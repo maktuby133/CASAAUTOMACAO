@@ -1,9 +1,13 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ⚠️ **ADICIONE ESTA LINHA** - Serve arquivos estáticos da pasta public
+app.use(express.static('public'));
 
 // ==================== DADOS DO SISTEMA ====================
 let sensorData = [];
@@ -16,10 +20,15 @@ let lightStates = {
   banheiro: false
 };
 
-// ==================== ROTAS DA API ====================
+// ==================== ROTAS PRINCIPAIS ====================
 
-// Página inicial - Status do sistema
+// ⚠️ **ROTA PRINCIPAL CORRIGIDA** - Agora serve a interface HTML
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Status da API (rota alternativa)
+app.get('/api/status', (req, res) => {
   res.json({ 
     message: '🏠 Servidor de Automação Residencial Online!',
     status: 'funcionando',
@@ -27,6 +36,8 @@ app.get('/', (req, res) => {
     comodos: Object.keys(lightStates).length
   });
 });
+
+// ==================== RESTANTE DO CÓDIGO PERMANECE IGUAL ====================
 
 // ESP32 envia dados dos sensores aqui
 app.post('/api/data', (req, res) => {
@@ -51,7 +62,7 @@ app.post('/api/data', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Dados salvos!',
-    commands: lightStates // Retorna estado atual das luzes
+    commands: lightStates
   });
 });
 
@@ -62,8 +73,6 @@ app.get('/api/data', (req, res) => {
     data: sensorData 
   });
 });
-
-// ==================== CONTROLE DE LÂMPADAS ====================
 
 // Ver estado de TODAS as lâmpadas
 app.get('/api/lights', (req, res) => {
@@ -98,55 +107,13 @@ app.post('/api/lights/:comodo', (req, res) => {
   }
 });
 
-// Alternar estado de uma lâmpada (toggle)
-app.post('/api/lights/:comodo/toggle', (req, res) => {
-  const { comodo } = req.params;
-  
-  if (lightStates.hasOwnProperty(comodo)) {
-    lightStates[comodo] = !lightStates[comodo];
-    
-    console.log(`🔘 ${comodo.toUpperCase()} TOGGLED: ${lightStates[comodo] ? 'LIGADO' : 'DESLIGADO'}`);
-    
-    res.json({ 
-      status: 'OK', 
-      comodo: comodo,
-      state: lightStates[comodo],
-      message: `${comodo} ${lightStates[comodo] ? 'ligado' : 'desligado'}`
-    });
-  } else {
-    res.status(400).json({ 
-      status: 'ERROR', 
-      message: 'Cômodo não encontrado!'
-    });
-  }
-});
-
-// Controlar TODAS as lâmpadas de uma vez
-app.post('/api/lights/all', (req, res) => {
-  const { state } = req.body;
-  
-  Object.keys(lightStates).forEach(comodo => {
-    lightStates[comodo] = state === true;
-  });
-  
-  console.log(`🏠 TODAS AS LUZES ${state ? 'LIGADAS' : 'DESLIGADAS'}`);
-  
-  res.json({ 
-    status: 'OK', 
-    lights: lightStates,
-    message: `Todas as luzes ${state ? 'ligadas' : 'desligadas'}`
-  });
-});
-
 // ESP32 busca comandos aqui
 app.get('/api/commands', (req, res) => {
   res.json(lightStates);
 });
 
-// ==================== ROTAS EXTRAS ====================
-
 // Status do sistema
-app.get('/api/status', (req, res) => {
+app.get('/api/system', (req, res) => {
   const comodosLigados = Object.values(lightStates).filter(state => state).length;
   
   res.json({
@@ -159,25 +126,10 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Reset do sistema
-app.post('/api/reset', (req, res) => {
-  sensorData = [];
-  Object.keys(lightStates).forEach(comodo => {
-    lightStates[comodo] = false;
-  });
-  
-  console.log('🔄 Sistema resetado!');
-  
-  res.json({ 
-    status: 'OK', 
-    message: 'Sistema resetado com sucesso!',
-    lights: lightStates
-  });
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🔥 Servidor de Automação rodando na porta ${PORT}`);
-  console.log(`🏠 Cômodos disponíveis: ${Object.keys(lightStates).join(', ')}`);
-  console.log(`🌐 Acesse: http://localhost:${PORT}`);
+  console.log(`🏠 Interface: http://localhost:${PORT}`);
+  console.log(`📊 API Status: http://localhost:${PORT}/api/status`);
+  console.log(`🌡️  API Dados: http://localhost:${PORT}/api/data`);
 });
