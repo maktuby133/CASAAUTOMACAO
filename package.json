@@ -1,7 +1,7 @@
 {
-  "name": "esp32-automation-server",
-  "version": "1.0.0",
-  "description": "Servidor para automação com ESP32 - Coleta e armazena dados de sensores",
+  "name": "casa-automacao-completa",
+  "version": "2.0.0",
+  "description": "Sistema completo de automação residencial com ESP32 - Sensores e controle de lâmpadas",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,10 +12,12 @@
     "esp32",
     "iot",
     "automation",
+    "smart-home",
     "arduino",
-    "sensors"
+    "sensors",
+    "lights-control"
   ],
-  "author": "Seu Nome",
+  "author": "Charles",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
