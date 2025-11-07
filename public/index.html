@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏠 Casa Automação - Controle de Iluminação & Temperatura</title>
+    <title>🏠 Smart Home - Controle Inteligente</title>
     <style>
         * {
             margin: 0;
@@ -11,9 +11,19 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #4CAF50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --dark: #2d3748;
+            --light: #f7fafc;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -27,97 +37,135 @@
             text-align: center;
             color: white;
             margin-bottom: 30px;
+            padding: 20px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 300;
         }
 
         .header p {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             opacity: 0.9;
+            font-weight: 300;
         }
 
         .dashboard {
             display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 20px;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
             margin-bottom: 30px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             .dashboard {
                 grid-template-columns: 1fr;
             }
         }
 
-        .grid {
+        .main-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
         }
 
-        .sensors-panel {
+        .control-panel {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
             height: fit-content;
         }
 
-        .sensors-panel h2 {
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 1.4rem;
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .panel-header h2 {
+            color: var(--dark);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .sensor-grid {
+            display: grid;
+            gap: 15px;
         }
 
         .sensor-card {
             background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
+            transition: transform 0.3s ease;
+            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.3);
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
         }
 
         .sensor-card.temperature {
             background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+            box-shadow: 0 8px 25px rgba(255, 118, 117, 0.3);
         }
 
-        .sensor-card.humidity {
+        .sensor-card.connected {
             background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
+            box-shadow: 0 8px 25px rgba(85, 239, 196, 0.3);
         }
 
         .sensor-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
         }
 
         .sensor-value {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: bold;
             margin: 10px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         .sensor-label {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .sensor-location {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 5px;
+            font-style: italic;
         }
 
         .room-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
         }
 
         .room-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .room-card.active {
+            border-left: 5px solid var(--success);
         }
 
         .room-header {
@@ -127,14 +175,39 @@
             margin-bottom: 20px;
         }
 
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         .room-icon {
-            font-size: 2rem;
+            font-size: 2.2rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 15px;
+            color: white;
+        }
+
+        .room-details {
+            flex: 1;
         }
 
         .room-name {
             font-size: 1.3rem;
             font-weight: 600;
-            color: #333;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .room-status {
+            font-size: 0.9rem;
+            color: #718096;
+            font-weight: 500;
         }
 
         .switch {
@@ -172,63 +245,71 @@
             background-color: white;
             transition: .4s;
             border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
         input:checked + .slider {
-            background-color: #4CAF50;
+            background-color: var(--success);
         }
 
         input:checked + .slider:before {
             transform: translateX(26px);
         }
 
-        .status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 500;
+        .power-consumption {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 12px;
             margin-top: 15px;
+            text-align: center;
         }
 
-        .status-on {
-            background-color: #4CAF50;
-            color: white;
+        .consumption-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
         }
 
-        .status-off {
-            background-color: #f44336;
-            color: white;
+        .consumption-label {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 5px;
         }
 
         .controls {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .btn {
-            flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.3s ease;
+            font-size: 0.9rem;
         }
 
         .btn-on {
-            background-color: #4CAF50;
+            background: linear-gradient(135deg, var(--success), #45a049);
             color: white;
         }
 
         .btn-off {
-            background-color: #f44336;
+            background: linear-gradient(135deg, var(--danger), #da190b);
             color: white;
         }
 
         .btn:hover {
-            opacity: 0.9;
-            transform: scale(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .footer {
@@ -241,24 +322,65 @@
         .last-update {
             text-align: center;
             color: white;
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 0.9rem;
             opacity: 0.7;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
         }
 
-        .loading {
-            text-align: center;
+        .update-btn {
+            background: rgba(255,255,255,0.2);
             color: white;
-            padding: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .update-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: var(--success);
+        }
+
+        .status-offline {
+            background: var(--danger);
         }
 
         @media (max-width: 768px) {
-            .grid {
+            .main-grid {
                 grid-template-columns: 1fr;
             }
             
             .header h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
+            }
+            
+            .room-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -266,182 +388,294 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏠 Casa Automação Inteligente</h1>
-            <p>Controle de Iluminação & Monitoramento de Temperatura</p>
+            <h1>🏠 Smart Home Automation</h1>
+            <p>Controle Inteligente de Iluminação e Monitoramento</p>
         </div>
 
         <div class="dashboard">
-            <div class="grid">
-                <!-- Sala -->
-                <div class="room-card">
+            <div class="main-grid">
+                <!-- Sala com Sensor de Temperatura -->
+                <div class="room-card active">
                     <div class="room-header">
-                        <div>
+                        <div class="room-info">
                             <div class="room-icon">🛋️</div>
-                            <div class="room-name">Sala</div>
+                            <div class="room-details">
+                                <div class="room-name">Sala Principal</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Com sensor de temperatura
+                                </div>
+                            </div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="sala-switch" onchange="toggleLight('sala')">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="sala-status" class="status status-off">DESLIGADA</div>
+                    <div id="sala-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
+                    <div class="power-consumption">
+                        <div class="consumption-value">💡 60W LED</div>
+                        <div class="consumption-label">Consumo estimado</div>
+                    </div>
                     <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('sala', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('sala', false)">DESLIGAR</button>
+                        <button class="btn btn-on" onclick="setLight('sala', true)">🟢 LIGAR LUZ</button>
+                        <button class="btn btn-off" onclick="setLight('sala', false)">🔴 DESLIGAR</button>
                     </div>
                 </div>
 
                 <!-- Quarto 1 -->
                 <div class="room-card">
                     <div class="room-header">
-                        <div>
+                        <div class="room-info">
                             <div class="room-icon">🛏️</div>
-                            <div class="room-name">Quarto 1</div>
+                            <div class="room-details">
+                                <div class="room-name">Quarto Casal</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Lâmpada inteligente
+                                </div>
+                            </div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="quarto1-switch" onchange="toggleLight('quarto1')">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="quarto1-status" class="status status-off">DESLIGADA</div>
+                    <div id="quarto1-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
                     <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('quarto1', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('quarto1', false)">DESLIGAR</button>
+                        <button class="btn btn-on" onclick="setLight('quarto1', true)">🟢 LIGAR</button>
+                        <button class="btn btn-off" onclick="setLight('quarto1', false)">🔴 DESLIGAR</button>
                     </div>
                 </div>
 
                 <!-- Quarto 2 -->
                 <div class="room-card">
                     <div class="room-header">
-                        <div>
+                        <div class="room-info">
                             <div class="room-icon">🛏️</div>
-                            <div class="room-name">Quarto 2</div>
+                            <div class="room-details">
+                                <div class="room-name">Quarto 2</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Disponível
+                                </div>
+                            </div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="quarto2-switch" onchange="toggleLight('quarto2')">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="quarto2-status" class="status status-off">DESLIGADA</div>
+                    <div id="quarto2-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
                     <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('quarto2', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('quarto2', false)">DESLIGAR</button>
+                        <button class="btn btn-on" onclick="setLight('quarto2', true)">🟢 LIGAR</button>
+                        <button class="btn btn-off" onclick="setLight('quarto2', false)">🔴 DESLIGAR</button>
                     </div>
                 </div>
 
                 <!-- Quarto 3 -->
                 <div class="room-card">
                     <div class="room-header">
-                        <div>
+                        <div class="room-info">
                             <div class="room-icon">🛏️</div>
-                            <div class="room-name">Quarto 3</div>
+                            <div class="room-details">
+                                <div class="room-name">Quarto 3</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Disponível
+                                </div>
+                            </div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="quarto3-switch" onchange="toggleLight('quarto3')">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="quarto3-status" class="status status-off">DESLIGADA</div>
+                    <div id="quarto3-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
                     <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('quarto3', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('quarto3', false)">DESLIGAR</button>
-                    </div>
-                </div>
-
-                <!-- Corredor -->
-                <div class="room-card">
-                    <div class="room-header">
-                        <div>
-                            <div class="room-icon">🚪</div>
-                            <div class="room-name">Corredor</div>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="corredor-switch" onchange="toggleLight('corredor')">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div id="corredor-status" class="status status-off">DESLIGADA</div>
-                    <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('corredor', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('corredor', false)">DESLIGAR</button>
+                        <button class="btn btn-on" onclick="setLight('quarto3', true)">🟢 LIGAR</button>
+                        <button class="btn btn-off" onclick="setLight('quarto3', false)">🔴 DESLIGAR</button>
                     </div>
                 </div>
 
                 <!-- Cozinha -->
                 <div class="room-card">
                     <div class="room-header">
-                        <div>
+                        <div class="room-info">
                             <div class="room-icon">👨‍🍳</div>
-                            <div class="room-name">Cozinha</div>
+                            <div class="room-details">
+                                <div class="room-name">Cozinha</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Iluminação LED
+                                </div>
+                            </div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="cozinha-switch" onchange="toggleLight('cozinha')">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="cozinha-status" class="status status-off">DESLIGADA</div>
+                    <div id="cozinha-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
                     <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('cozinha', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('cozinha', false)">DESLIGAR</button>
+                        <button class="btn btn-on" onclick="setLight('cozinha', true)">🟢 LIGAR</button>
+                        <button class="btn btn-off" onclick="setLight('cozinha', false)">🔴 DESLIGAR</button>
                     </div>
                 </div>
 
                 <!-- Banheiro -->
                 <div class="room-card">
                     <div class="room-header">
-                        <div>
+                        <div class="room-info">
                             <div class="room-icon">🚽</div>
-                            <div class="room-name">Banheiro</div>
+                            <div class="room-details">
+                                <div class="room-name">Banheiro</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Disponível
+                                </div>
+                            </div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="banheiro-switch" onchange="toggleLight('banheiro')">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="banheiro-status" class="status status-off">DESLIGADA</div>
+                    <div id="banheiro-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
                     <div class="controls">
-                        <button class="btn btn-on" onclick="setLight('banheiro', true)">LIGAR</button>
-                        <button class="btn btn-off" onclick="setLight('banheiro', false)">DESLIGAR</button>
+                        <button class="btn btn-on" onclick="setLight('banheiro', true)">🟢 LIGAR</button>
+                        <button class="btn btn-off" onclick="setLight('banheiro', false)">🔴 DESLIGAR</button>
+                    </div>
+                </div>
+
+                <!-- Corredor -->
+                <div class="room-card">
+                    <div class="room-header">
+                        <div class="room-info">
+                            <div class="room-icon">🚪</div>
+                            <div class="room-details">
+                                <div class="room-name">Corredor</div>
+                                <div class="room-status">
+                                    <span class="status-indicator status-online"></span>
+                                    Iluminação noturna
+                                </div>
+                            </div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="corredor-switch" onchange="toggleLight('corredor')">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="corredor-status" class="status-off" style="
+                        text-align: center;
+                        padding: 10px;
+                        border-radius: 8px;
+                        font-weight: 500;
+                        margin-top: 15px;
+                        background-color: #f44336;
+                        color: white;
+                    ">DESLIGADA</div>
+                    <div class="controls">
+                        <button class="btn btn-on" onclick="setLight('corredor', true)">🟢 LIGAR</button>
+                        <button class="btn btn-off" onclick="setLight('corredor', false)">🔴 DESLIGAR</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Painel de Sensores -->
-            <div class="sensors-panel">
-                <h2>📊 Monitoramento</h2>
-                
-                <div class="sensor-card temperature">
-                    <div class="sensor-icon">🌡️</div>
-                    <div class="sensor-value" id="temperature-value">-- °C</div>
-                    <div class="sensor-label">TEMPERATURA REAL (NTC)</div>
+            <!-- Painel de Monitoramento -->
+            <div class="control-panel">
+                <div class="panel-header">
+                    <h2>📊 Monitoramento</h2>
+                    <div class="status-indicator status-online"></div>
                 </div>
 
-                <div class="sensor-card humidity">
-                    <div class="sensor-icon">💧</div>
-                    <div class="sensor-value" id="humidity-value">-- %</div>
-                    <div class="sensor-label">UMIDADE</div>
+                <div class="sensor-grid">
+                    <div class="sensor-card temperature">
+                        <div class="sensor-icon">🌡️</div>
+                        <div class="sensor-value" id="temperature-value">-- °C</div>
+                        <div class="sensor-label">TEMPERATURA ATUAL</div>
+                        <div class="sensor-location">📍 Sensor na Sala Principal</div>
+                    </div>
+
+                    <div class="sensor-card connected">
+                        <div class="sensor-icon">📡</div>
+                        <div class="sensor-value" id="connected-value">--</div>
+                        <div class="sensor-label">ESP32 CONECTADO</div>
+                        <div class="sensor-location">🔄 Tempo real</div>
+                    </div>
+
+                    <div class="sensor-card">
+                        <div class="sensor-icon">💡</div>
+                        <div class="sensor-value" id="lights-on">0/7</div>
+                        <div class="sensor-label">LUZES ATIVAS</div>
+                        <div class="sensor-location">⚡ Consumo total</div>
+                    </div>
                 </div>
 
-                <div class="sensor-card">
-                    <div class="sensor-icon">📡</div>
-                    <div class="sensor-value" id="connected-value">--</div>
-                    <div class="sensor-label">ESP32 CONECTADO</div>
-                </div>
-
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-on" onclick="atualizarSensores()" style="background: #667eea;">
+                <div style="text-align: center; margin-top: 25px;">
+                    <button class="update-btn" onclick="atualizarSensores()">
                         🔄 Atualizar Dados
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="last-update">
-            Última atualização: <span id="last-update">--</span>
+        <div style="text-align: center; margin-top: 30px;">
+            <div class="last-update">
+                Última atualização: <span id="last-update">--</span>
+            </div>
         </div>
 
         <div class="footer">
-            <p>Sistema de Automação Residencial • ESP32 + NTC 100K + Node.js</p>
+            <p>Smart Home Automation • ESP32 + NTC 100K + Node.js • Sistema em Tempo Real</p>
         </div>
     </div>
 
@@ -460,8 +694,8 @@
         // Dados dos sensores
         let sensorData = {
             temperature: '--',
-            humidity: '--',
-            connected: 'Não'
+            connected: 'Não',
+            lightsOn: 0
         };
 
         // Alternar luz
@@ -469,6 +703,7 @@
             lights[room] = !lights[room];
             updateRoomUI(room);
             sendToServer(room, lights[room]);
+            updateLightsCount();
         }
 
         // Definir estado específico
@@ -476,6 +711,7 @@
             lights[room] = state;
             updateRoomUI(room);
             sendToServer(room, state);
+            updateLightsCount();
         }
 
         // Atualizar interface da luz
@@ -487,12 +723,19 @@
                 switchElement.checked = lights[room];
                 if (lights[room]) {
                     statusElement.textContent = 'LIGADA';
-                    statusElement.className = 'status status-on';
+                    statusElement.style.backgroundColor = '#4CAF50';
                 } else {
                     statusElement.textContent = 'DESLIGADA';
-                    statusElement.className = 'status status-off';
+                    statusElement.style.backgroundColor = '#f44336';
                 }
             }
+        }
+
+        // Atualizar contador de luzes
+        function updateLightsCount() {
+            const lightsOn = Object.values(lights).filter(state => state).length;
+            sensorData.lightsOn = lightsOn;
+            document.getElementById('lights-on').textContent = `${lightsOn}/7`;
         }
 
         // Atualizar dados dos sensores
@@ -503,7 +746,6 @@
                     if (data.data && data.data.length > 0) {
                         const latestData = data.data[0];
                         sensorData.temperature = latestData.temperature;
-                        sensorData.humidity = latestData.humidity;
                         sensorData.connected = 'Sim';
                         
                         updateSensorUI();
@@ -521,8 +763,6 @@
         function updateSensorUI() {
             document.getElementById('temperature-value').textContent = 
                 sensorData.temperature + ' °C';
-            document.getElementById('humidity-value').textContent = 
-                sensorData.humidity + ' %';
             document.getElementById('connected-value').textContent = 
                 sensorData.connected;
         }
@@ -565,6 +805,9 @@
             Object.keys(lights).forEach(room => {
                 updateRoomUI(room);
             });
+
+            // Atualizar contador de luzes
+            updateLightsCount();
 
             // Carregar dados dos sensores inicialmente
             atualizarSensores();
