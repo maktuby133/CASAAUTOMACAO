@@ -5,384 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏠 Smart Home - Controle Inteligente</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --success: #4CAF50;
-            --danger: #f44336;
-            --warning: #ff9800;
-            --dark: #2d3748;
-            --light: #f7fafc;
+            --primary: #667eea; --secondary: #764ba2; --success: #4CAF50; 
+            --danger: #f44336; --warning: #ff9800; --dark: #2d3748; --light: #f7fafc;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            min-height: 100vh;
-            padding: 20px;
+            min-height: 100vh; padding: 20px;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-            padding: 20px;
-        }
-
-        .header h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            font-weight: 300;
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        @media (max-width: 1024px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .control-panel {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            height: fit-content;
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .panel-header h2 {
-            color: var(--dark);
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .sensor-grid {
-            display: grid;
-            gap: 15px;
-        }
-
-        .sensor-card {
-            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            transition: transform 0.3s ease;
-            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.3);
-        }
-
-        .sensor-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .sensor-card.temperature {
-            background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
-            box-shadow: 0 8px 25px rgba(255, 118, 117, 0.3);
-        }
-
-        .sensor-card.connected {
-            background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
-            box-shadow: 0 8px 25px rgba(85, 239, 196, 0.3);
-        }
-
-        .sensor-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-        }
-
-        .sensor-value {
-            font-size: 2.2rem;
-            font-weight: bold;
-            margin: 10px 0;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        }
-
-        .sensor-label {
-            font-size: 0.95rem;
-            opacity: 0.9;
-            font-weight: 500;
-        }
-
-        .sensor-location {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        .room-card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            border: 1px solid #e2e8f0;
-        }
-
-        .room-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        }
-
-        .room-card.active {
-            border-left: 5px solid var(--success);
-        }
-
-        .room-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .room-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .room-icon {
-            font-size: 2.2rem;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 15px;
-            color: white;
-        }
-
-        .room-details {
-            flex: 1;
-        }
-
-        .room-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 5px;
-        }
-
-        .room-status {
-            font-size: 0.9rem;
-            color: #718096;
-            font-weight: 500;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        input:checked + .slider {
-            background-color: var(--success);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        .power-consumption {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 15px;
-            text-align: center;
-        }
-
-        .consumption-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .consumption-label {
-            font-size: 0.8rem;
-            color: #718096;
-            margin-top: 5px;
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .btn-on {
-            background: linear-gradient(135deg, var(--success), #45a049);
-            color: white;
-        }
-
-        .btn-off {
-            background: linear-gradient(135deg, var(--danger), #da190b);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 40px;
-            opacity: 0.8;
-        }
-
-        .last-update {
-            text-align: center;
-            color: white;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            opacity: 0.7;
-            background: rgba(255,255,255,0.1);
-            padding: 10px 20px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-
-        .update-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.3);
-            padding: 12px 25px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin-top: 15px;
-        }
-
-        .update-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-online {
-            background: var(--success);
-        }
-
-        .status-offline {
-            background: var(--danger);
-        }
-
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2.2rem;
-            }
-            
-            .room-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-            
-            .controls {
-                grid-template-columns: 1fr;
-            }
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; padding: 20px; }
+        .header h1 { font-size: 2.8rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .header p { font-size: 1.2rem; opacity: 0.9; }
+        .dashboard { display: grid; grid-template-columns: 1fr 350px; gap: 25px; margin-bottom: 30px; }
+        @media (max-width: 1024px) { .dashboard { grid-template-columns: 1fr; } }
+        .main-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .control-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; }
+        .panel-header h2 { color: var(--dark); font-size: 1.5rem; font-weight: 600; }
+        .sensor-grid { display: grid; gap: 15px; }
+        .sensor-card { color: white; padding: 25px; border-radius: 15px; text-align: center; transition: transform 0.3s ease; }
+        .sensor-card.temperature { background: linear-gradient(135deg, #ff7675 0%, #d63031 100%); }
+        .sensor-card.connected { background: linear-gradient(135deg, #55efc4 0%, #00b894 100%); }
+        .sensor-card:hover { transform: translateY(-5px); }
+        .sensor-icon { font-size: 2.5rem; margin-bottom: 15px; }
+        .sensor-value { font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
+        .sensor-label { font-size: 0.95rem; opacity: 0.9; font-weight: 500; }
+        .sensor-location { font-size: 0.85rem; opacity: 0.8; margin-top: 5px; font-style: italic; }
+        .room-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        .room-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .room-card.active { border-left: 5px solid var(--success); }
+        .room-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .room-info { display: flex; align-items: center; gap: 15px; }
+        .room-icon { font-size: 2.2rem; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 15px; color: white; }
+        .room-details { flex: 1; }
+        .room-name { font-size: 1.3rem; font-weight: 600; color: var(--dark); margin-bottom: 5px; }
+        .room-status { font-size: 0.9rem; color: #718096; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; font-size: 0.9rem; }
+        .btn-on { background: linear-gradient(135deg, var(--success), #45a049); color: white; }
+        .btn-off { background: linear-gradient(135deg, var(--danger), #da190b); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .footer { text-align: center; color: white; margin-top: 40px; opacity: 0.8; }
+        .last-update { text-align: center; color: white; margin-top: 15px; font-size: 0.9rem; opacity: 0.7; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px; display: inline-block; }
+        .update-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; margin-top: 15px; }
+        .update-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+        .status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        .status-online { background: var(--success); }
+        .status-offline { background: var(--danger); }
+        .status { text-align: center; padding: 10px; border-radius: 8px; font-weight: 500; margin-top: 15px; }
+        .status-on { background-color: var(--success); color: white; }
+        .status-off { background-color: var(--danger); color: white; }
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } .header h1 { font-size: 2.2rem; } .controls { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -394,17 +76,14 @@
 
         <div class="dashboard">
             <div class="main-grid">
-                <!-- Sala com Sensor de Temperatura -->
+                <!-- Sala com Sensor -->
                 <div class="room-card active">
                     <div class="room-header">
                         <div class="room-info">
                             <div class="room-icon">🛋️</div>
                             <div class="room-details">
                                 <div class="room-name">Sala Principal</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Com sensor de temperatura
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Com sensor de temperatura</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -412,19 +91,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="sala-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
-                    <div class="power-consumption">
-                        <div class="consumption-value">💡 60W LED</div>
-                        <div class="consumption-label">Consumo estimado</div>
-                    </div>
+                    <div id="sala-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('sala', true)">🟢 LIGAR LUZ</button>
                         <button class="btn btn-off" onclick="setLight('sala', false)">🔴 DESLIGAR</button>
@@ -438,10 +105,7 @@
                             <div class="room-icon">🛏️</div>
                             <div class="room-details">
                                 <div class="room-name">Quarto Casal</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Lâmpada inteligente
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Lâmpada inteligente</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -449,15 +113,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="quarto1-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
+                    <div id="quarto1-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('quarto1', true)">🟢 LIGAR</button>
                         <button class="btn btn-off" onclick="setLight('quarto1', false)">🔴 DESLIGAR</button>
@@ -471,10 +127,7 @@
                             <div class="room-icon">🛏️</div>
                             <div class="room-details">
                                 <div class="room-name">Quarto 2</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Disponível
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Disponível</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -482,15 +135,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="quarto2-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
+                    <div id="quarto2-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('quarto2', true)">🟢 LIGAR</button>
                         <button class="btn btn-off" onclick="setLight('quarto2', false)">🔴 DESLIGAR</button>
@@ -504,10 +149,7 @@
                             <div class="room-icon">🛏️</div>
                             <div class="room-details">
                                 <div class="room-name">Quarto 3</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Disponível
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Disponível</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -515,15 +157,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="quarto3-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
+                    <div id="quarto3-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('quarto3', true)">🟢 LIGAR</button>
                         <button class="btn btn-off" onclick="setLight('quarto3', false)">🔴 DESLIGAR</button>
@@ -537,10 +171,7 @@
                             <div class="room-icon">👨‍🍳</div>
                             <div class="room-details">
                                 <div class="room-name">Cozinha</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Iluminação LED
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Iluminação LED</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -548,15 +179,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="cozinha-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
+                    <div id="cozinha-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('cozinha', true)">🟢 LIGAR</button>
                         <button class="btn btn-off" onclick="setLight('cozinha', false)">🔴 DESLIGAR</button>
@@ -570,10 +193,7 @@
                             <div class="room-icon">🚽</div>
                             <div class="room-details">
                                 <div class="room-name">Banheiro</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Disponível
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Disponível</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -581,15 +201,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="banheiro-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
+                    <div id="banheiro-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('banheiro', true)">🟢 LIGAR</button>
                         <button class="btn btn-off" onclick="setLight('banheiro', false)">🔴 DESLIGAR</button>
@@ -603,10 +215,7 @@
                             <div class="room-icon">🚪</div>
                             <div class="room-details">
                                 <div class="room-name">Corredor</div>
-                                <div class="room-status">
-                                    <span class="status-indicator status-online"></span>
-                                    Iluminação noturna
-                                </div>
+                                <div class="room-status"><span class="status-indicator status-online"></span>Iluminação noturna</div>
                             </div>
                         </div>
                         <label class="switch">
@@ -614,15 +223,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="corredor-status" class="status-off" style="
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        font-weight: 500;
-                        margin-top: 15px;
-                        background-color: #f44336;
-                        color: white;
-                    ">DESLIGADA</div>
+                    <div id="corredor-status" class="status status-off">DESLIGADA</div>
                     <div class="controls">
                         <button class="btn btn-on" onclick="setLight('corredor', true)">🟢 LIGAR</button>
                         <button class="btn btn-off" onclick="setLight('corredor', false)">🔴 DESLIGAR</button>
@@ -636,7 +237,6 @@
                     <h2>📊 Monitoramento</h2>
                     <div class="status-indicator status-online"></div>
                 </div>
-
                 <div class="sensor-grid">
                     <div class="sensor-card temperature">
                         <div class="sensor-icon">🌡️</div>
@@ -644,34 +244,27 @@
                         <div class="sensor-label">TEMPERATURA ATUAL</div>
                         <div class="sensor-location">📍 Sensor na Sala Principal</div>
                     </div>
-
                     <div class="sensor-card connected">
                         <div class="sensor-icon">📡</div>
                         <div class="sensor-value" id="connected-value">--</div>
                         <div class="sensor-label">ESP32 CONECTADO</div>
                         <div class="sensor-location">🔄 Tempo real</div>
                     </div>
-
-                    <div class="sensor-card">
+                    <div class="sensor-card connected">
                         <div class="sensor-icon">💡</div>
                         <div class="sensor-value" id="lights-on">0/7</div>
                         <div class="sensor-label">LUZES ATIVAS</div>
                         <div class="sensor-location">⚡ Consumo total</div>
                     </div>
                 </div>
-
                 <div style="text-align: center; margin-top: 25px;">
-                    <button class="update-btn" onclick="atualizarSensores()">
-                        🔄 Atualizar Dados
-                    </button>
+                    <button class="update-btn" onclick="atualizarSensores()">🔄 Atualizar Dados</button>
                 </div>
             </div>
         </div>
 
         <div style="text-align: center; margin-top: 30px;">
-            <div class="last-update">
-                Última atualização: <span id="last-update">--</span>
-            </div>
+            <div class="last-update">Última atualização: <span id="last-update">--</span></div>
         </div>
 
         <div class="footer">
@@ -680,25 +273,9 @@
     </div>
 
     <script>
-        // Estado das luzes
-        let lights = {
-            sala: false,
-            quarto1: false,
-            quarto2: false,
-            quarto3: false,
-            corredor: false,
-            cozinha: false,
-            banheiro: false
-        };
+        let lights = { sala: false, quarto1: false, quarto2: false, quarto3: false, corredor: false, cozinha: false, banheiro: false };
+        let sensorData = { temperature: '--', connected: 'Não', lightsOn: 0 };
 
-        // Dados dos sensores
-        let sensorData = {
-            temperature: '--',
-            connected: 'Não',
-            lightsOn: 0
-        };
-
-        // Alternar luz
         function toggleLight(room) {
             lights[room] = !lights[room];
             updateRoomUI(room);
@@ -706,7 +283,6 @@
             updateLightsCount();
         }
 
-        // Definir estado específico
         function setLight(room, state) {
             lights[room] = state;
             updateRoomUI(room);
@@ -714,31 +290,27 @@
             updateLightsCount();
         }
 
-        // Atualizar interface da luz
         function updateRoomUI(room) {
             const switchElement = document.getElementById(`${room}-switch`);
             const statusElement = document.getElementById(`${room}-status`);
-            
             if (switchElement && statusElement) {
                 switchElement.checked = lights[room];
                 if (lights[room]) {
                     statusElement.textContent = 'LIGADA';
-                    statusElement.style.backgroundColor = '#4CAF50';
+                    statusElement.className = 'status status-on';
                 } else {
                     statusElement.textContent = 'DESLIGADA';
-                    statusElement.style.backgroundColor = '#f44336';
+                    statusElement.className = 'status status-off';
                 }
             }
         }
 
-        // Atualizar contador de luzes
         function updateLightsCount() {
             const lightsOn = Object.values(lights).filter(state => state).length;
             sensorData.lightsOn = lightsOn;
             document.getElementById('lights-on').textContent = `${lightsOn}/7`;
         }
 
-        // Atualizar dados dos sensores
         function atualizarSensores() {
             fetch('/api/data')
                 .then(response => response.json())
@@ -747,7 +319,6 @@
                         const latestData = data.data[0];
                         sensorData.temperature = latestData.temperature;
                         sensorData.connected = 'Sim';
-                        
                         updateSensorUI();
                         updateLastUpdate();
                     }
@@ -759,60 +330,31 @@
                 });
         }
 
-        // Atualizar interface dos sensores
         function updateSensorUI() {
-            document.getElementById('temperature-value').textContent = 
-                sensorData.temperature + ' °C';
-            document.getElementById('connected-value').textContent = 
-                sensorData.connected;
+            document.getElementById('temperature-value').textContent = sensorData.temperature + ' °C';
+            document.getElementById('connected-value').textContent = sensorData.connected;
         }
 
-        // Atualizar última atualização
         function updateLastUpdate() {
             const now = new Date();
-            document.getElementById('last-update').textContent = 
-                now.toLocaleString('pt-BR');
+            document.getElementById('last-update').textContent = now.toLocaleString('pt-BR');
         }
 
-        // Enviar comando para servidor
         function sendToServer(room, state) {
-            const action = state ? 'LIGAR' : 'DESLIGAR';
-            console.log(`💡 ${action} luz do ${room}`);
-            
             fetch('/api/control', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    room: room,
-                    state: state,
-                    timestamp: new Date().toISOString()
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room: room, state: state, timestamp: new Date().toISOString() })
             })
             .then(response => response.json())
-            .then(data => {
-                console.log('✅ Comando enviado:', data);
-            })
-            .catch(error => {
-                console.error('❌ Erro:', error);
-            });
+            .then(data => console.log('✅ Comando enviado:', data))
+            .catch(error => console.error('❌ Erro:', error));
         }
 
-        // Inicializar interface
         document.addEventListener('DOMContentLoaded', function() {
-            // Atualiza todos os estados iniciais
-            Object.keys(lights).forEach(room => {
-                updateRoomUI(room);
-            });
-
-            // Atualizar contador de luzes
+            Object.keys(lights).forEach(room => updateRoomUI(room));
             updateLightsCount();
-
-            // Carregar dados dos sensores inicialmente
             atualizarSensores();
-
-            // Atualizar dados a cada 30 segundos automaticamente
             setInterval(atualizarSensores, 30000);
         });
     </script>
