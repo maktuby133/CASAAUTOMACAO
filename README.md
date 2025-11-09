@@ -8,10 +8,18 @@ Sistema completo de automação residencial com ESP32, Node.js e interface web c
 - ✅ Monitoramento de temperatura e gás
 - ✅ Interface web responsiva
 - ✅ Dados meteorológicos em tempo real
-- ✅ Monitoramento de conexão ESP32
+- ✅ **MONITORAMENTO ESP32 EM TEMPO REAL**
 - ✅ Sistema de heartbeat
 - ✅ Persistência de estado
-- ✅ Alertas de desconexão
+- ✅ Alertas visuais de conexão
+
+## 🎯 Status do ESP32 no Painel
+
+Agora o sistema mostra claramente o status do ESP32:
+
+- **🟢 ONLINE**: ESP32 conectado e funcionando
+- **🔴 OFFLINE**: ESP32 desconectado
+- **🟡 CONECTANDO**: Estabelecendo conexão
 
 ## 📋 Pré-requisitos
 
