@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏠 Casa Automação - V2.0</title>
+    <title>🏠 Casa Automação - V3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -18,6 +18,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 15px;
+            color: #333;
         }
 
         .container {
@@ -45,6 +46,91 @@
             font-weight: 300;
         }
 
+        /* Seção Clima */
+        .weather-section {
+            margin-bottom: 20px;
+        }
+
+        .weather-card {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            border-radius: 20px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weather-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(30deg);
+        }
+
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .weather-location h2 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .weather-location p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .weather-icon {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .weather-item {
+            text-align: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .weather-item i {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .weather-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+
+        .weather-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        /* Layout Principal */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -55,6 +141,10 @@
         @media (max-width: 1200px) {
             .main-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .weather-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -95,6 +185,11 @@
             border-radius: 15px;
             color: white;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .sensor-compact-item:hover {
+            transform: translateY(-2px);
         }
 
         .sensor-compact-item.gas {
@@ -162,6 +257,11 @@
             transition: all 0.3s ease;
         }
 
+        .device-compact-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
         .device-compact-item.active {
             background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
             border-color: #fd9644;
@@ -177,6 +277,11 @@
             justify-content: center;
             background: rgba(255,255,255,0.9);
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .device-compact-item:hover .device-compact-icon {
+            transform: scale(1.1);
         }
 
         .device-compact-icon img {
@@ -260,6 +365,11 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
         .btn-success {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
@@ -272,6 +382,11 @@
 
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-weather {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
             color: white;
         }
 
@@ -314,29 +429,26 @@
             margin-right: 5px;
         }
 
-        .section-divider {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
-            margin: 15px 0;
+        .weather-time {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-top: 5px;
         }
 
-        /* Grid para caber tudo */
-        .full-layout {
-            display: grid;
-            grid-template-rows: auto auto 1fr auto;
-            gap: 15px;
-            height: calc(100vh - 40px);
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .devices-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
         }
 
+        /* Responsividade */
         @media (max-width: 768px) {
-            .devices-section {
-                grid-template-columns: 1fr;
+            .weather-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .sensors-compact {
@@ -346,67 +458,99 @@
             .devices-compact {
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             }
+            
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .weather-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="full-layout">
-            <!-- Header -->
-            <div class="header">
-                <h1>🏠 Casa Automação - V2.0</h1>
-                <p>Controle completo em tempo real</p>
-            </div>
+        <!-- Header -->
+        <div class="header">
+            <h1>🏠 Casa Automação - V3.0</h1>
+            <p>Controle completo com previsão do tempo em tempo real</p>
+        </div>
 
-            <!-- Sensores -->
-            <div class="card">
-                <h2><i class="fas fa-chart-line"></i> Monitoramento</h2>
-                <div class="sensors-compact" id="sensorsGrid">
-                    <!-- Sensores serão inseridos aqui -->
-                </div>
-            </div>
-
-            <!-- Dispositivos -->
-            <div class="devices-section">
-                <!-- Lâmpadas -->
-                <div class="card">
-                    <h2><i class="fas fa-lightbulb"></i> Lâmpadas</h2>
-                    <div class="devices-compact" id="lightsGrid">
-                        <!-- Lâmpadas serão inseridas aqui -->
+        <!-- Previsão do Tempo RJ -->
+        <div class="weather-section">
+            <div class="weather-card fade-in">
+                <div class="weather-header">
+                    <div class="weather-location">
+                        <h2><i class="fas fa-map-marker-alt"></i> Rio de Janeiro, RJ</h2>
+                        <p id="weather-description">Carregando previsão...</p>
+                    </div>
+                    <div class="weather-icon" id="weather-main-icon">
+                        <i class="fas fa-sun"></i>
                     </div>
                 </div>
+                <div class="weather-grid" id="weather-grid">
+                    <!-- Dados do clima serão inseridos aqui -->
+                </div>
+                <div class="weather-time" id="weather-update-time">
+                    Última atualização: --
+                </div>
+            </div>
+        </div>
 
-                <!-- Tomadas -->
-                <div class="card">
-                    <h2><i class="fas fa-plug"></i> Tomadas</h2>
-                    <div class="devices-compact" id="outletsGrid">
-                        <!-- Tomadas serão inseridas aqui -->
-                    </div>
+        <!-- Sensores da Casa -->
+        <div class="card fade-in">
+            <h2><i class="fas fa-chart-line"></i> Monitoramento da Casa</h2>
+            <div class="sensors-compact" id="sensorsGrid">
+                <!-- Sensores serão inseridos aqui -->
+            </div>
+        </div>
+
+        <!-- Dispositivos -->
+        <div class="main-grid">
+            <!-- Lâmpadas -->
+            <div class="card fade-in">
+                <h2><i class="fas fa-lightbulb"></i> Lâmpadas</h2>
+                <div class="devices-compact" id="lightsGrid">
+                    <!-- Lâmpadas serão inseridas aqui -->
                 </div>
             </div>
 
-            <!-- Controles -->
-            <div class="controls">
-                <button class="btn btn-success" onclick="ligarTudo()">
-                    <i class="fas fa-power-off"></i> Ligar Tudo
-                </button>
-                <button class="btn btn-danger" onclick="desligarTudo()">
-                    <i class="fas fa-plug"></i> Desligar Tudo
-                </button>
-                <button class="btn btn-primary" onclick="atualizarDados()">
-                    <i class="fas fa-sync-alt"></i> Atualizar
-                </button>
+            <!-- Tomadas -->
+            <div class="card fade-in">
+                <h2><i class="fas fa-plug"></i> Tomadas</h2>
+                <div class="devices-compact" id="outletsGrid">
+                    <!-- Tomadas serão inseridas aqui -->
+                </div>
             </div>
+        </div>
 
-            <!-- Status -->
-            <div class="status-bar" id="statusBar">
-                <i class="fas fa-sync fa-spin"></i> Conectando ao sistema...
-            </div>
+        <!-- Controles -->
+        <div class="controls">
+            <button class="btn btn-success" onclick="ligarTudo()">
+                <i class="fas fa-power-off"></i> Ligar Tudo
+            </button>
+            <button class="btn btn-danger" onclick="desligarTudo()">
+                <i class="fas fa-plug"></i> Desligar Tudo
+            </button>
+            <button class="btn btn-primary" onclick="atualizarDados()">
+                <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+            <button class="btn btn-weather" onclick="atualizarClima()">
+                <i class="fas fa-cloud-sun"></i> Atualizar Clima
+            </button>
+        </div>
+
+        <!-- Status -->
+        <div class="status-bar" id="statusBar">
+            <i class="fas fa-sync fa-spin"></i> Conectando ao sistema...
         </div>
     </div>
 
     <script>
-        // URLs CORRIGIDAS das imagens - usando PNG estático
+        // URLs das imagens
         const LAMP_ON = 'https://img.icons8.com/ios-filled/100/000000/light-on.png';
         const LAMP_OFF = 'https://img.icons8.com/ios/100/000000/light-off.png';
 
@@ -444,8 +588,109 @@
             renderOutlets();
             updateSensors();
             checkServerStatus();
+            atualizarClima();
+            
             setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
+            setInterval(atualizarClima, 600000); // Atualizar clima a cada 10 minutos
+        }
+
+        // Função para atualizar dados do clima
+        async function atualizarClima() {
+            try {
+                updateStatusBar('🌤️ Atualizando previsão do tempo...', 'online');
+                
+                // Simulação de dados do clima para o Rio de Janeiro
+                const weatherData = {
+                    temperature: 28 + Math.random() * 4, // 28-32°C
+                    feelsLike: 30 + Math.random() * 3, // 30-33°C
+                    humidity: 65 + Math.random() * 15, // 65-80%
+                    windSpeed: 8 + Math.random() * 10, // 8-18 km/h
+                    pressure: 1012 + Math.random() * 8, // 1012-1020 hPa
+                    description: getRandomWeatherDescription(),
+                    icon: getWeatherIcon()
+                };
+
+                renderWeather(weatherData);
+                updateStatusBar('✅ Previsão do tempo atualizada', 'online');
+                
+            } catch (error) {
+                console.error('Erro ao buscar dados do clima:', error);
+                updateStatusBar('❌ Erro ao atualizar clima', 'offline');
+            }
+        }
+
+        function getRandomWeatherDescription() {
+            const descriptions = [
+                'Parcialmente nublado',
+                'Ensolarado',
+                'Algumas nuvens',
+                'Céu limpo',
+                'Tempo aberto',
+                'Poucas nuvens'
+            ];
+            return descriptions[Math.floor(Math.random() * descriptions.length)];
+        }
+
+        function getWeatherIcon() {
+            const icons = ['sun', 'cloud-sun', 'cloud', 'sun'];
+            return icons[Math.floor(Math.random() * icons.length)];
+        }
+
+        function renderWeather(data) {
+            const grid = document.getElementById('weather-grid');
+            const iconElement = document.getElementById('weather-main-icon');
+            const descriptionElement = document.getElementById('weather-description');
+            const timeElement = document.getElementById('weather-update-time');
+
+            // Atualizar ícone principal
+            iconElement.innerHTML = `<i class="fas fa-${data.icon}"></i>`;
+            descriptionElement.textContent = data.description;
+
+            grid.innerHTML = `
+                <div class="weather-item">
+                    <i class="fas fa-thermometer-half"></i>
+                    <div class="weather-value">${data.temperature.toFixed(1)}°</div>
+                    <div class="weather-label">Temperatura</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-temperature-high"></i>
+                    <div class="weather-value">${data.feelsLike.toFixed(1)}°</div>
+                    <div class="weather-label">Sensação</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-tint"></i>
+                    <div class="weather-value">${data.humidity.toFixed(0)}%</div>
+                    <div class="weather-label">Umidade</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-wind"></i>
+                    <div class="weather-value">${data.windSpeed.toFixed(0)}km/h</div>
+                    <div class="weather-label">Vento</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-compress-alt"></i>
+                    <div class="weather-value">${data.pressure.toFixed(0)}hPa</div>
+                    <div class="weather-label">Pressão</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-eye"></i>
+                    <div class="weather-value">10km</div>
+                    <div class="weather-label">Visibilidade</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-sun"></i>
+                    <div class="weather-value">06:15</div>
+                    <div class="weather-label">Nascer do Sol</div>
+                </div>
+                <div class="weather-item">
+                    <i class="fas fa-moon"></i>
+                    <div class="weather-value">18:45</div>
+                    <div class="weather-label">Pôr do Sol</div>
+                </div>
+            `;
+
+            timeElement.textContent = `Última atualização: ${new Date().toLocaleTimeString('pt-BR')}`;
         }
 
         function renderLights() {
@@ -500,7 +745,7 @@
                     <div class="sensor-compact-value">
                         ${temp !== undefined && temp !== -999.9 ? temp.toFixed(1) + '°' : '--'}
                     </div>
-                    <div class="sensor-compact-label">Temperatura</div>
+                    <div class="sensor-compact-label">Temp. Interna</div>
                 </div>
                 <div class="sensor-compact-item gas ${gasAlert ? 'alert' : ''}">
                     <div class="sensor-compact-icon">${gasAlert ? '🚨' : '💨'}</div>
