@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Todos os estilos CSS anteriores permanecem EXATAMENTE iguais */
         * {
             margin: 0;
             padding: 0;
@@ -45,8 +44,903 @@
             gap: 15px;
         }
 
-        /* ... (todos os outros estilos permanecem exatamente iguais) ... */
-        
+        .title-icon {
+            width: 40px;
+            height: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Ícone da Lâmpada Acesa Animado */
+        .lamp-icon-on {
+            width: 22px;
+            height: 22px;
+            animation: lampGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes lampGlow {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,0,0.5));
+            }
+            50% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,0,0.8));
+            }
+        }
+
+        /* Ícone das Tomadas Animado - VELOCIDADE DIMINUÍDA */
+        .outlet-icon {
+            width: 22px;
+            height: 22px;
+            animation: plugPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes plugPulse {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1);
+            }
+            25% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.2);
+            }
+            50% { 
+                transform: scale(1.05) rotate(-3deg);
+                filter: brightness(1.1);
+            }
+            75% { 
+                transform: scale(1.15) rotate(2deg);
+                filter: brightness(1.3);
+            }
+        }
+
+        /* Ícone da Irrigação Animado */
+        .irrigation-icon {
+            width: 22px;
+            height: 22px;
+            animation: waterDrop 2s ease-in-out infinite;
+        }
+
+        @keyframes waterDrop {
+            0%, 100% { 
+                transform: scale(1) translateY(0px);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5));
+            }
+            50% { 
+                transform: scale(1.1) translateY(-2px);
+                filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8));
+            }
+        }
+
+        /* Ícone do Mapa Mundi para Status Online */
+        .internet-icon {
+            width: 20px;
+            height: 20px;
+            animation: globeRotate 3s ease-in-out infinite;
+        }
+
+        @keyframes globeRotate {
+            0%, 100% { 
+                transform: rotate(0deg) scale(1);
+                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
+            }
+            25% { 
+                transform: rotate(5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+            50% { 
+                transform: rotate(0deg) scale(1.1);
+                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
+            }
+            75% { 
+                transform: rotate(-5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+        }
+
+        .weather-compact {
+            background: linear-gradient(135deg, rgba(116, 185, 255, 0.9) 0%, rgba(9, 132, 227, 0.9) 100%);
+            border-radius: 12px;
+            padding: 10px 20px;
+            color: white;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1em;
+        }
+
+        .weather-location-compact {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weather-location-compact i {
+            font-size: 1.2em;
+        }
+
+        .weather-main-icon {
+            font-size: 1.8em !important;
+            margin-right: 8px;
+        }
+
+        .weather-data-compact {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .weather-item-compact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weather-item-compact i {
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+
+        .weather-value-compact {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .weather-description-compact {
+            font-size: 0.9em;
+            opacity: 0.9;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weather-time-compact {
+            font-size: 0.8em;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .update-icon {
+            width: 16px;
+            height: 16px;
+            animation: spin 2s linear infinite;
+        }
+
+        /* Ícones Animados para TODOS os ícones da meteorologia */
+        .weather-icon-sun {
+            color: #FFD700 !important;
+            animation: spin 10s linear infinite !important;
+        }
+
+        .weather-icon-cloud {
+            color: #FFFFFF !important;
+            animation: float 4s ease-in-out infinite !important;
+        }
+
+        .weather-icon-cloud-sun {
+            color: #FFD700 !important;
+            animation: float 3s ease-in-out infinite !important;
+        }
+
+        .weather-icon-rain {
+            color: #4FC3F7 !important;
+            animation: rainDrop 2s ease-in-out infinite !important;
+        }
+
+        .weather-icon-storm {
+            color: #FF9800 !important;
+            animation: flash 1.5s ease-in-out infinite !important;
+        }
+
+        .weather-icon-snow {
+            color: #E3F2FD !important;
+            animation: snowFall 3s ease-in-out infinite !important;
+        }
+
+        .weather-icon-mist {
+            color: #BDBDBD !important;
+            animation: fade 4s ease-in-out infinite !important;
+        }
+
+        /* Animações para os ícones individuais */
+        .icon-thermometer {
+            animation: pulse 2s ease-in-out infinite !important;
+            color: #FF6B6B !important;
+        }
+
+        .icon-humidity {
+            animation: drip 3s ease-in-out infinite !important;
+            color: #4FC3F7 !important;
+        }
+
+        .icon-wind {
+            animation: float 2s ease-in-out infinite !important;
+            color: #81D4FA !important;
+        }
+
+        .icon-pressure {
+            animation: breathe 2.5s ease-in-out infinite !important;
+            color: #AED581 !important;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rainDrop {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(2px); }
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes snowFall {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(3px) rotate(180deg); }
+        }
+
+        @keyframes fade {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes drip {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(2px) scale(1.05); }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .monitoring-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 15px 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            margin-bottom: 15px;
+        }
+
+        .monitoring-card h2 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.4em;
+        }
+
+        .monitoring-card h2 i {
+            color: #667eea;
+        }
+
+        .sensors-compact {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 0;
+        }
+
+        .sensor-compact-item {
+            text-align: center;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .sensor-compact-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .sensor-compact-item.gas {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .sensor-compact-item.alert {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            animation: pulse 2s infinite;
+        }
+
+        .sensor-compact-item.temperature {
+            background: linear-gradient(135deg, #ff7676 0%, #f54ea2 100%);
+        }
+
+        .sensor-compact-item.humidity {
+            background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
+        }
+
+        .sensor-compact-icon {
+            font-size: 1.6em;
+            margin-bottom: 6px;
+        }
+
+        .sensor-compact-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin: 3px 0;
+        }
+
+        .sensor-compact-label {
+            font-size: 0.75em;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.4em;
+        }
+
+        .card h2 i {
+            color: #667eea;
+        }
+
+        .devices-compact {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .device-compact-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .device-compact-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+        }
+
+        .device-compact-item.active {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            border-color: #fd9644;
+        }
+
+        .device-compact-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 6px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .device-compact-item:hover .device-compact-icon {
+            transform: scale(1.1);
+        }
+
+        .device-compact-icon img {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+        }
+
+        .device-compact-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-size: 0.8em;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ccc 0%, #999 100%);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-weather {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            font-size: 0.75em;
+            padding: 6px 12px;
+        }
+
+        .btn-irrigation {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+        }
+
+        .status-bar {
+            background: rgba(255,255,255,0.95);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85em;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+
+        .online {
+            color: #4CAF50;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .offline {
+            color: #f44336;
+            border-left: 3px solid #f44336;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .device-status {
+            margin-top: 4px;
+            font-size: 0.65em;
+            font-weight: 500;
+        }
+
+        .status-on {
+            color: #4CAF50;
+        }
+
+        .status-off {
+            color: #f44336;
+        }
+
+        .room-icon {
+            font-size: 0.8em;
+            margin-right: 3px;
+        }
+
+        /* NOVOS ESTILOS PARA INDICADOR ESP32 */
+        .status-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .esp32-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .esp32-indicator.online {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            animation: pulse-green 2s infinite;
+        }
+
+        .esp32-indicator.offline {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            animation: blink 1.5s infinite;
+        }
+
+        .esp32-indicator.connecting {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+            color: white;
+            animation: pulse-orange 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .status-text {
+            flex: 1;
+            text-align: center;
+        }
+
+        /* Estilos para o Modal de Irrigação */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #2d3748;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .modal-section h3 {
+            margin-bottom: 15px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-option:hover {
+            border-color: #667eea;
+        }
+
+        .mode-option.active {
+            border-color: #4CAF50;
+            background: #f0fff4;
+        }
+
+        .mode-option i {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .programming-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .programming-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .programming-item input, .programming-item select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .remove-programming {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .add-programming {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .weather-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .weather-compact {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+                padding: 12px 15px;
+            }
+            
+            .weather-data-compact {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            
+            .sensors-compact {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .devices-compact {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+            
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .status-content {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .programming-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .mode-selector {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sensors-compact {
+                grid-template-columns: 1fr;
+            }
+            
+            .weather-data-compact {
+                gap: 10px;
+            }
+            
+            .weather-item-compact {
+                flex-direction: column;
+                gap: 2px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -302,9 +1196,9 @@
             // Carregar dados do clima imediatamente
             setTimeout(atualizarClimaReal, 1000);
             
-            setInterval(updateSensors, 5000);
-            setInterval(checkServerStatus, 10000);
-            setInterval(() => checkESP32Status(), 15000);
+            setInterval(updateSensors, 3000);
+            setInterval(checkServerStatus, 5000);
+            setInterval(() => checkESP32Status(), 10000);
             setInterval(atualizarClimaReal, 600000);
         }
 
@@ -457,23 +1351,8 @@
             `).join('');
         }
 
-        async function updateSensors() {
-            try {
-                const response = await fetch('/api/data');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.data && data.data.length > 0) {
-                        const latest = data.data[0];
-                        currentState.temperature = latest.temperature;
-                        currentState.gas_level = latest.gas_level;
-                        currentState.gas_alert = latest.gas_alert;
-                        currentState.device = latest.device;
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao atualizar sensores:', error);
-            }
-
+        function updateSensors() {
+            // Simular dados dos sensores
             const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
             const gas = currentState.gas_level || Math.floor(Math.random() * 100);
             const humidity = currentState.humidity || (45 + Math.random() * 20).toFixed(0);
@@ -486,7 +1365,7 @@
 
             // Atualizar alerta de gás
             const gasElement = document.getElementById('sensorsGrid').children[1];
-            if (gas > 70 || currentState.gas_alert) {
+            if (gas > 70) {
                 gasElement.classList.add('alert');
                 gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
             } else {
@@ -662,7 +1541,7 @@
                     if (!checkbox.checked) {
                         checkbox.checked = true;
                         await toggleDevice('lights', light.name);
-                        await new Promise(resolve => setTimeout(resolve, 200)); // Pequeno delay
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
                 for (let outlet of devices.outlets) {
@@ -670,7 +1549,7 @@
                     if (!checkbox.checked) {
                         checkbox.checked = true;
                         await toggleDevice('outlets', outlet.name);
-                        await new Promise(resolve => setTimeout(resolve, 200)); // Pequeno delay
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
                 updateStatusBar('✅ Todos os dispositivos ligados!', 'online', 'online');
@@ -738,17 +1617,11 @@
         }
 
         function loadIrrigationModal() {
-            // Carregar configurações atuais
-            fetch('/api/irrigation')
-                .then(response => response.json())
-                .then(data => {
-                    irrigationConfig = data;
-                    selectMode(irrigationConfig.modo);
-                    renderProgrammings();
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar configurações de irrigação:', error);
-                });
+            // Carregar modo atual
+            selectMode(irrigationConfig.modo);
+            
+            // Carregar programações
+            renderProgrammings();
         }
 
         function selectMode(mode) {
@@ -779,7 +1652,7 @@
             irrigationConfig.programacoes.push({
                 id: Date.now(),
                 hora: '08:00',
-                dias: [1, 2, 3, 4, 5], // Segunda a sexta
+                dias: [1, 2, 3, 4, 5],
                 duracao: 30
             });
             
