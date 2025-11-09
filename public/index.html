@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏠 Casa Automação - Sistema</title>
+    <title>🏠 Casa Automação </title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -68,7 +68,7 @@
             }
         }
 
-        /* Ícone das Tomadas Animado */
+        /* Ícone das Tomadas Animado - VELOCIDADE DIMINUÍDA */
         .outlet-icon {
             width: 22px;
             height: 22px;
@@ -442,6 +442,7 @@
             text-align: center;
             border: 2px solid #e9ecef;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .device-compact-item:hover {
@@ -708,7 +709,7 @@
             border-radius: 15px;
             padding: 25px;
             width: 100%;
-            max-width: 700px;
+            max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
@@ -846,11 +847,19 @@
         .btn-save {
             background: #4CAF50;
             color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         .btn-cancel {
             background: #6c757d;
             color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         .weather-warning {
@@ -870,28 +879,6 @@
 
         .fade-in {
             animation: fadeIn 0.6s ease-out;
-        }
-
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
@@ -935,12 +922,8 @@
                 gap: 8px;
             }
 
-            .logout-btn {
-                position: relative;
-                top: 0;
-                right: 0;
-                margin: 10px auto;
-                display: block;
+            .mode-selector {
+                flex-direction: column;
             }
         }
 
@@ -961,11 +944,6 @@
     </style>
 </head>
 <body>
-    <button class="logout-btn" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i>
-        Sair
-    </button>
-
     <div class="container">
         <!-- Header com Ícones Animados -->
         <div class="header">
@@ -1013,7 +991,6 @@
             </div>
         </div>
 
-        <!-- Restante do código permanece igual -->
         <div class="monitoring-card fade-in">
             <h2><i class="fas fa-chart-line"></i> Monitoramento em Tempo Real</h2>
             <div class="sensors-compact" id="sensorsGrid">
@@ -1060,26 +1037,17 @@
         <div class="card fade-in">
             <h2><i class="fas fa-tint"></i> Sistema de Irrigação</h2>
             <div class="devices-compact" id="irrigationGrid">
-                <div class="device-compact-item" id="device_irrigation_bomba_irrigacao">
+                <div class="device-compact-item" onclick="openIrrigationModal()">
                     <div class="device-compact-icon">
                         <img src="https://img.icons8.com/?size=100&id=98967&format=png&color=000000" 
                              alt="Bomba de Irrigação" class="irrigation-icon"
                              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1IDVWMTVNMTUgMTVWMjVNMTUgMTVIMTBNMTUgMTVIMjBNOCAxMkM4IDEwLjg5NjQgOC44OTY0NCAxMCAxMCAxMEgyMEMyMS4xMDM2IDEwIDIyIDEwLjg5NjQgMjIgMTJWMThDMjIgMTkuMTAzNiAyMS4xMDM2IDIwIDIwIDIwSDEwQzguODk2NDQgMjAgOCAxOS4xMDM2IDggMThWMTJaIiBmaWxsPSIjMDBCODk0Ii8+Cjwvc3ZnPg=='">
                     </div>
                     <div class="device-compact-name">
-                        <span class="room-icon">💧</span>Bomba de Irrigação
+                        <span class="room-icon">💧</span>Configurar Irrigação
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="irrigation_bomba_irrigacao" onchange="toggleDevice('irrigation', 'bomba_irrigacao')">
-                        <span class="slider"></span>
-                    </label>
-                    <div class="device-status status-off" id="status_irrigation_bomba_irrigacao">OFF</div>
+                    <div class="device-status status-on">CLIQUE PARA CONFIGURAR</div>
                 </div>
-            </div>
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn btn-irrigation" onclick="openIrrigationModal()">
-                    <i class="fas fa-cog"></i> Configurar Irrigação Automática
-                </button>
             </div>
         </div>
 
@@ -1123,7 +1091,7 @@
             <div class="modal-section">
                 <h3><i class="fas fa-cog"></i> Modo de Operação</h3>
                 <div class="mode-selector">
-                    <div class="mode-option" onclick="selectMode('manual')">
+                    <div class="mode-option active" onclick="selectMode('manual')">
                         <i class="fas fa-hand-paper"></i>
                         <div>Manual</div>
                         <small>Controle direto</small>
@@ -1136,16 +1104,18 @@
                 </div>
             </div>
 
-            <div class="modal-section" id="automaticSettings" style="display: none;">
+            <div class="modal-section" id="automaticSettings">
                 <h3><i class="fas fa-clock"></i> Programação Automática</h3>
                 
-                <div class="weather-warning" id="weatherWarning">
+                <div class="weather-warning">
                     <i class="fas fa-exclamation-triangle"></i>
                     <strong>Monitoramento Climático:</strong> O sistema não irrigará em dias chuvosos automaticamente.
                 </div>
                 
                 <div class="programming-grid" id="programmingGrid">
-                    <!-- Programações serão adicionadas aqui -->
+                    <div style="text-align: center; color: #666; padding: 20px;">
+                        Nenhuma programação adicionada
+                    </div>
                 </div>
                 
                 <button class="add-programming" onclick="addProgramming()">
@@ -1159,10 +1129,10 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeIrrigationModal()">
+                <button class="btn-cancel" onclick="closeIrrigationModal()">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <button class="btn btn-save" onclick="saveIrrigationConfig()">
+                <button class="btn-save" onclick="saveIrrigationConfig()">
                     <i class="fas fa-save"></i> Salvar Configurações
                 </button>
             </div>
@@ -1196,9 +1166,6 @@
                 { name: 'tomada_quarto1', icon: '🔌', label: 'Tomada Q1' },
                 { name: 'tomada_quarto2', icon: '🔌', label: 'Tomada Q2' },
                 { name: 'tomada_quarto3', icon: '🔌', label: 'Tomada Q3' }
-            ],
-            irrigation: [
-                { name: 'bomba_irrigacao', icon: '💧', label: 'Bomba de Irrigação' }
             ]
         };
 
@@ -1208,12 +1175,7 @@
             gas_alert: false,
             humidity: 0,
             lights: {},
-            outlets: {},
-            irrigation: {
-                bomba_irrigacao: false,
-                modo: 'manual',
-                programacoes: []
-            }
+            outlets: {}
         };
 
         let irrigationConfig = {
@@ -1221,33 +1183,12 @@
             programacoes: []
         };
 
-        // Verificar autenticação
-        function checkAuth() {
-            const token = localStorage.getItem('authToken');
-            if (token !== 'admin123') {
-                window.location.href = '/';
-                return false;
-            }
-            return true;
-        }
-
-        // Logout
-        function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('loginTime');
-            window.location.href = '/';
-        }
-
         // Inicializar interface
         function initInterface() {
-            if (!checkAuth()) return;
-
             renderLights();
             renderOutlets();
-            renderIrrigation();
             updateSensors();
             checkServerStatus();
-            loadIrrigationConfig();
             
             // Verificar status do ESP32 especificamente
             setTimeout(() => checkESP32Status(), 2000);
@@ -1257,67 +1198,8 @@
             
             setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
-            setInterval(() => checkESP32Status(), 10000);
+            setInterval(() => checkESP32Status(), 10000); // Verificar ESP32 a cada 10s
             setInterval(atualizarClimaReal, 600000);
-            setInterval(checkIrrigationSchedule, 60000); // Verificar programação a cada minuto
-        }
-
-        // Carregar configurações de irrigação
-        async function loadIrrigationConfig() {
-            try {
-                const response = await fetch('/api/irrigation', {
-                    headers: {
-                        'Authorization': 'Bearer admin123'
-                    }
-                });
-                const data = await response.json();
-                irrigationConfig = data;
-            } catch (error) {
-                console.error('Erro ao carregar configurações de irrigação:', error);
-            }
-        }
-
-        // Verificar programação de irrigação
-        function checkIrrigationSchedule() {
-            if (irrigationConfig.modo !== 'automatico') return;
-
-            const now = new Date();
-            const currentDay = now.getDay(); // 0 = Domingo, 1 = Segunda, etc.
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0');
-
-            // Verificar se há programação para agora
-            const activeProgram = irrigationConfig.programacoes.find(prog => {
-                const daysMatch = prog.dias.includes(currentDay);
-                const timeMatch = prog.hora === currentTime;
-                return daysMatch && timeMatch;
-            });
-
-            if (activeProgram) {
-                // Verificar condições climáticas antes de ligar
-                checkWeatherBeforeIrrigation();
-            }
-        }
-
-        // Verificar clima antes de irrigar
-        async function checkWeatherBeforeIrrigation() {
-            try {
-                const response = await fetch('/api/weather');
-                const weatherData = await response.json();
-                
-                // Verificar se está chovendo
-                const isRaining = weatherData.weather[0].main.toLowerCase().includes('rain');
-                
-                if (!isRaining) {
-                    // Ligar irrigação se não estiver chovendo
-                    toggleDevice('irrigation', 'bomba_irrigacao', true);
-                    console.log('💧 Irrigação automática ativada');
-                } else {
-                    console.log('💧 Irrigação suspensa devido à chuva');
-                }
-            } catch (error) {
-                console.error('Erro ao verificar clima para irrigação:', error);
-            }
         }
 
         // Função para buscar dados REAIS do clima via servidor
@@ -1469,26 +1351,6 @@
             `).join('');
         }
 
-        function renderIrrigation() {
-            const grid = document.getElementById('irrigationGrid');
-            grid.innerHTML = devices.irrigation.map(device => `
-                <div class="device-compact-item" id="device_irrigation_${device.name}">
-                    <div class="device-compact-icon">
-                        <img src="${IRRIGATION_ICON}" alt="${device.label}" class="irrigation-icon"
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1IDVWMTVNMTUgMTVWMjVNMTUgMTVIMTBNMTUgMTVIMjBNOCAxMkM4IDEwLjg5NjQgOC44OTY0NCAxMCAxMCAxMEgyMEMyMS4xMDM2IDEwIDIyIDEwLjg5NjQgMjIgMTJWMThDMjIgMTkuMTAzNiAyMS4xMDM2IDIwIDIwIDIwSDEwQzguODk2NDQgMjAgOCAxOS4xMDM2IDggMThWMTJaIiBmaWxsPSIjMDBCODk0Ii8+Cjwvc3ZnPg=='">
-                    </div>
-                    <div class="device-compact-name">
-                        <span class="room-icon">${device.icon}</span>${device.label}
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="irrigation_${device.name}" onchange="toggleDevice('irrigation', '${device.name}')">
-                        <span class="slider"></span>
-                    </label>
-                    <div class="device-status status-off" id="status_irrigation_${device.name}">OFF</div>
-                </div>
-            `).join('');
-        }
-
         function updateSensors() {
             // Simular dados dos sensores
             const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
@@ -1512,9 +1374,9 @@
             }
         }
 
-        async function toggleDevice(type, device, forceState = null) {
+        async function toggleDevice(type, device) {
             const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
-            const state = forceState !== null ? forceState : checkbox.checked;
+            const state = checkbox.checked;
             const deviceElement = document.getElementById(`device_${type.slice(0, -1)}_${device}`);
             const statusElement = document.getElementById(`status_${type.slice(0, -1)}_${device}`);
             
@@ -1537,10 +1399,7 @@
             try {
                 const response = await fetch('/api/control', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer admin123'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ type, device, state })
                 });
                 
@@ -1556,9 +1415,7 @@
             } catch (error) {
                 console.error('Erro:', error);
                 // Reverter mudança em caso de erro
-                if (forceState === null) {
-                    checkbox.checked = !state;
-                }
+                checkbox.checked = !state;
                 if (type === 'lights') {
                     const imgElement = document.getElementById(`img_light_${device}`);
                     imgElement.src = !state ? LAMP_ON : LAMP_OFF;
@@ -1681,7 +1538,7 @@
                     if (!checkbox.checked) {
                         checkbox.checked = true;
                         await toggleDevice('lights', light.name);
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay
                     }
                 }
                 for (let outlet of devices.outlets) {
@@ -1689,7 +1546,7 @@
                     if (!checkbox.checked) {
                         checkbox.checked = true;
                         await toggleDevice('outlets', outlet.name);
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay
                     }
                 }
                 updateStatusBar('✅ Todos os dispositivos ligados!', 'online', 'online');
@@ -1700,12 +1557,7 @@
 
         async function desligarTudo() {
             try {
-                const response = await fetch('/api/reset', { 
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer admin123'
-                    }
-                });
+                const response = await fetch('/api/reset', { method: 'POST' });
                 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -1729,12 +1581,6 @@
                         document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
                         document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
                         document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
-                    });
-                    devices.irrigation.forEach(device => {
-                        document.getElementById(`irrigation_${device.name}`).checked = false;
-                        document.getElementById(`device_irrigation_${device.name}`).classList.remove('active');
-                        document.getElementById(`status_irrigation_${device.name}`).textContent = 'OFF';
-                        document.getElementById(`status_irrigation_${device.name}`).className = 'device-status status-off';
                     });
                     
                     updateStatusBar('✅ Todos os dispositivos desligados!', 'online', 'online');
@@ -1858,8 +1704,7 @@
                 const response = await fetch('/api/irrigation/save', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer admin123'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         modo: irrigationConfig.modo,
