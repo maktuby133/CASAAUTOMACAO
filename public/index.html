@@ -72,7 +72,7 @@
         .outlet-icon {
             width: 22px;
             height: 22px;
-            animation: plugPulse 4s ease-in-out infinite; /* Alterado de 2s para 4s */
+            animation: plugPulse 4s ease-in-out infinite;
         }
 
         @keyframes plugPulse {
@@ -120,7 +120,6 @@
             }
         }
 
-        /* Restante do CSS permanece igual */
         .weather-compact {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.9) 0%, rgba(9, 132, 227, 0.9) 100%);
             border-radius: 12px;
@@ -296,7 +295,6 @@
             50% { transform: scale(1.08); }
         }
 
-        /* Restante do CSS permanece igual */
         .monitoring-card {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 15px;
@@ -707,7 +705,7 @@
             </div>
         </div>
 
-        <!-- Restante do código permanece igual -->
+        <!-- Monitoramento em Tempo Real -->
         <div class="monitoring-card fade-in">
             <h2><i class="fas fa-chart-line"></i> Monitoramento em Tempo Real</h2>
             <div class="sensors-compact" id="sensorsGrid">
@@ -781,6 +779,11 @@
         const OUTLET_ICON = 'https://img.icons8.com/?size=100&id=Sc8AAAaZgbuy&format=png&color=000000';
         const INTERNET_ICON = 'https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000';
 
+        // Configurações de sincronização
+        const SERVER_URL = window.location.origin;
+        const SYNC_INTERVAL = 2000; // Sincronizar a cada 2 segundos
+        let syncInterval;
+
         // Dados dos dispositivos
         const devices = {
             lights: [
@@ -813,19 +816,144 @@
         // SUA API KEY CONFIGURADA
         const API_KEY = 'ad248cf36c16a9def9f349b2d3c1b127';
 
+        // Sincronizar estado com o servidor
+        async function syncDeviceStates() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/sync`);
+                const serverState = await response.json();
+                
+                let changesDetected = false;
+
+                // Sincronizar lâmpadas
+                devices.lights.forEach(light => {
+                    const checkbox = document.getElementById(`light_${light.name}`);
+                    const imgElement = document.getElementById(`img_light_${light.name}`);
+                    const statusElement = document.getElementById(`status_light_${light.name}`);
+                    const deviceElement = document.getElementById(`device_light_${light.name}`);
+                    
+                    const serverLightState = serverState.lights[light.name];
+                    
+                    if (checkbox.checked !== serverLightState) {
+                        checkbox.checked = serverLightState;
+                        
+                        // Atualizar ícone
+                        imgElement.src = serverLightState ? LAMP_ON : LAMP_OFF;
+                        
+                        // Aplicar/remover animação
+                        if (serverLightState) {
+                            imgElement.classList.add('lamp-icon-on');
+                        } else {
+                            imgElement.classList.remove('lamp-icon-on');
+                        }
+                        
+                        // Atualizar status visual
+                        deviceElement.classList.toggle('active', serverLightState);
+                        statusElement.textContent = serverLightState ? 'ON' : 'OFF';
+                        statusElement.className = `device-status ${serverLightState ? 'status-on' : 'status-off'}`;
+                        
+                        changesDetected = true;
+                    }
+                });
+
+                // Sincronizar tomadas
+                devices.outlets.forEach(outlet => {
+                    const checkbox = document.getElementById(`outlet_${outlet.name}`);
+                    const statusElement = document.getElementById(`status_outlet_${outlet.name}`);
+                    const deviceElement = document.getElementById(`device_outlet_${outlet.name}`);
+                    
+                    const serverOutletState = serverState.outlets[outlet.name];
+                    
+                    if (checkbox.checked !== serverOutletState) {
+                        checkbox.checked = serverOutletState;
+                        deviceElement.classList.toggle('active', serverOutletState);
+                        statusElement.textContent = serverOutletState ? 'ON' : 'OFF';
+                        statusElement.className = `device-status ${serverOutletState ? 'status-on' : 'status-off'}`;
+                        
+                        changesDetected = true;
+                    }
+                });
+
+                if (changesDetected) {
+                    console.log('🔄 Estados sincronizados do servidor');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro na sincronização:', error);
+            }
+        }
+
+        // Sincronizar dados dos sensores
+        async function syncSensorData() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/data`);
+                const data = await response.json();
+                
+                if (data.currentState) {
+                    const sensorState = data.currentState;
+                    
+                    // Atualizar display dos sensores
+                    document.getElementById('sensor-temp').textContent = 
+                        sensorState.temperature !== -999.9 ? `${sensorState.temperature.toFixed(1)}°` : '--°';
+                    
+                    document.getElementById('sensor-gas').textContent = 
+                        sensorState.gas_level || '--';
+                    
+                    document.getElementById('sensor-humidity').textContent = 
+                        `${sensorState.humidity || 50}%`;
+
+                    // Atualizar alerta de gás
+                    const gasElement = document.getElementById('sensorsGrid').children[1];
+                    if (sensorState.gas_alert || sensorState.gas_warning) {
+                        gasElement.classList.add('alert');
+                        gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
+                    } else {
+                        gasElement.classList.remove('alert');
+                        gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro ao sincronizar sensores:', error);
+            }
+        }
+
         // Inicializar interface
         function initInterface() {
             renderLights();
             renderOutlets();
-            updateSensors();
+            
+            // Iniciar sincronização
+            startSync();
+            
             checkServerStatus();
             
             // Carregar dados do clima imediatamente
             setTimeout(atualizarClimaReal, 1000);
             
-            setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
             setInterval(atualizarClimaReal, 600000);
+        }
+
+        // Iniciar sistema de sincronização
+        function startSync() {
+            // Sincronizar imediatamente
+            syncDeviceStates();
+            syncSensorData();
+            
+            // Configurar sincronização periódica
+            syncInterval = setInterval(() => {
+                syncDeviceStates();
+                syncSensorData();
+            }, SYNC_INTERVAL);
+            
+            console.log('🔄 Sistema de sincronização iniciado');
+        }
+
+        // Parar sincronização (para debug)
+        function stopSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                console.log('⏹️ Sincronização parada');
+            }
         }
 
         // Função para buscar dados REAIS do clima
@@ -846,11 +974,11 @@
                 
                 const data = await response.json();
                 renderWeatherCompact(data);
-                updateStatusBar('✅ Sistema atualizado', 'online');
+                updateStatusBar('✅ Sistema sincronizado', 'online');
                 
             } catch (error) {
                 console.error('Erro ao buscar dados do clima:', error);
-                updateStatusBar('⚠️ Clima offline - Dados locais ativos', 'offline');
+                updateStatusBar('⚠️ Clima offline - Dados sincronizados', 'online');
             }
         }
 
@@ -1024,23 +1152,13 @@
                 
                 const result = await response.json();
                 if (result.status === 'OK') {
-                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
+                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'} | 🔄 Sincronizado`, 'online');
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                checkbox.checked = !state;
-                if (type === 'lights') {
-                    const imgElement = document.getElementById(`img_light_${device}`);
-                    imgElement.src = !state ? LAMP_ON : LAMP_OFF;
-                    if (!state) {
-                        imgElement.classList.add('lamp-icon-on');
-                    } else {
-                        imgElement.classList.remove('lamp-icon-on');
-                    }
-                }
-                deviceElement.classList.toggle('active', !state);
-                statusElement.textContent = !state ? 'ON' : 'OFF';
-                updateStatusBar('❌ Erro ao controlar', 'offline');
+                // Em caso de erro, sincronizar com servidor
+                syncDeviceStates();
+                updateStatusBar('❌ Erro ao controlar | 🔄 Sincronizando...', 'offline');
             }
         }
 
@@ -1050,7 +1168,7 @@
                 const data = await response.json();
                 updateStatusBar(`✅ ${data.message} | ${new Date().toLocaleTimeString('pt-BR')}`, 'online');
             } catch (error) {
-                updateStatusBar('❌ Servidor offline', 'offline');
+                updateStatusBar('❌ Servidor offline | Tentando reconectar...', 'offline');
             }
         }
 
@@ -1080,9 +1198,10 @@
                         await toggleDevice('outlets', outlet.name);
                     }
                 }
-                updateStatusBar('✅ Todos os dispositivos ligados!', 'online');
+                updateStatusBar('✅ Todos os dispositivos ligados! | 🔄 Sincronizado', 'online');
             } catch (error) {
-                updateStatusBar('❌ Erro ao ligar tudo', 'offline');
+                updateStatusBar('❌ Erro ao ligar tudo | 🔄 Sincronizando...', 'offline');
+                syncDeviceStates();
             }
         }
 
@@ -1092,35 +1211,39 @@
                 const result = await response.json();
                 
                 if (result.status === 'OK') {
-                    devices.lights.forEach(light => {
-                        document.getElementById(`light_${light.name}`).checked = false;
-                        const imgElement = document.getElementById(`img_light_${light.name}`);
-                        imgElement.src = LAMP_OFF;
-                        imgElement.classList.remove('lamp-icon-on');
-                        document.getElementById(`device_light_${light.name}`).classList.remove('active');
-                        document.getElementById(`status_light_${light.name}`).textContent = 'OFF';
-                        document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
-                    });
-                    devices.outlets.forEach(outlet => {
-                        document.getElementById(`outlet_${outlet.name}`).checked = false;
-                        document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
-                        document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
-                        document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
-                    });
-                    
-                    updateStatusBar('✅ Todos os dispositivos desligados!', 'online');
+                    // Sincronizar imediatamente após reset
+                    syncDeviceStates();
+                    updateStatusBar('✅ Todos os dispositivos desligados! | 🔄 Sincronizado', 'online');
                 }
             } catch (error) {
-                updateStatusBar('❌ Erro ao desligar', 'offline');
+                updateStatusBar('❌ Erro ao desligar | 🔄 Sincronizando...', 'offline');
+                syncDeviceStates();
             }
         }
 
         async function atualizarDados() {
             updateStatusBar('🔄 Atualizando dados...', 'online');
-            await updateSensors();
+            await syncDeviceStates();
+            await syncSensorData();
             await checkServerStatus();
             await atualizarClimaReal();
         }
+
+        // Comandos de debug no console
+        window.debugSync = {
+            start: startSync,
+            stop: stopSync,
+            forceSync: () => {
+                syncDeviceStates();
+                syncSensorData();
+            },
+            status: () => {
+                console.log('🔄 Status da Sincronização:');
+                console.log('- Intervalo:', SYNC_INTERVAL + 'ms');
+                console.log('- Servidor:', SERVER_URL);
+                console.log('- Sincronização ativa:', !!syncInterval);
+            }
+        };
 
         // Inicializar quando a página carregar
         document.addEventListener('DOMContentLoaded', initInterface);
