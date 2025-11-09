@@ -579,6 +579,12 @@
         .offline {
             color: #f44336;
             border-left: 3px solid #f44336;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .device-status {
@@ -815,11 +821,15 @@
             updateSensors();
             checkServerStatus();
             
+            // Verificar status do ESP32 especificamente
+            setTimeout(() => checkESP32Status(), 2000);
+            
             // Carregar dados do clima imediatamente
             setTimeout(atualizarClimaReal, 1000);
             
             setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
+            setInterval(() => checkESP32Status(), 10000); // Verificar ESP32 a cada 10s
             setInterval(atualizarClimaReal, 600000);
         }
 
@@ -1027,7 +1037,8 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Erro na resposta do servidor');
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Erro na resposta do servidor');
                 }
                 
                 const result = await response.json();
@@ -1049,7 +1060,8 @@
                 }
                 deviceElement.classList.toggle('active', !state);
                 statusElement.textContent = !state ? 'ON' : 'OFF';
-                updateStatusBar('❌ Erro ao controlar dispositivo', 'offline');
+                statusElement.className = `device-status ${!state ? 'status-on' : 'status-off'}`;
+                updateStatusBar(`❌ ${error.message}`, 'offline');
             }
         }
 
@@ -1060,9 +1072,53 @@
                     throw new Error('Servidor não respondeu corretamente');
                 }
                 const data = await response.json();
-                updateStatusBar(`✅ ${data.message} | ${new Date().toLocaleTimeString('pt-BR')}`, 'online');
+                
+                // Verificar status do ESP32
+                let statusMessage = data.systemStatus;
+                let statusType = 'online';
+                
+                if (!data.esp32.connected) {
+                    statusMessage = '⚠️ ESP32 DESCONECTADO - Verifique alimentação e WiFi';
+                    statusType = 'offline';
+                    
+                    // Adicionar informações de quando foi visto pela última vez
+                    if (data.esp32.lastSeen) {
+                        const lastSeen = new Date(data.esp32.lastSeen);
+                        const now = new Date();
+                        const diffMinutes = Math.floor((now - lastSeen) / 60000);
+                        statusMessage += ` | Último sinal: ${diffMinutes} min atrás`;
+                    }
+                } else {
+                    statusMessage = `✅ Sistema OK | ESP32: ${data.esp32.deviceId} | ${new Date().toLocaleTimeString('pt-BR')}`;
+                }
+                
+                updateStatusBar(statusMessage, statusType);
+                
             } catch (error) {
                 updateStatusBar('❌ Servidor offline', 'offline');
+            }
+        }
+
+        // Nova função para verificar status detalhado do ESP32
+        async function checkESP32Status() {
+            try {
+                const response = await fetch('/api/esp32-status');
+                const data = await response.json();
+                
+                if (data.connected) {
+                    console.log('📡 ESP32 conectado:', {
+                        device: data.deviceId,
+                        ip: data.ipAddress,
+                        uptime: data.uptime
+                    });
+                } else {
+                    console.warn('⚠️ ESP32 desconectado');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('❌ Erro ao verificar status ESP32:', error);
+                return { connected: false };
             }
         }
 
@@ -1105,7 +1161,8 @@
                 const response = await fetch('/api/reset', { method: 'POST' });
                 
                 if (!response.ok) {
-                    throw new Error('Erro no reset');
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Erro no reset');
                 }
                 
                 const result = await response.json();
@@ -1130,7 +1187,7 @@
                     updateStatusBar('✅ Todos os dispositivos desligados!', 'online');
                 }
             } catch (error) {
-                updateStatusBar('❌ Erro ao desligar dispositivos', 'offline');
+                updateStatusBar(`❌ ${error.message}`, 'offline');
             }
         }
 
@@ -1139,6 +1196,7 @@
             await updateSensors();
             await checkServerStatus();
             await atualizarClimaReal();
+            await checkESP32Status();
         }
 
         // Inicializar quando a página carregar
