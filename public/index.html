@@ -34,76 +34,125 @@
         }
 
         .header h1 {
-            font-size: 2em;
+            font-size: 2.2em;
             margin-bottom: 5px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             font-weight: 700;
         }
 
-        .header p {
-            font-size: 1em;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        /* Meteorologia Compacta */
+        /* Meteorologia Compacta com Letras Maiores */
         .weather-compact {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.9) 0%, rgba(9, 132, 227, 0.9) 100%);
             border-radius: 12px;
-            padding: 8px 15px;
+            padding: 10px 20px;
             color: white;
             margin-bottom: 15px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85em;
+            font-size: 1em; /* Aumentado */
         }
 
         .weather-location-compact {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .weather-location-compact i {
-            font-size: 1em;
+            font-size: 1.2em; /* Aumentado */
         }
 
         .weather-data-compact {
             display: flex;
-            gap: 20px;
+            gap: 25px; /* Mais espaçamento */
             align-items: center;
         }
 
         .weather-item-compact {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px; /* Mais espaçamento */
         }
 
         .weather-item-compact i {
-            font-size: 0.9em;
+            font-size: 1.3em; /* Aumentado */
             opacity: 0.9;
         }
 
         .weather-value-compact {
-            font-weight: 600;
-            font-size: 0.9em;
+            font-weight: 700; /* Mais negrito */
+            font-size: 1.1em; /* Aumentado */
         }
 
         .weather-description-compact {
-            font-size: 0.8em;
+            font-size: 0.9em; /* Aumentado */
             opacity: 0.9;
             font-style: italic;
         }
 
         .weather-time-compact {
-            font-size: 0.7em;
+            font-size: 0.8em; /* Aumentado */
             opacity: 0.7;
         }
 
-        /* Layout Principal Expandido */
+        /* Ícones Animados para Diferentes Condições */
+        .weather-icon-animated {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .weather-icon-sun {
+            color: #FFD700;
+            animation: spin 10s linear infinite;
+        }
+
+        .weather-icon-cloud {
+            color: #FFFFFF;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .weather-icon-rain {
+            color: #4FC3F7;
+            animation: rainDrop 2s ease-in-out infinite;
+        }
+
+        .weather-icon-storm {
+            color: #FF9800;
+            animation: flash 1.5s ease-in-out infinite;
+        }
+
+        .weather-icon-snow {
+            color: #E3F2FD;
+            animation: snowFall 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rainDrop {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(3px); }
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes snowFall {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(4px) rotate(180deg); }
+        }
+
+        /* Layout Principal */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -132,49 +181,49 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 1.3em;
+            font-size: 1.4em; /* Aumentado */
         }
 
         .card h2 i {
             color: #667eea;
         }
 
-        /* Sensores - Mais Informações */
-        .sensors-expanded {
+        /* Sensores - Balões Menores */
+        .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+            gap: 10px;
             margin-bottom: 15px;
         }
 
-        .sensor-expanded-item {
+        .sensor-compact-item {
             text-align: center;
-            padding: 15px;
+            padding: 12px; /* Menor */
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
+            border-radius: 10px;
             color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
         }
 
-        .sensor-expanded-item:hover {
+        .sensor-compact-item:hover {
             transform: translateY(-2px);
         }
 
-        .sensor-expanded-item.gas {
+        .sensor-compact-item.gas {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
 
-        .sensor-expanded-item.alert {
+        .sensor-compact-item.alert {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             animation: pulse 2s infinite;
         }
 
-        .sensor-expanded-item.temperature {
+        .sensor-compact-item.temperature {
             background: linear-gradient(135deg, #ff7676 0%, #f54ea2 100%);
         }
 
-        .sensor-expanded-item.humidity {
+        .sensor-compact-item.humidity {
             background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
         }
 
@@ -184,107 +233,101 @@
             100% { transform: scale(1); }
         }
 
-        .sensor-expanded-icon {
-            font-size: 1.8em;
-            margin-bottom: 8px;
+        .sensor-compact-icon {
+            font-size: 1.6em; /* Ajustado */
+            margin-bottom: 6px;
         }
 
-        .sensor-expanded-value {
-            font-size: 1.6em;
+        .sensor-compact-value {
+            font-size: 1.4em; /* Ajustado */
             font-weight: 700;
-            margin: 5px 0;
+            margin: 3px 0;
         }
 
-        .sensor-expanded-label {
-            font-size: 0.8em;
+        .sensor-compact-label {
+            font-size: 0.75em; /* Menor */
             opacity: 0.95;
             font-weight: 500;
         }
 
-        .sensor-expanded-details {
-            font-size: 0.7em;
-            opacity: 0.8;
-            margin-top: 3px;
-        }
-
-        /* Dispositivos - Mais Espaço */
-        .devices-expanded {
+        /* Dispositivos */
+        .devices-compact {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            max-height: 500px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            max-height: 400px;
             overflow-y: auto;
             padding-right: 5px;
         }
 
-        .devices-expanded::-webkit-scrollbar {
-            width: 6px;
+        .devices-compact::-webkit-scrollbar {
+            width: 5px;
         }
 
-        .devices-expanded::-webkit-scrollbar-track {
+        .devices-compact::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 3px;
         }
 
-        .devices-expanded::-webkit-scrollbar-thumb {
+        .devices-compact::-webkit-scrollbar-thumb {
             background: #667eea;
             border-radius: 3px;
         }
 
-        .device-expanded-item {
+        .device-compact-item {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 15px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             text-align: center;
             border: 2px solid #e9ecef;
             transition: all 0.3s ease;
         }
 
-        .device-expanded-item:hover {
+        .device-compact-item:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
         }
 
-        .device-expanded-item.active {
+        .device-compact-item.active {
             background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
             border-color: #fd9644;
         }
 
-        .device-expanded-icon {
-            width: 45px;
-            height: 45px;
-            margin: 0 auto 8px;
+        .device-compact-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 6px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255,255,255,0.9);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
 
-        .device-expanded-item:hover .device-expanded-icon {
+        .device-compact-item:hover .device-compact-icon {
             transform: scale(1.1);
         }
 
-        .device-expanded-icon img {
-            width: 25px;
-            height: 25px;
+        .device-compact-icon img {
+            width: 22px;
+            height: 22px;
             object-fit: contain;
         }
 
-        .device-expanded-name {
+        .device-compact-name {
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #2d3748;
-            font-size: 0.85em;
+            font-size: 0.8em;
         }
 
         .switch {
             position: relative;
             display: inline-block;
-            width: 45px;
-            height: 24px;
+            width: 40px;
+            height: 22px;
         }
 
         .switch input {
@@ -308,14 +351,14 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 16px;
-            width: 16px;
+            height: 14px;
+            width: 14px;
             left: 4px;
             bottom: 4px;
             background: white;
             transition: .4s;
             border-radius: 50%;
-            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         input:checked + .slider {
@@ -323,7 +366,7 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(21px);
+            transform: translateX(18px);
         }
 
         .controls {
@@ -396,8 +439,8 @@
         }
 
         .device-status {
-            margin-top: 5px;
-            font-size: 0.7em;
+            margin-top: 4px;
+            font-size: 0.65em;
             font-weight: 500;
         }
 
@@ -410,8 +453,8 @@
         }
 
         .room-icon {
-            font-size: 0.9em;
-            margin-right: 4px;
+            font-size: 0.8em;
+            margin-right: 3px;
         }
 
         @keyframes fadeIn {
@@ -429,6 +472,7 @@
                 flex-direction: column;
                 gap: 8px;
                 text-align: center;
+                padding: 12px 15px;
             }
             
             .weather-data-compact {
@@ -437,11 +481,11 @@
                 gap: 15px;
             }
             
-            .sensors-expanded {
+            .sensors-compact {
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            .devices-expanded {
+            .devices-compact {
                 grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             }
             
@@ -451,7 +495,7 @@
         }
 
         @media (max-width: 480px) {
-            .sensors-expanded {
+            .sensors-compact {
                 grid-template-columns: 1fr;
             }
             
@@ -471,10 +515,9 @@
         <!-- Header -->
         <div class="header">
             <h1>🏠 Casa Automação - V3.0</h1>
-            <p>Controle completo da sua casa inteligente</p>
         </div>
 
-        <!-- Meteorologia Compacta -->
+        <!-- Meteorologia Compacta com Ícones Animados -->
         <div class="weather-compact fade-in" id="weatherCompact">
             <div class="weather-location-compact">
                 <i class="fas fa-map-marker-alt"></i>
@@ -483,19 +526,19 @@
             </div>
             <div class="weather-data-compact" id="weather-data-compact">
                 <div class="weather-item-compact">
-                    <i class="fas fa-thermometer-half"></i>
+                    <i class="fas fa-thermometer-half weather-icon-animated"></i>
                     <span class="weather-value-compact" id="weather-temp">--°</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-tint"></i>
+                    <i class="fas fa-tint weather-icon-animated"></i>
                     <span class="weather-value-compact" id="weather-humidity">--%</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-wind"></i>
+                    <i class="fas fa-wind weather-icon-animated"></i>
                     <span class="weather-value-compact" id="weather-wind">--km/h</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-compress-alt"></i>
+                    <i class="fas fa-compress-alt weather-icon-animated"></i>
                     <span class="weather-value-compact" id="weather-pressure">--hPa</span>
                 </div>
             </div>
@@ -504,33 +547,29 @@
             </div>
         </div>
 
-        <!-- Sensores da Casa Expandidos -->
+        <!-- Sensores da Casa -->
         <div class="card fade-in">
             <h2><i class="fas fa-chart-line"></i> Monitoramento em Tempo Real</h2>
-            <div class="sensors-expanded" id="sensorsGrid">
-                <div class="sensor-expanded-item temperature">
-                    <div class="sensor-expanded-icon">🌡️</div>
-                    <div class="sensor-expanded-value" id="sensor-temp">--°</div>
-                    <div class="sensor-expanded-label">Temperatura</div>
-                    <div class="sensor-expanded-details">Interna</div>
+            <div class="sensors-compact" id="sensorsGrid">
+                <div class="sensor-compact-item temperature">
+                    <div class="sensor-compact-icon">🌡️</div>
+                    <div class="sensor-compact-value" id="sensor-temp">--°</div>
+                    <div class="sensor-compact-label">Temperatura</div>
                 </div>
-                <div class="sensor-expanded-item gas">
-                    <div class="sensor-expanded-icon">💨</div>
-                    <div class="sensor-expanded-value" id="sensor-gas">--</div>
-                    <div class="sensor-expanded-label">Nível de Gás</div>
-                    <div class="sensor-expanded-details">Cozinha</div>
+                <div class="sensor-compact-item gas">
+                    <div class="sensor-compact-icon">💨</div>
+                    <div class="sensor-compact-value" id="sensor-gas">--</div>
+                    <div class="sensor-compact-label">Nível de Gás</div>
                 </div>
-                <div class="sensor-expanded-item humidity">
-                    <div class="sensor-expanded-icon">💧</div>
-                    <div class="sensor-expanded-value" id="sensor-humidity">--%</div>
-                    <div class="sensor-expanded-label">Umidade</div>
-                    <div class="sensor-expanded-details">Interna</div>
+                <div class="sensor-compact-item humidity">
+                    <div class="sensor-compact-icon">💧</div>
+                    <div class="sensor-compact-value" id="sensor-humidity">--%</div>
+                    <div class="sensor-compact-label">Umidade</div>
                 </div>
-                <div class="sensor-expanded-item">
-                    <div class="sensor-expanded-icon">📡</div>
-                    <div class="sensor-expanded-value" id="sensor-status">ON</div>
-                    <div class="sensor-expanded-label">Status</div>
-                    <div class="sensor-expanded-details">Sistema</div>
+                <div class="sensor-compact-item">
+                    <div class="sensor-compact-icon">📡</div>
+                    <div class="sensor-compact-value" id="sensor-status">ON</div>
+                    <div class="sensor-compact-label">Status</div>
                 </div>
             </div>
         </div>
@@ -540,7 +579,7 @@
             <!-- Lâmpadas -->
             <div class="card fade-in">
                 <h2><i class="fas fa-lightbulb"></i> Controle de Lâmpadas</h2>
-                <div class="devices-expanded" id="lightsGrid">
+                <div class="devices-compact" id="lightsGrid">
                     <!-- Lâmpadas serão inseridas aqui -->
                 </div>
             </div>
@@ -548,7 +587,7 @@
             <!-- Tomadas -->
             <div class="card fade-in">
                 <h2><i class="fas fa-plug"></i> Controle de Tomadas</h2>
-                <div class="devices-expanded" id="outletsGrid">
+                <div class="devices-compact" id="outletsGrid">
                     <!-- Tomadas serão inseridas aqui -->
                 </div>
             </div>
@@ -625,7 +664,7 @@
             
             setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
-            setInterval(atualizarClimaReal, 600000); // Atualizar a cada 10 minutos
+            setInterval(atualizarClimaReal, 600000);
         }
 
         // Função para buscar dados REAIS do clima
@@ -633,7 +672,6 @@
             try {
                 updateStatusBar('🌤️ Atualizando dados meteorológicos...', 'online');
                 
-                // Coordenadas do Rio de Janeiro
                 const lat = -22.9068;
                 const lon = -43.1729;
                 
@@ -674,18 +712,49 @@
             document.getElementById('weather-pressure').textContent = `${pressure}hPa`;
             document.getElementById('weather-update-time').textContent = 
                 `Atualizado: ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
+
+            // Aplicar ícone animado baseado na condição do tempo
+            applyWeatherIcon(data.weather[0].main, data.weather[0].description);
+        }
+
+        // Aplicar ícone animado baseado na condição do tempo
+        function applyWeatherIcon(main, description) {
+            const tempIcon = document.querySelector('.fa-thermometer-half');
+            const humidityIcon = document.querySelector('.fa-tint');
+            const windIcon = document.querySelector('.fa-wind');
+            const pressureIcon = document.querySelector('.fa-compress-alt');
+
+            // Resetar todas as classes de animação
+            [tempIcon, humidityIcon, windIcon, pressureIcon].forEach(icon => {
+                icon.className = icon.className.replace(/\bweather-icon-\w+\b/g, '');
+                icon.classList.add('weather-icon-animated');
+            });
+
+            // Aplicar animações específicas baseadas na condição
+            if (main === 'Clear') {
+                tempIcon.classList.add('weather-icon-sun');
+            } else if (main === 'Clouds') {
+                tempIcon.classList.add('weather-icon-cloud');
+            } else if (main === 'Rain' || main === 'Drizzle') {
+                humidityIcon.classList.add('weather-icon-rain');
+            } else if (main === 'Thunderstorm') {
+                tempIcon.classList.add('weather-icon-storm');
+                humidityIcon.classList.add('weather-icon-rain');
+            } else if (main === 'Snow') {
+                tempIcon.classList.add('weather-icon-snow');
+            }
         }
 
         function renderLights() {
             const grid = document.getElementById('lightsGrid');
             grid.innerHTML = devices.lights.map(light => `
-                <div class="device-expanded-item" id="device_light_${light.name}">
-                    <div class="device-expanded-icon">
+                <div class="device-compact-item" id="device_light_${light.name}">
+                    <div class="device-compact-icon">
                         <img src="${LAMP_OFF}" alt="Lâmpada ${light.label}" 
                              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiNGRkQiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMiAxMEgxOE0xMiAxNEgxOE0xMiAxOEgxNiIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'"
                              id="img_light_${light.name}">
                     </div>
-                    <div class="device-expanded-name">
+                    <div class="device-compact-name">
                         <span class="room-icon">${light.icon}</span>${light.label}
                     </div>
                     <label class="switch">
@@ -700,11 +769,11 @@
         function renderOutlets() {
             const grid = document.getElementById('outletsGrid');
             grid.innerHTML = devices.outlets.map(outlet => `
-                <div class="device-expanded-item" id="device_outlet_${outlet.name}">
-                    <div class="device-expanded-icon">
-                        <i class="fas fa-plug" style="font-size: 1.3em; color: #666;"></i>
+                <div class="device-compact-item" id="device_outlet_${outlet.name}">
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="font-size: 1.1em; color: #666;"></i>
                     </div>
-                    <div class="device-expanded-name">
+                    <div class="device-compact-name">
                         <span class="room-icon">${outlet.icon}</span>${outlet.label}
                     </div>
                     <label class="switch">
@@ -717,7 +786,7 @@
         }
 
         function updateSensors() {
-            // Simular dados dos sensores (substitua pela sua API real)
+            // Simular dados dos sensores
             const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
             const gas = currentState.gas_level || Math.floor(Math.random() * 100);
             const humidity = currentState.humidity || (45 + Math.random() * 20).toFixed(0);
@@ -732,12 +801,10 @@
             const gasElement = document.getElementById('sensorsGrid').children[1];
             if (gas > 70) {
                 gasElement.classList.add('alert');
-                gasElement.querySelector('.sensor-expanded-icon').textContent = '🚨';
-                gasElement.querySelector('.sensor-expanded-details').textContent = 'ALERTA!';
+                gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
             } else {
                 gasElement.classList.remove('alert');
-                gasElement.querySelector('.sensor-expanded-icon').textContent = '💨';
-                gasElement.querySelector('.sensor-expanded-details').textContent = 'Cozinha';
+                gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
             }
         }
 
