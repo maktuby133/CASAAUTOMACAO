@@ -1,1 +1,214 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Casa Automação</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .title-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .login-form {
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+            background: #ffeaea;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ffcdd2;
+        }
+
+        .login-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .login-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
+                     alt="Casa Inteligente" class="title-icon">
+                Casa Automação
+            </h1>
+            <p>Acesse o sistema de automação residencial</p>
+        </div>
+        
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="username"><i class="fas fa-user"></i> Usuário:</label>
+                <input type="text" id="username" name="username" required placeholder="Digite seu usuário">
+            </div>
+            
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Senha:</label>
+                <input type="password" id="password" name="password" required placeholder="Digite sua senha">
+            </div>
+            
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i>
+                Entrar no Sistema
+            </button>
+            
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                Usuário ou senha incorretos!
+            </div>
+        </form>
+
+        <div class="login-info">
+            <p><strong>Credenciais padrão:</strong></p>
+            <p>Usuário: <strong>admin</strong></p>
+            <p>Senha: <strong>admin123</strong></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Credenciais padrão
+            const validUsername = 'admin';
+            const validPassword = 'admin123';
+            
+            if (username === validUsername && password === validPassword) {
+                // Salvar autenticação
+                localStorage.setItem('authenticated', 'true');
+                localStorage.setItem('loginTime', new Date().getTime());
+                localStorage.setItem('authToken', 'authenticated');
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('errorMessage').style.display = 'block';
+                // Limpar campos
+                document.getElementById('password').value = '';
+            }
+        });
+
+        // Verificar se já está autenticado
+        if (localStorage.getItem('authenticated') === 'true') {
+            const loginTime = parseInt(localStorage.getItem('loginTime'));
+            const currentTime = new Date().getTime();
+            const hoursSinceLogin = (currentTime - loginTime) / (1000 * 60 * 60);
+            
+            // Logout automático após 24 horas
+            if (hoursSinceLogin < 24) {
+                window.location.href = 'index.html';
+            } else {
+                localStorage.removeItem('authenticated');
+                localStorage.removeItem('loginTime');
+                localStorage.removeItem('authToken');
+            }
+        }
+
+        // Focar no campo de usuário ao carregar
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>
