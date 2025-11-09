@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏠 Casa Automação - V2.0</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,42 +14,44 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             color: white;
         }
 
         .header h1 {
-            font-size: 2.5em;
+            font-size: 3em;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
         }
 
         .header p {
-            font-size: 1.2em;
+            font-size: 1.3em;
             opacity: 0.9;
+            font-weight: 300;
         }
 
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 25px;
+            margin-bottom: 40px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 968px) {
             .dashboard {
                 grid-template-columns: 1fr;
             }
@@ -55,11 +59,17 @@
 
         .card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
 
         .sensors-card {
@@ -67,25 +77,38 @@
         }
 
         .card h2 {
-            color: #333;
-            margin-bottom: 20px;
+            color: #2d3748;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 1.5em;
+        }
+
+        .card h2 i {
+            color: #667eea;
         }
 
         .sensor-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
         }
 
         .sensor-item {
             text-align: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 15px;
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
             color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .sensor-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
         }
 
         .sensor-item.gas {
@@ -98,58 +121,114 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% { transform: scale(1); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+            50% { transform: scale(1.05); box-shadow: 0 12px 35px rgba(255,107,107,0.4); }
+            100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        }
+
+        .sensor-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
         }
 
         .sensor-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin: 10px 0;
+            font-size: 2.8em;
+            font-weight: 700;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .sensor-label {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 1.2em;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .sensor-unit {
+            font-size: 0.8em;
+            opacity: 0.8;
         }
 
         .devices-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
         }
 
         .device-item {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 20px;
             text-align: center;
             border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .device-item:hover::before {
+            left: 100%;
         }
 
         .device-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .device-item.active {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            border-color: #fd9644;
         }
 
         .device-icon {
-            font-size: 2em;
-            margin-bottom: 10px;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .device-item:hover .device-icon {
+            transform: scale(1.1);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        .device-icon img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
         }
 
         .device-name {
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+            font-size: 1.1em;
         }
 
         .switch {
             position: relative;
             display: inline-block;
-            width: 60px;
-            height: 34px;
+            width: 70px;
+            height: 38px;
         }
 
         .switch input {
@@ -165,50 +244,62 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
+            background: linear-gradient(135deg, #ccc 0%, #999 100%);
             transition: .4s;
             border-radius: 34px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 26px;
-            width: 26px;
+            height: 30px;
+            width: 30px;
             left: 4px;
             bottom: 4px;
-            background-color: white;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
             transition: .4s;
             border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
         input:checked + .slider {
-            background-color: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
 
         input:checked + .slider:before {
-            transform: translateX(26px);
+            transform: translateX(32px);
         }
 
         .controls {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
+            gap: 20px;
+            margin-top: 40px;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 12px 25px;
+            padding: 15px 30px;
             border: none;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: bold;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
 
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
         }
 
@@ -218,25 +309,61 @@
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.25);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
         }
 
         .status-bar {
-            background: rgba(255,255,255,0.9);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
         .online {
             color: #4CAF50;
+            border-left: 5px solid #4CAF50;
         }
 
         .offline {
             color: #f44336;
+            border-left: 5px solid #f44336;
+        }
+
+        .device-status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .status-on {
+            color: #4CAF50;
+        }
+
+        .status-off {
+            color: #f44336;
+        }
+
+        .room-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .section-title {
+            text-align: center;
+            color: white;
+            margin: 30px 0 20px 0;
+            font-size: 1.8em;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
     </style>
 </head>
@@ -247,23 +374,27 @@
             <p>Controle completo da sua casa inteligente em tempo real</p>
         </div>
 
+        <div class="section-title">📊 Monitoramento em Tempo Real</div>
         <div class="dashboard">
             <div class="card sensors-card">
-                <h2>📊 Sensores em Tempo Real</h2>
+                <h2><i class="fas fa-chart-line"></i> Sensores em Tempo Real</h2>
                 <div class="sensor-grid" id="sensorsGrid">
                     <!-- Sensores serão inseridos aqui via JavaScript -->
                 </div>
             </div>
+        </div>
 
+        <div class="section-title">💡 Controle de Dispositivos</div>
+        <div class="dashboard">
             <div class="card">
-                <h2>💡 Controle de Lâmpadas</h2>
+                <h2><i class="fas fa-lightbulb"></i> Controle de Lâmpadas</h2>
                 <div class="devices-grid" id="lightsGrid">
                     <!-- Lâmpadas serão inseridas aqui via JavaScript -->
                 </div>
             </div>
 
             <div class="card">
-                <h2>🔌 Controle de Tomadas</h2>
+                <h2><i class="fas fa-plug"></i> Controle de Tomadas</h2>
                 <div class="devices-grid" id="outletsGrid">
                     <!-- Tomadas serão inseridas aqui via JavaScript -->
                 </div>
@@ -271,16 +402,27 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" onclick="ligarTudo()">⚡ Ligar Tudo</button>
-            <button class="btn btn-danger" onclick="desligarTudo()">🔌 Desligar Tudo</button>
+            <button class="btn btn-success" onclick="ligarTudo()">
+                <i class="fas fa-power-off"></i> ⚡ Ligar Tudo
+            </button>
+            <button class="btn btn-danger" onclick="desligarTudo()">
+                <i class="fas fa-plug"></i> 🔌 Desligar Tudo
+            </button>
+            <button class="btn btn-primary" onclick="atualizarDados()">
+                <i class="fas fa-sync-alt"></i> 🔄 Atualizar
+            </button>
         </div>
 
         <div class="status-bar" id="statusBar">
-            🔄 Conectando ao sistema...
+            <i class="fas fa-sync fa-spin"></i> Conectando ao sistema...
         </div>
     </div>
 
     <script>
+        // URLs dos GIFs das lâmpadas
+        const LAMP_ON = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=gif&color=000000';
+        const LAMP_OFF = 'https://img.icons8.com/?size=100&id=55787&format=gif&color=000000';
+
         // Dados dos dispositivos
         const devices = {
             lights: [
@@ -322,13 +464,18 @@
         function renderLights() {
             const grid = document.getElementById('lightsGrid');
             grid.innerHTML = devices.lights.map(light => `
-                <div class="device-item">
-                    <div class="device-icon">${light.icon}</div>
-                    <div class="device-name">${light.label}</div>
+                <div class="device-item" id="device_light_${light.name}">
+                    <div class="device-icon">
+                        <img src="${LAMP_OFF}" alt="Lâmpada ${light.label}" id="img_light_${light.name}">
+                    </div>
+                    <div class="device-name">
+                        <span class="room-icon">${light.icon}</span>${light.label}
+                    </div>
                     <label class="switch">
                         <input type="checkbox" id="light_${light.name}" onchange="toggleDevice('lights', '${light.name}')">
                         <span class="slider"></span>
                     </label>
+                    <div class="device-status status-off" id="status_light_${light.name}">DESLIGADA</div>
                 </div>
             `).join('');
         }
@@ -336,13 +483,18 @@
         function renderOutlets() {
             const grid = document.getElementById('outletsGrid');
             grid.innerHTML = devices.outlets.map(outlet => `
-                <div class="device-item">
-                    <div class="device-icon">${outlet.icon}</div>
-                    <div class="device-name">${outlet.label}</div>
+                <div class="device-item" id="device_outlet_${outlet.name}">
+                    <div class="device-icon">
+                        <i class="fas fa-plug" style="font-size: 2.5em; color: #666;"></i>
+                    </div>
+                    <div class="device-name">
+                        <span class="room-icon">${outlet.icon}</span>${outlet.label}
+                    </div>
                     <label class="switch">
                         <input type="checkbox" id="outlet_${outlet.name}" onchange="toggleDevice('outlets', '${outlet.name}')">
                         <span class="slider"></span>
                     </label>
+                    <div class="device-status status-off" id="status_outlet_${outlet.name}">DESLIGADA</div>
                 </div>
             `).join('');
         }
@@ -350,6 +502,18 @@
         async function toggleDevice(type, device) {
             const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
             const state = checkbox.checked;
+            const deviceElement = document.getElementById(`device_${type.slice(0, -1)}_${device}`);
+            const statusElement = document.getElementById(`status_${type.slice(0, -1)}_${device}`);
+            
+            // Atualizar visual imediatamente
+            if (type === 'lights') {
+                const imgElement = document.getElementById(`img_light_${device}`);
+                imgElement.src = state ? LAMP_ON : LAMP_OFF;
+            }
+            
+            deviceElement.classList.toggle('active', state);
+            statusElement.textContent = state ? 'LIGADA' : 'DESLIGADA';
+            statusElement.className = `device-status ${state ? 'status-on' : 'status-off'}`;
             
             try {
                 const response = await fetch('/api/control', {
@@ -360,11 +524,19 @@
                 
                 const result = await response.json();
                 if (result.status === 'OK') {
-                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
+                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'} com sucesso!`, 'online');
                 }
             } catch (error) {
                 console.error('Erro:', error);
+                // Reverter visual em caso de erro
                 checkbox.checked = !state;
+                if (type === 'lights') {
+                    const imgElement = document.getElementById(`img_light_${device}`);
+                    imgElement.src = !state ? LAMP_ON : LAMP_OFF;
+                }
+                deviceElement.classList.toggle('active', !state);
+                statusElement.textContent = !state ? 'LIGADA' : 'DESLIGADA';
+                statusElement.className = `device-status ${!state ? 'status-on' : 'status-off'}`;
                 updateStatusBar('❌ Erro ao controlar dispositivo', 'offline');
             }
         }
@@ -388,23 +560,29 @@
             const grid = document.getElementById('sensorsGrid');
             const gasLevel = currentState.gas_level || 0;
             const gasAlert = currentState.gas_alert;
+            const temp = currentState.temperature;
             
             grid.innerHTML = `
                 <div class="sensor-item">
                     <div class="sensor-icon">🌡️</div>
-                    <div class="sensor-label">Temperatura</div>
-                    <div class="sensor-value">${currentState.temperature?.toFixed(1) || '--'}°C</div>
+                    <div class="sensor-label">Temperatura Ambiente</div>
+                    <div class="sensor-value">
+                        ${temp !== undefined && temp !== -999.9 ? temp.toFixed(1) : '--'}
+                        <span class="sensor-unit">°C</span>
+                    </div>
+                    <div class="sensor-label">${temp === -999.9 ? 'Sensor com defeito' : 'Condição normal'}</div>
                 </div>
                 <div class="sensor-item gas ${gasAlert ? 'alert' : ''}">
                     <div class="sensor-icon">${gasAlert ? '🚨' : '💨'}</div>
                     <div class="sensor-label">Nível de Gás</div>
                     <div class="sensor-value">${gasLevel}</div>
-                    <div class="sensor-label">${gasAlert ? 'ALERTA!' : 'Normal'}</div>
+                    <div class="sensor-label">${gasAlert ? 'ALERTA! Verifique vazamentos' : 'Níveis normais'}</div>
                 </div>
                 <div class="sensor-item">
                     <div class="sensor-icon">📡</div>
-                    <div class="sensor-label">Dispositivo</div>
+                    <div class="sensor-label">Status do Sistema</div>
                     <div class="sensor-value">${currentState.device || 'ESP32'}</div>
+                    <div class="sensor-label">${gasAlert ? 'Alerta ativo' : 'Tudo operacional'}</div>
                 </div>
             `;
         }
@@ -421,23 +599,32 @@
 
         function updateStatusBar(message, type) {
             const statusBar = document.getElementById('statusBar');
-            statusBar.textContent = message;
+            const icon = type === 'online' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+            statusBar.innerHTML = `<i class="${icon}"></i> ${message}`;
             statusBar.className = `status-bar ${type}`;
         }
 
         async function ligarTudo() {
             try {
                 for (let light of devices.lights) {
-                    document.getElementById(`light_${light.name}`).checked = true;
-                    await toggleDevice('lights', light.name);
+                    const checkbox = document.getElementById(`light_${light.name}`);
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        await toggleDevice('lights', light.name);
+                        await new Promise(resolve => setTimeout(resolve, 200)); // Pequeno delay
+                    }
                 }
                 for (let outlet of devices.outlets) {
-                    document.getElementById(`outlet_${outlet.name}`).checked = true;
-                    await toggleDevice('outlets', outlet.name);
+                    const checkbox = document.getElementById(`outlet_${outlet.name}`);
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        await toggleDevice('outlets', outlet.name);
+                        await new Promise(resolve => setTimeout(resolve, 200)); // Pequeno delay
+                    }
                 }
-                updateStatusBar('✅ Todos os dispositivos ligados', 'online');
+                updateStatusBar('✅ Todos os dispositivos foram ligados!', 'online');
             } catch (error) {
-                updateStatusBar('❌ Erro ao ligar dispositivos', 'offline');
+                updateStatusBar('❌ Erro ao ligar todos os dispositivos', 'offline');
             }
         }
 
@@ -447,19 +634,32 @@
                 const result = await response.json();
                 
                 if (result.status === 'OK') {
-                    // Atualizar checkboxes
+                    // Atualizar checkboxes e imagens
                     devices.lights.forEach(light => {
                         document.getElementById(`light_${light.name}`).checked = false;
+                        document.getElementById(`img_light_${light.name}`).src = LAMP_OFF;
+                        document.getElementById(`device_light_${light.name}`).classList.remove('active');
+                        document.getElementById(`status_light_${light.name}`).textContent = 'DESLIGADA';
+                        document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
                     });
                     devices.outlets.forEach(outlet => {
                         document.getElementById(`outlet_${outlet.name}`).checked = false;
+                        document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
+                        document.getElementById(`status_outlet_${outlet.name}`).textContent = 'DESLIGADA';
+                        document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
                     });
                     
-                    updateStatusBar('✅ Todos os dispositivos desligados', 'online');
+                    updateStatusBar('✅ Todos os dispositivos foram desligados!', 'online');
                 }
             } catch (error) {
                 updateStatusBar('❌ Erro ao desligar dispositivos', 'offline');
             }
+        }
+
+        async function atualizarDados() {
+            updateStatusBar('🔄 Atualizando dados...', 'online');
+            await updateSensors();
+            await checkServerStatus();
         }
 
         // Inicializar quando a página carregar
