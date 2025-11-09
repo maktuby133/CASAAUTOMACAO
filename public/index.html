@@ -51,7 +51,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1em; /* Aumentado */
+            font-size: 1em;
         }
 
         .weather-location-compact {
@@ -61,75 +61,89 @@
         }
 
         .weather-location-compact i {
-            font-size: 1.2em; /* Aumentado */
+            font-size: 1.2em;
+        }
+
+        .weather-main-icon {
+            font-size: 1.8em !important;
+            margin-right: 8px;
         }
 
         .weather-data-compact {
             display: flex;
-            gap: 25px; /* Mais espaçamento */
+            gap: 25px;
             align-items: center;
         }
 
         .weather-item-compact {
             display: flex;
             align-items: center;
-            gap: 8px; /* Mais espaçamento */
+            gap: 8px;
         }
 
         .weather-item-compact i {
-            font-size: 1.3em; /* Aumentado */
+            font-size: 1.3em;
             opacity: 0.9;
         }
 
         .weather-value-compact {
-            font-weight: 700; /* Mais negrito */
-            font-size: 1.1em; /* Aumentado */
+            font-weight: 700;
+            font-size: 1.1em;
         }
 
         .weather-description-compact {
-            font-size: 0.9em; /* Aumentado */
+            font-size: 0.9em;
             opacity: 0.9;
             font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .weather-time-compact {
-            font-size: 0.8em; /* Aumentado */
+            font-size: 0.8em;
             opacity: 0.7;
         }
 
         /* Ícones Animados para Diferentes Condições */
-        .weather-icon-animated {
-            animation: float 3s ease-in-out infinite;
-        }
-
         .weather-icon-sun {
-            color: #FFD700;
-            animation: spin 10s linear infinite;
+            color: #FFD700 !important;
+            animation: spin 10s linear infinite !important;
         }
 
         .weather-icon-cloud {
-            color: #FFFFFF;
-            animation: float 4s ease-in-out infinite;
+            color: #FFFFFF !important;
+            animation: float 4s ease-in-out infinite !important;
+        }
+
+        .weather-icon-cloud-sun {
+            color: #FFD700 !important;
+            animation: float 3s ease-in-out infinite !important;
         }
 
         .weather-icon-rain {
-            color: #4FC3F7;
-            animation: rainDrop 2s ease-in-out infinite;
+            color: #4FC3F7 !important;
+            animation: rainDrop 2s ease-in-out infinite !important;
         }
 
         .weather-icon-storm {
-            color: #FF9800;
-            animation: flash 1.5s ease-in-out infinite;
+            color: #FF9800 !important;
+            animation: flash 1.5s ease-in-out infinite !important;
         }
 
         .weather-icon-snow {
-            color: #E3F2FD;
-            animation: snowFall 3s ease-in-out infinite;
+            color: #E3F2FD !important;
+            animation: snowFall 3s ease-in-out infinite !important;
+        }
+
+        .weather-icon-mist {
+            color: #BDBDBD !important;
+            animation: fade 4s ease-in-out infinite !important;
         }
 
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
+            50% { transform: translateY(-3px); }
         }
 
         @keyframes spin {
@@ -139,20 +153,25 @@
 
         @keyframes rainDrop {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(3px); }
+            50% { transform: translateY(2px); }
         }
 
         @keyframes flash {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            50% { opacity: 0.4; }
         }
 
         @keyframes snowFall {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(4px) rotate(180deg); }
+            50% { transform: translateY(3px) rotate(180deg); }
         }
 
-        /* Layout Principal */
+        @keyframes fade {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        /* Restante do CSS permanece igual */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -181,14 +200,13 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 1.4em; /* Aumentado */
+            font-size: 1.4em;
         }
 
         .card h2 i {
             color: #667eea;
         }
 
-        /* Sensores - Balões Menores */
         .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -198,7 +216,7 @@
 
         .sensor-compact-item {
             text-align: center;
-            padding: 12px; /* Menor */
+            padding: 12px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 10px;
             color: white;
@@ -234,23 +252,22 @@
         }
 
         .sensor-compact-icon {
-            font-size: 1.6em; /* Ajustado */
+            font-size: 1.6em;
             margin-bottom: 6px;
         }
 
         .sensor-compact-value {
-            font-size: 1.4em; /* Ajustado */
+            font-size: 1.4em;
             font-weight: 700;
             margin: 3px 0;
         }
 
         .sensor-compact-label {
-            font-size: 0.75em; /* Menor */
+            font-size: 0.75em;
             opacity: 0.95;
             font-weight: 500;
         }
 
-        /* Dispositivos */
         .devices-compact {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -258,20 +275,6 @@
             max-height: 400px;
             overflow-y: auto;
             padding-right: 5px;
-        }
-
-        .devices-compact::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .devices-compact::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        .devices-compact::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 3px;
         }
 
         .device-compact-item {
@@ -466,7 +469,6 @@
             animation: fadeIn 0.6s ease-out;
         }
 
-        /* Responsividade */
         @media (max-width: 768px) {
             .weather-compact {
                 flex-direction: column;
@@ -517,28 +519,31 @@
             <h1>🏠 Casa Automação - V3.0</h1>
         </div>
 
-        <!-- Meteorologia Compacta com Ícones Animados -->
+        <!-- Meteorologia Compacta com Ícone Principal -->
         <div class="weather-compact fade-in" id="weatherCompact">
             <div class="weather-location-compact">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Rio de Janeiro, RJ</span>
-                <div class="weather-description-compact" id="weather-description">Carregando...</div>
+                <div class="weather-description-compact" id="weather-description">
+                    <i class="fas fa-cloud weather-main-icon" id="weather-main-icon"></i>
+                    Carregando...
+                </div>
             </div>
             <div class="weather-data-compact" id="weather-data-compact">
                 <div class="weather-item-compact">
-                    <i class="fas fa-thermometer-half weather-icon-animated"></i>
+                    <i class="fas fa-thermometer-half"></i>
                     <span class="weather-value-compact" id="weather-temp">--°</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-tint weather-icon-animated"></i>
+                    <i class="fas fa-tint"></i>
                     <span class="weather-value-compact" id="weather-humidity">--%</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-wind weather-icon-animated"></i>
+                    <i class="fas fa-wind"></i>
                     <span class="weather-value-compact" id="weather-wind">--km/h</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-compress-alt weather-icon-animated"></i>
+                    <i class="fas fa-compress-alt"></i>
                     <span class="weather-value-compact" id="weather-pressure">--hPa</span>
                 </div>
             </div>
@@ -547,6 +552,7 @@
             </div>
         </div>
 
+        <!-- Restante do código permanece igual -->
         <!-- Sensores da Casa -->
         <div class="card fade-in">
             <h2><i class="fas fa-chart-line"></i> Monitoramento em Tempo Real</h2>
@@ -705,7 +711,8 @@
             const formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
 
             // Atualizar elementos
-            document.getElementById('weather-description').textContent = formattedDescription;
+            document.getElementById('weather-description').innerHTML = 
+                `<i class="fas fa-cloud weather-main-icon" id="weather-main-icon"></i>${formattedDescription}`;
             document.getElementById('weather-temp').textContent = `${temperature.toFixed(1)}°`;
             document.getElementById('weather-humidity').textContent = `${humidity}%`;
             document.getElementById('weather-wind').textContent = `${windSpeed}km/h`;
@@ -717,33 +724,35 @@
             applyWeatherIcon(data.weather[0].main, data.weather[0].description);
         }
 
-        // Aplicar ícone animado baseado na condição do tempo
+        // Aplicar ícone animado baseado na condição do tempo - CORRIGIDO
         function applyWeatherIcon(main, description) {
-            const tempIcon = document.querySelector('.fa-thermometer-half');
-            const humidityIcon = document.querySelector('.fa-tint');
-            const windIcon = document.querySelector('.fa-wind');
-            const pressureIcon = document.querySelector('.fa-compress-alt');
-
+            const mainIcon = document.getElementById('weather-main-icon');
+            
             // Resetar todas as classes de animação
-            [tempIcon, humidityIcon, windIcon, pressureIcon].forEach(icon => {
-                icon.className = icon.className.replace(/\bweather-icon-\w+\b/g, '');
-                icon.classList.add('weather-icon-animated');
-            });
+            mainIcon.className = 'fas weather-main-icon';
+            
+            // Mapear condições do tempo para ícones e animações
+            const weatherMap = {
+                'Clear': { icon: 'fa-sun', animation: 'weather-icon-sun' },
+                'Clouds': { 
+                    icon: description.includes('poucas nuvens') ? 'fa-cloud-sun' : 'fa-cloud',
+                    animation: description.includes('poucas nuvens') ? 'weather-icon-cloud-sun' : 'weather-icon-cloud'
+                },
+                'Rain': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
+                'Drizzle': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
+                'Thunderstorm': { icon: 'fa-bolt', animation: 'weather-icon-storm' },
+                'Snow': { icon: 'fa-snowflake', animation: 'weather-icon-snow' },
+                'Mist': { icon: 'fa-smog', animation: 'weather-icon-mist' },
+                'Fog': { icon: 'fa-smog', animation: 'weather-icon-mist' },
+                'Haze': { icon: 'fa-smog', animation: 'weather-icon-mist' }
+            };
 
-            // Aplicar animações específicas baseadas na condição
-            if (main === 'Clear') {
-                tempIcon.classList.add('weather-icon-sun');
-            } else if (main === 'Clouds') {
-                tempIcon.classList.add('weather-icon-cloud');
-            } else if (main === 'Rain' || main === 'Drizzle') {
-                humidityIcon.classList.add('weather-icon-rain');
-            } else if (main === 'Thunderstorm') {
-                tempIcon.classList.add('weather-icon-storm');
-                humidityIcon.classList.add('weather-icon-rain');
-            } else if (main === 'Snow') {
-                tempIcon.classList.add('weather-icon-snow');
-            }
+            const weatherConfig = weatherMap[main] || { icon: 'fa-cloud', animation: 'weather-icon-cloud' };
+            
+            mainIcon.classList.add(weatherConfig.icon, weatherConfig.animation);
         }
+
+        // [MANTENHA AS OUTRAS FUNÇÕES: renderLights, renderOutlets, updateSensors, toggleDevice, etc.]
 
         function renderLights() {
             const grid = document.getElementById('lightsGrid');
@@ -807,8 +816,6 @@
                 gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
             }
         }
-
-        // [MANTENHA AS OUTRAS FUNÇÕES: toggleDevice, checkServerStatus, updateStatusBar, ligarTudo, desligarTudo, atualizarDados]
 
         async function toggleDevice(type, device) {
             const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
