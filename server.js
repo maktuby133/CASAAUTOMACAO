@@ -8,7 +8,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://192.168.1.100:3000', 'https://casaautomacao.onrender.com'],
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -130,7 +133,7 @@ async function fetchWeatherData() {
 // Middleware de autenticação simples
 function requireAuth(req, res, next) {
     // Rotas públicas que não precisam de autenticação
-    const publicRoutes = ['/api/status', '/health', '/', '/login.html', '/api/login', '/api/data', '/api/devices'];
+    const publicRoutes = ['/api/status', '/health', '/', '/login.html', '/api/login', '/api/data', '/api/devices', '/api/weather', '/api/esp32-status'];
     
     if (publicRoutes.includes(req.path)) {
         return next();
@@ -408,7 +411,11 @@ app.post('/api/irrigation/control', (req, res) => {
     saveState(devicesState);
     
     console.log(`💧 Bomba irrigação: ${state ? 'LIGADA' : 'DESLIGADA'}`);
-    res.json({ status: 'OK', state });
+    res.json({ 
+        status: 'OK', 
+        state,
+        message: `Bomba ${state ? 'ligada' : 'desligada'} com sucesso`
+    });
 });
 
 // Health check
@@ -444,4 +451,5 @@ app.listen(PORT, () => {
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('🔐 Sistema de Login: ATIVADO');
+    console.log('🌤️  API Clima: ' + (process.env.OPENWEATHER_API_KEY ? 'CONFIGURADA' : 'NÃO CONFIGURADA'));
 });
