@@ -94,6 +94,32 @@
             }
         }
 
+        /* Ícone do Mapa Mundi para Status Online */
+        .internet-icon {
+            width: 20px;
+            height: 20px;
+            animation: globeRotate 3s ease-in-out infinite;
+        }
+
+        @keyframes globeRotate {
+            0%, 100% { 
+                transform: rotate(0deg) scale(1);
+                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
+            }
+            25% { 
+                transform: rotate(5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+            50% { 
+                transform: rotate(0deg) scale(1.1);
+                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
+            }
+            75% { 
+                transform: rotate(-5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+        }
+
         /* Restante do CSS permanece igual */
         .weather-compact {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.9) 0%, rgba(9, 132, 227, 0.9) 100%);
@@ -740,7 +766,9 @@
         </div>
 
         <div class="status-bar online" id="statusBar">
-            <i class="fas fa-sync fa-spin"></i> Inicializando sistema...
+            <img src="https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000" 
+                 alt="Sistema Online" class="internet-icon">
+            Inicializando sistema...
         </div>
     </div>
 
@@ -751,6 +779,7 @@
         const HOUSE_ICON = 'https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000';
         const UPDATE_ICON = 'https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000';
         const OUTLET_ICON = 'https://img.icons8.com/?size=100&id=Sc8AAAaZgbuy&format=png&color=000000';
+        const INTERNET_ICON = 'https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000';
 
         // Dados dos dispositivos
         const devices = {
@@ -1027,8 +1056,11 @@
 
         function updateStatusBar(message, type) {
             const statusBar = document.getElementById('statusBar');
-            const icon = type === 'online' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
-            statusBar.innerHTML = `<i class="${icon}"></i> ${message}`;
+            if (type === 'online') {
+                statusBar.innerHTML = `<img src="${INTERNET_ICON}" alt="Sistema Online" class="internet-icon"> ${message}`;
+            } else {
+                statusBar.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            }
             statusBar.className = `status-bar ${type}`;
         }
 
