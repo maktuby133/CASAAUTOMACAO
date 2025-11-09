@@ -20,7 +20,8 @@ let esp32Status = {
     connected: false,
     lastSeen: null,
     deviceId: null,
-    ipAddress: null
+    ipAddress: null,
+    lastHeartbeat: null
 };
 
 // Carregar estado salvo
@@ -75,28 +76,21 @@ function updateESP32Status(device, ip) {
     esp32Status = {
         connected: true,
         lastSeen: new Date(),
+        lastHeartbeat: new Date(),
         deviceId: device || 'ESP32-AUTOMACAO-V3',
         ipAddress: ip || 'Desconhecido'
     };
     
     console.log(`📡 ESP32 conectado: ${device} | IP: ${ip}`);
-    
-    // Agendar verificação de desconexão (3 minutos sem sinal = desconectado)
-    setTimeout(() => {
-        const timeSinceLastSeen = new Date() - esp32Status.lastSeen;
-        if (timeSinceLastSeen > 180000) { // 3 minutos
-            esp32Status.connected = false;
-            console.log('⚠️  ESP32 considerado desconectado (timeout)');
-        }
-    }, 180000);
 }
 
 // Verificar se ESP32 está conectado
 function checkESP32Connection() {
-    if (esp32Status.lastSeen) {
-        const timeSinceLastSeen = new Date() - esp32Status.lastSeen;
-        if (timeSinceLastSeen > 120000) { // 2 minutos sem sinal
+    if (esp32Status.lastHeartbeat) {
+        const timeSinceLastHeartbeat = new Date() - esp32Status.lastHeartbeat;
+        if (timeSinceLastHeartbeat > 120000) { // 2 minutos sem heartbeat
             esp32Status.connected = false;
+            console.log('⚠️ ESP32 considerado desconectado (sem heartbeat)');
         }
     }
     return esp32Status.connected;
@@ -136,7 +130,7 @@ async function fetchWeatherData() {
 // Middleware de autenticação simples
 function requireAuth(req, res, next) {
     // Rotas públicas que não precisam de autenticação
-    const publicRoutes = ['/api/status', '/health', '/', '/login.html', '/api/login'];
+    const publicRoutes = ['/api/status', '/health', '/', '/login.html', '/api/login', '/api/data', '/api/devices'];
     
     if (publicRoutes.includes(req.path)) {
         return next();
@@ -194,7 +188,7 @@ app.get('/api/status', (req, res) => {
     const espConnected = checkESP32Connection();
     const statusMessage = espConnected ? 
         '✅ Sistema operando normalmente' : 
-        '⚠️  ESP32 desconectado';
+        '⚠️ ESP32 desconectado';
     
     res.json({ 
         message: '🚀 Servidor Automação Residencial V3.0',
@@ -246,7 +240,7 @@ app.get('/api/weather', async (req, res) => {
 
 // ESP32 envia dados dos sensores
 app.post('/api/data', (req, res) => {
-    const { temperature, gas_level, gas_alert, device, heartbeat } = req.body;
+    const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi } = req.body;
 
     // Validação básica
     if (typeof temperature === 'undefined' || typeof gas_level === 'undefined') {
@@ -259,6 +253,7 @@ app.post('/api/data', (req, res) => {
         gas_alert: gas_alert || false,
         device: device || 'ESP32',
         heartbeat: heartbeat || false,
+        wifi_rssi: wifi_rssi || 0,
         timestamp: new Date().toLocaleString('pt-BR'),
         receivedAt: new Date()
     };
@@ -267,31 +262,33 @@ app.post('/api/data', (req, res) => {
     if (sensorData.length > 100) sensorData = sensorData.slice(0, 100);
 
     // Atualizar status do ESP32
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
     updateESP32Status(device, clientIP);
 
     if (heartbeat) {
-        console.log('💓 Heartbeat recebido:', { device, ip: clientIP });
+        console.log('💓 Heartbeat recebido:', { device, ip: clientIP, rssi: wifi_rssi });
     } else {
         console.log('📨 Dados recebidos:', {
             device,
             temperature,
             gas_level,
-            ip: clientIP
+            ip: clientIP,
+            rssi: wifi_rssi
         });
     }
     
     res.json({ 
         status: 'OK', 
         message: heartbeat ? 'Heartbeat recebido!' : 'Dados salvos!',
-        serverTime: new Date().toLocaleString('pt-BR')
+        serverTime: new Date().toLocaleString('pt-BR'),
+        devices: devicesState // Retorna estado atual dos dispositivos
     });
 });
 
 // ESP32 busca estado dos dispositivos
 app.get('/api/devices', (req, res) => {
     // Atualizar status do ESP32
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
     updateESP32Status('ESP32-AUTOMACAO-V3', clientIP);
     
     res.json(devicesState);
@@ -326,7 +323,7 @@ app.post('/api/control', (req, res) => {
     devicesState[type][device] = state;
     saveState(devicesState);
     
-    console.log(`🎛️  ${type} ${device}: ${state ? 'LIGADO' : 'DESLIGADO'}`);
+    console.log(`🎛️ ${type} ${device}: ${state ? 'LIGADO' : 'DESLIGADO'}`);
     res.json({ 
         status: 'OK', 
         type, 
@@ -395,11 +392,11 @@ app.post('/api/irrigation/save', (req, res) => {
     const { modo, programacoes } = req.body;
     
     devicesState.irrigation.modo = modo;
-    devicesState.irrigation.programacoes = programacoes;
+    devicesState.irrigation.programacoes = programacoes || [];
     
     saveState(devicesState);
     
-    console.log('💧 Configurações de irrigação salvas:', { modo, programacoes: programacoes.length });
+    console.log('💧 Configurações de irrigação salvas:', { modo, programacoes: programacoes?.length || 0 });
     res.json({ status: 'OK', message: 'Configurações salvas com sucesso' });
 });
 
