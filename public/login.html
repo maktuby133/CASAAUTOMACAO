@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -106,14 +105,13 @@
             color: #e74c3c;
             text-align: center;
             margin-top: 15px;
-            display: none;
-            background: #ffeaea;
             padding: 10px;
+            background: #ffeaea;
             border-radius: 5px;
-            border: 1px solid #ffcdd2;
+            display: none;
         }
 
-        .login-info {
+        .credentials-info {
             margin-top: 20px;
             padding: 15px;
             background: #f8f9fa;
@@ -122,8 +120,19 @@
             color: #666;
         }
 
-        .login-info strong {
+        .credentials-info h3 {
             color: #333;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-container {
+            animation: fadeIn 0.6s ease-out;
         }
     </style>
 </head>
@@ -133,7 +142,7 @@
             <h1>
                 <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
                      alt="Casa Inteligente" class="title-icon">
-                Casa Automação
+                Casa Automação V3.0
             </h1>
             <p>Acesse o sistema de automação residencial</p>
         </div>
@@ -141,12 +150,12 @@
         <form class="login-form" id="loginForm">
             <div class="form-group">
                 <label for="username"><i class="fas fa-user"></i> Usuário:</label>
-                <input type="text" id="username" name="username" required placeholder="Digite seu usuário">
+                <input type="text" id="username" name="username" required placeholder="Digite seu usuário" value="admin">
             </div>
             
             <div class="form-group">
                 <label for="password"><i class="fas fa-lock"></i> Senha:</label>
-                <input type="password" id="password" name="password" required placeholder="Digite sua senha">
+                <input type="password" id="password" name="password" required placeholder="Digite sua senha" value="admin123">
             </div>
             
             <button type="submit" class="login-btn">
@@ -160,54 +169,74 @@
             </div>
         </form>
 
-        <div class="login-info">
-            <p><strong>Credenciais padrão:</strong></p>
-            <p>Usuário: <strong>admin</strong></p>
-            <p>Senha: <strong>admin123</strong></p>
+        <div class="credentials-info">
+            <h3><i class="fas fa-info-circle"></i> Credenciais de Acesso:</h3>
+            <p><strong>Usuário:</strong> admin</p>
+            <p><strong>Senha:</strong> admin123</p>
         </div>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const loginBtn = this.querySelector('.login-btn');
             
-            // Credenciais padrão
-            const validUsername = 'admin';
-            const validPassword = 'admin123';
+            // Mostrar loading
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+            loginBtn.disabled = true;
             
-            if (username === validUsername && password === validPassword) {
-                // Salvar autenticação
-                localStorage.setItem('authenticated', 'true');
-                localStorage.setItem('loginTime', new Date().getTime());
-                localStorage.setItem('authToken', 'authenticated');
-                window.location.href = 'index.html';
-            } else {
-                document.getElementById('errorMessage').style.display = 'block';
-                // Limpar campos
-                document.getElementById('password').value = '';
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Salvar token e redirecionar
+                    localStorage.setItem('authToken', 'admin123');
+                    localStorage.setItem('loginTime', new Date().getTime());
+                    window.location.href = '/sistema';
+                } else {
+                    errorMessage.style.display = 'block';
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
+                    loginBtn.disabled = false;
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Erro de conexão com o servidor';
+                errorMessage.style.display = 'block';
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
+                loginBtn.disabled = false;
             }
         });
 
-        // Verificar se já está autenticado
-        if (localStorage.getItem('authenticated') === 'true') {
-            const loginTime = parseInt(localStorage.getItem('loginTime'));
+        // Verificar se já está autenticado - CORREÇÃO AQUI
+        const token = localStorage.getItem('authToken');
+        const loginTime = localStorage.getItem('loginTime');
+        
+        if (token === 'admin123' && loginTime) {
             const currentTime = new Date().getTime();
-            const hoursSinceLogin = (currentTime - loginTime) / (1000 * 60 * 60);
+            const hoursSinceLogin = (currentTime - parseInt(loginTime)) / (1000 * 60 * 60);
             
             // Logout automático após 24 horas
             if (hoursSinceLogin < 24) {
-                window.location.href = 'index.html';
+                // Não redirecionar automaticamente, deixar usuário escolher
+                console.log('Usuário já autenticado, mas permitindo acesso à página de login');
             } else {
-                localStorage.removeItem('authenticated');
-                localStorage.removeItem('loginTime');
                 localStorage.removeItem('authToken');
+                localStorage.removeItem('loginTime');
             }
         }
 
-        // Focar no campo de usuário ao carregar
+        // Foco no campo de usuário
         document.getElementById('username').focus();
     </script>
 </body>
