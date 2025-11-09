@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* [MANTENHA TODO O CSS ANTERIOR] */
         * {
             margin: 0;
             padding: 0;
@@ -465,32 +464,24 @@
             }
         }
 
-        .api-key-input {
+        .api-status {
             background: rgba(255,255,255,0.9);
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 10px;
             margin-bottom: 10px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
+            text-align: center;
+            font-size: 0.8em;
+            font-weight: 500;
         }
 
-        .api-key-input input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.9em;
+        .api-active {
+            color: #4CAF50;
+            border-left: 3px solid #4CAF50;
         }
 
-        .api-key-input button {
-            padding: 8px 15px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9em;
+        .api-inactive {
+            color: #ff9800;
+            border-left: 3px solid #ff9800;
         }
     </style>
 </head>
@@ -505,17 +496,16 @@
         <!-- Previsão do Tempo RJ -->
         <div class="weather-section">
             <div class="weather-card fade-in">
-                <div class="api-key-input" id="apiKeySection">
-                    <input type="text" id="apiKeyInput" placeholder="Digite sua API Key do OpenWeatherMap (opcional)">
-                    <button onclick="salvarApiKey()">Salvar</button>
+                <div class="api-status api-active">
+                    <i class="fas fa-check-circle"></i> API do Clima Conectada - Dados em Tempo Real
                 </div>
                 <div class="weather-header">
                     <div class="weather-location">
                         <h2><i class="fas fa-map-marker-alt"></i> Rio de Janeiro, RJ</h2>
-                        <p id="weather-description">Clique em "Atualizar Clima" para carregar dados reais</p>
+                        <p id="weather-description">Carregando dados meteorológicos...</p>
                     </div>
                     <div class="weather-icon" id="weather-main-icon">
-                        <i class="fas fa-cloud"></i>
+                        <i class="fas fa-sync fa-spin"></i>
                     </div>
                 </div>
                 <div class="weather-grid" id="weather-grid">
@@ -541,7 +531,7 @@
                     </div>
                 </div>
                 <div class="weather-time" id="weather-update-time">
-                    Use uma API Key gratuita do OpenWeatherMap
+                    Conectando à API...
                 </div>
             </div>
         </div>
@@ -590,8 +580,8 @@
         </div>
 
         <!-- Status -->
-        <div class="status-bar" id="statusBar">
-            <i class="fas fa-info-circle"></i> Para dados reais do clima, obtenha uma API Key gratuita em openweathermap.org
+        <div class="status-bar online" id="statusBar">
+            <i class="fas fa-sync fa-spin"></i> Inicializando sistema...
         </div>
     </div>
 
@@ -628,8 +618,8 @@
             outlets: {}
         };
 
-        // API Key do OpenWeatherMap
-        let apiKey = localStorage.getItem('weatherApiKey') || '';
+        // SUA API KEY CONFIGURADA
+        const API_KEY = 'ad248cf36c16a9def9f349b2d3c1b127';
 
         // Inicializar interface
         function initInterface() {
@@ -638,81 +628,42 @@
             updateSensors();
             checkServerStatus();
             
-            // Mostrar/ocultar input da API Key
-            const apiKeySection = document.getElementById('apiKeySection');
-            if (!apiKey) {
-                apiKeySection.style.display = 'flex';
-            } else {
-                apiKeySection.style.display = 'none';
-                // Carregar dados do clima se já tiver API Key
-                setTimeout(atualizarClimaReal, 1000);
-            }
+            // Carregar dados do clima imediatamente
+            setTimeout(atualizarClimaReal, 1000);
             
             setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
-        }
-
-        // Salvar API Key
-        function salvarApiKey() {
-            const input = document.getElementById('apiKeyInput');
-            apiKey = input.value.trim();
-            if (apiKey) {
-                localStorage.setItem('weatherApiKey', apiKey);
-                document.getElementById('apiKeySection').style.display = 'none';
-                atualizarClimaReal();
-                updateStatusBar('✅ API Key salva com sucesso!', 'online');
-            } else {
-                updateStatusBar('❌ Por favor, digite uma API Key válida', 'offline');
-            }
+            setInterval(atualizarClimaReal, 600000); // Atualizar a cada 10 minutos
         }
 
         // Função para buscar dados REAIS do clima
         async function atualizarClimaReal() {
-            if (!apiKey) {
-                updateStatusBar('❌ API Key não configurada. Use o campo acima.', 'offline');
-                return;
-            }
-
             try {
-                updateStatusBar('🌤️ Buscando dados do clima...', 'online');
+                updateStatusBar('🌤️ Buscando dados meteorológicos...', 'online');
                 
                 // Coordenadas do Rio de Janeiro
                 const lat = -22.9068;
                 const lon = -43.1729;
                 
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=pt_br`;
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=pt_br`;
                 
                 const response = await fetch(url);
                 
                 if (!response.ok) {
-                    throw new Error('Erro na API do clima');
+                    throw new Error(`Erro na API: ${response.status}`);
                 }
                 
                 const data = await response.json();
                 renderWeatherReal(data);
-                updateStatusBar('✅ Previsão do tempo atualizada com dados reais!', 'online');
+                updateStatusBar('✅ Dados meteorológicos atualizados!', 'online');
                 
             } catch (error) {
                 console.error('Erro ao buscar dados do clima:', error);
-                updateStatusBar('❌ Erro ao buscar dados do clima. Verifique sua API Key.', 'offline');
+                updateStatusBar('❌ Erro ao atualizar clima. Tentando novamente...', 'offline');
                 
-                // Fallback para dados simulados
-                atualizarClimaSimulado();
+                // Tentar novamente após 30 segundos
+                setTimeout(atualizarClimaReal, 30000);
             }
-        }
-
-        // Função fallback com dados simulados
-        function atualizarClimaSimulado() {
-            const weatherData = {
-                temperature: 28 + Math.random() * 4,
-                feelsLike: 30 + Math.random() * 3,
-                humidity: 65 + Math.random() * 15,
-                windSpeed: 8 + Math.random() * 10,
-                pressure: 1012 + Math.random() * 8,
-                description: getRandomWeatherDescription(),
-                icon: getWeatherIcon()
-            };
-            renderWeather(weatherData);
         }
 
         // Renderizar dados REAIS do clima
@@ -750,11 +701,14 @@
             const feelsLike = data.main.feels_like;
             const humidity = data.main.humidity;
             const pressure = data.main.pressure;
-            const windSpeed = data.wind.speed * 3.6; // converter m/s para km/h
-            const visibility = (data.visibility / 1000).toFixed(1); // metros para km
+            const windSpeed = (data.wind.speed * 3.6).toFixed(1); // converter m/s para km/h
+            const visibility = data.visibility ? (data.visibility / 1000).toFixed(1) : '--';
+
+            // Formatar descrição (primeira letra maiúscula)
+            const formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
 
             iconElement.innerHTML = `<i class="fas fa-${weatherIcon}"></i>`;
-            descriptionElement.textContent = description.charAt(0).toUpperCase() + description.slice(1);
+            descriptionElement.textContent = formattedDescription;
 
             grid.innerHTML = `
                 <div class="weather-item">
@@ -774,7 +728,7 @@
                 </div>
                 <div class="weather-item">
                     <i class="fas fa-wind"></i>
-                    <div class="weather-value">${windSpeed.toFixed(0)}km/h</div>
+                    <div class="weather-value">${windSpeed}km/h</div>
                     <div class="weather-label">Vento</div>
                 </div>
                 <div class="weather-item">
@@ -802,59 +756,198 @@
             timeElement.textContent = `Última atualização: ${new Date().toLocaleTimeString('pt-BR')}`;
         }
 
-        // [MANTENHA TODAS AS OUTRAS FUNÇÕES DO CÓDIGO ANTERIOR]
-        function getRandomWeatherDescription() {
-            const descriptions = ['Parcialmente nublado', 'Ensolarado', 'Algumas nuvens', 'Céu limpo'];
-            return descriptions[Math.floor(Math.random() * descriptions.length)];
-        }
-
-        function getWeatherIcon() {
-            const icons = ['sun', 'cloud-sun', 'cloud'];
-            return icons[Math.floor(Math.random() * icons.length)];
-        }
-
-        function renderWeather(data) {
-            // ... (função de renderização simulada anterior)
-        }
-
+        // [MANTENHA TODAS AS OUTRAS FUNÇÕES]
         function renderLights() {
-            // ... (função anterior)
+            const grid = document.getElementById('lightsGrid');
+            grid.innerHTML = devices.lights.map(light => `
+                <div class="device-compact-item" id="device_light_${light.name}">
+                    <div class="device-compact-icon">
+                        <img src="${LAMP_OFF}" alt="Lâmpada ${light.label}" 
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiNGRkQiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMiAxMEgxOE0xMiAxNEgxOE0xMiAxOEgxNiIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'"
+                             id="img_light_${light.name}">
+                    </div>
+                    <div class="device-compact-name">
+                        <span class="room-icon">${light.icon}</span>${light.label}
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="light_${light.name}" onchange="toggleDevice('lights', '${light.name}')">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="device-status status-off" id="status_light_${light.name}">OFF</div>
+                </div>
+            `).join('');
         }
 
         function renderOutlets() {
-            // ... (função anterior)
+            const grid = document.getElementById('outletsGrid');
+            grid.innerHTML = devices.outlets.map(outlet => `
+                <div class="device-compact-item" id="device_outlet_${outlet.name}">
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="font-size: 1.5em; color: #666;"></i>
+                    </div>
+                    <div class="device-compact-name">
+                        <span class="room-icon">${outlet.icon}</span>${outlet.label}
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="outlet_${outlet.name}" onchange="toggleDevice('outlets', '${outlet.name}')">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="device-status status-off" id="status_outlet_${outlet.name}">OFF</div>
+                </div>
+            `).join('');
         }
 
         function renderSensors() {
-            // ... (função anterior)
+            const grid = document.getElementById('sensorsGrid');
+            const gasLevel = currentState.gas_level || 0;
+            const gasAlert = currentState.gas_alert;
+            const temp = currentState.temperature;
+            
+            grid.innerHTML = `
+                <div class="sensor-compact-item">
+                    <div class="sensor-compact-icon">🌡️</div>
+                    <div class="sensor-compact-value">
+                        ${temp !== undefined && temp !== -999.9 ? temp.toFixed(1) + '°' : '--'}
+                    </div>
+                    <div class="sensor-compact-label">Temp. Interna</div>
+                </div>
+                <div class="sensor-compact-item gas ${gasAlert ? 'alert' : ''}">
+                    <div class="sensor-compact-icon">${gasAlert ? '🚨' : '💨'}</div>
+                    <div class="sensor-compact-value">${gasLevel}</div>
+                    <div class="sensor-compact-label">${gasAlert ? 'ALERTA GÁS' : 'Nível Gás'}</div>
+                </div>
+                <div class="sensor-compact-item">
+                    <div class="sensor-compact-icon">📡</div>
+                    <div class="sensor-compact-value">${currentState.device ? 'ON' : '--'}</div>
+                    <div class="sensor-compact-label">Sistema</div>
+                </div>
+            `;
         }
 
         async function toggleDevice(type, device) {
-            // ... (função anterior)
+            const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
+            const state = checkbox.checked;
+            const deviceElement = document.getElementById(`device_${type.slice(0, -1)}_${device}`);
+            const statusElement = document.getElementById(`status_${type.slice(0, -1)}_${device}`);
+            
+            if (type === 'lights') {
+                const imgElement = document.getElementById(`img_light_${device}`);
+                imgElement.src = state ? LAMP_ON : LAMP_OFF;
+            }
+            
+            deviceElement.classList.toggle('active', state);
+            statusElement.textContent = state ? 'ON' : 'OFF';
+            statusElement.className = `device-status ${state ? 'status-on' : 'status-off'}`;
+            
+            try {
+                const response = await fetch('/api/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, device, state })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'OK') {
+                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                checkbox.checked = !state;
+                if (type === 'lights') {
+                    const imgElement = document.getElementById(`img_light_${device}`);
+                    imgElement.src = !state ? LAMP_ON : LAMP_OFF;
+                }
+                deviceElement.classList.toggle('active', !state);
+                statusElement.textContent = !state ? 'ON' : 'OFF';
+                updateStatusBar('❌ Erro ao controlar', 'offline');
+            }
         }
 
         async function updateSensors() {
-            // ... (função anterior)
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                
+                if (data.data && data.data.length > 0) {
+                    const latest = data.data[0];
+                    currentState = { ...currentState, ...latest };
+                    renderSensors();
+                }
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+            }
         }
 
         async function checkServerStatus() {
-            // ... (função anterior)
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                updateStatusBar(`✅ ${data.message} | ${data.time}`, 'online');
+            } catch (error) {
+                updateStatusBar('❌ Servidor offline', 'offline');
+            }
         }
 
         function updateStatusBar(message, type) {
-            // ... (função anterior)
+            const statusBar = document.getElementById('statusBar');
+            const icon = type === 'online' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+            statusBar.innerHTML = `<i class="${icon}"></i> ${message}`;
+            statusBar.className = `status-bar ${type}`;
         }
 
         async function ligarTudo() {
-            // ... (função anterior)
+            try {
+                for (let light of devices.lights) {
+                    const checkbox = document.getElementById(`light_${light.name}`);
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        await toggleDevice('lights', light.name);
+                    }
+                }
+                for (let outlet of devices.outlets) {
+                    const checkbox = document.getElementById(`outlet_${outlet.name}`);
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        await toggleDevice('outlets', outlet.name);
+                    }
+                }
+                updateStatusBar('✅ Todos ligados!', 'online');
+            } catch (error) {
+                updateStatusBar('❌ Erro ao ligar tudo', 'offline');
+            }
         }
 
         async function desligarTudo() {
-            // ... (função anterior)
+            try {
+                const response = await fetch('/api/reset', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.status === 'OK') {
+                    devices.lights.forEach(light => {
+                        document.getElementById(`light_${light.name}`).checked = false;
+                        document.getElementById(`img_light_${light.name}`).src = LAMP_OFF;
+                        document.getElementById(`device_light_${light.name}`).classList.remove('active');
+                        document.getElementById(`status_light_${light.name}`).textContent = 'OFF';
+                        document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
+                    });
+                    devices.outlets.forEach(outlet => {
+                        document.getElementById(`outlet_${outlet.name}`).checked = false;
+                        document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
+                        document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
+                        document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
+                    });
+                    
+                    updateStatusBar('✅ Todos desligados!', 'online');
+                }
+            } catch (error) {
+                updateStatusBar('❌ Erro ao desligar', 'offline');
+            }
         }
 
         async function atualizarDados() {
-            // ... (função anterior)
+            updateStatusBar('🔄 Atualizando...', 'online');
+            await updateSensors();
+            await checkServerStatus();
         }
 
         // Inicializar quando a página carregar
