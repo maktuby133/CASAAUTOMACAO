@@ -28,9 +28,9 @@
 
         .header {
             text-align: center;
-            margin-bottom: 10px; /* Reduzido para subir os balões */
+            margin-bottom: 10px;
             color: white;
-            padding: 8px; /* Reduzido */
+            padding: 8px;
         }
 
         .header h1 {
@@ -56,7 +56,7 @@
             border-radius: 12px;
             padding: 10px 20px;
             color: white;
-            margin-bottom: 10px; /* Reduzido para subir */
+            margin-bottom: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: flex;
             justify-content: space-between;
@@ -115,31 +115,7 @@
             opacity: 0.7;
         }
 
-        /* Monitoramento em Tempo Real - Subida */
-        .monitoring-card {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 15px;
-            padding: 15px 20px; /* Reduzido */
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            margin-bottom: 15px; /* Ajustado */
-        }
-
-        .monitoring-card h2 {
-            color: #2d3748;
-            margin-bottom: 12px; /* Reduzido */
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            font-size: 1.4em;
-        }
-
-        .monitoring-card h2 i {
-            color: #667eea;
-        }
-
-        /* Ícones Animados para Diferentes Condições */
+        /* Ícones Animados para TODOS os ícones da meteorologia */
         .weather-icon-sun {
             color: #FFD700 !important;
             animation: spin 10s linear infinite !important;
@@ -175,6 +151,27 @@
             animation: fade 4s ease-in-out infinite !important;
         }
 
+        /* Animações para os ícones individuais */
+        .icon-thermometer {
+            animation: pulse 2s ease-in-out infinite !important;
+            color: #FF6B6B !important;
+        }
+
+        .icon-humidity {
+            animation: drip 3s ease-in-out infinite !important;
+            color: #4FC3F7 !important;
+        }
+
+        .icon-wind {
+            animation: spin 4s linear infinite !important;
+            color: #81D4FA !important;
+        }
+
+        .icon-pressure {
+            animation: breathe 2.5s ease-in-out infinite !important;
+            color: #AED581 !important;
+        }
+
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-3px); }
@@ -205,12 +202,50 @@
             50% { opacity: 1; }
         }
 
-        /* Sensores - Balões Menores */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes drip {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(2px) scale(1.05); }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* Restante do CSS permanece igual */
+        .monitoring-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 15px 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            margin-bottom: 15px;
+        }
+
+        .monitoring-card h2 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.4em;
+        }
+
+        .monitoring-card h2 i {
+            color: #667eea;
+        }
+
         .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
-            margin-bottom: 0; /* Removido */
+            margin-bottom: 0;
         }
 
         .sensor-compact-item {
@@ -244,12 +279,6 @@
             background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-
         .sensor-compact-icon {
             font-size: 1.6em;
             margin-bottom: 6px;
@@ -267,7 +296,6 @@
             font-weight: 500;
         }
 
-        /* Layout Principal */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -565,7 +593,7 @@
             </h1>
         </div>
 
-        <!-- Meteorologia Compacta com Ícone Principal -->
+        <!-- Meteorologia Compacta com TODOS os ícones animados -->
         <div class="weather-compact fade-in" id="weatherCompact">
             <div class="weather-location-compact">
                 <i class="fas fa-map-marker-alt"></i>
@@ -577,19 +605,19 @@
             </div>
             <div class="weather-data-compact" id="weather-data-compact">
                 <div class="weather-item-compact">
-                    <i class="fas fa-thermometer-half"></i>
+                    <i class="fas fa-thermometer-half icon-thermometer" id="icon-temp"></i>
                     <span class="weather-value-compact" id="weather-temp">--°</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-tint"></i>
+                    <i class="fas fa-tint icon-humidity" id="icon-humidity"></i>
                     <span class="weather-value-compact" id="weather-humidity">--%</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-wind"></i>
+                    <i class="fas fa-wind icon-wind" id="icon-wind"></i>
                     <span class="weather-value-compact" id="weather-wind">--km/h</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-compress-alt"></i>
+                    <i class="fas fa-compress-alt icon-pressure" id="icon-pressure"></i>
                     <span class="weather-value-compact" id="weather-pressure">--hPa</span>
                 </div>
             </div>
@@ -598,7 +626,7 @@
             </div>
         </div>
 
-        <!-- Monitoramento em Tempo Real - Subido -->
+        <!-- Restante do código permanece igual -->
         <div class="monitoring-card fade-in">
             <h2><i class="fas fa-chart-line"></i> Monitoramento em Tempo Real</h2>
             <div class="sensors-compact" id="sensorsGrid">
@@ -625,9 +653,7 @@
             </div>
         </div>
 
-        <!-- Dispositivos -->
         <div class="main-grid">
-            <!-- Lâmpadas -->
             <div class="card fade-in">
                 <h2><i class="fas fa-lightbulb"></i> Controle de Lâmpadas</h2>
                 <div class="devices-compact" id="lightsGrid">
@@ -635,7 +661,6 @@
                 </div>
             </div>
 
-            <!-- Tomadas -->
             <div class="card fade-in">
                 <h2><i class="fas fa-plug"></i> Controle de Tomadas</h2>
                 <div class="devices-compact" id="outletsGrid">
@@ -644,7 +669,6 @@
             </div>
         </div>
 
-        <!-- Controles -->
         <div class="controls">
             <button class="btn btn-success" onclick="ligarTudo()">
                 <i class="fas fa-power-off"></i> Ligar Tudo
@@ -660,7 +684,6 @@
             </button>
         </div>
 
-        <!-- Status -->
         <div class="status-bar online" id="statusBar">
             <i class="fas fa-sync fa-spin"></i> Inicializando sistema...
         </div>
@@ -768,6 +791,9 @@
 
             // Aplicar ícone animado baseado na condição do tempo
             applyWeatherIcon(data.weather[0].main, data.weather[0].description);
+            
+            // Aplicar animações aos ícones individuais (sempre ativas)
+            applyIndividualIconsAnimations();
         }
 
         // Aplicar ícone animado baseado na condição do tempo
@@ -798,7 +824,22 @@
             mainIcon.classList.add(weatherConfig.icon, weatherConfig.animation);
         }
 
-        // [MANTENHA AS OUTRAS FUNÇÕES: renderLights, renderOutlets, updateSensors, toggleDevice, etc.]
+        // Aplicar animações aos ícones individuais (SEMPRE ATIVAS)
+        function applyIndividualIconsAnimations() {
+            // Termômetro - animação de pulso
+            document.getElementById('icon-temp').className = 'fas fa-thermometer-half icon-thermometer';
+            
+            // Gota - animação de gotejamento
+            document.getElementById('icon-humidity').className = 'fas fa-tint icon-humidity';
+            
+            // Vento - animação de rotação
+            document.getElementById('icon-wind').className = 'fas fa-wind icon-wind';
+            
+            // Pressão - animação de respiração
+            document.getElementById('icon-pressure').className = 'fas fa-compress-alt icon-pressure';
+        }
+
+        // [MANTENHA AS OUTRAS FUNÇÕES: renderLights, renderOutlets, updateSensors, etc.]
 
         function renderLights() {
             const grid = document.getElementById('lightsGrid');
