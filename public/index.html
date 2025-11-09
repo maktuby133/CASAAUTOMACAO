@@ -50,11 +50,29 @@
             animation: float 3s ease-in-out infinite;
         }
 
-        /* Ícone das Tomadas Animado */
+        /* Ícone da Lâmpada Acesa Animado */
+        .lamp-icon-on {
+            width: 22px;
+            height: 22px;
+            animation: lampGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes lampGlow {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,0,0.5));
+            }
+            50% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,0,0.8));
+            }
+        }
+
+        /* Ícone das Tomadas Animado - VELOCIDADE DIMINUÍDA */
         .outlet-icon {
             width: 22px;
             height: 22px;
-            animation: plugPulse 2s ease-in-out infinite;
+            animation: plugPulse 4s ease-in-out infinite; /* Alterado de 2s para 4s */
         }
 
         @keyframes plugPulse {
@@ -728,7 +746,7 @@
 
     <script>
         // URLs das imagens
-        const LAMP_ON = 'https://img.icons8.com/ios-filled/100/000000/light-on.png';
+        const LAMP_ON = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
         const LAMP_OFF = 'https://img.icons8.com/ios/100/000000/light-off.png';
         const HOUSE_ICON = 'https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000';
         const UPDATE_ICON = 'https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000';
@@ -923,8 +941,6 @@
             `).join('');
         }
 
-        // [MANTENHA AS OUTRAS FUNÇÕES: updateSensors, toggleDevice, checkServerStatus, etc.]
-
         function updateSensors() {
             // Simular dados dos sensores
             const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
@@ -957,6 +973,13 @@
             if (type === 'lights') {
                 const imgElement = document.getElementById(`img_light_${device}`);
                 imgElement.src = state ? LAMP_ON : LAMP_OFF;
+                
+                // Aplicar ou remover a classe de animação para lâmpada acesa
+                if (state) {
+                    imgElement.classList.add('lamp-icon-on');
+                } else {
+                    imgElement.classList.remove('lamp-icon-on');
+                }
             }
             
             deviceElement.classList.toggle('active', state);
@@ -980,6 +1003,11 @@
                 if (type === 'lights') {
                     const imgElement = document.getElementById(`img_light_${device}`);
                     imgElement.src = !state ? LAMP_ON : LAMP_OFF;
+                    if (!state) {
+                        imgElement.classList.add('lamp-icon-on');
+                    } else {
+                        imgElement.classList.remove('lamp-icon-on');
+                    }
                 }
                 deviceElement.classList.toggle('active', !state);
                 statusElement.textContent = !state ? 'ON' : 'OFF';
@@ -1034,7 +1062,9 @@
                 if (result.status === 'OK') {
                     devices.lights.forEach(light => {
                         document.getElementById(`light_${light.name}`).checked = false;
-                        document.getElementById(`img_light_${light.name}`).src = LAMP_OFF;
+                        const imgElement = document.getElementById(`img_light_${light.name}`);
+                        imgElement.src = LAMP_OFF;
+                        imgElement.classList.remove('lamp-icon-on');
                         document.getElementById(`device_light_${light.name}`).classList.remove('active');
                         document.getElementById(`status_light_${light.name}`).textContent = 'OFF';
                         document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
