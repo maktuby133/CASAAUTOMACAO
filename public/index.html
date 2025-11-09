@@ -606,6 +606,65 @@
             margin-right: 3px;
         }
 
+        /* NOVOS ESTILOS PARA INDICADOR ESP32 */
+        .status-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .esp32-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .esp32-indicator.online {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            animation: pulse-green 2s infinite;
+        }
+
+        .esp32-indicator.offline {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            animation: blink 1.5s infinite;
+        }
+
+        .esp32-indicator.connecting {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+            color: white;
+            animation: pulse-orange 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .status-text {
+            flex: 1;
+            text-align: center;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -644,6 +703,11 @@
             .header h1 {
                 flex-direction: column;
                 gap: 8px;
+            }
+            
+            .status-content {
+                flex-direction: column;
+                gap: 5px;
             }
         }
 
@@ -769,10 +833,17 @@
             </button>
         </div>
 
+        <!-- STATUS BAR ATUALIZADA COM INDICADOR ESP32 -->
         <div class="status-bar online" id="statusBar">
-            <img src="https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000" 
-                 alt="Sistema Online" class="internet-icon">
-            Inicializando sistema...
+            <div class="status-content">
+                <img src="https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000" 
+                     alt="Sistema Online" class="internet-icon">
+                <span class="status-text" id="statusText">Inicializando sistema...</span>
+                <div class="esp32-indicator connecting" id="esp32Indicator">
+                    <i class="fas fa-microchip"></i>
+                    <span>ESP32: CONECTANDO...</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -836,7 +907,7 @@
         // Função para buscar dados REAIS do clima via servidor
         async function atualizarClimaReal() {
             try {
-                updateStatusBar('🌤️ Atualizando dados meteorológicos...', 'online');
+                updateStatusBar('🌤️ Atualizando dados meteorológicos...', 'online', 'connecting');
                 
                 const response = await fetch('/api/weather');
                 
@@ -846,11 +917,9 @@
                 
                 const data = await response.json();
                 renderWeatherCompact(data);
-                updateStatusBar('✅ Sistema atualizado', 'online');
                 
             } catch (error) {
                 console.error('Erro ao buscar dados do clima:', error);
-                updateStatusBar('⚠️ Clima offline - Dados locais ativos', 'offline');
                 
                 // Dados simulados em caso de falha
                 const simulatedData = {
@@ -1043,7 +1112,7 @@
                 
                 const result = await response.json();
                 if (result.status === 'OK') {
-                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
+                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online', 'online');
                 }
             } catch (error) {
                 console.error('Erro:', error);
@@ -1061,7 +1130,7 @@
                 deviceElement.classList.toggle('active', !state);
                 statusElement.textContent = !state ? 'ON' : 'OFF';
                 statusElement.className = `device-status ${!state ? 'status-on' : 'status-off'}`;
-                updateStatusBar(`❌ ${error.message}`, 'offline');
+                updateStatusBar(`❌ ${error.message}`, 'offline', 'offline');
             }
         }
 
@@ -1076,10 +1145,11 @@
                 // Verificar status do ESP32
                 let statusMessage = data.systemStatus;
                 let statusType = 'online';
+                let esp32Status = 'online';
                 
                 if (!data.esp32.connected) {
-                    statusMessage = '⚠️ ESP32 DESCONECTADO - Verifique alimentação e WiFi';
-                    statusType = 'offline';
+                    statusMessage = 'Sistema operando - ESP32 offline';
+                    esp32Status = 'offline';
                     
                     // Adicionar informações de quando foi visto pela última vez
                     if (data.esp32.lastSeen) {
@@ -1089,13 +1159,14 @@
                         statusMessage += ` | Último sinal: ${diffMinutes} min atrás`;
                     }
                 } else {
-                    statusMessage = `✅ Sistema OK | ESP32: ${data.esp32.deviceId} | ${new Date().toLocaleTimeString('pt-BR')}`;
+                    statusMessage = `Sistema OK | ${new Date().toLocaleTimeString('pt-BR')}`;
+                    esp32Status = 'online';
                 }
                 
-                updateStatusBar(statusMessage, statusType);
+                updateStatusBar(statusMessage, statusType, esp32Status);
                 
             } catch (error) {
-                updateStatusBar('❌ Servidor offline', 'offline');
+                updateStatusBar('❌ Servidor offline', 'offline', 'offline');
             }
         }
 
@@ -1111,24 +1182,54 @@
                         ip: data.ipAddress,
                         uptime: data.uptime
                     });
+                    return { connected: true, status: 'online' };
                 } else {
                     console.warn('⚠️ ESP32 desconectado');
+                    return { connected: false, status: 'offline' };
                 }
                 
-                return data;
             } catch (error) {
                 console.error('❌ Erro ao verificar status ESP32:', error);
-                return { connected: false };
+                return { connected: false, status: 'offline' };
             }
         }
 
-        function updateStatusBar(message, type) {
+        function updateStatusBar(message, type, esp32Status = 'connecting') {
             const statusBar = document.getElementById('statusBar');
-            if (type === 'online') {
-                statusBar.innerHTML = `<img src="${INTERNET_ICON}" alt="Sistema Online" class="internet-icon"> ${message}`;
-            } else {
-                statusBar.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            const statusText = document.getElementById('statusText');
+            const esp32Indicator = document.getElementById('esp32Indicator');
+            
+            // Atualizar texto principal
+            if (statusText) {
+                statusText.textContent = message;
             }
+            
+            // Atualizar indicador ESP32
+            if (esp32Indicator) {
+                let esp32Text = 'ESP32: ';
+                let esp32Class = 'connecting';
+                
+                switch(esp32Status) {
+                    case 'online':
+                        esp32Text += 'ONLINE';
+                        esp32Class = 'online';
+                        break;
+                    case 'offline':
+                        esp32Text += 'OFFLINE';
+                        esp32Class = 'offline';
+                        break;
+                    default:
+                        esp32Text += 'CONECTANDO...';
+                        esp32Class = 'connecting';
+                }
+                
+                esp32Indicator.innerHTML = `
+                    <i class="fas fa-microchip"></i>
+                    <span>${esp32Text}</span>
+                `;
+                esp32Indicator.className = `esp32-indicator ${esp32Class}`;
+            }
+            
             statusBar.className = `status-bar ${type}`;
         }
 
@@ -1150,9 +1251,9 @@
                         await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay
                     }
                 }
-                updateStatusBar('✅ Todos os dispositivos ligados!', 'online');
+                updateStatusBar('✅ Todos os dispositivos ligados!', 'online', 'online');
             } catch (error) {
-                updateStatusBar('❌ Erro ao ligar todos os dispositivos', 'offline');
+                updateStatusBar('❌ Erro ao ligar todos os dispositivos', 'offline', 'offline');
             }
         }
 
@@ -1184,15 +1285,15 @@
                         document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
                     });
                     
-                    updateStatusBar('✅ Todos os dispositivos desligados!', 'online');
+                    updateStatusBar('✅ Todos os dispositivos desligados!', 'online', 'online');
                 }
             } catch (error) {
-                updateStatusBar(`❌ ${error.message}`, 'offline');
+                updateStatusBar(`❌ ${error.message}`, 'offline', 'offline');
             }
         }
 
         async function atualizarDados() {
-            updateStatusBar('🔄 Atualizando dados...', 'online');
+            updateStatusBar('🔄 Atualizando dados...', 'online', 'connecting');
             await updateSensors();
             await checkServerStatus();
             await atualizarClimaReal();
