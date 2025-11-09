@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏠 Casa Automação </title>
+    <title>🏠 Casa Automação - Sistema</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -68,7 +68,7 @@
             }
         }
 
-        /* Ícone das Tomadas Animado - VELOCIDADE DIMINUÍDA */
+        /* Ícone das Tomadas Animado */
         .outlet-icon {
             width: 22px;
             height: 22px;
@@ -91,6 +91,24 @@
             75% { 
                 transform: scale(1.15) rotate(2deg);
                 filter: brightness(1.3);
+            }
+        }
+
+        /* Ícone da Irrigação Animado */
+        .irrigation-icon {
+            width: 22px;
+            height: 22px;
+            animation: waterDrop 2s ease-in-out infinite;
+        }
+
+        @keyframes waterDrop {
+            0%, 100% { 
+                transform: scale(1) translateY(0px);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5));
+            }
+            50% { 
+                transform: scale(1.1) translateY(-2px);
+                filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8));
             }
         }
 
@@ -561,6 +579,11 @@
             padding: 6px 12px;
         }
 
+        .btn-irrigation {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+        }
+
         .status-bar {
             background: rgba(255,255,255,0.95);
             padding: 10px;
@@ -665,6 +688,181 @@
             text-align: center;
         }
 
+        /* Estilos para o Modal de Irrigação */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #2d3748;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .modal-section h3 {
+            margin-bottom: 15px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-option:hover {
+            border-color: #667eea;
+        }
+
+        .mode-option.active {
+            border-color: #4CAF50;
+            background: #f0fff4;
+        }
+
+        .mode-option i {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .programming-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .programming-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .programming-item input, .programming-item select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .remove-programming {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .add-programming {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .weather-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -672,6 +870,28 @@
 
         .fade-in {
             animation: fadeIn 0.6s ease-out;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
@@ -709,6 +929,19 @@
                 flex-direction: column;
                 gap: 5px;
             }
+
+            .programming-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .logout-btn {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 10px auto;
+                display: block;
+            }
         }
 
         @media (max-width: 480px) {
@@ -728,6 +961,11 @@
     </style>
 </head>
 <body>
+    <button class="logout-btn" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        Sair
+    </button>
+
     <div class="container">
         <!-- Header com Ícones Animados -->
         <div class="header">
@@ -818,6 +1056,33 @@
             </div>
         </div>
 
+        <!-- NOVO CARD PARA IRRIGAÇÃO -->
+        <div class="card fade-in">
+            <h2><i class="fas fa-tint"></i> Sistema de Irrigação</h2>
+            <div class="devices-compact" id="irrigationGrid">
+                <div class="device-compact-item" id="device_irrigation_bomba_irrigacao">
+                    <div class="device-compact-icon">
+                        <img src="https://img.icons8.com/?size=100&id=98967&format=png&color=000000" 
+                             alt="Bomba de Irrigação" class="irrigation-icon"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1IDVWMTVNMTUgMTVWMjVNMTUgMTVIMTBNMTUgMTVIMjBNOCAxMkM4IDEwLjg5NjQgOC44OTY0NCAxMCAxMCAxMEgyMEMyMS4xMDM2IDEwIDIyIDEwLjg5NjQgMjIgMTJWMThDMjIgMTkuMTAzNiAyMS4xMDM2IDIwIDIwIDIwSDEwQzguODk2NDQgMjAgOCAxOS4xMDM2IDggMThWMTJaIiBmaWxsPSIjMDBCODk0Ii8+Cjwvc3ZnPg=='">
+                    </div>
+                    <div class="device-compact-name">
+                        <span class="room-icon">💧</span>Bomba de Irrigação
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="irrigation_bomba_irrigacao" onchange="toggleDevice('irrigation', 'bomba_irrigacao')">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="device-status status-off" id="status_irrigation_bomba_irrigacao">OFF</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-irrigation" onclick="openIrrigationModal()">
+                    <i class="fas fa-cog"></i> Configurar Irrigação Automática
+                </button>
+            </div>
+        </div>
+
         <div class="controls">
             <button class="btn btn-success" onclick="ligarTudo()">
                 <i class="fas fa-power-off"></i> Ligar Tudo
@@ -847,6 +1112,63 @@
         </div>
     </div>
 
+    <!-- MODAL DE CONFIGURAÇÃO DE IRRIGAÇÃO -->
+    <div class="modal-overlay" id="irrigationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-tint"></i> Configuração de Irrigação Automática</h2>
+                <button class="close-modal" onclick="closeIrrigationModal()">&times;</button>
+            </div>
+            
+            <div class="modal-section">
+                <h3><i class="fas fa-cog"></i> Modo de Operação</h3>
+                <div class="mode-selector">
+                    <div class="mode-option" onclick="selectMode('manual')">
+                        <i class="fas fa-hand-paper"></i>
+                        <div>Manual</div>
+                        <small>Controle direto</small>
+                    </div>
+                    <div class="mode-option" onclick="selectMode('automatico')">
+                        <i class="fas fa-robot"></i>
+                        <div>Automático</div>
+                        <small>Programação</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section" id="automaticSettings" style="display: none;">
+                <h3><i class="fas fa-clock"></i> Programação Automática</h3>
+                
+                <div class="weather-warning" id="weatherWarning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Monitoramento Climático:</strong> O sistema não irrigará em dias chuvosos automaticamente.
+                </div>
+                
+                <div class="programming-grid" id="programmingGrid">
+                    <!-- Programações serão adicionadas aqui -->
+                </div>
+                
+                <button class="add-programming" onclick="addProgramming()">
+                    <i class="fas fa-plus"></i> Adicionar Programação
+                </button>
+                
+                <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                    <i class="fas fa-info-circle"></i>
+                    Máximo de 5 programações por dia. Em dias chuvosos, a irrigação será automaticamente suspensa.
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeIrrigationModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-save" onclick="saveIrrigationConfig()">
+                    <i class="fas fa-save"></i> Salvar Configurações
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // URLs das imagens
         const LAMP_ON = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
@@ -855,6 +1177,7 @@
         const UPDATE_ICON = 'https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000';
         const OUTLET_ICON = 'https://img.icons8.com/?size=100&id=Sc8AAAaZgbuy&format=png&color=000000';
         const INTERNET_ICON = 'https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000';
+        const IRRIGATION_ICON = 'https://img.icons8.com/?size=100&id=98967&format=png&color=000000';
 
         // Dados dos dispositivos
         const devices = {
@@ -873,6 +1196,9 @@
                 { name: 'tomada_quarto1', icon: '🔌', label: 'Tomada Q1' },
                 { name: 'tomada_quarto2', icon: '🔌', label: 'Tomada Q2' },
                 { name: 'tomada_quarto3', icon: '🔌', label: 'Tomada Q3' }
+            ],
+            irrigation: [
+                { name: 'bomba_irrigacao', icon: '💧', label: 'Bomba de Irrigação' }
             ]
         };
 
@@ -882,15 +1208,46 @@
             gas_alert: false,
             humidity: 0,
             lights: {},
-            outlets: {}
+            outlets: {},
+            irrigation: {
+                bomba_irrigacao: false,
+                modo: 'manual',
+                programacoes: []
+            }
         };
+
+        let irrigationConfig = {
+            modo: 'manual',
+            programacoes: []
+        };
+
+        // Verificar autenticação
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            if (token !== 'admin123') {
+                window.location.href = '/';
+                return false;
+            }
+            return true;
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('loginTime');
+            window.location.href = '/';
+        }
 
         // Inicializar interface
         function initInterface() {
+            if (!checkAuth()) return;
+
             renderLights();
             renderOutlets();
+            renderIrrigation();
             updateSensors();
             checkServerStatus();
+            loadIrrigationConfig();
             
             // Verificar status do ESP32 especificamente
             setTimeout(() => checkESP32Status(), 2000);
@@ -900,8 +1257,67 @@
             
             setInterval(updateSensors, 3000);
             setInterval(checkServerStatus, 5000);
-            setInterval(() => checkESP32Status(), 10000); // Verificar ESP32 a cada 10s
+            setInterval(() => checkESP32Status(), 10000);
             setInterval(atualizarClimaReal, 600000);
+            setInterval(checkIrrigationSchedule, 60000); // Verificar programação a cada minuto
+        }
+
+        // Carregar configurações de irrigação
+        async function loadIrrigationConfig() {
+            try {
+                const response = await fetch('/api/irrigation', {
+                    headers: {
+                        'Authorization': 'Bearer admin123'
+                    }
+                });
+                const data = await response.json();
+                irrigationConfig = data;
+            } catch (error) {
+                console.error('Erro ao carregar configurações de irrigação:', error);
+            }
+        }
+
+        // Verificar programação de irrigação
+        function checkIrrigationSchedule() {
+            if (irrigationConfig.modo !== 'automatico') return;
+
+            const now = new Date();
+            const currentDay = now.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+
+            // Verificar se há programação para agora
+            const activeProgram = irrigationConfig.programacoes.find(prog => {
+                const daysMatch = prog.dias.includes(currentDay);
+                const timeMatch = prog.hora === currentTime;
+                return daysMatch && timeMatch;
+            });
+
+            if (activeProgram) {
+                // Verificar condições climáticas antes de ligar
+                checkWeatherBeforeIrrigation();
+            }
+        }
+
+        // Verificar clima antes de irrigar
+        async function checkWeatherBeforeIrrigation() {
+            try {
+                const response = await fetch('/api/weather');
+                const weatherData = await response.json();
+                
+                // Verificar se está chovendo
+                const isRaining = weatherData.weather[0].main.toLowerCase().includes('rain');
+                
+                if (!isRaining) {
+                    // Ligar irrigação se não estiver chovendo
+                    toggleDevice('irrigation', 'bomba_irrigacao', true);
+                    console.log('💧 Irrigação automática ativada');
+                } else {
+                    console.log('💧 Irrigação suspensa devido à chuva');
+                }
+            } catch (error) {
+                console.error('Erro ao verificar clima para irrigação:', error);
+            }
         }
 
         // Função para buscar dados REAIS do clima via servidor
@@ -1053,6 +1469,26 @@
             `).join('');
         }
 
+        function renderIrrigation() {
+            const grid = document.getElementById('irrigationGrid');
+            grid.innerHTML = devices.irrigation.map(device => `
+                <div class="device-compact-item" id="device_irrigation_${device.name}">
+                    <div class="device-compact-icon">
+                        <img src="${IRRIGATION_ICON}" alt="${device.label}" class="irrigation-icon"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1IDVWMTVNMTUgMTVWMjVNMTUgMTVIMTBNMTUgMTVIMjBNOCAxMkM4IDEwLjg5NjQgOC44OTY0NCAxMCAxMCAxMEgyMEMyMS4xMDM2IDEwIDIyIDEwLjg5NjQgMjIgMTJWMThDMjIgMTkuMTAzNiAyMS4xMDM2IDIwIDIwIDIwSDEwQzguODk2NDQgMjAgOCAxOS4xMDM2IDggMThWMTJaIiBmaWxsPSIjMDBCODk0Ii8+Cjwvc3ZnPg=='">
+                    </div>
+                    <div class="device-compact-name">
+                        <span class="room-icon">${device.icon}</span>${device.label}
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="irrigation_${device.name}" onchange="toggleDevice('irrigation', '${device.name}')">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="device-status status-off" id="status_irrigation_${device.name}">OFF</div>
+                </div>
+            `).join('');
+        }
+
         function updateSensors() {
             // Simular dados dos sensores
             const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
@@ -1076,9 +1512,9 @@
             }
         }
 
-        async function toggleDevice(type, device) {
+        async function toggleDevice(type, device, forceState = null) {
             const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
-            const state = checkbox.checked;
+            const state = forceState !== null ? forceState : checkbox.checked;
             const deviceElement = document.getElementById(`device_${type.slice(0, -1)}_${device}`);
             const statusElement = document.getElementById(`status_${type.slice(0, -1)}_${device}`);
             
@@ -1101,7 +1537,10 @@
             try {
                 const response = await fetch('/api/control', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer admin123'
+                    },
                     body: JSON.stringify({ type, device, state })
                 });
                 
@@ -1117,7 +1556,9 @@
             } catch (error) {
                 console.error('Erro:', error);
                 // Reverter mudança em caso de erro
-                checkbox.checked = !state;
+                if (forceState === null) {
+                    checkbox.checked = !state;
+                }
                 if (type === 'lights') {
                     const imgElement = document.getElementById(`img_light_${device}`);
                     imgElement.src = !state ? LAMP_ON : LAMP_OFF;
@@ -1240,7 +1681,7 @@
                     if (!checkbox.checked) {
                         checkbox.checked = true;
                         await toggleDevice('lights', light.name);
-                        await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
                 for (let outlet of devices.outlets) {
@@ -1248,7 +1689,7 @@
                     if (!checkbox.checked) {
                         checkbox.checked = true;
                         await toggleDevice('outlets', outlet.name);
-                        await new Promise(resolve => setTimeout(resolve, 100)); // Pequeno delay
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
                 updateStatusBar('✅ Todos os dispositivos ligados!', 'online', 'online');
@@ -1259,7 +1700,12 @@
 
         async function desligarTudo() {
             try {
-                const response = await fetch('/api/reset', { method: 'POST' });
+                const response = await fetch('/api/reset', { 
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer admin123'
+                    }
+                });
                 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -1284,6 +1730,12 @@
                         document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
                         document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
                     });
+                    devices.irrigation.forEach(device => {
+                        document.getElementById(`irrigation_${device.name}`).checked = false;
+                        document.getElementById(`device_irrigation_${device.name}`).classList.remove('active');
+                        document.getElementById(`status_irrigation_${device.name}`).textContent = 'OFF';
+                        document.getElementById(`status_irrigation_${device.name}`).className = 'device-status status-off';
+                    });
                     
                     updateStatusBar('✅ Todos os dispositivos desligados!', 'online', 'online');
                 }
@@ -1299,6 +1751,139 @@
             await atualizarClimaReal();
             await checkESP32Status();
         }
+
+        // FUNÇÕES DO MODAL DE IRRIGAÇÃO
+        function openIrrigationModal() {
+            document.getElementById('irrigationModal').style.display = 'flex';
+            loadIrrigationModal();
+        }
+
+        function closeIrrigationModal() {
+            document.getElementById('irrigationModal').style.display = 'none';
+        }
+
+        function loadIrrigationModal() {
+            // Carregar modo atual
+            selectMode(irrigationConfig.modo);
+            
+            // Carregar programações
+            renderProgrammings();
+        }
+
+        function selectMode(mode) {
+            irrigationConfig.modo = mode;
+            
+            // Atualizar UI
+            document.querySelectorAll('.mode-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.mode-option').forEach(opt => {
+                if (opt.querySelector('i').className.includes(mode === 'manual' ? 'hand-paper' : 'robot')) {
+                    opt.classList.add('active');
+                }
+            });
+            
+            // Mostrar/ocultar configurações automáticas
+            document.getElementById('automaticSettings').style.display = 
+                mode === 'automatico' ? 'block' : 'none';
+        }
+
+        function addProgramming() {
+            if (irrigationConfig.programacoes.length >= 5) {
+                alert('Máximo de 5 programações atingido!');
+                return;
+            }
+            
+            irrigationConfig.programacoes.push({
+                id: Date.now(),
+                hora: '08:00',
+                dias: [1, 2, 3, 4, 5], // Segunda a sexta
+                duracao: 30
+            });
+            
+            renderProgrammings();
+        }
+
+        function removeProgramming(id) {
+            irrigationConfig.programacoes = irrigationConfig.programacoes.filter(p => p.id !== id);
+            renderProgrammings();
+        }
+
+        function renderProgrammings() {
+            const grid = document.getElementById('programmingGrid');
+            
+            if (irrigationConfig.programacoes.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Nenhuma programação adicionada</div>';
+                return;
+            }
+            
+            grid.innerHTML = irrigationConfig.programacoes.map(prog => `
+                <div class="programming-item">
+                    <input type="time" value="${prog.hora}" onchange="updateProgramming(${prog.id}, 'hora', this.value)">
+                    
+                    <select onchange="updateProgramming(${prog.id}, 'dias', Array.from(this.selectedOptions).map(opt => parseInt(opt.value)))" multiple>
+                        <option value="0" ${prog.dias.includes(0) ? 'selected' : ''}>Dom</option>
+                        <option value="1" ${prog.dias.includes(1) ? 'selected' : ''}>Seg</option>
+                        <option value="2" ${prog.dias.includes(2) ? 'selected' : ''}>Ter</option>
+                        <option value="3" ${prog.dias.includes(3) ? 'selected' : ''}>Qua</option>
+                        <option value="4" ${prog.dias.includes(4) ? 'selected' : ''}>Qui</option>
+                        <option value="5" ${prog.dias.includes(5) ? 'selected' : ''}>Sex</option>
+                        <option value="6" ${prog.dias.includes(6) ? 'selected' : ''}>Sáb</option>
+                    </select>
+                    
+                    <select onchange="updateProgramming(${prog.id}, 'duracao', parseInt(this.value))">
+                        <option value="15" ${prog.duracao === 15 ? 'selected' : ''}>15 min</option>
+                        <option value="30" ${prog.duracao === 30 ? 'selected' : ''}>30 min</option>
+                        <option value="45" ${prog.duracao === 45 ? 'selected' : ''}>45 min</option>
+                        <option value="60" ${prog.duracao === 60 ? 'selected' : ''}>60 min</option>
+                    </select>
+                    
+                    <button class="remove-programming" onclick="removeProgramming(${prog.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateProgramming(id, field, value) {
+            const programming = irrigationConfig.programacoes.find(p => p.id === id);
+            if (programming) {
+                programming[field] = value;
+            }
+        }
+
+        async function saveIrrigationConfig() {
+            try {
+                const response = await fetch('/api/irrigation/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer admin123'
+                    },
+                    body: JSON.stringify({
+                        modo: irrigationConfig.modo,
+                        programacoes: irrigationConfig.programacoes
+                    })
+                });
+                
+                if (response.ok) {
+                    updateStatusBar('✅ Configurações de irrigação salvas!', 'online', 'online');
+                    closeIrrigationModal();
+                } else {
+                    throw new Error('Erro ao salvar configurações');
+                }
+            } catch (error) {
+                updateStatusBar('❌ Erro ao salvar configurações', 'offline', 'offline');
+            }
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('irrigationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeIrrigationModal();
+            }
+        });
 
         // Inicializar quando a página carregar
         document.addEventListener('DOMContentLoaded', initInterface);
