@@ -50,7 +50,33 @@
             animation: float 3s ease-in-out infinite;
         }
 
-        /* Meteorologia Compacta - Subida */
+        /* Ícone das Tomadas Animado */
+        .outlet-icon {
+            width: 22px;
+            height: 22px;
+            animation: plugPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes plugPulse {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1);
+            }
+            25% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.2);
+            }
+            50% { 
+                transform: scale(1.05) rotate(-3deg);
+                filter: brightness(1.1);
+            }
+            75% { 
+                transform: scale(1.15) rotate(2deg);
+                filter: brightness(1.3);
+            }
+        }
+
+        /* Restante do CSS permanece igual */
         .weather-compact {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.9) 0%, rgba(9, 132, 227, 0.9) 100%);
             border-radius: 12px;
@@ -172,7 +198,7 @@
         }
 
         .icon-wind {
-            animation: float 2s ease-in-out infinite !important; /* Alterado: de spin para float */
+            animation: float 2s ease-in-out infinite !important;
             color: #81D4FA !important;
         }
 
@@ -706,6 +732,7 @@
         const LAMP_OFF = 'https://img.icons8.com/ios/100/000000/light-off.png';
         const HOUSE_ICON = 'https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000';
         const UPDATE_ICON = 'https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000';
+        const OUTLET_ICON = 'https://img.icons8.com/?size=100&id=Sc8AAAaZgbuy&format=png&color=000000';
 
         // Dados dos dispositivos
         const devices = {
@@ -848,14 +875,12 @@
             // Gota - animação de gotejamento
             document.getElementById('icon-humidity').className = 'fas fa-tint icon-humidity';
             
-            // Vento - animação de flutuação (subir e descer) - ALTERADO
+            // Vento - animação de flutuação (subir e descer)
             document.getElementById('icon-wind').className = 'fas fa-wind icon-wind';
             
             // Pressão - animação de respiração
             document.getElementById('icon-pressure').className = 'fas fa-compress-alt icon-pressure';
         }
-
-        // [MANTENHA AS OUTRAS FUNÇÕES: renderLights, renderOutlets, updateSensors, etc.]
 
         function renderLights() {
             const grid = document.getElementById('lightsGrid');
@@ -863,7 +888,7 @@
                 <div class="device-compact-item" id="device_light_${light.name}">
                     <div class="device-compact-icon">
                         <img src="${LAMP_OFF}" alt="Lâmpada ${light.label}" 
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiNGRkQiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMiAxMEgxOE0xMiAxNEgxOE0xMiAxOEgxNiIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDA/svc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiNGRkQiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMiAxMEgxOE0xMiAxNEgxOE0xMiAxOEgxNiIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'"
                              id="img_light_${light.name}">
                     </div>
                     <div class="device-compact-name">
@@ -883,7 +908,8 @@
             grid.innerHTML = devices.outlets.map(outlet => `
                 <div class="device-compact-item" id="device_outlet_${outlet.name}">
                     <div class="device-compact-icon">
-                        <i class="fas fa-plug" style="font-size: 1.1em; color: #666;"></i>
+                        <img src="${OUTLET_ICON}" alt="Tomada ${outlet.label}" class="outlet-icon"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iOCIgeT0iOCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMiIgZmlsbD0iIzY2NiIvPgo8L3N2Zz4='">
                     </div>
                     <div class="device-compact-name">
                         <span class="room-icon">${outlet.icon}</span>${outlet.label}
@@ -896,6 +922,8 @@
                 </div>
             `).join('');
         }
+
+        // [MANTENHA AS OUTRAS FUNÇÕES: updateSensors, toggleDevice, checkServerStatus, etc.]
 
         function updateSensors() {
             // Simular dados dos sensores
