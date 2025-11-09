@@ -1,7 +1,7 @@
 {
   "name": "casa-automacao-completa",
-  "version": "3.0.0",
-  "description": "Sistema completo de automação residencial com ESP32 - Sensores e controle de lâmpadas",
+  "version": "3.1.0",
+  "description": "Sistema completo de automação residencial com ESP32 - Sensores, controle de lâmpadas, tomadas e irrigação automática",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,7 +16,9 @@
     "smart-home",
     "arduino",
     "sensors",
-    "lights-control"
+    "lights-control",
+    "irrigation",
+    "login-system"
   ],
   "author": "Charles",
   "license": "MIT",
