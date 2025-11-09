@@ -1,19 +1,36 @@
-# 🚀 Servidor de Automação com ESP32
+# 🏠 Sistema de Automação Residencial V3.0
 
-Sistema completo de automação residencial usando ESP32 como cliente e Node.js como servidor.
+Sistema completo de automação residencial com ESP32, Node.js e interface web com monitoramento em tempo real.
 
-## 📋 Funcionalidades
+## ✨ Funcionalidades
 
-- ✅ Coleta de dados de sensores (temperatura, umidade)
-- ✅ Envio automático para servidor cloud
-- ✅ API REST para consulta de dados
-- ✅ Interface web para monitoramento
-- ✅ Deploy automático no Render.com
+- ✅ Controle de lâmpadas e tomadas
+- ✅ Monitoramento de temperatura e gás
+- ✅ Interface web responsiva
+- ✅ Dados meteorológicos em tempo real
+- ✅ Monitoramento de conexão ESP32
+- ✅ Sistema de heartbeat
+- ✅ Persistência de estado
+- ✅ Alertas de desconexão
 
-## 🛠 Tecnologias
+## 📋 Pré-requisitos
 
-- **ESP32**: Microcontrolador com WiFi
-- **Node.js**: Servidor backend
-- **Express.js**: Framework web
-- **Render.com**: Hospedagem cloud
-- **Arduino IDE**: Programação do ESP32
+- Node.js 16+
+- ESP32
+- Sensores: NTC (temperatura), MQ-2/MQ-5 (gás)
+- Módulos relé para lâmpadas/tomadas
+
+## 🚀 Instalação Rápida
+
+### 1. Servidor Node.js
+```bash
+# Instalar dependências
+npm install
+
+# Configurar variáveis de ambiente
+cp .env.example .env
+# Edite o .env com suas configurações
+
+# Iniciar servidor
+npm run dev    # Desenvolvimento
+npm start      # Produção
