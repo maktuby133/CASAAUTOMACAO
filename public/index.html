@@ -113,6 +113,15 @@
         .weather-time-compact {
             font-size: 0.8em;
             opacity: 0.7;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .update-icon {
+            width: 16px;
+            height: 16px;
+            animation: spin 2s linear infinite;
         }
 
         /* Ícones Animados para TODOS os ícones da meteorologia */
@@ -163,7 +172,7 @@
         }
 
         .icon-wind {
-            animation: spin 4s linear infinite !important;
+            animation: float 2s ease-in-out infinite !important; /* Alterado: de spin para float */
             color: #81D4FA !important;
         }
 
@@ -622,6 +631,8 @@
                 </div>
             </div>
             <div class="weather-time-compact" id="weather-update-time">
+                <img src="https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000" 
+                     alt="Atualizado" class="update-icon">
                 Atualizando...
             </div>
         </div>
@@ -694,6 +705,7 @@
         const LAMP_ON = 'https://img.icons8.com/ios-filled/100/000000/light-on.png';
         const LAMP_OFF = 'https://img.icons8.com/ios/100/000000/light-off.png';
         const HOUSE_ICON = 'https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000';
+        const UPDATE_ICON = 'https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000';
 
         // Dados dos dispositivos
         const devices = {
@@ -786,8 +798,12 @@
             document.getElementById('weather-humidity').textContent = `${humidity}%`;
             document.getElementById('weather-wind').textContent = `${windSpeed}km/h`;
             document.getElementById('weather-pressure').textContent = `${pressure}hPa`;
-            document.getElementById('weather-update-time').textContent = 
-                `Atualizado: ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
+            
+            // Atualizar o horário da última atualização
+            const now = new Date();
+            const updateTime = `Atualizado: ${now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
+            document.getElementById('weather-update-time').innerHTML = 
+                `<img src="${UPDATE_ICON}" alt="Atualizado" class="update-icon"> ${updateTime}`;
 
             // Aplicar ícone animado baseado na condição do tempo
             applyWeatherIcon(data.weather[0].main, data.weather[0].description);
@@ -832,7 +848,7 @@
             // Gota - animação de gotejamento
             document.getElementById('icon-humidity').className = 'fas fa-tint icon-humidity';
             
-            // Vento - animação de rotação
+            // Vento - animação de flutuação (subir e descer) - ALTERADO
             document.getElementById('icon-wind').className = 'fas fa-wind icon-wind';
             
             // Pressão - animação de respiração
