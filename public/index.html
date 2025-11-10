@@ -1386,6 +1386,15 @@
             { valor: 0, label: 'Dom' }
         ];
 
+        // Variáveis para controle de intervalos
+        let updateIntervals = {
+            sensors: null,
+            status: null,
+            esp32: null,
+            weather: null,
+            bomba: null
+        };
+
         // Sistema de Estado Centralizado
         class HomeAutomationState {
             constructor() {
@@ -1464,6 +1473,9 @@
             try {
                 logger.info('Iniciando logout...');
                 
+                // Parar todos os intervalos antes do logout
+                stopAllIntervals();
+                
                 const response = await fetchWithTimeout('/api/logout', {
                     method: 'POST',
                     headers: {
@@ -1483,6 +1495,15 @@
                 logger.error('Erro ao fazer logout:', error);
                 window.location.href = '/';
             }
+        }
+
+        // Parar todos os intervalos
+        function stopAllIntervals() {
+            Object.values(updateIntervals).forEach(interval => {
+                if (interval) {
+                    clearInterval(interval);
+                }
+            });
         }
 
         // VERIFICAR AUTENTICAÇÃO
@@ -1519,6 +1540,7 @@
                     
                     if (response.status === 401) {
                         logger.warn('Sessão expirada, fazendo logout...');
+                        stopAllIntervals();
                         window.location.href = '/';
                         return response;
                     }
@@ -1546,22 +1568,30 @@
             // Inicializar componentes
             renderLights();
             renderOutlets();
-            updateSensors();
-            checkServerStatus();
-            loadIrrigationConfig();
+            await updateSensors();
+            await checkServerStatus();
+            await loadIrrigationConfig();
             
-            // Configurar intervalos
-            setTimeout(() => checkESP32Status(), 2000);
-            setTimeout(atualizarClimaReal, 1000);
+            // Configurar intervalos COM CONTROLE
+            setupControlledIntervals();
             
-            setInterval(updateSensors, 3000);
-            setInterval(checkServerStatus, 5000);
-            setInterval(() => checkESP32Status(), 10000);
-            setInterval(atualizarClimaReal, 600000);
-            setInterval(updateBombaStatus, 5000);
-
             // Solicitar permissão para notificações
             requestNotificationPermission();
+        }
+
+        // Configurar intervalos controlados
+        function setupControlledIntervals() {
+            // Limpar intervalos existentes
+            stopAllIntervals();
+            
+            // Configurar novos intervalos com tempos mais espaçados
+            updateIntervals.sensors = setInterval(updateSensors, 10000); // 10 segundos
+            updateIntervals.status = setInterval(checkServerStatus, 15000); // 15 segundos
+            updateIntervals.esp32 = setInterval(() => checkESP32Status(), 30000); // 30 segundos
+            updateIntervals.weather = setInterval(atualizarClimaReal, 600000); // 10 minutos
+            updateIntervals.bomba = setInterval(updateBombaStatus, 20000); // 20 segundos
+            
+            logger.info('Intervalos de atualização configurados');
         }
 
         // Sistema de Notificações
@@ -1817,29 +1847,33 @@
             `).join('');
         }
 
-        function updateSensors() {
-            // Simular dados dos sensores
-            const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
-            const gas = currentState.gas_level || Math.floor(Math.random() * 100);
-            const humidity = currentState.humidity || (45 + Math.random() * 20).toFixed(0);
-            const status = currentState.device ? 'ON' : 'ON';
+        async function updateSensors() {
+            try {
+                // Simular dados dos sensores
+                const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
+                const gas = currentState.gas_level || Math.floor(Math.random() * 100);
+                const humidity = currentState.humidity || (45 + Math.random() * 20).toFixed(0);
+                const status = currentState.device ? 'ON' : 'ON';
 
-            document.getElementById('sensor-temp').textContent = `${temp}°`;
-            document.getElementById('sensor-gas').textContent = gas;
-            document.getElementById('sensor-humidity').textContent = `${humidity}%`;
-            document.getElementById('sensor-status').textContent = status;
+                document.getElementById('sensor-temp').textContent = `${temp}°`;
+                document.getElementById('sensor-gas').textContent = gas;
+                document.getElementById('sensor-humidity').textContent = `${humidity}%`;
+                document.getElementById('sensor-status').textContent = status;
 
-            // Atualizar alerta de gás
-            const gasElement = document.getElementById('sensorsGrid').children[1];
-            if (gas > 70) {
-                gasElement.classList.add('alert');
-                gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
-                showNotification('Alerta de Gás!', {
-                    body: `Nível de gás detectado: ${gas}%`
-                });
-            } else {
-                gasElement.classList.remove('alert');
-                gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
+                // Atualizar alerta de gás
+                const gasElement = document.getElementById('sensorsGrid').children[1];
+                if (gas > 70) {
+                    gasElement.classList.add('alert');
+                    gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
+                    showNotification('Alerta de Gás!', {
+                        body: `Nível de gás detectado: ${gas}%`
+                    });
+                } else {
+                    gasElement.classList.remove('alert');
+                    gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
+                }
+            } catch (error) {
+                logger.error('Erro ao atualizar sensores:', error);
             }
         }
 
