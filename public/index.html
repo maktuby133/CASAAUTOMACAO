@@ -27,10 +27,21 @@
         }
 
         .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             text-align: center;
             margin-bottom: 10px;
             color: white;
             padding: 8px;
+            position: relative;
+        }
+
+        .header-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .header h1 {
@@ -48,6 +59,28 @@
             width: 40px;
             height: 40px;
             animation: float 3s ease-in-out infinite;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
         /* Ícone da Lâmpada Acesa Animado */
@@ -1001,6 +1034,16 @@
         }
 
         @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .logout-btn {
+                position: static;
+                margin-top: 5px;
+            }
+
             .weather-compact {
                 flex-direction: column;
                 gap: 8px;
@@ -1069,15 +1112,22 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header com Ícones Animados -->
+        <!-- Header com Ícones Animados E BOTÃO DE LOGOUT -->
         <div class="header">
-            <h1>
-                <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
-                     alt="Casa Inteligente" class="title-icon">
-                Casa Automação - V3.0
-                <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
-                     alt="Casa Inteligente" class="title-icon">
-            </h1>
+            <div class="header-content">
+                <h1>
+                    <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
+                         alt="Casa Inteligente" class="title-icon">
+                    Casa Automação - V3.0
+                    <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
+                         alt="Casa Inteligente" class="title-icon">
+                </h1>
+            </div>
+            <!-- BOTÃO DE LOGOUT -->
+            <button class="logout-btn" onclick="fazerLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Sair
+            </button>
         </div>
 
         <!-- Meteorologia Compacta com TODOS os ícones animados -->
@@ -1336,15 +1386,56 @@
         let diasSemana = [
             { valor: 1, label: 'Seg' },
             { valor: 2, label: 'Ter' },
-            { valor: 3, label: 'Ter' },
-            { valor: 4, label: 'Qua' },
-            { valor: 5, label: 'Qui' },
-            { valor: 6, label: 'Sex' },
+            { valor: 3, label: 'Qua' },
+            { valor: 4, label: 'Qui' },
+            { valor: 5, label: 'Sex' },
+            { valor: 6, label: 'Sáb' },
             { valor: 0, label: 'Dom' }
         ];
 
+        // ADICIONAR FUNÇÃO DE LOGOUT
+        async function fazerLogout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Redirecionar para a página de login
+                    window.location.href = '/';
+                } else {
+                    console.error('Erro ao fazer logout');
+                }
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                // Mesmo com erro, redirecionar para login
+                window.location.href = '/';
+            }
+        }
+
+        // VERIFICAR AUTENTICAÇÃO AO CARREGAR A PÁGINA
+        async function verificarAutenticacao() {
+            try {
+                const response = await fetch('/api/status');
+                if (response.status === 401) {
+                    // Não autorizado, redirecionar para login
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar autenticação:', error);
+                window.location.href = '/';
+            }
+        }
+
         // Inicializar interface
         function initInterface() {
+            // Verificar autenticação primeiro
+            verificarAutenticacao();
+            
+            // Depois inicializar o resto
             renderLights();
             renderOutlets();
             updateSensors();
