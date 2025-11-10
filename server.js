@@ -148,7 +148,7 @@ async function isRaining() {
     }
 }
 
-// Middleware de autenticação
+// Middleware de autenticação CORRIGIDO
 function requireAuth(req, res, next) {
     // Rotas públicas que não precisam de autenticação
     const publicRoutes = [
@@ -157,10 +157,12 @@ function requireAuth(req, res, next) {
         '/api/login', 
         '/api/logout',
         '/api/status',
-        '/health'
+        '/health',
+        '/favicon.ico'
     ];
     
-    if (publicRoutes.includes(req.path)) {
+    // Verificar se é uma rota pública
+    if (publicRoutes.some(route => req.path === route || req.path.startsWith('/public/'))) {
         return next();
     }
     
@@ -186,6 +188,10 @@ app.use(requireAuth);
 
 // Página de login - SEMPRE acessível
 app.get('/', (req, res) => {
+    // Se já estiver autenticado, redirecionar para o sistema
+    if (req.cookies?.authToken === 'admin123') {
+        return res.redirect('/sistema');
+    }
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
