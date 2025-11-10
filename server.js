@@ -148,7 +148,7 @@ async function isRaining() {
     }
 }
 
-// Middleware de autenticação CORRIGIDO
+// MIDDLEWARE DE AUTENTICAÇÃO CORRIGIDO
 function requireAuth(req, res, next) {
     // Rotas públicas que não precisam de autenticação
     const publicRoutes = [
@@ -158,20 +158,31 @@ function requireAuth(req, res, next) {
         '/api/logout',
         '/api/status',
         '/health',
-        '/favicon.ico'
+        '/favicon.ico',
+        '/sistema' // ADICIONADO para evitar loop
     ];
     
-    // Verificar se é uma rota pública
-    if (publicRoutes.some(route => req.path === route || req.path.startsWith('/public/'))) {
+    // Verificação CORRIGIDA - mais flexível
+    const isPublicRoute = publicRoutes.some(route => {
+        const path = req.path.toLowerCase();
+        const routeLower = route.toLowerCase();
+        return path === routeLower || 
+               path.startsWith('/public/') ||
+               path === '' ||
+               path.includes('login');
+    });
+    
+    if (isPublicRoute) {
         return next();
     }
     
-    // Verificar autenticação para todas as outras rotas
-    const authToken = req.cookies?.authToken === 'admin123';
+    // Verificação de autenticação SIMPLIFICADA
+    const authToken = req.cookies?.authToken;
     
-    if (authToken) {
+    if (authToken === 'admin123') {
         return next();
     } else {
+        console.log('❌ Acesso não autorizado para:', req.path);
         // Para API routes, retornar erro JSON
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ error: 'Não autorizado' });
@@ -186,23 +197,31 @@ app.use(requireAuth);
 
 // Rotas
 
-// Página de login - SEMPRE acessível
+// Página de login - CORRIGIDA (SEM redirecionamento automático)
 app.get('/', (req, res) => {
-    // Se já estiver autenticado, redirecionar para o sistema
-    if (req.cookies?.authToken === 'admin123') {
-        return res.redirect('/sistema');
-    }
+    // SEMPRE mostrar a página de login, independente de autenticação
+    // O redirecionamento será feito pelo cliente após login bem-sucedido
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // Página do sistema - REQUER autenticação
 app.get('/sistema', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // Verificar autenticação manualmente para esta rota específica
+    const authToken = req.cookies?.authToken;
+    
+    if (authToken === 'admin123') {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    } else {
+        console.log('❌ Tentativa de acesso ao sistema sem autenticação');
+        res.redirect('/');
+    }
 });
 
-// Login
+// Login - CORRIGIDO
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
+    
+    console.log('🔐 Tentativa de login:', { username, password });
     
     if (username === 'admin' && password === 'admin123') {
         // Configurar cookie de autenticação (expira em 24 horas)
@@ -213,12 +232,16 @@ app.post('/api/login', (req, res) => {
             sameSite: 'lax'
         });
         
+        console.log('✅ Login bem-sucedido para:', username);
+        
         res.json({ 
             success: true, 
             token: 'admin123',
-            message: 'Login realizado com sucesso'
+            message: 'Login realizado com sucesso',
+            redirect: '/sistema' // Informar o cliente para redirecionar
         });
     } else {
+        console.log('❌ Login falhou para:', username);
         res.status(401).json({ 
             success: false, 
             message: 'Usuário ou senha incorretos' 
@@ -228,6 +251,8 @@ app.post('/api/login', (req, res) => {
 
 // Logout - CORRIGIDO
 app.post('/api/logout', (req, res) => {
+    console.log('🚪 Logout solicitado');
+    
     // Limpar o cookie de autenticação
     res.clearCookie('authToken', {
         httpOnly: true,
@@ -241,7 +266,7 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// Status do servidor
+// Status do servidor - SEMPRE acessível
 app.get('/api/status', (req, res) => {
     const espConnected = checkESP32Connection();
     const statusMessage = espConnected ? 
@@ -512,7 +537,7 @@ app.post('/api/irrigation/control', async (req, res) => {
     });
 });
 
-// Health check
+// Health check - SEMPRE acessível
 app.get('/health', (req, res) => {
     const espConnected = checkESP32Connection();
     
@@ -535,6 +560,7 @@ app.use((error, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
+    console.log('❌ Rota não encontrada:', req.path);
     res.status(404).json({ error: 'Rota não encontrada' });
 });
 
