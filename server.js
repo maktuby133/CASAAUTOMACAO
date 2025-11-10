@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static('public'));
 
 // Arquivo para persistência
@@ -149,19 +151,26 @@ async function isRaining() {
 // Middleware de autenticação
 function requireAuth(req, res, next) {
     // Rotas públicas que não precisam de autenticação
-    const publicRoutes = ['/api/status', '/health', '/', '/login.html', '/api/login', '/api/data', '/api/devices', '/api/weather', '/api/esp32-status'];
+    const publicRoutes = [
+        '/', 
+        '/login.html', 
+        '/api/login', 
+        '/api/logout',
+        '/api/status',
+        '/health'
+    ];
     
     if (publicRoutes.includes(req.path)) {
         return next();
     }
     
-    // Verificar se está autenticado via cookie ou header
-    const authToken = req.headers.authorization === 'Bearer admin123' || req.cookies?.authToken === 'admin123';
+    // Verificar autenticação para todas as outras rotas
+    const authToken = req.cookies?.authToken === 'admin123';
     
     if (authToken) {
         return next();
     } else {
-        // Para API, retornar erro JSON
+        // Para API routes, retornar erro JSON
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ error: 'Não autorizado' });
         }
@@ -170,39 +179,17 @@ function requireAuth(req, res, next) {
     }
 }
 
+// Aplicar middleware de autenticação em TODAS as rotas
 app.use(requireAuth);
-
-// Middleware para verificar autenticação em todas as rotas exceto as públicas
-app.use((req, res, next) => {
-    const publicRoutes = ['/', '/login.html', '/api/login', '/api/status', '/health'];
-    
-    if (publicRoutes.includes(req.path)) {
-        return next();
-    }
-    
-    // Verificar se usuário está autenticado
-    const authToken = req.headers.authorization === 'Bearer admin123' || req.cookies?.authToken === 'admin123';
-    
-    if (!authToken && !req.path.startsWith('/api/')) {
-        return res.redirect('/');
-    }
-    
-    next();
-});
 
 // Rotas
 
-// Página de login
+// Página de login - SEMPRE acessível
 app.get('/', (req, res) => {
-    // Se já estiver autenticado, redirecionar para o sistema
-    const authToken = req.cookies?.authToken === 'admin123';
-    if (authToken) {
-        return res.redirect('/sistema');
-    }
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Página do sistema
+// Página do sistema - REQUER autenticação
 app.get('/sistema', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -212,11 +199,12 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     if (username === 'admin' && password === 'admin123') {
-        // Configurar cookie de autenticação (expira em 30 dias)
+        // Configurar cookie de autenticação (expira em 24 horas)
         res.cookie('authToken', 'admin123', { 
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            maxAge: 24 * 60 * 60 * 1000, // 24 horas
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
         });
         
         res.json({ 
@@ -232,10 +220,19 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// Logout
+// Logout - CORRIGIDO
 app.post('/api/logout', (req, res) => {
-    res.clearCookie('authToken');
-    res.json({ success: true, message: 'Logout realizado' });
+    // Limpar o cookie de autenticação
+    res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    });
+    
+    res.json({ 
+        success: true, 
+        message: 'Logout realizado com sucesso' 
+    });
 });
 
 // Status do servidor
