@@ -177,20 +177,8 @@
     </div>
 
     <script>
-        // Verificar se já está autenticado
-        function checkAuth() {
-            // Verificar se existe cookie de autenticação
-            const cookies = document.cookie.split(';');
-            const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
-            
-            if (authCookie) {
-                // Redirecionar para o sistema se já estiver autenticado
-                window.location.href = '/sistema';
-            }
-        }
-
-        // Verificar autenticação ao carregar a página
-        document.addEventListener('DOMContentLoaded', checkAuth);
+        // REMOVER a verificação automática de autenticação
+        // SEMPRE mostrar a tela de login, independente de estar autenticado ou não
 
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -216,7 +204,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Redirecionar para o sistema
+                    // Redirecionar para o sistema após login bem-sucedido
                     window.location.href = '/sistema';
                 } else {
                     errorMessage.style.display = 'block';
