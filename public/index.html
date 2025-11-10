@@ -1393,47 +1393,89 @@
             { valor: 0, label: 'Dom' }
         ];
 
-        // ADICIONAR FUNÇÃO DE LOGOUT
+        // FUNÇÃO DE LOGOUT CORRIGIDA
         async function fazerLogout() {
             try {
+                console.log('Iniciando logout...');
+                
                 const response = await fetch('/api/logout', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    credentials: 'include'
                 });
                 
                 if (response.ok) {
-                    // Redirecionar para a página de login
+                    console.log('Logout bem-sucedido, redirecionando...');
                     window.location.href = '/';
                 } else {
-                    console.error('Erro ao fazer logout');
+                    console.error('Erro no logout:', response.status);
+                    window.location.href = '/';
                 }
             } catch (error) {
                 console.error('Erro ao fazer logout:', error);
-                // Mesmo com erro, redirecionar para login
                 window.location.href = '/';
             }
         }
 
-        // VERIFICAR AUTENTICAÇÃO AO CARREGAR A PÁGINA
+        // VERIFICAR AUTENTICAÇÃO MELHORADA
         async function verificarAutenticacao() {
             try {
-                const response = await fetch('/api/status');
+                const response = await fetch('/api/status', {
+                    credentials: 'include'
+                });
+                
                 if (response.status === 401) {
-                    // Não autorizado, redirecionar para login
+                    console.log('Não autorizado, redirecionando para login...');
                     window.location.href = '/';
+                    return false;
                 }
+                
+                if (!response.ok) {
+                    throw new Error('Erro na verificação de autenticação');
+                }
+                
+                return true;
             } catch (error) {
                 console.error('Erro ao verificar autenticação:', error);
                 window.location.href = '/';
+                return false;
             }
         }
 
+        // INTERCEPTAR ERROS 401 EM TODAS AS REQUISIÇÕES
+        function setupErrorInterceptor() {
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+                try {
+                    const response = await originalFetch.apply(this, args);
+                    
+                    if (response.status === 401) {
+                        console.log('Sessão expirada, fazendo logout...');
+                        window.location.href = '/';
+                        return response;
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    console.error('Erro na requisição:', error);
+                    throw error;
+                }
+            };
+        }
+
         // Inicializar interface
-        function initInterface() {
-            // Verificar autenticação primeiro
-            verificarAutenticacao();
+        async function initInterface() {
+            // Configurar interceptor de erros primeiro
+            setupErrorInterceptor();
+            
+            // Verificar autenticação
+            const autenticado = await verificarAutenticacao();
+            
+            if (!autenticado) {
+                return;
+            }
             
             // Depois inicializar o resto
             renderLights();
@@ -1442,10 +1484,7 @@
             checkServerStatus();
             loadIrrigationConfig();
             
-            // Verificar status do ESP32 especificamente
             setTimeout(() => checkESP32Status(), 2000);
-            
-            // Carregar dados do clima imediatamente
             setTimeout(atualizarClimaReal, 1000);
             
             setInterval(updateSensors, 3000);
