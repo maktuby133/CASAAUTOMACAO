@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Todos os estilos CSS anteriores permanecem EXATAMENTE iguais */
         * {
             margin: 0;
             padding: 0;
@@ -34,8 +33,107 @@
             text-align: center;
         }
 
-        /* ... (todos os outros estilos permanecem exatamente iguais) ... */
-        
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .title-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .login-form {
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #ffeaea;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .credentials-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .credentials-info h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-container {
+            animation: fadeIn 0.6s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -79,6 +177,21 @@
     </div>
 
     <script>
+        // Verificar se já está autenticado
+        function checkAuth() {
+            // Verificar se existe cookie de autenticação
+            const cookies = document.cookie.split(';');
+            const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
+            
+            if (authCookie) {
+                // Redirecionar para o sistema se já estiver autenticado
+                window.location.href = '/sistema';
+            }
+        }
+
+        // Verificar autenticação ao carregar a página
+        document.addEventListener('DOMContentLoaded', checkAuth);
+
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -103,12 +216,9 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Salvar token e redirecionar
-                    localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('loginTime', new Date().getTime());
+                    // Redirecionar para o sistema
                     window.location.href = '/sistema';
                 } else {
-                    errorMessage.textContent = data.message || 'Usuário ou senha incorretos!';
                     errorMessage.style.display = 'block';
                     loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
                     loginBtn.disabled = false;
@@ -120,24 +230,6 @@
                 loginBtn.disabled = false;
             }
         });
-
-        // Verificar se já está autenticado
-        const token = localStorage.getItem('authToken');
-        const loginTime = localStorage.getItem('loginTime');
-        
-        if (token && loginTime) {
-            const currentTime = new Date().getTime();
-            const hoursSinceLogin = (currentTime - parseInt(loginTime)) / (1000 * 60 * 60);
-            
-            // Logout automático após 24 horas
-            if (hoursSinceLogin < 24) {
-                // Não redirecionar automaticamente, deixar usuário escolher
-                console.log('Usuário já autenticado, mas permitindo acesso à página de login');
-            } else {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('loginTime');
-            }
-        }
 
         // Foco no campo de usuário
         document.getElementById('username').focus();
