@@ -59,7 +59,8 @@ function loadState() {
         irrigation: {
             bomba_irrigacao: false,
             modo: 'manual',
-            programacoes: []
+            programacoes: [],
+            evitar_chuva: true
         }
     };
 }
@@ -130,7 +131,22 @@ async function fetchWeatherData() {
     }
 }
 
-// Middleware de autenticação simples
+// Verificar se está chovendo baseado nos dados do clima
+async function isRaining() {
+    try {
+        const weatherData = await fetchWeatherData();
+        if (weatherData && weatherData.weather && weatherData.weather.length > 0) {
+            const condition = weatherData.weather[0].main.toLowerCase();
+            return condition.includes('rain') || condition.includes('drizzle') || condition.includes('storm');
+        }
+        return false;
+    } catch (error) {
+        console.error('❌ Erro ao verificar condição de chuva:', error);
+        return false;
+    }
+}
+
+// Middleware de autenticação
 function requireAuth(req, res, next) {
     // Rotas públicas que não precisam de autenticação
     const publicRoutes = ['/api/status', '/health', '/', '/login.html', '/api/login', '/api/data', '/api/devices', '/api/weather', '/api/esp32-status'];
@@ -139,27 +155,50 @@ function requireAuth(req, res, next) {
         return next();
     }
     
-    // Para API routes, verificar o token
-    if (req.path.startsWith('/api/')) {
-        const authHeader = req.headers.authorization;
-        
-        if (authHeader === 'Bearer admin123') {
-            return next();
-        } else {
+    // Verificar se está autenticado via cookie ou header
+    const authToken = req.headers.authorization === 'Bearer admin123' || req.cookies?.authToken === 'admin123';
+    
+    if (authToken) {
+        return next();
+    } else {
+        // Para API, retornar erro JSON
+        if (req.path.startsWith('/api/')) {
             return res.status(401).json({ error: 'Não autorizado' });
         }
+        // Para páginas, redirecionar para login
+        return res.redirect('/');
     }
-    
-    // Para outras rotas, seguir normalmente
-    next();
 }
 
 app.use(requireAuth);
+
+// Middleware para verificar autenticação em todas as rotas exceto as públicas
+app.use((req, res, next) => {
+    const publicRoutes = ['/', '/login.html', '/api/login', '/api/status', '/health'];
+    
+    if (publicRoutes.includes(req.path)) {
+        return next();
+    }
+    
+    // Verificar se usuário está autenticado
+    const authToken = req.headers.authorization === 'Bearer admin123' || req.cookies?.authToken === 'admin123';
+    
+    if (!authToken && !req.path.startsWith('/api/')) {
+        return res.redirect('/');
+    }
+    
+    next();
+});
 
 // Rotas
 
 // Página de login
 app.get('/', (req, res) => {
+    // Se já estiver autenticado, redirecionar para o sistema
+    const authToken = req.cookies?.authToken === 'admin123';
+    if (authToken) {
+        return res.redirect('/sistema');
+    }
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
@@ -173,6 +212,13 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     if (username === 'admin' && password === 'admin123') {
+        // Configurar cookie de autenticação (expira em 30 dias)
+        res.cookie('authToken', 'admin123', { 
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+        
         res.json({ 
             success: true, 
             token: 'admin123',
@@ -184,6 +230,12 @@ app.post('/api/login', (req, res) => {
             message: 'Usuário ou senha incorretos' 
         });
     }
+});
+
+// Logout
+app.post('/api/logout', (req, res) => {
+    res.clearCookie('authToken');
+    res.json({ success: true, message: 'Logout realizado' });
 });
 
 // Status do servidor
@@ -236,6 +288,16 @@ app.get('/api/weather', async (req, res) => {
         } else {
             res.status(500).json({ error: 'Erro ao buscar dados do clima' });
         }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Verificar condição de chuva
+app.get('/api/weather/raining', async (req, res) => {
+    try {
+        const raining = await isRaining();
+        res.json({ raining });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -298,7 +360,7 @@ app.get('/api/devices', (req, res) => {
 });
 
 // Interface web controla dispositivos
-app.post('/api/control', (req, res) => {
+app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
     
     // Validação
@@ -312,6 +374,19 @@ app.post('/api/control', (req, res) => {
     
     if (!devicesState[type] || !devicesState[type].hasOwnProperty(device)) {
         return res.status(400).json({ error: 'Dispositivo não encontrado' });
+    }
+    
+    // Verificação especial para irrigação automática em dias chuvosos
+    if (type === 'irrigation' && device === 'bomba_irrigacao' && state === true) {
+        if (devicesState.irrigation.modo === 'automatico' && devicesState.irrigation.evitar_chuva) {
+            const raining = await isRaining();
+            if (raining) {
+                return res.status(400).json({ 
+                    error: 'Irrigação bloqueada - Está chovendo',
+                    message: 'O sistema detectou chuva e bloqueou a irrigação automática'
+                });
+            }
+        }
     }
     
     // Verificar se ESP32 está conectado antes de enviar comando
@@ -392,20 +467,36 @@ app.get('/api/irrigation', (req, res) => {
 
 // Rota para salvar configurações de irrigação
 app.post('/api/irrigation/save', (req, res) => {
-    const { modo, programacoes } = req.body;
+    const { modo, programacoes, evitar_chuva } = req.body;
     
     devicesState.irrigation.modo = modo;
     devicesState.irrigation.programacoes = programacoes || [];
+    devicesState.irrigation.evitar_chuva = evitar_chuva !== false; // Padrão true
     
     saveState(devicesState);
     
-    console.log('💧 Configurações de irrigação salvas:', { modo, programacoes: programacoes?.length || 0 });
+    console.log('💧 Configurações de irrigação salvas:', { 
+        modo, 
+        programacoes: programacoes?.length || 0,
+        evitar_chuva: devicesState.irrigation.evitar_chuva
+    });
     res.json({ status: 'OK', message: 'Configurações salvas com sucesso' });
 });
 
 // Rota para controlar a bomba manualmente
-app.post('/api/irrigation/control', (req, res) => {
+app.post('/api/irrigation/control', async (req, res) => {
     const { state } = req.body;
+    
+    // Verificar se está chovendo para irrigação manual com prevenção ativa
+    if (state === true && devicesState.irrigation.evitar_chuva) {
+        const raining = await isRaining();
+        if (raining) {
+            return res.status(400).json({ 
+                error: 'Irrigação bloqueada - Está chovendo',
+                message: 'O sistema detectou chuva e bloqueou a irrigação'
+            });
+        }
+    }
     
     devicesState.irrigation.bomba_irrigacao = state;
     saveState(devicesState);
