@@ -8,15 +8,12 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🚨 CORREÇÃO CRÍTICA: CORS configurado ANTES de tudo
+// Middleware CORS
 app.use(cors({
-    origin: true, // 🚨 Permite TODOS os origins durante o desenvolvimento
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+    origin: ['http://localhost:3000', 'http://192.168.1.100:3000', 'https://casaautomacao.onrender.com'],
+    credentials: true
 }));
 
-// Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
@@ -155,10 +152,9 @@ async function isRaining() {
     }
 }
 
-// 🚨 CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO
+// 🚨 CORREÇÃO CRÍTICA: Middleware de autenticação CORRETO
 function requireAuth(req, res, next) {
     console.log(`\n🔐 [AUTH] ${req.method} ${req.path}`);
-    console.log(`🍪 [COOKIE]`, req.cookies);
     
     // 🚨 ROTAS PÚBLICAS - SEMPRE ACESSÍVEIS
     const publicRoutes = [
@@ -179,7 +175,7 @@ function requireAuth(req, res, next) {
 
     // Verifica se é rota pública
     if (publicRoutes.includes(req.path)) {
-        console.log(`✅ [PUBLIC] Rota pública liberada`);
+        console.log(`✅ [PUBLIC] Rota pública liberada: ${req.path}`);
         return next();
     }
 
@@ -187,24 +183,26 @@ function requireAuth(req, res, next) {
     if (esp32Routes.includes(req.path) && 
         ((req.path === '/api/data' && req.method === 'POST') || 
          (req.path === '/api/devices' && req.method === 'GET'))) {
-        console.log(`✅ [ESP32] Rota ESP32 liberada`);
+        console.log(`✅ [ESP32] Rota ESP32 liberada: ${req.path}`);
         return next();
     }
 
-    // 🚨 VERIFICA AUTENTICAÇÃO
+    // 🚨 VERIFICA AUTENTICAÇÃO PARA TODAS AS OUTRAS ROTAS
     const authToken = req.cookies?.authToken;
     console.log(`🔑 [TOKEN] ${authToken ? 'PRESENTE' : 'AUSENTE'}`);
 
     if (authToken === 'admin123') {
-        console.log(`✅ [AUTH] Usuário autenticado`);
+        console.log(`✅ [AUTH] Usuário autenticado: ${req.path}`);
         return next();
     }
 
-    console.log(`❌ [AUTH] ACESSO NEGADO - Redirecionando para login`);
+    console.log(`❌ [AUTH] ACESSO NEGADO: ${req.path}`);
     
     if (req.path.startsWith('/api/')) {
         return res.status(401).json({ error: 'Não autorizado - Faça login' });
     } else {
+        // 🚨 CORREÇÃO: Para páginas, SEMPRE redireciona para login
+        console.log(`🔄 [REDIRECT] Redirecionando para login: ${req.path}`);
         return res.redirect('/');
     }
 }
@@ -212,34 +210,35 @@ function requireAuth(req, res, next) {
 // Aplica o middleware
 app.use(requireAuth);
 
-// 🚨 Rota principal SEMPRE serve login
+// 🚨 CORREÇÃO: Rota principal SEMPRE serve login
 app.get('/', (req, res) => {
-    console.log('📄 [ROUTE] Servindo página de LOGIN');
+    console.log('📄 [ROUTE] / -> Servindo LOGIN');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// 🚨 Rota do sistema - só acessível se autenticado
+// 🚨 CORREÇÃO: Rota do sistema VERIFICA autenticação
 app.get('/sistema', (req, res) => {
-    console.log('📄 [ROUTE] Servindo página do SISTEMA');
+    console.log('📄 [ROUTE] /sistema -> Servindo SISTEMA (após autenticação)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// 🚨 CORREÇÃO: Rota alternativa também VERIFICA autenticação
 app.get('/index.html', (req, res) => {
-    console.log('📄 [ROUTE] Servindo página do SISTEMA (index.html)');
+    console.log('📄 [ROUTE] /index.html -> Servindo SISTEMA (após autenticação)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 🚨 CORREÇÃO CRÍTICA: Login com cookie SIMPLES
+// Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     console.log('🔐 [LOGIN] Tentativa:', username);
     
     if (username === 'admin' && password === 'admin123') {
-        // 🚨 CORREÇÃO: Cookie SIMPLES sem opções complexas
+        // 🚨 CORREÇÃO: Cookie SIMPLES para desenvolvimento
         res.cookie('authToken', 'admin123', {
-            maxAge: 24 * 60 * 60 * 1000, // 24 horas
-            httpOnly: false, // 🚨 IMPORTANTE: false para desenvolvimento
-            secure: false,   // 🚨 IMPORTANTE: false para desenvolvimento  
+            maxAge: 24 * 60 * 60 * 1000,
+            httpOnly: false,
+            secure: false,
             sameSite: 'lax',
             path: '/'
         });
