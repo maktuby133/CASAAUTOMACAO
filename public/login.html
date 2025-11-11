@@ -5,23 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Casa Automação</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial; }
-        body { background: #667eea; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .login-container { background: white; padding: 40px; border-radius: 10px; width: 90%; max-width: 400px; }
-        h1 { text-align: center; margin-bottom: 30px; color: #333; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
-        button { width: 100%; padding: 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .error { color: red; margin-top: 10px; text-align: center; display: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 15px;
+            padding: 10px;
+            background: #ffeaea;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .logo {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            display: none;
+            color: #667eea;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>🔐 Login</h1>
+        <div class="logo">🏠</div>
+        <h1>Casa Automação V3.0</h1>
+        
         <form id="loginForm">
-            <input type="text" id="username" placeholder="Usuário" value="admin" required>
-            <input type="password" id="password" placeholder="Senha" value="admin123" required>
-            <button type="submit">Entrar</button>
+            <div class="input-group">
+                <label for="username">Usuário:</label>
+                <input type="text" id="username" value="admin" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Senha:</label>
+                <input type="password" id="password" value="admin123" required>
+            </div>
+            
+            <button type="submit" id="loginBtn">
+                <span id="btnText">Entrar no Sistema</span>
+                <div class="loading" id="loading">Carregando...</div>
+            </button>
         </form>
+        
         <div id="errorMessage" class="error"></div>
     </div>
 
@@ -32,50 +133,49 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const loginBtn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('btnText');
+            const loading = document.getElementById('loading');
             
+            // Limpar erro anterior e mostrar loading
             errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            btnText.style.display = 'none';
+            loading.style.display = 'block';
+            loginBtn.disabled = true;
             
             try {
-                console.log('🔐 Tentando login...');
-                
                 const response = await fetch('/api/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ username, password })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log('✅ Login OK! Redirecionando...');
+                    console.log('✅ Login bem-sucedido! Redirecionando...');
                     window.location.href = data.redirect;
                 } else {
                     throw new Error(data.message);
                 }
                 
             } catch (error) {
-                console.error('❌ Erro:', error);
-                errorMessage.textContent = error.message;
+                console.error('❌ Erro no login:', error);
+                errorMessage.textContent = error.message || 'Erro de conexão com o servidor';
                 errorMessage.style.display = 'block';
+            } finally {
+                btnText.style.display = 'block';
+                loading.style.display = 'none';
+                loginBtn.disabled = false;
             }
         });
 
-        // 🚨 TESTE DE COOKIE AO CARREGAR
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🔍 Verificando autenticação...');
-            
-            try {
-                const response = await fetch('/api/test-auth');
-                const data = await response.json();
-                console.log('🔍 Status autenticação:', data);
-                
-                if (data.authenticated) {
-                    console.log('✅ Já autenticado! Redirecionando...');
-                    window.location.href = '/sistema';
-                }
-            } catch (error) {
-                console.log('🔍 Não autenticado');
-            }
+        // 🚨 CORREÇÃO: Removida verificação automática de auth que causava loop
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('password').focus();
         });
     </script>
 </body>
