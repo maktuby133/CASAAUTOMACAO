@@ -1179,9 +1179,7 @@
             <div class="devices-compact" id="irrigationGrid">
                 <div class="device-compact-item" onclick="openIrrigationModal()">
                     <div class="device-compact-icon">
-                        <img src="https://img.icons8.com/?size=100&id=98967&format=png&color=000000" 
-                             alt="Bomba de Irrigação" class="irrigation-icon"
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1IDVWMTVNMTUgMTVWMjVNMTUgMTVIMTBNMTUgMTVIMjBNOCAxMkM4IDEwLjg5NjQgOC44OTY0NCAxMCAxMCAxMEgyMEMyMS4xMDM2IDEwIDIyIDEwLjg5NjQgMjIgMTJWMThDMjIgMTkuMTAzNiAyMS4xMDM2IDIwIDIwIDIwSDEwQzguODk2NDQgMjAgOCAxOS4xMDM2IDggMThWMTJaIiBmaWxsPSIjMDBCODk0Ii8+Cjwvc3ZnPg=='">
+                        <i class="fas fa-tint irrigation-icon"></i>
                     </div>
                     <div class="device-compact-name">
                         <span class="room-icon">💧</span>Configurar Irrigação
@@ -1305,16 +1303,7 @@
     </div>
 
     <script>
-        // URLs das imagens
-        const LAMP_ON = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
-        const LAMP_OFF = 'https://img.icons8.com/ios/100/000000/light-off.png';
-        const HOUSE_ICON = 'https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000';
-        const UPDATE_ICON = 'https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000';
-        const OUTLET_ICON = 'https://img.icons8.com/?size=100&id=Sc8AAAaZgbuy&format=png&color=000000';
-        const INTERNET_ICON = 'https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000';
-        const IRRIGATION_ICON = 'https://img.icons8.com/?size=100&id=98967&format=png&color=000000';
-
-        // Dados dos dispositivos
+        // Configurações
         const devices = {
             lights: [
                 { name: 'sala', icon: '🛋️', label: 'Sala' },
@@ -1360,301 +1349,125 @@
             { valor: 0, label: 'Dom' }
         ];
 
-        // Sistema de Logging
-        const logger = {
-            info: (message, data) => {
-                console.log(`[INFO] ${message}`, data);
-            },
-            error: (message, error) => {
-                console.error(`[ERROR] ${message}`, error);
-            },
-            warn: (message, data) => {
-                console.warn(`[WARN] ${message}`, data);
-            }
-        };
-
-        // FUNÇÃO DE LOGOUT SEGURA
-        async function fazerLogout() {
-            try {
-                logger.info('Iniciando logout...');
-                
-                const response = await fetch('/api/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    logger.info('Logout bem-sucedido, redirecionando...');
-                    window.location.href = '/';
-                } else {
-                    logger.error('Erro no logout:', response.status);
-                    window.location.href = '/';
-                }
-            } catch (error) {
-                logger.error('Erro ao fazer logout:', error);
-                window.location.href = '/';
-            }
-        }
-
-        // INTERCEPTADOR DE ERROS 401 - CORRIGIDO
+        // 🚨 CORREÇÃO: Interceptador de erros 401
         function setupErrorInterceptor() {
             const originalFetch = window.fetch;
             window.fetch = async function(...args) {
                 try {
                     const response = await originalFetch.apply(this, args);
                     
-                    // 🚨 CORREÇÃO: Só redireciona para login se for erro 401
                     if (response.status === 401) {
-                        logger.warn('Sessão expirada, fazendo logout...');
-                        // Pequeno delay para evitar loop rápido
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 1000);
+                        console.log('🔐 Sessão expirada, redirecionando para login...');
+                        window.location.href = '/';
                         return response;
                     }
                     
                     return response;
                 } catch (error) {
-                    logger.error('Erro na requisição:', error);
-                    // 🚨 CORREÇÃO: Não redireciona em caso de erro de rede
+                    console.error('❌ Erro na requisição:', error);
                     throw error;
                 }
             };
         }
 
-        // Inicializar interface - CORRIGIDA (SEM intervalos automáticos)
+        // Inicialização SEGURA - SEM INTERVALOS AUTOMÁTICOS
         async function initInterface() {
             try {
-                // Configurar interceptor de erros primeiro
+                console.log('🚀 Inicializando interface...');
                 setupErrorInterceptor();
                 
-                // Inicializar componentes
+                // Inicializar componentes básicos
                 renderLights();
                 renderOutlets();
-                await updateSensors();
                 await checkServerStatus();
                 await loadIrrigationConfig();
                 
-                // 🚨 CORREÇÃO CRÍTICA: NÃO configurar intervalos automáticos
-                logger.info('Interface inicializada SEM atualizações automáticas');
+                console.log('✅ Sistema inicializado SEM intervalos automáticos');
                 updateStatusBar('✅ Sistema pronto - Use os botões para atualizar', 'online');
                 
             } catch (error) {
-                logger.error('Erro na inicialização da interface:', error);
+                console.error('❌ Erro na inicialização:', error);
                 updateStatusBar('❌ Erro na inicialização', 'offline');
             }
         }
 
-        // Sistema de Notificações
-        function requestNotificationPermission() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
-        }
-
-        function showNotification(title, options) {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(title, options);
-            }
-            
-            // Fallback para notificação na interface
-            showInAppNotification(title, options);
-        }
-
-        function showInAppNotification(title, options = {}) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #4CAF50;
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 10000;
-                max-width: 300px;
-                animation: slideIn 0.3s ease-out;
-            `;
-            notification.innerHTML = `
-                <strong>${title}</strong>
-                ${options.body ? `<br><small>${options.body}</small>` : ''}
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease-in';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Carregar configurações de irrigação
-        async function loadIrrigationConfig() {
+        // 🚨 CORREÇÃO: Funções básicas sem intervalos automáticos
+        async function checkServerStatus() {
             try {
-                const response = await fetch('/api/irrigation');
+                const response = await fetch('/api/status');
+                if (!response.ok) throw new Error('Servidor offline');
+                const data = await response.json();
+                updateStatusBar(data.systemStatus, 'online');
+            } catch (error) {
+                updateStatusBar('❌ Servidor offline', 'offline');
+            }
+        }
+
+        async function updateSensors() {
+            try {
+                const response = await fetch('/api/data');
                 if (response.ok) {
                     const data = await response.json();
-                    irrigationConfig = { ...irrigationConfig, ...data };
-                    updateBombaStatus();
+                    if (data.data && data.data.length > 0) {
+                        const latest = data.data[0];
+                        currentState = {
+                            temperature: latest.temperature,
+                            gas_level: latest.gas_level,
+                            gas_alert: latest.gas_alert,
+                            humidity: latest.humidity || 50
+                        };
+                    }
                 }
-            } catch (error) {
-                logger.error('Erro ao carregar configurações de irrigação:', error);
-            }
-        }
 
-        // Atualizar status da bomba
-        function updateBombaStatus() {
-            const estado = irrigationConfig.bomba_estado;
-            const icon = document.getElementById('bomba-status-icon');
-            const text = document.getElementById('bomba-state-text');
-            const status = document.getElementById('irrigation-status');
-            
-            if (icon && text) {
-                icon.className = estado ? 'fas fa-water bomba-icon' : 'fas fa-water bomba-icon';
-                icon.style.color = estado ? '#4CAF50' : '#666';
-                text.textContent = estado ? 'LIGADA' : 'DESLIGADA';
-                text.style.color = estado ? '#4CAF50' : '#666';
-            }
-            
-            if (status) {
-                status.textContent = estado ? 'BOMBA LIGADA' : 'BOMBA DESLIGADA';
-                status.className = `device-status ${estado ? 'status-on' : 'status-off'}`;
-            }
-        }
+                const temp = currentState.temperature !== -999.9 ? currentState.temperature : 23;
+                const gas = currentState.gas_level || 0;
+                const humidity = currentState.humidity || 50;
 
-        // Controlar bomba manualmente
-        async function controlarBomba(estado) {
-            try {
-                const response = await fetch('/api/irrigation/control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ state: estado })
-                });
-                
-                if (response.ok) {
-                    irrigationConfig.bomba_estado = estado;
-                    updateBombaStatus();
-                    updateStatusBar(`✅ Bomba ${estado ? 'ligada' : 'desligada'}`, 'online');
-                    showNotification(`Bomba ${estado ? 'ligada' : 'desligada'}`, {
-                        body: 'Sistema de irrigação atualizado'
-                    });
+                document.getElementById('sensor-temp').textContent = `${temp}°`;
+                document.getElementById('sensor-gas').textContent = gas;
+                document.getElementById('sensor-humidity').textContent = `${humidity}%`;
+
+                // Atualizar alerta de gás
+                const gasElement = document.getElementById('sensorsGrid').children[1];
+                if (gas > 70) {
+                    gasElement.classList.add('alert');
+                    gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
                 } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Erro ao controlar bomba');
+                    gasElement.classList.remove('alert');
+                    gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
                 }
+
             } catch (error) {
-                updateStatusBar(`❌ ${error.message}`, 'offline');
-                showNotification('Erro no sistema de irrigação', {
-                    body: error.message
-                });
+                console.error('❌ Erro ao atualizar sensores:', error);
             }
         }
 
-        // Função para buscar dados REAIS do clima
-        async function atualizarClimaReal() {
+        function updateStatusBar(message, type) {
+            const statusBar = document.getElementById('statusBar');
+            const statusText = document.getElementById('statusText');
+            if (statusText) statusText.textContent = message;
+            statusBar.className = `status-bar ${type}`;
+        }
+
+        // 🚨 CORREÇÃO: Logout seguro
+        async function fazerLogout() {
             try {
-                updateStatusBar('🌤️ Atualizando dados meteorológicos...', 'online');
-                
-                const response = await fetch('/api/weather');
-                
-                if (!response.ok) {
-                    throw new Error(`Erro no servidor: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                renderWeatherCompact(data);
-                updateStatusBar('✅ Clima atualizado', 'online');
-                
+                console.log('🚪 Fazendo logout...');
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/';
             } catch (error) {
-                logger.error('Erro ao buscar dados do clima:', error);
-                updateStatusBar('❌ Erro ao atualizar clima', 'offline');
+                console.error('❌ Erro no logout:', error);
+                window.location.href = '/';
             }
         }
 
-        // Renderizar dados do clima
-        function renderWeatherCompact(data) {
-            const description = data.weather[0].description;
-            const temperature = data.main.temp;
-            const humidity = data.main.humidity;
-            const windSpeed = (data.wind.speed * 3.6).toFixed(1);
-            const pressure = data.main.pressure;
-
-            // Formatar descrição
-            const formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
-
-            // Atualizar elementos
-            document.getElementById('weather-description').innerHTML = 
-                `<i class="fas fa-cloud weather-main-icon" id="weather-main-icon"></i>${formattedDescription}`;
-            document.getElementById('weather-temp').textContent = `${temperature.toFixed(1)}°`;
-            document.getElementById('weather-humidity').textContent = `${humidity}%`;
-            document.getElementById('weather-wind').textContent = `${windSpeed}km/h`;
-            document.getElementById('weather-pressure').textContent = `${pressure}hPa`;
-            
-            // Atualizar o horário da última atualização
-            const now = new Date();
-            const updateTime = `Atualizado: ${now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
-            document.getElementById('weather-update-time').innerHTML = 
-                `<img src="${UPDATE_ICON}" alt="Atualizado" class="update-icon"> ${updateTime}`;
-
-            // Aplicar ícone animado
-            applyWeatherIcon(data.weather[0].main, data.weather[0].description);
-            
-            // Aplicar animações aos ícones individuais
-            applyIndividualIconsAnimations();
-        }
-
-        // Aplicar ícone animado baseado na condição do tempo
-        function applyWeatherIcon(main, description) {
-            const mainIcon = document.getElementById('weather-main-icon');
-            
-            // Resetar todas as classes de animação
-            mainIcon.className = 'fas weather-main-icon';
-            
-            // Mapear condições do tempo para ícones e animações
-            const weatherMap = {
-                'Clear': { icon: 'fa-sun', animation: 'weather-icon-sun' },
-                'Clouds': { 
-                    icon: description.includes('poucas nuvens') ? 'fa-cloud-sun' : 'fa-cloud',
-                    animation: description.includes('poucas nuvens') ? 'weather-icon-cloud-sun' : 'weather-icon-cloud'
-                },
-                'Rain': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
-                'Drizzle': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
-                'Thunderstorm': { icon: 'fa-bolt', animation: 'weather-icon-storm' },
-                'Snow': { icon: 'fa-snowflake', animation: 'weather-icon-snow' },
-                'Mist': { icon: 'fa-smog', animation: 'weather-icon-mist' },
-                'Fog': { icon: 'fa-smog', animation: 'weather-icon-mist' },
-                'Haze': { icon: 'fa-smog', animation: 'weather-icon-mist' }
-            };
-
-            const weatherConfig = weatherMap[main] || { icon: 'fa-cloud', animation: 'weather-icon-cloud' };
-            
-            mainIcon.classList.add(weatherConfig.icon, weatherConfig.animation);
-        }
-
-        // Aplicar animações aos ícones individuais
-        function applyIndividualIconsAnimations() {
-            document.getElementById('icon-temp').className = 'fas fa-thermometer-half icon-thermometer';
-            document.getElementById('icon-humidity').className = 'fas fa-tint icon-humidity';
-            document.getElementById('icon-wind').className = 'fas fa-wind icon-wind';
-            document.getElementById('icon-pressure').className = 'fas fa-compress-alt icon-pressure';
-        }
-
+        // Renderização dos dispositivos
         function renderLights() {
             const grid = document.getElementById('lightsGrid');
             grid.innerHTML = devices.lights.map(light => `
                 <div class="device-compact-item" id="device_light_${light.name}">
                     <div class="device-compact-icon">
-                        <img src="${LAMP_OFF}" alt="Lâmpada ${light.label}" 
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDA/svc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiNGRkQiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMiAxMEgxOE0xMiAxNEgxOE0xMiAxOEgxNiIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'" 
-                             id="img_light_${light.name}">
+                        <i class="fas fa-lightbulb"></i>
                     </div>
                     <div class="device-compact-name">
                         <span class="room-icon">${light.icon}</span>${light.label}
@@ -1673,8 +1486,7 @@
             grid.innerHTML = devices.outlets.map(outlet => `
                 <div class="device-compact-item" id="device_outlet_${outlet.name}">
                     <div class="device-compact-icon">
-                        <img src="${OUTLET_ICON}" alt="Tomada ${outlet.label}" class="outlet-icon"
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iOCIgeT0iOCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMiIgZmlsbD0iIzY2NiIvPgo8L3N2Zz4='">
+                        <i class="fas fa-plug"></i>
                     </div>
                     <div class="device-compact-name">
                         <span class="room-icon">${outlet.icon}</span>${outlet.label}
@@ -1688,70 +1500,11 @@
             `).join('');
         }
 
-        async function updateSensors() {
-            try {
-                // Buscar dados reais do servidor
-                const response = await fetch('/api/data');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.data && data.data.length > 0) {
-                        const latest = data.data[0];
-                        currentState = {
-                            temperature: latest.temperature,
-                            gas_level: latest.gas_level,
-                            gas_alert: latest.gas_alert,
-                            humidity: latest.humidity || (45 + Math.random() * 20).toFixed(0),
-                            device: latest.device
-                        };
-                    }
-                }
-
-                const temp = currentState.temperature !== -999.9 ? currentState.temperature : (22 + Math.random() * 3).toFixed(1);
-                const gas = currentState.gas_level || Math.floor(Math.random() * 100);
-                const humidity = currentState.humidity || (45 + Math.random() * 20).toFixed(0);
-                const status = currentState.device ? 'ON' : 'ON';
-
-                document.getElementById('sensor-temp').textContent = `${temp}°`;
-                document.getElementById('sensor-gas').textContent = gas;
-                document.getElementById('sensor-humidity').textContent = `${humidity}%`;
-                document.getElementById('sensor-status').textContent = status;
-
-                // Atualizar alerta de gás
-                const gasElement = document.getElementById('sensorsGrid').children[1];
-                if (gas > 70) {
-                    gasElement.classList.add('alert');
-                    gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
-                    if (currentState.gas_alert) {
-                        showNotification('Alerta de Gás!', {
-                            body: `Nível de gás detectado: ${gas}%`
-                        });
-                    }
-                } else {
-                    gasElement.classList.remove('alert');
-                    gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
-                }
-            } catch (error) {
-                logger.error('Erro ao atualizar sensores:', error);
-            }
-        }
-
         async function toggleDevice(type, device) {
             const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
             const state = checkbox.checked;
             const deviceElement = document.getElementById(`device_${type.slice(0, -1)}_${device}`);
             const statusElement = document.getElementById(`status_${type.slice(0, -1)}_${device}`);
-            
-            if (type === 'lights') {
-                const imgElement = document.getElementById(`img_light_${device}`);
-                imgElement.src = state ? LAMP_ON : LAMP_OFF;
-                
-                // Aplicar ou remover a classe de animação para lâmpada acesa
-                if (state) {
-                    imgElement.classList.add('lamp-icon-on');
-                } else {
-                    imgElement.classList.remove('lamp-icon-on');
-                }
-            }
             
             deviceElement.classList.toggle('active', state);
             statusElement.textContent = state ? 'ON' : 'OFF';
@@ -1769,73 +1522,17 @@
                     throw new Error(errorData.error || 'Erro na resposta do servidor');
                 }
                 
-                const result = await response.json();
-                if (result.status === 'OK') {
-                    updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
-                    showNotification(`${type === 'lights' ? 'Lâmpada' : 'Tomada'} ${state ? 'ligada' : 'desligada'}`, {
-                        body: `${device} - ${state ? 'ON' : 'OFF'}`
-                    });
-                }
+                updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
+                
             } catch (error) {
-                logger.error('Erro:', error);
+                console.error('❌ Erro:', error);
                 // Reverter mudança em caso de erro
                 checkbox.checked = !state;
-                if (type === 'lights') {
-                    const imgElement = document.getElementById(`img_light_${device}`);
-                    imgElement.src = !state ? LAMP_ON : LAMP_OFF;
-                    if (!state) {
-                        imgElement.classList.add('lamp-icon-on');
-                    } else {
-                        imgElement.classList.remove('lamp-icon-on');
-                    }
-                }
                 deviceElement.classList.toggle('active', !state);
                 statusElement.textContent = !state ? 'ON' : 'OFF';
                 statusElement.className = `device-status ${!state ? 'status-on' : 'status-off'}`;
                 updateStatusBar(`❌ ${error.message}`, 'offline');
-                showNotification('Erro de Controle', {
-                    body: error.message
-                });
             }
-        }
-
-        async function checkServerStatus() {
-            try {
-                const response = await fetch('/api/status');
-                if (!response.ok) {
-                    throw new Error('Servidor não respondeu corretamente');
-                }
-                const data = await response.json();
-                
-                // Verificar status do ESP32
-                let statusMessage = data.systemStatus;
-                let statusType = 'online';
-                
-                if (!data.esp32.connected) {
-                    statusMessage = 'Sistema operando - ESP32 offline';
-                    statusType = 'offline';
-                } else {
-                    statusMessage = `Sistema OK | ${new Date().toLocaleTimeString('pt-BR')}`;
-                    statusType = 'online';
-                }
-                
-                updateStatusBar(statusMessage, statusType);
-                
-            } catch (error) {
-                updateStatusBar('❌ Servidor offline', 'offline');
-            }
-        }
-
-        function updateStatusBar(message, type) {
-            const statusBar = document.getElementById('statusBar');
-            const statusText = document.getElementById('statusText');
-            
-            // Atualizar texto principal
-            if (statusText) {
-                statusText.textContent = message;
-            }
-            
-            statusBar.className = `status-bar ${type}`;
         }
 
         async function ligarTudo() {
@@ -1857,9 +1554,6 @@
                     }
                 }
                 updateStatusBar('✅ Todos os dispositivos ligados!', 'online');
-                showNotification('Sistema Ligado', {
-                    body: 'Todos os dispositivos foram ligados'
-                });
             } catch (error) {
                 updateStatusBar('❌ Erro ao ligar todos os dispositivos', 'offline');
             }
@@ -1874,30 +1568,20 @@
                     throw new Error(errorData.error || 'Erro no reset');
                 }
                 
-                const result = await response.json();
+                devices.lights.forEach(light => {
+                    document.getElementById(`light_${light.name}`).checked = false;
+                    document.getElementById(`device_light_${light.name}`).classList.remove('active');
+                    document.getElementById(`status_light_${light.name}`).textContent = 'OFF';
+                    document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
+                });
+                devices.outlets.forEach(outlet => {
+                    document.getElementById(`outlet_${outlet.name}`).checked = false;
+                    document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
+                    document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
+                    document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
+                });
                 
-                if (result.status === 'OK') {
-                    devices.lights.forEach(light => {
-                        document.getElementById(`light_${light.name}`).checked = false;
-                        const imgElement = document.getElementById(`img_light_${light.name}`);
-                        imgElement.src = LAMP_OFF;
-                        imgElement.classList.remove('lamp-icon-on');
-                        document.getElementById(`device_light_${light.name}`).classList.remove('active');
-                        document.getElementById(`status_light_${light.name}`).textContent = 'OFF';
-                        document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
-                    });
-                    devices.outlets.forEach(outlet => {
-                        document.getElementById(`outlet_${outlet.name}`).checked = false;
-                        document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
-                        document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
-                        document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
-                    });
-                    
-                    updateStatusBar('✅ Todos os dispositivos desligados!', 'online');
-                    showNotification('Sistema Desligado', {
-                        body: 'Todos os dispositivos foram desligados'
-                    });
-                }
+                updateStatusBar('✅ Todos os dispositivos desligados!', 'online');
             } catch (error) {
                 updateStatusBar(`❌ ${error.message}`, 'offline');
             }
@@ -1907,12 +1591,75 @@
             updateStatusBar('🔄 Atualizando dados...', 'online');
             await updateSensors();
             await checkServerStatus();
-            await atualizarClimaReal();
-            await loadIrrigationConfig();
             updateStatusBar('✅ Dados atualizados com sucesso', 'online');
         }
 
-        // FUNÇÕES DO MODAL DE IRRIGAÇÃO
+        // Funções do clima
+        async function atualizarClimaReal() {
+            try {
+                updateStatusBar('🌤️ Atualizando clima...', 'online');
+                const response = await fetch('/api/weather');
+                
+                if (!response.ok) {
+                    throw new Error(`Erro no servidor: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                renderWeatherCompact(data);
+                updateStatusBar('✅ Clima atualizado', 'online');
+                
+            } catch (error) {
+                console.error('❌ Erro ao buscar dados do clima:', error);
+                updateStatusBar('❌ Erro ao atualizar clima', 'offline');
+            }
+        }
+
+        function renderWeatherCompact(data) {
+            const description = data.weather[0].description;
+            const temperature = data.main.temp;
+            const humidity = data.main.humidity;
+            const windSpeed = (data.wind.speed * 3.6).toFixed(1);
+            const pressure = data.main.pressure;
+
+            const formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
+
+            document.getElementById('weather-description').innerHTML = 
+                `<i class="fas fa-cloud weather-main-icon" id="weather-main-icon"></i>${formattedDescription}`;
+            document.getElementById('weather-temp').textContent = `${temperature.toFixed(1)}°`;
+            document.getElementById('weather-humidity').textContent = `${humidity}%`;
+            document.getElementById('weather-wind').textContent = `${windSpeed}km/h`;
+            document.getElementById('weather-pressure').textContent = `${pressure}hPa`;
+            
+            const now = new Date();
+            const updateTime = `Atualizado: ${now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
+            document.getElementById('weather-update-time').innerHTML = 
+                `<i class="fas fa-sync-alt update-icon"></i> ${updateTime}`;
+
+            applyWeatherIcon(data.weather[0].main, data.weather[0].description);
+        }
+
+        function applyWeatherIcon(main, description) {
+            const mainIcon = document.getElementById('weather-main-icon');
+            mainIcon.className = 'fas weather-main-icon';
+            
+            const weatherMap = {
+                'Clear': { icon: 'fa-sun', animation: 'weather-icon-sun' },
+                'Clouds': { 
+                    icon: description.includes('poucas nuvens') ? 'fa-cloud-sun' : 'fa-cloud',
+                    animation: description.includes('poucas nuvens') ? 'weather-icon-cloud-sun' : 'weather-icon-cloud'
+                },
+                'Rain': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
+                'Drizzle': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
+                'Thunderstorm': { icon: 'fa-bolt', animation: 'weather-icon-storm' },
+                'Snow': { icon: 'fa-snowflake', animation: 'weather-icon-snow' },
+                'Mist': { icon: 'fa-smog', animation: 'weather-icon-mist' }
+            };
+
+            const weatherConfig = weatherMap[main] || { icon: 'fa-cloud', animation: 'weather-icon-cloud' };
+            mainIcon.classList.add(weatherConfig.icon, weatherConfig.animation);
+        }
+
+        // Funções do modal de irrigação
         function openIrrigationModal() {
             document.getElementById('irrigationModal').style.display = 'flex';
             loadIrrigationModal();
@@ -1922,11 +1669,57 @@
             document.getElementById('irrigationModal').style.display = 'none';
         }
 
-        function loadIrrigationModal() {
-            selectMode(irrigationConfig.modo);
-            document.getElementById('evitar-chuva').checked = irrigationConfig.evitar_chuva;
-            renderProgrammings();
-            updateBombaStatus();
+        async function loadIrrigationConfig() {
+            try {
+                const response = await fetch('/api/irrigation');
+                if (response.ok) {
+                    const data = await response.json();
+                    irrigationConfig = { ...irrigationConfig, ...data };
+                    updateBombaStatus();
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar configurações de irrigação:', error);
+            }
+        }
+
+        function updateBombaStatus() {
+            const estado = irrigationConfig.bomba_estado;
+            const icon = document.getElementById('bomba-status-icon');
+            const text = document.getElementById('bomba-state-text');
+            const status = document.getElementById('irrigation-status');
+            
+            if (icon && text) {
+                icon.className = estado ? 'fas fa-water bomba-icon' : 'fas fa-water bomba-icon';
+                icon.style.color = estado ? '#4CAF50' : '#666';
+                text.textContent = estado ? 'LIGADA' : 'DESLIGADA';
+                text.style.color = estado ? '#4CAF50' : '#666';
+            }
+            
+            if (status) {
+                status.textContent = estado ? 'BOMBA LIGADA' : 'BOMBA DESLIGADA';
+                status.className = `device-status ${estado ? 'status-on' : 'status-off'}`;
+            }
+        }
+
+        async function controlarBomba(estado) {
+            try {
+                const response = await fetch('/api/irrigation/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: estado })
+                });
+                
+                if (response.ok) {
+                    irrigationConfig.bomba_estado = estado;
+                    updateBombaStatus();
+                    updateStatusBar(`✅ Bomba ${estado ? 'ligada' : 'desligada'}`, 'online');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Erro ao controlar bomba');
+                }
+            } catch (error) {
+                updateStatusBar(`❌ ${error.message}`, 'offline');
+            }
         }
 
         function selectMode(mode) {
@@ -2044,9 +1837,6 @@
                 if (response.ok) {
                     irrigationConfig.evitar_chuva = evitarChuva;
                     updateStatusBar('✅ Configurações de irrigação salvas!', 'online');
-                    showNotification('Configurações Salvas', {
-                        body: 'Sistema de irrigação atualizado com sucesso'
-                    });
                     closeIrrigationModal();
                 } else {
                     throw new Error('Erro ao salvar configurações');
@@ -2065,20 +1855,6 @@
 
         // Inicializar quando a página carregar
         document.addEventListener('DOMContentLoaded', initInterface);
-
-        // Adicionar CSS para animações de notificação
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>
