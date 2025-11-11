@@ -93,6 +93,12 @@
             font-size: 3em;
             margin-bottom: 20px;
         }
+        
+        .loading {
+            display: none;
+            color: #667eea;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -111,7 +117,10 @@
                 <input type="password" id="password" value="admin123" required>
             </div>
             
-            <button type="submit">Entrar no Sistema</button>
+            <button type="submit" id="loginBtn">
+                <span id="btnText">Entrar no Sistema</span>
+                <div class="loading" id="loading">Carregando...</div>
+            </button>
         </form>
         
         <div id="errorMessage" class="error"></div>
@@ -124,10 +133,16 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const loginBtn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('btnText');
+            const loading = document.getElementById('loading');
             
-            // Limpar erro anterior
+            // Limpar erro anterior e mostrar loading
             errorMessage.style.display = 'none';
             errorMessage.textContent = '';
+            btnText.style.display = 'none';
+            loading.style.display = 'block';
+            loginBtn.disabled = true;
             
             try {
                 console.log('🔐 Tentando login...');
@@ -135,28 +150,8 @@
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                    // 🚨 NÃO enviar credentials: 'include' aqui
-                    // O cookie será enviado automaticamente pelo navegador
-                    // credentials: 'include' causa problemas de CORS
-                    // O servidor já está configurado com CORS adequado
-                    // O cookie será recebido automaticamente na resposta
-                    // E enviado automaticamente nas próximas requisições
-                    // Isso evita o loop de autenticação
-                    // E resolve o problema do redirecionamento infinito
-                    // Mantenha SIMPLES - deixe o navegador fazer seu trabalho
-                    // Não force o que já é automático
-                    // Confie no fluxo padrão de cookies HTTP
-                    // Funciona melhor e é mais confiável
-                    // Menos configuração = menos problemas
-                    // Simplicidade é a chave para estabilidade
-                    // O servidor já cuida do CORS corretamente
-                    // O cliente só precisa fazer a requisição normal
-                    // E o cookie será gerenciado automaticamente
-                    // Sem loops, sem redirecionamentos infinitos
-                    // Sistema estável e funcional
-                },
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ username, password })
                 });
                 
@@ -173,13 +168,35 @@
                 console.error('❌ Erro no login:', error);
                 errorMessage.textContent = error.message || 'Erro de conexão com o servidor';
                 errorMessage.style.display = 'block';
+            } finally {
+                // Restaurar botão
+                btnText.style.display = 'block';
+                loading.style.display = 'none';
+                loginBtn.disabled = false;
             }
         });
 
         // Focar no campo de senha após carregar
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('password').focus();
+            
+            // Verificar se já está autenticado
+            checkAuthStatus();
         });
+
+        // Verificar se já está logado
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/status');
+                if (response.ok) {
+                    // Se está autenticado, redireciona para o sistema
+                    window.location.href = '/sistema';
+                }
+            } catch (error) {
+                // Não autenticado, permanece na página de login
+                console.log('🔐 Não autenticado - Mostrando login');
+            }
+        }
     </script>
 </body>
 </html>
