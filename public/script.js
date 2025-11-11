@@ -1,4 +1,4 @@
-// public/script.js - Cliente CORRIGIDO sem loops
+// public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -223,6 +223,8 @@ async function toggleDevice(type, device, state) {
         
         if (data.status === 'OK') {
             console.log(`✅ ${device}: ${state ? 'Ligado' : 'Desligado'}`);
+            showNotification(`${getDeviceDisplayName(device)} ${state ? 'ligado' : 'desligado'}`, 'success');
+            
             // Atualizar estado local
             if (currentDevices[type]) {
                 currentDevices[type][device] = state;
@@ -230,31 +232,77 @@ async function toggleDevice(type, device, state) {
             updateDeviceDisplays();
         } else {
             console.error('❌ Erro ao controlar dispositivo:', data.error);
+            showNotification(`Erro: ${data.error}`, 'error');
             // Reverter visualmente em caso de erro
             loadDevices();
         }
     } catch (error) {
         console.error('❌ Erro na comunicação:', error);
+        showNotification('Erro de conexão com o servidor', 'error');
         loadDevices();
     }
 }
 
 async function controlAllLights(state) {
     const lights = currentDevices.lights || {};
-    for (const device of Object.keys(lights)) {
-        await toggleDevice('lights', device, state);
+    const action = state ? 'ligadas' : 'desligadas';
+    
+    try {
+        for (const device of Object.keys(lights)) {
+            await toggleDevice('lights', device, state);
+        }
+        showNotification(`Todas as lâmpadas ${action}`, 'success');
+    } catch (error) {
+        console.error('❌ Erro ao controlar lâmpadas:', error);
     }
 }
 
 async function controlAllOutlets(state) {
     const outlets = currentDevices.outlets || {};
-    for (const device of Object.keys(outlets)) {
-        await toggleDevice('outlets', device, state);
+    const action = state ? 'ligadas' : 'desligadas';
+    
+    try {
+        for (const device of Object.keys(outlets)) {
+            await toggleDevice('outlets', device, state);
+        }
+        showNotification(`Todas as tomadas ${action}`, 'success');
+    } catch (error) {
+        console.error('❌ Erro ao controlar tomadas:', error);
     }
 }
 
 async function controlIrrigation(state) {
-    await toggleDevice('irrigation', 'bomba_irrigacao', state);
+    try {
+        const response = await fetch('/api/irrigation/control', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ state })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'OK') {
+            const action = state ? 'ligada' : 'desligada';
+            console.log(`💧 Bomba ${action}`);
+            showNotification(`Bomba de irrigação ${action}`, 'success');
+            
+            // Atualizar estado local
+            if (currentDevices.irrigation) {
+                currentDevices.irrigation.bomba_irrigacao = state;
+            }
+            updateIrrigationDisplay();
+        } else {
+            console.error('❌ Erro ao controlar irrigação:', data.error);
+            showNotification(`Erro: ${data.error}`, 'error');
+            loadDevices();
+        }
+    } catch (error) {
+        console.error('❌ Erro na comunicação:', error);
+        showNotification('Erro de conexão com o servidor', 'error');
+        loadDevices();
+    }
 }
 
 // Atualização de dados em tempo real
@@ -284,6 +332,15 @@ async function updateSensorData() {
             const tempElement = document.getElementById('sensor-temperature');
             if (tempElement && latest.temperature !== undefined) {
                 tempElement.textContent = `${latest.temperature}°C`;
+                
+                // Mudar cor baseada na temperatura
+                if (latest.temperature > 30) {
+                    tempElement.style.color = '#ff4444';
+                } else if (latest.temperature < 15) {
+                    tempElement.style.color = '#4444ff';
+                } else {
+                    tempElement.style.color = 'white';
+                }
             }
             
             // Atualizar umidade (simulada)
@@ -298,6 +355,15 @@ async function updateSensorData() {
             const gasElement = document.getElementById('sensor-gas');
             if (gasElement && latest.gas_level !== undefined) {
                 gasElement.textContent = latest.gas_level;
+                
+                // Mudar cor baseada no nível de gás
+                if (latest.gas_level > 500) {
+                    gasElement.style.color = '#ff4444';
+                } else if (latest.gas_level > 300) {
+                    gasElement.style.color = '#ffaa00';
+                } else {
+                    gasElement.style.color = 'white';
+                }
             }
             
             // Atualizar alerta
@@ -306,6 +372,13 @@ async function updateSensorData() {
                 const isAlert = latest.gas_alert || latest.gas_level > 300;
                 alertElement.textContent = isAlert ? 'ALERTA!' : 'NORMAL';
                 alertElement.style.color = isAlert ? '#ff4444' : '#4CAF50';
+                alertElement.style.fontWeight = isAlert ? 'bold' : 'normal';
+                
+                if (isAlert && latest.gas_level > 500) {
+                    showNotification('⚠️ ALERTA CRÍTICO: Nível de gás muito alto!', 'error');
+                } else if (isAlert) {
+                    showNotification('⚠️ Alerta: Nível de gás elevado', 'warning');
+                }
             }
         }
     } catch (error) {
@@ -313,16 +386,36 @@ async function updateSensorData() {
     }
 }
 
+// 🆕 METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
         const response = await fetch('/api/weather');
         const data = await response.json();
         
         if (data && data.main) {
-            // Temperatura
-            const tempElement = document.getElementById('weather-temp');
-            if (tempElement) {
-                tempElement.textContent = `${Math.round(data.main.temp)}°C`;
+            // Temperatura principal
+            const mainTempElement = document.getElementById('weather-main-temp');
+            if (mainTempElement) {
+                mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
+            }
+            
+            // Descrição principal
+            const mainDescElement = document.getElementById('weather-main-desc');
+            if (mainDescElement && data.weather && data.weather[0]) {
+                mainDescElement.textContent = data.weather[0].description;
+            }
+            
+            // Ícone principal
+            const mainIconElement = document.getElementById('weather-main-icon');
+            if (mainIconElement && data.weather && data.weather[0]) {
+                const weatherMain = data.weather[0].main.toLowerCase();
+                mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+            }
+            
+            // Sensação térmica
+            const feelsLikeElement = document.getElementById('weather-feels-like');
+            if (feelsLikeElement) {
+                feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
             }
             
             // Umidade
@@ -331,21 +424,26 @@ async function updateWeather() {
                 humidityElement.textContent = `${data.main.humidity}%`;
             }
             
-            // Descrição
-            const descElement = document.getElementById('weather-desc');
-            if (descElement && data.weather && data.weather[0]) {
-                descElement.textContent = data.weather[0].description;
+            // Vento
+            const windElement = document.getElementById('weather-wind');
+            if (windElement && data.wind) {
+                windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
             }
             
-            // Ícone
-            const iconElement = document.getElementById('weather-icon');
-            if (iconElement && data.weather && data.weather[0]) {
-                const weatherMain = data.weather[0].main.toLowerCase();
-                iconElement.className = getWeatherIconClass(weatherMain);
+            // Pressão
+            const pressureElement = document.getElementById('weather-pressure');
+            if (pressureElement) {
+                pressureElement.textContent = `${data.main.pressure} hPa`;
             }
             
-            // Horário
-            const timeElement = document.getElementById('weather-time');
+            // Cidade
+            const cityElement = document.getElementById('weather-city');
+            if (cityElement && data.name) {
+                cityElement.textContent = `${data.name}, BR`;
+            }
+            
+            // Horário de atualização
+            const timeElement = document.getElementById('weather-update-time');
             if (timeElement) {
                 const now = new Date();
                 timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -353,22 +451,45 @@ async function updateWeather() {
         }
     } catch (error) {
         console.error('❌ Erro ao atualizar clima:', error);
+        // Mostrar dados padrão em caso de erro
+        const mainTempElement = document.getElementById('weather-main-temp');
+        if (mainTempElement) mainTempElement.textContent = '--°C';
+        
+        const mainDescElement = document.getElementById('weather-main-desc');
+        if (mainDescElement) mainDescElement.textContent = 'Dados indisponíveis';
     }
 }
 
-function getWeatherIconClass(weatherMain) {
+function getWeatherMainIcon(weatherMain) {
     const icons = {
-        'clear': 'fas fa-sun weather-icon-sun',
-        'clouds': 'fas fa-cloud weather-icon-cloud',
-        'rain': 'fas fa-cloud-rain weather-icon-rain',
-        'drizzle': 'fas fa-cloud-drizzle weather-icon-rain',
-        'thunderstorm': 'fas fa-bolt weather-icon-storm',
-        'snow': 'fas fa-snowflake weather-icon-snow',
-        'mist': 'fas fa-smog weather-icon-mist',
-        'fog': 'fas fa-smog weather-icon-mist'
+        'clear': 'fa-sun',
+        'clouds': 'fa-cloud',
+        'rain': 'fa-cloud-rain',
+        'drizzle': 'fa-cloud-drizzle',
+        'thunderstorm': 'fa-bolt',
+        'snow': 'fa-snowflake',
+        'mist': 'fa-smog',
+        'fog': 'fa-smog',
+        'haze': 'fa-smog'
     };
     
-    return icons[weatherMain] || 'fas fa-cloud weather-icon-cloud';
+    return icons[weatherMain] || 'fa-cloud';
+}
+
+function getWeatherAnimationClass(weatherMain) {
+    const animations = {
+        'clear': 'weather-icon-sun',
+        'clouds': 'weather-icon-cloud',
+        'rain': 'weather-icon-rain',
+        'drizzle': 'weather-icon-rain',
+        'thunderstorm': 'weather-icon-storm',
+        'snow': 'weather-icon-snow',
+        'mist': 'weather-icon-mist',
+        'fog': 'weather-icon-mist',
+        'haze': 'weather-icon-mist'
+    };
+    
+    return animations[weatherMain] || 'weather-icon-cloud';
 }
 
 async function updateESP32Status() {
@@ -391,7 +512,7 @@ async function updateESP32Status() {
     }
 }
 
-// Modal de Irrigação
+// 🆕 MODAL DE IRRIGAÇÃO MELHORADO
 function openIrrigationModal() {
     const modal = document.getElementById('irrigation-modal');
     if (modal) {
@@ -422,64 +543,149 @@ function loadIrrigationSettings() {
         rainCheckbox.checked = irrigation.evitar_chuva !== false;
     }
     
-    // Programações
-    updateProgrammingList();
-}
-
-function updateProgrammingList() {
+    // 🆕 Limpar e carregar programações
     const programmingList = document.getElementById('programming-list');
-    if (!programmingList) return;
-    
-    const programacoes = currentDevices.irrigation?.programacoes || [];
-    
     programmingList.innerHTML = '';
     
+    const programacoes = irrigation.programacoes || [];
     if (programacoes.length === 0) {
-        programmingList.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma programação configurada</p>';
-        return;
-    }
-    
-    programacoes.forEach((prog, index) => {
-        const progElement = document.createElement('div');
-        progElement.className = 'programming-item';
-        progElement.innerHTML = `
-            <div class="programming-header">
-                <span class="programming-time">${prog.hora}</span>
-                <button class="delete-programming" onclick="deleteProgramming(${index})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            <div class="programming-days">
-                Dias: ${prog.dias ? prog.dias.join(', ') : 'Todos'}
+        programmingList.innerHTML = `
+            <div class="no-programming">
+                <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                <br>
+                Nenhuma programação configurada
             </div>
         `;
-        programmingList.appendChild(progElement);
-    });
+    } else {
+        programacoes.forEach(prog => {
+            addProgrammingToList(prog);
+        });
+    }
+    
+    // 🆕 Limpar seleções atuais
+    document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('irrigation-time').value = '08:00';
+}
+
+function showTimePicker() {
+    const timeInput = document.getElementById('irrigation-time');
+    timeInput.showPicker(); // Abre o seletor nativo de hora
 }
 
 function addProgramming() {
-    const hora = prompt('Digite o horário (HH:MM):');
-    if (!hora) return;
+    const timeInput = document.getElementById('irrigation-time');
+    const selectedTime = timeInput.value;
     
-    const dias = prompt('Digite os dias (ex: seg,ter,qua ou * para todos):', '*');
-    if (!dias) return;
+    if (!selectedTime) {
+        showNotification('Por favor, selecione um horário.', 'warning');
+        return;
+    }
+
+    // Coletar dias selecionados
+    const selectedDays = [];
+    const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
     
-    const programacoes = currentDevices.irrigation?.programacoes || [];
-    programacoes.push({
-        hora: hora,
-        dias: dias === '*' ? [] : dias.split(',')
+    if (dayCheckboxes.length === 0) {
+        showNotification('Por favor, selecione pelo menos um dia da semana.', 'warning');
+        return;
+    }
+
+    dayCheckboxes.forEach(checkbox => {
+        selectedDays.push(checkbox.value);
     });
+
+    // Criar nova programação
+    const newProgramming = {
+        hora: selectedTime,
+        dias: selectedDays
+    };
+
+    // Adicionar à lista visual
+    addProgrammingToList(newProgramming);
     
-    if (!currentDevices.irrigation) currentDevices.irrigation = {};
-    currentDevices.irrigation.programacoes = programacoes;
+    // Limpar seleção
+    timeInput.value = '08:00';
+    document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
     
-    updateProgrammingList();
+    showNotification('Programação adicionada com sucesso!', 'success');
 }
 
-function deleteProgramming(index) {
-    const programacoes = currentDevices.irrigation?.programacoes || [];
-    programacoes.splice(index, 1);
-    updateProgrammingList();
+function addProgrammingToList(programming) {
+    const programmingList = document.getElementById('programming-list');
+    
+    // Remover mensagem "nenhuma programação" se for a primeira
+    if (programmingList.querySelector('.no-programming')) {
+        programmingList.innerHTML = '';
+    }
+
+    const programmingElement = document.createElement('div');
+    programmingElement.className = 'programming-item';
+    programmingElement.innerHTML = `
+        <div class="programming-header">
+            <span class="programming-time">${programming.hora}</span>
+            <button class="delete-programming" onclick="removeProgramming(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="programming-days">
+            ${getDaysBadges(programming.dias)}
+        </div>
+    `;
+    
+    programmingList.appendChild(programmingElement);
+}
+
+function getDaysBadges(days) {
+    const dayNames = {
+        'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+        'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
+    };
+    
+    return days.map(day => 
+        `<span class="day-badge active">${dayNames[day]}</span>`
+    ).join('');
+}
+
+function removeProgramming(button) {
+    const programmingItem = button.closest('.programming-item');
+    programmingItem.remove();
+    
+    const programmingList = document.getElementById('programming-list');
+    if (programmingList.children.length === 0) {
+        programmingList.innerHTML = `
+            <div class="no-programming">
+                <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                <br>
+                Nenhuma programação configurada
+            </div>
+        `;
+    }
+    
+    showNotification('Programação removida', 'info');
+}
+
+function getSelectedProgrammings() {
+    const programmingList = document.getElementById('programming-list');
+    const programmings = [];
+    
+    programmingList.querySelectorAll('.programming-item').forEach(item => {
+        const time = item.querySelector('.programming-time').textContent;
+        const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
+            const dayText = badge.textContent.toLowerCase();
+            const dayMap = {
+                'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 
+                'sex': 'sex', 'sab': 'sab', 'dom': 'dom'
+            };
+            return dayMap[dayText];
+        }).filter(day => day);
+        
+        programmings.push({
+            hora: time,
+            dias: days
+        });
+    });
+    
+    return programmings;
 }
 
 async function saveIrrigationSettings() {
@@ -490,7 +696,7 @@ async function saveIrrigationSettings() {
         const settings = {
             modo: modeSelect?.value || 'manual',
             evitar_chuva: rainCheckbox?.checked !== false,
-            programacoes: currentDevices.irrigation?.programacoes || []
+            programacoes: getSelectedProgrammings()
         };
         
         const response = await fetch('/api/irrigation/save', {
@@ -505,15 +711,16 @@ async function saveIrrigationSettings() {
         
         if (data.status === 'OK') {
             console.log('✅ Configurações de irrigação salvas');
+            showNotification('Configurações salvas com sucesso!', 'success');
             closeIrrigationModal();
             loadDevices(); // Recarregar dados
         } else {
             console.error('❌ Erro ao salvar configurações:', data.error);
-            alert('Erro ao salvar configurações: ' + data.error);
+            showNotification('Erro ao salvar configurações: ' + data.error, 'error');
         }
     } catch (error) {
         console.error('❌ Erro ao salvar configurações:', error);
-        alert('Erro de conexão ao salvar configurações');
+        showNotification('Erro de conexão ao salvar configurações', 'error');
     }
 }
 
@@ -523,22 +730,103 @@ async function checkWeather() {
         const data = await response.json();
         
         if (data.raining) {
-            alert('⚠️ Está chovendo! A irrigação pode ser bloqueada.');
+            showNotification('⚠️ Está chovendo! A irrigação automática está bloqueada.', 'warning');
         } else {
-            alert('☀️ Tempo seco - Irrigação permitida.');
+            showNotification('☀️ Tempo seco - Irrigação automática permitida.', 'success');
         }
     } catch (error) {
         console.error('❌ Erro ao verificar clima:', error);
-        alert('Erro ao verificar condições climáticas');
+        showNotification('Erro ao verificar condições climáticas', 'error');
     }
+}
+
+// 🆕 SISTEMA DE NOTIFICAÇÕES
+function showNotification(message, type = 'info') {
+    // Remove notificações existentes para evitar acumulação
+    const existingNotifications = document.querySelectorAll('.custom-notification');
+    existingNotifications.forEach(notif => {
+        if (notif.parentNode) {
+            notif.parentNode.removeChild(notif);
+        }
+    });
+
+    // Cria uma notificação
+    const notification = document.createElement('div');
+    notification.className = 'custom-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideInRight 0.3s ease;
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+    
+    const colors = {
+        success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+        error: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+        info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+        warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
+    };
+    
+    notification.style.background = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    // Adicionar ícone baseado no tipo
+    const icons = {
+        success: '✅',
+        error: '❌',
+        info: 'ℹ️',
+        warning: '⚠️'
+    };
+    
+    notification.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
+    
+    document.body.appendChild(notification);
+    
+    // Remove após 4 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
+// 🆕 ADICIONAR ANIMAÇÕES CSS PARA NOTIFICAÇÕES
+if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // Prevenir fechamento acidental
 window.addEventListener('beforeunload', function (e) {
     // Opcional: Confirmar saída se houver operações pendentes
+    // const confirmationMessage = 'Tem certeza que deseja sair?';
+    // e.returnValue = confirmationMessage;
+    // return confirmationMessage;
 });
 
-// 🚨 CORREÇÃO: Exportar funções globais
+// 🚨 CORREÇÃO: Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
@@ -548,4 +836,10 @@ window.saveIrrigationSettings = saveIrrigationSettings;
 window.checkWeather = checkWeather;
 window.toggleDevice = toggleDevice;
 window.addProgramming = addProgramming;
-window.deleteProgramming = deleteProgramming;
+window.removeProgramming = removeProgramming;
+window.showTimePicker = showTimePicker;
+window.updateWeather = updateWeather;
+window.showNotification = showNotification;
+window.logout = logout;
+
+console.log('🔧 Script.js carregado com todas as funcionalidades!');
