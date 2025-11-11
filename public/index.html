@@ -746,316 +746,101 @@
         .modal-section h3 {
             margin-bottom: 15px;
             color: #2d3748;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             font-size: 1.1em;
         }
 
-        .mode-selector {
-            display: flex;
-            gap: 10px;
+        .form-group {
             margin-bottom: 15px;
         }
 
-        .mode-option {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .mode-option:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        .mode-option.active {
-            border-color: #4CAF50;
-            background: #f0fff4;
-            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
-        }
-
-        .mode-option i {
-            font-size: 1.3em;
-            margin-bottom: 6px;
+        .form-group label {
             display: block;
-            color: #667eea;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
         }
 
-        .mode-option.active i {
-            color: #4CAF50;
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
         }
 
-        .bomba-status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
+        .programming-item {
             background: white;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 2px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
         }
 
-        .bomba-info {
+        .programming-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            margin-bottom: 5px;
         }
 
-        .bomba-icon {
-            font-size: 1.5em;
-            color: #00b894;
-        }
-
-        .bomba-details {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .bomba-title {
+        .programming-time {
             font-weight: 600;
             color: #2d3748;
         }
 
-        .bomba-state {
-            font-size: 0.85em;
+        .programming-days {
+            font-size: 0.8em;
             color: #666;
         }
 
-        .bomba-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-bomba {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.8em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-bomba.on {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .btn-bomba.off {
-            background: #f44336;
-            color: white;
-        }
-
-        .btn-bomba:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .chuva-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .programming-grid {
-            display: grid;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .programming-item {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
-            gap: 8px;
-            align-items: center;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .programming-item input, .programming-item select {
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 0.85em;
-        }
-
-        .dias-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin: 8px 0;
-        }
-
-        .dia-option {
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.75em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .dia-option.selected {
-            background: #4CAF50;
-            color: white;
-            border-color: #4CAF50;
-        }
-
-        .remove-programming {
+        .delete-programming {
             background: #ff6b6b;
             color: white;
             border: none;
-            border-radius: 5px;
-            padding: 6px 10px;
+            border-radius: 3px;
+            padding: 2px 6px;
             cursor: pointer;
-            font-size: 0.8em;
+            font-size: 0.7em;
         }
 
-        .add-programming {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 8px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-top: 10px;
-            font-size: 0.85em;
+        /* Scrollbar personalizado */
+        .devices-compact::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
+        .devices-compact::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
         }
 
-        .btn-save {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
+        .devices-compact::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
         }
 
-        .btn-cancel {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .weather-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 0.85em;
-            color: #856404;
-        }
-
-        .no-programming {
-            text-align: center;
-            color: #666;
-            padding: 20px;
-            font-style: italic;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.6s ease-out;
+        .devices-compact::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
 
         /* Responsividade */
-        @media (max-width: 1200px) {
+        @media (max-width: 768px) {
             .main-grid {
                 grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .logout-btn {
-                position: static;
-                margin-top: 5px;
-            }
-
-            .weather-compact {
-                flex-direction: column;
-                gap: 8px;
-                text-align: center;
-                padding: 12px 15px;
-            }
-            
-            .weather-data-compact {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 15px;
             }
             
             .sensors-compact {
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            .devices-compact {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            }
-            
-            .main-grid {
-                grid-template-columns: 1fr;
+            .weather-data-compact {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
             }
             
             .header h1 {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .status-content {
-                flex-direction: column;
-                gap: 5px;
-            }
-
-            .programming-item {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-
-            .mode-selector {
-                flex-direction: column;
-            }
-
-            .modal-content {
-                padding: 15px;
-                margin: 10px;
+                font-size: 1.8em;
             }
         }
 
@@ -1064,797 +849,268 @@
                 grid-template-columns: 1fr;
             }
             
-            .weather-data-compact {
+            .header {
+                flex-direction: column;
                 gap: 10px;
             }
             
-            .weather-item-compact {
-                flex-direction: column;
-                gap: 2px;
+            .logout-btn {
+                align-self: center;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <div class="header-content">
                 <h1>
-                    <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
-                         alt="Casa Inteligente" class="title-icon">
-                    Casa Automação - V3.0
-                    <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" 
-                         alt="Casa Inteligente" class="title-icon">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgOUg5VjNIM1Y5Wk0xMCAyMlYxNkgxNlYyMkgxMFpNMyAyMlYxNkg5VjIySDNaTTQgOEg4VjRINFY4Wk0xMCAxNUgxNVYxMEgxMFYxNVpNMTYgOEgyMFY0SDE2VjhaTTEwIDhIMTRWNEgxMFY4Wk0xNiAxNUgyMFYxMEgxNlYxNVpNMTYgMjJIMjBWMTZIMTYgVjIyWiIgZmlsbD0iY3VycmVudENvbG9yIi8+Cjwvc3ZnPgo=" class="title-icon" alt="Casa">
+                    Casa Automação V3.0
                 </h1>
             </div>
-            <button class="logout-btn" onclick="fazerLogout()">
+            <!-- 🚨 CORREÇÃO: Botão logout com onclick correto -->
+            <button class="logout-btn" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i>
-                Sair
+                Sair do Sistema
             </button>
         </div>
 
-        <!-- Meteorologia -->
-        <div class="weather-compact fade-in" id="weatherCompact">
+        <!-- Clima Compacto -->
+        <div class="weather-compact">
             <div class="weather-location-compact">
                 <i class="fas fa-map-marker-alt"></i>
-                <span>Rio de Janeiro, RJ</span>
-                <div class="weather-description-compact" id="weather-description">
-                    <i class="fas fa-cloud weather-main-icon" id="weather-main-icon"></i>
-                    Carregando...
-                </div>
+                <span>Rio de Janeiro, BR</span>
             </div>
-            <div class="weather-data-compact" id="weather-data-compact">
+            <div class="weather-data-compact">
                 <div class="weather-item-compact">
-                    <i class="fas fa-thermometer-half icon-thermometer" id="icon-temp"></i>
-                    <span class="weather-value-compact" id="weather-temp">--°</span>
+                    <i class="fas fa-thermometer-half icon-thermometer"></i>
+                    <span class="weather-value-compact" id="weather-temp">--°C</span>
                 </div>
                 <div class="weather-item-compact">
-                    <i class="fas fa-tint icon-humidity" id="icon-humidity"></i>
+                    <i class="fas fa-tint icon-humidity"></i>
                     <span class="weather-value-compact" id="weather-humidity">--%</span>
                 </div>
-                <div class="weather-item-compact">
-                    <i class="fas fa-wind icon-wind" id="icon-wind"></i>
-                    <span class="weather-value-compact" id="weather-wind">--km/h</span>
-                </div>
-                <div class="weather-item-compact">
-                    <i class="fas fa-compress-alt icon-pressure" id="icon-pressure"></i>
-                    <span class="weather-value-compact" id="weather-pressure">--hPa</span>
+                <div class="weather-description-compact">
+                    <i class="fas fa-cloud weather-icon-cloud" id="weather-icon"></i>
+                    <span id="weather-desc">Carregando...</span>
                 </div>
             </div>
-            <div class="weather-time-compact" id="weather-update-time">
-                <img src="https://img.icons8.com/?size=100&id=Y9YVREoA15tQ&format=png&color=000000" 
-                     alt="Atualizado" class="update-icon">
-                Atualizando...
+            <div class="weather-time-compact">
+                <i class="fas fa-sync-alt update-icon" id="weather-update-icon"></i>
+                <span id="weather-time">Atualizado: --:--</span>
             </div>
         </div>
 
-        <!-- Monitoramento -->
-        <div class="monitoring-card fade-in">
-            <h2><i class="fas fa-chart-line"></i> Monitoramento em Tempo Real</h2>
-            <div class="sensors-compact" id="sensorsGrid">
+        <!-- Monitoramento de Sensores -->
+        <div class="monitoring-card">
+            <h2>
+                <i class="fas fa-chart-line"></i>
+                Monitoramento em Tempo Real
+            </h2>
+            <div class="sensors-compact">
                 <div class="sensor-compact-item temperature">
-                    <div class="sensor-compact-icon">🌡️</div>
-                    <div class="sensor-compact-value" id="sensor-temp">--°</div>
+                    <div class="sensor-compact-icon">
+                        <i class="fas fa-thermometer-half"></i>
+                    </div>
+                    <div class="sensor-compact-value" id="sensor-temperature">--°C</div>
                     <div class="sensor-compact-label">Temperatura</div>
                 </div>
-                <div class="sensor-compact-item gas">
-                    <div class="sensor-compact-icon">💨</div>
-                    <div class="sensor-compact-value" id="sensor-gas">--</div>
-                    <div class="sensor-compact-label">Nível de Gás</div>
-                </div>
                 <div class="sensor-compact-item humidity">
-                    <div class="sensor-compact-icon">💧</div>
+                    <div class="sensor-compact-icon">
+                        <i class="fas fa-tint"></i>
+                    </div>
                     <div class="sensor-compact-value" id="sensor-humidity">--%</div>
                     <div class="sensor-compact-label">Umidade</div>
                 </div>
-                <div class="sensor-compact-item">
-                    <div class="sensor-compact-icon">📡</div>
-                    <div class="sensor-compact-value" id="sensor-status">ON</div>
-                    <div class="sensor-compact-label">Status</div>
+                <div class="sensor-compact-item gas">
+                    <div class="sensor-compact-icon">
+                        <i class="fas fa-wind"></i>
+                    </div>
+                    <div class="sensor-compact-value" id="sensor-gas">--</div>
+                    <div class="sensor-compact-label">Nível de Gás</div>
+                </div>
+                <div class="sensor-compact-item alert">
+                    <div class="sensor-compact-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="sensor-compact-value" id="sensor-alert">NORMAL</div>
+                    <div class="sensor-compact-label">Status Gás</div>
                 </div>
             </div>
         </div>
 
         <!-- Grid Principal -->
         <div class="main-grid">
-            <div class="card fade-in">
-                <h2><i class="fas fa-lightbulb"></i> Controle de Lâmpadas</h2>
-                <div class="devices-compact" id="lightsGrid">
-                    <!-- Lâmpadas serão inseridas aqui -->
+            <!-- Controle de Lâmpadas -->
+            <div class="card">
+                <h2>
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMjFDNy45IDIxIDcgMjAuMSA3IDE5VjE4IM0gxMFYxOSBDMTAgMjAuMSA5LjEgMjEgOSAyMVpNMTAgMTZINVYxOUgxMFYxNlpNMTAgMTZIMTNWMTlIMTBWMTZaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPHBhdGggZD0iTTE2LjUgMTEuNUwxNSA4SDlMMy41IDE2LjVDMy4xIDE3LjIgMy4xIDE4IDMuNSAxOC41QzMuOSAxOSA0LjcgMTkuNSA1LjUgMTkuNUgxNC41QzE1LjMgMTkuNSAxNi4xIDE5IDE2LjUgMTguNUMxNi45IDE4IDE2LjkgMTcuMiAxNi41IDE2LjVMMTYgMTUuNUwxNi41IDExLjVaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPHBhdGggZD0iTTE1IDdWMTBIMTZMMTUuNSAxNEwxNiAxNUgxNkwxNi41IDE2LjVMMTUuNSAxOEgxNkwxNS41IDE5LjVMMTQgMjFIMTBMMTAuNSAxOS41SDlMOS41IDE4SDlMOC41IDE2LjVMOSAxNUg4TDguNSAxNEw4IDEwSDlMNyA3SDE1WiIgZmlsbD0iY3VycmVudENvbG9yIi8+Cjwvc3ZnPgo=" class="lamp-icon-on" alt="Lâmpada">
+                    Controle de Lâmpadas
+                </h2>
+                <div class="devices-compact" id="lights-container">
+                    <!-- Lâmpadas serão carregadas via JavaScript -->
+                </div>
+                <div class="controls">
+                    <button class="btn btn-success" onclick="controlAllLights(true)">
+                        <i class="fas fa-power-off"></i>
+                        Ligar Todas
+                    </button>
+                    <button class="btn btn-danger" onclick="controlAllLights(false)">
+                        <i class="fas fa-power-off"></i>
+                        Desligar Todas
+                    </button>
                 </div>
             </div>
 
-            <div class="card fade-in">
-                <h2><i class="fas fa-plug"></i> Controle de Tomadas</h2>
-                <div class="devices-compact" id="outletsGrid">
-                    <!-- Tomadas serão inseridas aqui -->
+            <!-- Controle de Tomadas -->
+            <div class="card">
+                <h2>
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC45IDE2LjlMNy4xIDE0LjdNMTYuOSAxNi45TDE0LjcgMTQuN1oiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="outlet-icon" alt="Tomada">
+                    Controle de Tomadas
+                </h2>
+                <div class="devices-compact" id="outlets-container">
+                    <!-- Tomadas serão carregadas via JavaScript -->
+                </div>
+                <div class="controls">
+                    <button class="btn btn-success" onclick="controlAllOutlets(true)">
+                        <i class="fas fa-plug"></i>
+                        Ligar Todas
+                    </button>
+                    <button class="btn btn-danger" onclick="controlAllOutlets(false)">
+                        <i class="fas fa-plug"></i>
+                        Desligar Todas
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Sistema de Irrigação -->
-        <div class="card fade-in">
-            <h2><i class="fas fa-tint"></i> Sistema de Irrigação</h2>
-            <div class="devices-compact" id="irrigationGrid">
-                <div class="device-compact-item" onclick="openIrrigationModal()">
-                    <div class="device-compact-icon">
-                        <i class="fas fa-tint irrigation-icon"></i>
+        <div class="card">
+            <h2>
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
+                Sistema de Irrigação
+            </h2>
+            <div class="status-bar">
+                <div class="status-content">
+                    <div class="esp32-indicator online" id="esp32-status">
+                        <i class="fas fa-microchip"></i>
+                        <span>ESP32 Online</span>
                     </div>
-                    <div class="device-compact-name">
-                        <span class="room-icon">💧</span>Configurar Irrigação
+                    <div class="status-text">
+                        Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
                     </div>
-                    <div class="device-status status-on" id="irrigation-status">CLIQUE PARA CONFIGURAR</div>
+                    <div class="device-status">
+                        Modo: <span id="irrigation-mode">Manual</span> | 
+                        Evitar Chuva: <span id="rain-avoidance">Ativado</span>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Controles -->
-        <div class="controls">
-            <button class="btn btn-success" onclick="ligarTudo()">
-                <i class="fas fa-power-off"></i> Ligar Tudo
-            </button>
-            <button class="btn btn-danger" onclick="desligarTudo()">
-                <i class="fas fa-plug"></i> Desligar Tudo
-            </button>
-            <button class="btn btn-primary" onclick="atualizarDados()">
-                <i class="fas fa-sync-alt"></i> Atualizar
-            </button>
-            <button class="btn btn-weather" onclick="atualizarClimaReal()">
-                <i class="fas fa-cloud-sun"></i> Clima
-            </button>
-        </div>
-
-        <!-- Status Bar -->
-        <div class="status-bar online" id="statusBar">
-            <div class="status-content">
-                <img src="https://img.icons8.com/?size=100&id=qEwDbmXzlQrx&format=png&color=000000" 
-                     alt="Sistema Online" class="internet-icon">
-                <span class="status-text" id="statusText">Sistema Inicializado - Use os botões para atualizar</span>
-                <div class="esp32-indicator online" id="esp32Indicator">
-                    <i class="fas fa-microchip"></i>
-                    <span>ESP32: AGUARDANDO</span>
-                </div>
+            <div class="controls">
+                <button class="btn btn-success" onclick="controlIrrigation(true)">
+                    <i class="fas fa-play"></i>
+                    Ligar Bomba
+                </button>
+                <button class="btn btn-danger" onclick="controlIrrigation(false)">
+                    <i class="fas fa-stop"></i>
+                    Desligar Bomba
+                </button>
+                <button class="btn btn-primary" onclick="openIrrigationModal()">
+                    <i class="fas fa-cog"></i>
+                    Configurar
+                </button>
+                <button class="btn btn-weather" onclick="checkWeather()">
+                    <i class="fas fa-cloud-sun"></i>
+                    Verificar Clima
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Irrigação -->
-    <div class="modal-overlay" id="irrigationModal">
+    <!-- Modal de Configuração de Irrigação -->
+    <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-tint"></i> Configuração de Irrigação</h2>
+                <h2>
+                    <i class="fas fa-cog"></i>
+                    Configurações de Irrigação
+                </h2>
                 <button class="close-modal" onclick="closeIrrigationModal()">&times;</button>
             </div>
             
-            <!-- Status da Bomba -->
             <div class="modal-section">
-                <h3><i class="fas fa-info-circle"></i> Status da Bomba</h3>
-                <div class="bomba-status">
-                    <div class="bomba-info">
-                        <i class="fas fa-water bomba-icon" id="bomba-status-icon"></i>
-                        <div class="bomba-details">
-                            <div class="bomba-title">Bomba de Irrigação</div>
-                            <div class="bomba-state" id="bomba-state-text">Carregando...</div>
-                        </div>
-                    </div>
-                    <div class="bomba-controls">
-                        <button class="btn-bomba on" onclick="controlarBomba(true)">LIGAR</button>
-                        <button class="btn-bomba off" onclick="controlarBomba(false)">DESLIGAR</button>
-                    </div>
+                <h3>Modo de Operação</h3>
+                <div class="form-group">
+                    <label for="irrigation-mode-select">Selecione o modo:</label>
+                    <select id="irrigation-mode-select">
+                        <option value="manual">Manual</option>
+                        <option value="automatico">Automático</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Modo de Operação -->
             <div class="modal-section">
-                <h3><i class="fas fa-cog"></i> Modo de Operação</h3>
-                <div class="mode-selector">
-                    <div class="mode-option active" onclick="selectMode('manual')">
-                        <i class="fas fa-hand-paper"></i>
-                        <div>Manual</div>
-                        <small>Controle direto</small>
-                    </div>
-                    <div class="mode-option" onclick="selectMode('automatico')">
-                        <i class="fas fa-robot"></i>
-                        <div>Automático</div>
-                        <small>Programação</small>
-                    </div>
-                </div>
-
-                <!-- Opção de evitar chuva -->
-                <div class="chuva-option">
-                    <label class="switch">
-                        <input type="checkbox" id="evitar-chuva" checked>
-                        <span class="slider"></span>
+                <h3>Preferências</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="avoid-rain-checkbox" checked>
+                        Evitar irrigação quando estiver chovendo
                     </label>
-                    <span>Não irrigar em dias chuvosos</span>
                 </div>
             </div>
 
-            <!-- Configurações Automáticas -->
-            <div class="modal-section" id="automaticSettings" style="display: none;">
-                <h3><i class="fas fa-clock"></i> Programação Automática</h3>
-                
-                <div class="weather-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Monitoramento Climático:</strong> O sistema não irrigará automaticamente em dias chuvosos.
+            <div class="modal-section" id="programming-section">
+                <h3>Programações Automáticas</h3>
+                <div id="programming-list">
+                    <!-- Programações serão carregadas aqui -->
                 </div>
-                
-                <div class="programming-grid" id="programmingGrid">
-                    <div class="no-programming">
-                        Nenhuma programação adicionada
-                    </div>
-                </div>
-                
-                <button class="add-programming" onclick="addProgramming()">
-                    <i class="fas fa-plus"></i> Adicionar Programação
+                <button class="btn btn-primary" onclick="addProgramming()">
+                    <i class="fas fa-plus"></i>
+                    Adicionar Programação
                 </button>
             </div>
 
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeIrrigationModal()">
-                    <i class="fas fa-times"></i> Cancelar
+            <div class="controls">
+                <button class="btn btn-success" onclick="saveIrrigationSettings()">
+                    <i class="fas fa-save"></i>
+                    Salvar Configurações
                 </button>
-                <button class="btn-save" onclick="saveIrrigationConfig()">
-                    <i class="fas fa-save"></i> Salvar Configurações
+                <button class="btn btn-danger" onclick="closeIrrigationModal()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Script principal -->
+    <script src="script.js"></script>
     <script>
-        // Configurações
-        const devices = {
-            lights: [
-                { name: 'sala', icon: '🛋️', label: 'Sala' },
-                { name: 'quarto1', icon: '🛏️', label: 'Quarto 1' },
-                { name: 'quarto2', icon: '🛏️', label: 'Quarto 2' },
-                { name: 'quarto3', icon: '🛏️', label: 'Quarto 3' },
-                { name: 'corredor', icon: '🚪', label: 'Corredor' },
-                { name: 'cozinha', icon: '👨‍🍳', label: 'Cozinha' },
-                { name: 'banheiro', icon: '🚿', label: 'Banheiro' }
-            ],
-            outlets: [
-                { name: 'tomada_sala', icon: '🔌', label: 'Tomada Sala' },
-                { name: 'tomada_cozinha', icon: '🔌', label: 'Tomada Cozinha' },
-                { name: 'tomada_quarto1', icon: '🔌', label: 'Tomada Q1' },
-                { name: 'tomada_quarto2', icon: '🔌', label: 'Tomada Q2' },
-                { name: 'tomada_quarto3', icon: '🔌', label: 'Tomada Q3' }
-            ]
-        };
-
-        let currentState = {
-            temperature: 0,
-            gas_level: 0,
-            gas_alert: false,
-            humidity: 0,
-            lights: {},
-            outlets: {}
-        };
-
-        let irrigationConfig = {
-            modo: 'manual',
-            programacoes: [],
-            evitar_chuva: true,
-            bomba_estado: false
-        };
-
-        let diasSemana = [
-            { valor: 1, label: 'Seg' },
-            { valor: 2, label: 'Ter' },
-            { valor: 3, label: 'Qua' },
-            { valor: 4, label: 'Qui' },
-            { valor: 5, label: 'Sex' },
-            { valor: 6, label: 'Sáb' },
-            { valor: 0, label: 'Dom' }
-        ];
-
-        // 🚨 CORREÇÃO: Interceptador de erros 401
-        function setupErrorInterceptor() {
-            const originalFetch = window.fetch;
-            window.fetch = async function(...args) {
-                try {
-                    const response = await originalFetch.apply(this, args);
-                    
-                    if (response.status === 401) {
-                        console.log('🔐 Sessão expirada, redirecionando para login...');
-                        window.location.href = '/';
-                        return response;
-                    }
-                    
-                    return response;
-                } catch (error) {
-                    console.error('❌ Erro na requisição:', error);
-                    throw error;
-                }
-            };
-        }
-
-        // Inicialização SEGURA - SEM INTERVALOS AUTOMÁTICOS
-        async function initInterface() {
+        // 🚨 CORREÇÃO: Função logout global
+        async function logout() {
             try {
-                console.log('🚀 Inicializando interface...');
-                setupErrorInterceptor();
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
                 
-                // Inicializar componentes básicos
-                renderLights();
-                renderOutlets();
-                await checkServerStatus();
-                await loadIrrigationConfig();
-                
-                console.log('✅ Sistema inicializado SEM intervalos automáticos');
-                updateStatusBar('✅ Sistema pronto - Use os botões para atualizar', 'online');
-                
-            } catch (error) {
-                console.error('❌ Erro na inicialização:', error);
-                updateStatusBar('❌ Erro na inicialização', 'offline');
-            }
-        }
-
-        // 🚨 CORREÇÃO: Funções básicas sem intervalos automáticos
-        async function checkServerStatus() {
-            try {
-                const response = await fetch('/api/status');
-                if (!response.ok) throw new Error('Servidor offline');
                 const data = await response.json();
-                updateStatusBar(data.systemStatus, 'online');
-            } catch (error) {
-                updateStatusBar('❌ Servidor offline', 'offline');
-            }
-        }
-
-        async function updateSensors() {
-            try {
-                const response = await fetch('/api/data');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.data && data.data.length > 0) {
-                        const latest = data.data[0];
-                        currentState = {
-                            temperature: latest.temperature,
-                            gas_level: latest.gas_level,
-                            gas_alert: latest.gas_alert,
-                            humidity: latest.humidity || 50
-                        };
-                    }
+                
+                if (data.success) {
+                    window.location.href = data.redirect;
                 }
-
-                const temp = currentState.temperature !== -999.9 ? currentState.temperature : 23;
-                const gas = currentState.gas_level || 0;
-                const humidity = currentState.humidity || 50;
-
-                document.getElementById('sensor-temp').textContent = `${temp}°`;
-                document.getElementById('sensor-gas').textContent = gas;
-                document.getElementById('sensor-humidity').textContent = `${humidity}%`;
-
-                // Atualizar alerta de gás
-                const gasElement = document.getElementById('sensorsGrid').children[1];
-                if (gas > 70) {
-                    gasElement.classList.add('alert');
-                    gasElement.querySelector('.sensor-compact-icon').textContent = '🚨';
-                } else {
-                    gasElement.classList.remove('alert');
-                    gasElement.querySelector('.sensor-compact-icon').textContent = '💨';
-                }
-
-            } catch (error) {
-                console.error('❌ Erro ao atualizar sensores:', error);
-            }
-        }
-
-        function updateStatusBar(message, type) {
-            const statusBar = document.getElementById('statusBar');
-            const statusText = document.getElementById('statusText');
-            if (statusText) statusText.textContent = message;
-            statusBar.className = `status-bar ${type}`;
-        }
-
-        // 🚨 CORREÇÃO: Logout seguro
-        async function fazerLogout() {
-            try {
-                console.log('🚪 Fazendo logout...');
-                await fetch('/api/logout', { method: 'POST' });
-                window.location.href = '/';
             } catch (error) {
                 console.error('❌ Erro no logout:', error);
-                window.location.href = '/';
+                window.location.href = '/login.html';
             }
         }
 
-        // Renderização dos dispositivos
-        function renderLights() {
-            const grid = document.getElementById('lightsGrid');
-            grid.innerHTML = devices.lights.map(light => `
-                <div class="device-compact-item" id="device_light_${light.name}">
-                    <div class="device-compact-icon">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="device-compact-name">
-                        <span class="room-icon">${light.icon}</span>${light.label}
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="light_${light.name}" onchange="toggleDevice('lights', '${light.name}')">
-                        <span class="slider"></span>
-                    </label>
-                    <div class="device-status status-off" id="status_light_${light.name}">OFF</div>
-                </div>
-            `).join('');
-        }
-
-        function renderOutlets() {
-            const grid = document.getElementById('outletsGrid');
-            grid.innerHTML = devices.outlets.map(outlet => `
-                <div class="device-compact-item" id="device_outlet_${outlet.name}">
-                    <div class="device-compact-icon">
-                        <i class="fas fa-plug"></i>
-                    </div>
-                    <div class="device-compact-name">
-                        <span class="room-icon">${outlet.icon}</span>${outlet.label}
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="outlet_${outlet.name}" onchange="toggleDevice('outlets', '${outlet.name}')">
-                        <span class="slider"></span>
-                    </label>
-                    <div class="device-status status-off" id="status_outlet_${outlet.name}">OFF</div>
-                </div>
-            `).join('');
-        }
-
-        async function toggleDevice(type, device) {
-            const checkbox = document.getElementById(`${type.slice(0, -1)}_${device}`);
-            const state = checkbox.checked;
-            const deviceElement = document.getElementById(`device_${type.slice(0, -1)}_${device}`);
-            const statusElement = document.getElementById(`status_${type.slice(0, -1)}_${device}`);
-            
-            deviceElement.classList.toggle('active', state);
-            statusElement.textContent = state ? 'ON' : 'OFF';
-            statusElement.className = `device-status ${state ? 'status-on' : 'status-off'}`;
-            
-            try {
-                const response = await fetch('/api/control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, device, state })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro na resposta do servidor');
-                }
-                
-                updateStatusBar(`✅ ${device} ${state ? 'ligado' : 'desligado'}`, 'online');
-                
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                // Reverter mudança em caso de erro
-                checkbox.checked = !state;
-                deviceElement.classList.toggle('active', !state);
-                statusElement.textContent = !state ? 'ON' : 'OFF';
-                statusElement.className = `device-status ${!state ? 'status-on' : 'status-off'}`;
-                updateStatusBar(`❌ ${error.message}`, 'offline');
-            }
-        }
-
-        async function ligarTudo() {
-            try {
-                for (let light of devices.lights) {
-                    const checkbox = document.getElementById(`light_${light.name}`);
-                    if (!checkbox.checked) {
-                        checkbox.checked = true;
-                        await toggleDevice('lights', light.name);
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                }
-                for (let outlet of devices.outlets) {
-                    const checkbox = document.getElementById(`outlet_${outlet.name}`);
-                    if (!checkbox.checked) {
-                        checkbox.checked = true;
-                        await toggleDevice('outlets', outlet.name);
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                }
-                updateStatusBar('✅ Todos os dispositivos ligados!', 'online');
-            } catch (error) {
-                updateStatusBar('❌ Erro ao ligar todos os dispositivos', 'offline');
-            }
-        }
-
-        async function desligarTudo() {
-            try {
-                const response = await fetch('/api/reset', { method: 'POST' });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro no reset');
-                }
-                
-                devices.lights.forEach(light => {
-                    document.getElementById(`light_${light.name}`).checked = false;
-                    document.getElementById(`device_light_${light.name}`).classList.remove('active');
-                    document.getElementById(`status_light_${light.name}`).textContent = 'OFF';
-                    document.getElementById(`status_light_${light.name}`).className = 'device-status status-off';
-                });
-                devices.outlets.forEach(outlet => {
-                    document.getElementById(`outlet_${outlet.name}`).checked = false;
-                    document.getElementById(`device_outlet_${outlet.name}`).classList.remove('active');
-                    document.getElementById(`status_outlet_${outlet.name}`).textContent = 'OFF';
-                    document.getElementById(`status_outlet_${outlet.name}`).className = 'device-status status-off';
-                });
-                
-                updateStatusBar('✅ Todos os dispositivos desligados!', 'online');
-            } catch (error) {
-                updateStatusBar(`❌ ${error.message}`, 'offline');
-            }
-        }
-
-        async function atualizarDados() {
-            updateStatusBar('🔄 Atualizando dados...', 'online');
-            await updateSensors();
-            await checkServerStatus();
-            updateStatusBar('✅ Dados atualizados com sucesso', 'online');
-        }
-
-        // Funções do clima
-        async function atualizarClimaReal() {
-            try {
-                updateStatusBar('🌤️ Atualizando clima...', 'online');
-                const response = await fetch('/api/weather');
-                
-                if (!response.ok) {
-                    throw new Error(`Erro no servidor: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                renderWeatherCompact(data);
-                updateStatusBar('✅ Clima atualizado', 'online');
-                
-            } catch (error) {
-                console.error('❌ Erro ao buscar dados do clima:', error);
-                updateStatusBar('❌ Erro ao atualizar clima', 'offline');
-            }
-        }
-
-        function renderWeatherCompact(data) {
-            const description = data.weather[0].description;
-            const temperature = data.main.temp;
-            const humidity = data.main.humidity;
-            const windSpeed = (data.wind.speed * 3.6).toFixed(1);
-            const pressure = data.main.pressure;
-
-            const formattedDescription = description.charAt(0).toUpperCase() + description.slice(1);
-
-            document.getElementById('weather-description').innerHTML = 
-                `<i class="fas fa-cloud weather-main-icon" id="weather-main-icon"></i>${formattedDescription}`;
-            document.getElementById('weather-temp').textContent = `${temperature.toFixed(1)}°`;
-            document.getElementById('weather-humidity').textContent = `${humidity}%`;
-            document.getElementById('weather-wind').textContent = `${windSpeed}km/h`;
-            document.getElementById('weather-pressure').textContent = `${pressure}hPa`;
-            
-            const now = new Date();
-            const updateTime = `Atualizado: ${now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
-            document.getElementById('weather-update-time').innerHTML = 
-                `<i class="fas fa-sync-alt update-icon"></i> ${updateTime}`;
-
-            applyWeatherIcon(data.weather[0].main, data.weather[0].description);
-        }
-
-        function applyWeatherIcon(main, description) {
-            const mainIcon = document.getElementById('weather-main-icon');
-            mainIcon.className = 'fas weather-main-icon';
-            
-            const weatherMap = {
-                'Clear': { icon: 'fa-sun', animation: 'weather-icon-sun' },
-                'Clouds': { 
-                    icon: description.includes('poucas nuvens') ? 'fa-cloud-sun' : 'fa-cloud',
-                    animation: description.includes('poucas nuvens') ? 'weather-icon-cloud-sun' : 'weather-icon-cloud'
-                },
-                'Rain': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
-                'Drizzle': { icon: 'fa-cloud-rain', animation: 'weather-icon-rain' },
-                'Thunderstorm': { icon: 'fa-bolt', animation: 'weather-icon-storm' },
-                'Snow': { icon: 'fa-snowflake', animation: 'weather-icon-snow' },
-                'Mist': { icon: 'fa-smog', animation: 'weather-icon-mist' }
-            };
-
-            const weatherConfig = weatherMap[main] || { icon: 'fa-cloud', animation: 'weather-icon-cloud' };
-            mainIcon.classList.add(weatherConfig.icon, weatherConfig.animation);
-        }
-
-        // Funções do modal de irrigação
-        function openIrrigationModal() {
-            document.getElementById('irrigationModal').style.display = 'flex';
-            loadIrrigationModal();
-        }
-
-        function closeIrrigationModal() {
-            document.getElementById('irrigationModal').style.display = 'none';
-        }
-
-        async function loadIrrigationConfig() {
-            try {
-                const response = await fetch('/api/irrigation');
-                if (response.ok) {
-                    const data = await response.json();
-                    irrigationConfig = { ...irrigationConfig, ...data };
-                    updateBombaStatus();
-                }
-            } catch (error) {
-                console.error('❌ Erro ao carregar configurações de irrigação:', error);
-            }
-        }
-
-        function updateBombaStatus() {
-            const estado = irrigationConfig.bomba_estado;
-            const icon = document.getElementById('bomba-status-icon');
-            const text = document.getElementById('bomba-state-text');
-            const status = document.getElementById('irrigation-status');
-            
-            if (icon && text) {
-                icon.className = estado ? 'fas fa-water bomba-icon' : 'fas fa-water bomba-icon';
-                icon.style.color = estado ? '#4CAF50' : '#666';
-                text.textContent = estado ? 'LIGADA' : 'DESLIGADA';
-                text.style.color = estado ? '#4CAF50' : '#666';
-            }
-            
-            if (status) {
-                status.textContent = estado ? 'BOMBA LIGADA' : 'BOMBA DESLIGADA';
-                status.className = `device-status ${estado ? 'status-on' : 'status-off'}`;
-            }
-        }
-
-        async function controlarBomba(estado) {
-            try {
-                const response = await fetch('/api/irrigation/control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ state: estado })
-                });
-                
-                if (response.ok) {
-                    irrigationConfig.bomba_estado = estado;
-                    updateBombaStatus();
-                    updateStatusBar(`✅ Bomba ${estado ? 'ligada' : 'desligada'}`, 'online');
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Erro ao controlar bomba');
-                }
-            } catch (error) {
-                updateStatusBar(`❌ ${error.message}`, 'offline');
-            }
-        }
-
-        function selectMode(mode) {
-            irrigationConfig.modo = mode;
-            
-            document.querySelectorAll('.mode-option').forEach(opt => {
-                opt.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.mode-option').forEach(opt => {
-                if (opt.querySelector('i').className.includes(mode === 'manual' ? 'hand-paper' : 'robot')) {
-                    opt.classList.add('active');
-                }
-            });
-            
-            document.getElementById('automaticSettings').style.display = 
-                mode === 'automatico' ? 'block' : 'none';
-        }
-
-        function addProgramming() {
-            if (irrigationConfig.programacoes.length >= 5) {
-                alert('Máximo de 5 programações atingido!');
-                return;
-            }
-            
-            irrigationConfig.programacoes.push({
-                id: Date.now(),
-                hora: '08:00',
-                dias: [1, 2, 3, 4, 5],
-                duracao: 30
-            });
-            
-            renderProgrammings();
-        }
-
-        function removeProgramming(id) {
-            irrigationConfig.programacoes = irrigationConfig.programacoes.filter(p => p.id !== id);
-            renderProgrammings();
-        }
-
-        function updateProgramming(id, field, value) {
-            const programming = irrigationConfig.programacoes.find(p => p.id === id);
-            if (programming) {
-                programming[field] = value;
-            }
-        }
-
-        function toggleDia(programmingId, dia) {
-            const programming = irrigationConfig.programacoes.find(p => p.id === programmingId);
-            if (programming) {
-                const index = programming.dias.indexOf(dia);
-                if (index > -1) {
-                    programming.dias.splice(index, 1);
-                } else {
-                    programming.dias.push(dia);
-                }
-                renderProgrammings();
-            }
-        }
-
-        function renderProgrammings() {
-            const grid = document.getElementById('programmingGrid');
-            
-            if (irrigationConfig.programacoes.length === 0) {
-                grid.innerHTML = '<div class="no-programming">Nenhuma programação adicionada</div>';
-                return;
-            }
-            
-            grid.innerHTML = irrigationConfig.programacoes.map(prog => `
-                <div class="programming-item">
-                    <input type="time" value="${prog.hora}" onchange="updateProgramming(${prog.id}, 'hora', this.value)">
-                    
-                    <div>
-                        <small>Dias da semana:</small>
-                        <div class="dias-selector">
-                            ${diasSemana.map(dia => `
-                                <div class="dia-option ${prog.dias.includes(dia.valor) ? 'selected' : ''}" 
-                                     onclick="toggleDia(${prog.id}, ${dia.valor})">
-                                    ${dia.label}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <select onchange="updateProgramming(${prog.id}, 'duracao', parseInt(this.value))">
-                        <option value="15" ${prog.duracao === 15 ? 'selected' : ''}>15 min</option>
-                        <option value="30" ${prog.duracao === 30 ? 'selected' : ''}>30 min</option>
-                        <option value="45" ${prog.duracao === 45 ? 'selected' : ''}>45 min</option>
-                        <option value="60" ${prog.duracao === 60 ? 'selected' : ''}>60 min</option>
-                    </select>
-                    
-                    <button class="remove-programming" onclick="removeProgramming(${prog.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        async function saveIrrigationConfig() {
-            try {
-                const evitarChuva = document.getElementById('evitar-chuva').checked;
-                
-                const response = await fetch('/api/irrigation/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        modo: irrigationConfig.modo,
-                        programacoes: irrigationConfig.programacoes,
-                        evitar_chuva: evitarChuva
-                    })
-                });
-                
-                if (response.ok) {
-                    irrigationConfig.evitar_chuva = evitarChuva;
-                    updateStatusBar('✅ Configurações de irrigação salvas!', 'online');
-                    closeIrrigationModal();
-                } else {
-                    throw new Error('Erro ao salvar configurações');
-                }
-            } catch (error) {
-                updateStatusBar('❌ Erro ao salvar configurações', 'offline');
-            }
-        }
-
-        // Fechar modal ao clicar fora
-        document.getElementById('irrigationModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeIrrigationModal();
-            }
+        // Inicialização do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            loadDevices();
+            startDataUpdates();
+            checkSystemAuth();
         });
-
-        // Inicializar quando a página carregar
-        document.addEventListener('DOMContentLoaded', initInterface);
     </script>
 </body>
 </html>
