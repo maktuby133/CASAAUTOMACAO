@@ -1,2 +1,134 @@
 # CASAAUTOMACAO
 AUTOMAÇÃO RESIDENCIAL
+
+## CONFIGURAÇÕES DO ESP32
+
+### PINOS UTILIZADOS:
+
+SENSORES:
+- DHT22 (Temperatura/Umidade): GPIO 4
+- MQ-2 (Gás): GPIO 34 (ADC)
+- LDR (Luz): GPIO 35 (ADC)
+
+LÂMPADAS (RELES):
+- Sala: GPIO 16
+- Quarto 1: GPIO 17  
+- Quarto 2: GPIO 18
+- Quarto 3: GPIO 19
+- Corredor: GPIO 21
+- Cozinha: GPIO 22
+- Banheiro: GPIO 23
+
+TOMADAS (RELES):
+- Tomada Sala: GPIO 32
+- Tomada Cozinha: GPIO 33
+- Tomada Quarto 1: GPIO 25
+- Tomada Quarto 2: GPIO 26
+- Tomada Quarto 3: GPIO 27
+
+IRRIGAÇÃO:
+- Bomba de Água: GPIO 13
+
+### CONFIGURAÇÃO WIFI:
+
+const char* ssid = "SUA_REDE_WIFI";
+const char* password = "SUA_SENHA_WIFI";
+
+### ENDPOINTS DO SERVIDOR:
+
+- POST /api/data → Enviar dados dos sensores
+- GET /api/devices → Buscar estado dos dispositivos  
+- POST /api/control → Controlar dispositivos
+
+### EXEMPLO DE DADOS DOS SENSORES:
+
+{
+  "temperature": 25.5,
+  "gas_level": 120,
+  "gas_alert": false,
+  "device": "ESP32-AUTOMACAO",
+  "heartbeat": true,
+  "wifi_rssi": -65
+}
+
+### FUNCIONALIDADES:
+
+1. MONITORAMENTO CONTÍNUO:
+   - Temperatura e umidade ambiente
+   - Níveis de gás (detecção de vazamentos)
+   - Qualidade do sinal WiFi
+
+2. CONTROLE REMOTO:
+   - Lâmpadas inteligentes
+   - Tomadas controláveis
+   - Sistema de irrigação
+
+3. SEGURANÇA:
+   - Alertas de gás
+   - Monitoramento 24/7
+   - Logs de eventos
+
+4. AUTOMAÇÃO:
+   - Irrigação programável
+   - Controle por horário
+   - Integração com clima
+
+### COMANDOS PARA CONTROLE:
+
+Ligar Lâmpada da Sala:
+POST /api/control
+{
+  "type": "lights",
+  "device": "sala", 
+  "state": true
+}
+
+Ligar Tomada da Cozinha:
+POST /api/control  
+{
+  "type": "outlets",
+  "device": "tomada_cozinha",
+  "state": true
+}
+
+Ativar Irrigação:
+POST /api/control
+{
+  "type": "irrigation", 
+  "device": "bomba_irrigacao",
+  "state": true
+}
+
+### CONFIGURAÇÃO DE PROGRAMação:
+
+POST /api/irrigation/save
+{
+  "modo": "automatico",
+  "evitar_chuva": true,
+  "programacoes": [
+    {
+      "hora": "08:00",
+      "dias": ["seg", "qua", "sex"]
+    },
+    {
+      "hora": "18:00", 
+      "dias": ["ter", "qui"]
+    }
+  ]
+}
+
+### ALERTAS:
+
+- Nível de gás > 300 → ALERTA_AMARELO
+- Nível de gás > 500 → ALERTA_VERMELHO
+- Temperatura > 35°C → ALERTA_CALOR
+- Temperatura < 10°C → ALERTA_FRIO
+- WiFi RSSI < -80 → ALERTA_SINAL_FRACO
+
+### STATUS DO SISTEMA:
+
+- ONLINE: Conectado ao servidor
+- OFFLINE: Sem conexão
+- ERROR: Erro de comunicação
+- SENSING: Coletando dados
+- CONTROLLING: Executando comando
