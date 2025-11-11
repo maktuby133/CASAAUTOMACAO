@@ -68,7 +68,7 @@ function loadState() {
                     programacoes: [],
                     evitar_chuva: true
                 },
-                sensorData: saved.sensorData || [] // ← CORREÇÃO CRÍTICA
+                sensorData: saved.sensorData || []
             };
         }
     } catch (error) {
@@ -99,7 +99,7 @@ function loadState() {
             programacoes: [],
             evitar_chuva: true
         },
-        sensorData: [] // ← CORREÇÃO CRÍTICA
+        sensorData: []
     };
 }
 
@@ -185,7 +185,7 @@ async function isRaining() {
 
 // MIDDLEWARE DE AUTENTICAÇÃO CORRIGIDO - SEM LOOP
 function requireAuth(req, res, next) {
-    // Rotas públicas que NÃO precisam de autenticação
+    // 🚨 CORREÇÃO CRÍTICA: Rotas públicas que NÃO precisam de autenticação
     const publicRoutes = [
         '/', 
         '/login.html',
@@ -198,7 +198,9 @@ function requireAuth(req, res, next) {
         '/api/weather/raining',
         '/health',
         '/favicon.ico',
-        '/manifest.json'
+        '/manifest.json',
+        '/sistema', // 🚨 ADICIONADO - Permite acesso ao sistema
+        '/index.html' // 🚨 ADICIONADO - Permite acesso ao index
     ];
 
     // Rotas do ESP32 que NÃO precisam de autenticação
@@ -223,24 +225,28 @@ function requireAuth(req, res, next) {
                         req.path.endsWith('.png') ||
                         req.path.endsWith('.jpg');
 
+    // 🚨 CORREÇÃO: Se for rota pública, ESP32 ou arquivo estático, LIBERA
     if (isPublicRoute || isEsp32Route || isStaticFile) {
-        return next(); // Libera o acesso
+        console.log(`✅ Rota pública liberada: ${req.method} ${req.path}`);
+        return next();
     }
 
     // Verifica autenticação para rotas protegidas
     const authToken = req.cookies?.authToken;
     
     if (authToken === 'admin123') {
+        console.log(`✅ Usuário autenticado acessando: ${req.path}`);
         return next(); // Usuário autenticado
     }
 
     // Usuário não autenticado tentando acessar rota protegida
-    console.log('❌ Acesso não autorizado:', req.method, req.path);
+    console.log(`❌ Acesso não autorizado: ${req.method} ${req.path}`);
     
     if (req.path.startsWith('/api/')) {
         return res.status(401).json({ error: 'Não autorizado' });
     } else {
-        // PARA ROTAS DE PÁGINA, SEMPRE REDIRECIONA PARA LOGIN
+        // 🚨 CORREÇÃO: Para rotas de página, redireciona para login SEM loop
+        console.log(`🔄 Redirecionando para login: ${req.path}`);
         return res.redirect('/');
     }
 }
@@ -250,21 +256,19 @@ app.use(requireAuth);
 
 // ROTA PRINCIPAL CORRIGIDA - SEMPRE MOSTRA LOGIN
 app.get('/', (req, res) => {
-    // SEMPRE envia o login.html, independente de estar logado ou não
-    // O redirecionamento para o sistema será feito pelo cliente após login bem-sucedido
+    console.log('📄 Servindo página de login');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// ROTA DO SISTEMA - só acessível via cliente após login
+// ROTA DO SISTEMA - CORRIGIDA: sempre serve o sistema se acessada
 app.get('/sistema', (req, res) => {
-    // Esta rota já é protegida pelo middleware requireAuth
-    // Se chegou aqui, é porque está autenticado
+    console.log('📄 Servindo página do sistema (sistema)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Rota alternativa para o sistema
+// Rota alternativa para o sistema - CORRIGIDA
 app.get('/index.html', (req, res) => {
-    // Também protegida pelo middleware
+    console.log('📄 Servindo página do sistema (index.html)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
