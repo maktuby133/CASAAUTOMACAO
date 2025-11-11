@@ -8,11 +8,15 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// 🚨 CORREÇÃO CRÍTICA: Configuração CORS correta para cookies
 app.use(cors({
     origin: ['http://localhost:3000', 'http://192.168.1.100:3000', 'https://casaautomacao.onrender.com'],
-    credentials: true
+    credentials: true, // 🚨 IMPORTANTE: Permite envio de cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
+
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
@@ -37,14 +41,13 @@ let esp32Status = {
     lastHeartbeat: null
 };
 
-// Carregar estado salvo - CORRIGIDO com sensorData
+// Carregar estado salvo
 function loadState() {
     try {
         if (fs.existsSync(STATE_FILE)) {
             const data = fs.readFileSync(STATE_FILE, 'utf8');
             const saved = JSON.parse(data);
             
-            // Garantir que todas as propriedades existam
             return {
                 lights: saved.lights || {
                     sala: false,
@@ -75,7 +78,6 @@ function loadState() {
         console.log('❌ Erro ao carregar estado, usando padrão:', error.message);
     }
     
-    // Estado padrão COM sensorData
     return {
         lights: {
             sala: false,
@@ -130,7 +132,7 @@ function updateESP32Status(device, ip) {
 function checkESP32Connection() {
     if (esp32Status.lastHeartbeat) {
         const timeSinceLastHeartbeat = new Date() - esp32Status.lastHeartbeat;
-        if (timeSinceLastHeartbeat > 120000) { // 2 minutos sem heartbeat
+        if (timeSinceLastHeartbeat > 120000) {
             esp32Status.connected = false;
             console.log('⚠️ ESP32 considerado desconectado (sem heartbeat)');
         }
@@ -138,7 +140,7 @@ function checkESP32Connection() {
     return esp32Status.connected;
 }
 
-// Inicializar dados - CORRIGIDO: sem variável global sensorData
+// Inicializar dados
 let devicesState = loadState();
 
 // Verificar conexão do ESP32 a cada minuto
@@ -168,7 +170,7 @@ async function fetchWeatherData() {
     }
 }
 
-// Verificar se está chovendo baseado nos dados do clima
+// Verificar se está chovendo
 async function isRaining() {
     try {
         const weatherData = await fetchWeatherData();
@@ -183,9 +185,9 @@ async function isRaining() {
     }
 }
 
-// MIDDLEWARE DE AUTENTICAÇÃO CORRIGIDO - SEM LOOP
+// 🚨 CORREÇÃO CRÍTICA: Middleware de autenticação simplificado
 function requireAuth(req, res, next) {
-    // 🚨 CORREÇÃO CRÍTICA: Rotas públicas que NÃO precisam de autenticação
+    // Rotas públicas que NÃO precisam de autenticação
     const publicRoutes = [
         '/', 
         '/login.html',
@@ -199,8 +201,8 @@ function requireAuth(req, res, next) {
         '/health',
         '/favicon.ico',
         '/manifest.json',
-        '/sistema', // 🚨 ADICIONADO - Permite acesso ao sistema
-        '/index.html' // 🚨 ADICIONADO - Permite acesso ao index
+        '/sistema',
+        '/index.html'
     ];
 
     // Rotas do ESP32 que NÃO precisam de autenticação
@@ -225,28 +227,26 @@ function requireAuth(req, res, next) {
                         req.path.endsWith('.png') ||
                         req.path.endsWith('.jpg');
 
-    // 🚨 CORREÇÃO: Se for rota pública, ESP32 ou arquivo estático, LIBERA
     if (isPublicRoute || isEsp32Route || isStaticFile) {
-        console.log(`✅ Rota pública liberada: ${req.method} ${req.path}`);
         return next();
     }
 
-    // Verifica autenticação para rotas protegidas
+    // 🚨 CORREÇÃO: Verificação de autenticação mais robusta
     const authToken = req.cookies?.authToken;
+    console.log(`🔐 Verificando autenticação para: ${req.path}`);
+    console.log(`🍪 Cookie recebido:`, authToken ? 'PRESENTE' : 'AUSENTE');
     
     if (authToken === 'admin123') {
-        console.log(`✅ Usuário autenticado acessando: ${req.path}`);
-        return next(); // Usuário autenticado
+        console.log(`✅ Usuário autenticado: ${req.path}`);
+        return next();
     }
 
-    // Usuário não autenticado tentando acessar rota protegida
     console.log(`❌ Acesso não autorizado: ${req.method} ${req.path}`);
+    console.log(`🔍 Cookies recebidos:`, req.cookies);
     
     if (req.path.startsWith('/api/')) {
-        return res.status(401).json({ error: 'Não autorizado' });
+        return res.status(401).json({ error: 'Não autorizado - Faça login novamente' });
     } else {
-        // 🚨 CORREÇÃO: Para rotas de página, redireciona para login SEM loop
-        console.log(`🔄 Redirecionando para login: ${req.path}`);
         return res.redirect('/');
     }
 }
@@ -254,46 +254,49 @@ function requireAuth(req, res, next) {
 // APLICA o middleware de autenticação
 app.use(requireAuth);
 
-// ROTA PRINCIPAL CORRIGIDA - SEMPRE MOSTRA LOGIN
+// ROTA PRINCIPAL
 app.get('/', (req, res) => {
     console.log('📄 Servindo página de login');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// ROTA DO SISTEMA - CORRIGIDA: sempre serve o sistema se acessada
+// ROTA DO SISTEMA
 app.get('/sistema', (req, res) => {
-    console.log('📄 Servindo página do sistema (sistema)');
+    console.log('📄 Servindo página do sistema');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Rota alternativa para o sistema - CORRIGIDA
+// Rota alternativa para o sistema
 app.get('/index.html', (req, res) => {
     console.log('📄 Servindo página do sistema (index.html)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Login - CORRIGIDO para Render.com
+// 🚨 CORREÇÃO CRÍTICA: Login com configuração de cookie melhorada
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     console.log('🔐 Tentativa de login:', username);
     
     if (username === 'admin' && password === 'admin123') {
-        // Configurar cookie de autenticação (expira em 24 horas)
-        res.cookie('authToken', 'admin123', { 
+        // 🚨 CORREÇÃO: Configuração de cookie otimizada
+        const cookieOptions = {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // true no Render
-            sameSite: 'none', // Importante para cross-site
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: '/'
-        });
+        };
+        
+        res.cookie('authToken', 'admin123', cookieOptions);
         
         console.log('✅ Login bem-sucedido para:', username);
+        console.log('🍪 Cookie configurado com opções:', cookieOptions);
         
         res.json({ 
             success: true, 
             message: 'Login realizado com sucesso',
-            redirect: '/sistema' // Cliente faz o redirecionamento
+            redirect: '/sistema'
         });
     } else {
         console.log('❌ Login falhou para:', username);
@@ -304,16 +307,15 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// Logout - CORRIGIDO para Render.com
+// Logout
 app.post('/api/logout', (req, res) => {
     console.log('🚪 Logout solicitado');
     
     try {
-        // Limpar o cookie de autenticação
         res.clearCookie('authToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: '/'
         });
         
@@ -333,7 +335,7 @@ app.post('/api/logout', (req, res) => {
     }
 });
 
-// Status do servidor - SEMPRE acessível
+// Status do servidor
 app.get('/api/status', (req, res) => {
     const espConnected = checkESP32Connection();
     const statusMessage = espConnected ? 
@@ -398,11 +400,10 @@ app.get('/api/weather/raining', async (req, res) => {
     }
 });
 
-// ESP32 envia dados dos sensores - CORRIGIDO com sensorData persistente
+// ESP32 envia dados dos sensores
 app.post('/api/data', (req, res) => {
     const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi } = req.body;
 
-    // Validação básica
     if (typeof temperature === 'undefined' || typeof gas_level === 'undefined') {
         return res.status(400).json({ error: 'Dados inválidos' });
     }
@@ -418,7 +419,6 @@ app.post('/api/data', (req, res) => {
         receivedAt: new Date()
     };
 
-    // CORREÇÃO: Usar devicesState.sensorData
     if (!devicesState.sensorData) {
         devicesState.sensorData = [];
     }
@@ -428,10 +428,8 @@ app.post('/api/data', (req, res) => {
         devicesState.sensorData = devicesState.sensorData.slice(0, 100);
     }
 
-    // SALVAR o estado atualizado
     saveState(devicesState);
 
-    // Atualizar status do ESP32
     const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
     updateESP32Status(device, clientIP);
 
@@ -479,7 +477,6 @@ app.post('/api/control', async (req, res) => {
         return res.status(400).json({ error: 'Dispositivo não encontrado' });
     }
     
-    // Verificação especial para irrigação automática em dias chuvosos
     if (type === 'irrigation' && device === 'bomba_irrigacao' && state === true) {
         if (devicesState.irrigation.modo === 'automatico' && devicesState.irrigation.evitar_chuva) {
             const raining = await isRaining();
@@ -492,7 +489,6 @@ app.post('/api/control', async (req, res) => {
         }
     }
     
-    // Verificar se ESP32 está conectado antes de enviar comando
     const espConnected = checkESP32Connection();
     if (!espConnected && type !== 'irrigation') {
         return res.status(503).json({ 
@@ -515,7 +511,7 @@ app.post('/api/control', async (req, res) => {
     });
 });
 
-// Ver dados dos sensores - CORRIGIDO
+// Ver dados dos sensores
 app.get('/api/data', (req, res) => {
     const espConnected = checkESP32Connection();
     
@@ -610,7 +606,7 @@ app.post('/api/irrigation/control', async (req, res) => {
     });
 });
 
-// Health check - SEMPRE acessível
+// Health check
 app.get('/health', (req, res) => {
     const espConnected = checkESP32Connection();
     
@@ -625,7 +621,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Rota de fallback para evitar 502
+// Rota de fallback
 app.get('/api/fallback', (req, res) => {
     res.json({ status: 'server_is_running', time: new Date().toISOString() });
 });
@@ -650,11 +646,4 @@ app.listen(PORT, () => {
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('🔐 Sistema de Login: ATIVADO');
     console.log('🌤️  API Clima: ' + (process.env.OPENWEATHER_API_KEY ? 'CONFIGURADA' : 'NÃO CONFIGURADA'));
-    
-    // Log inicial do estado carregado
-    console.log('💾 Estado carregado:', {
-        luzes: Object.keys(devicesState.lights).length,
-        tomadas: Object.keys(devicesState.outlets).length,
-        leituras_sensor: devicesState.sensorData?.length || 0
-    });
 });
