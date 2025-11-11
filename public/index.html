@@ -387,7 +387,6 @@
 
         .sensor-compact-item.alert {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            /* animation: pulse 2s infinite; */ /* REMOVIDA */
         }
 
         .sensor-compact-item.temperature {
@@ -620,7 +619,6 @@
         .offline {
             color: #f44336;
             border-left: 3px solid #f44336;
-            /* animation: blink 2s infinite; */ /* REMOVIDA */
         }
 
         .device-status {
@@ -665,19 +663,16 @@
         .esp32-indicator.online {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
-            /* animation: pulse-green 2s infinite; */ /* REMOVIDA */
         }
 
         .esp32-indicator.offline {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
-            /* animation: blink 1.5s infinite; */ /* REMOVIDA */
         }
 
         .esp32-indicator.connecting {
             background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
             color: white;
-            /* animation: pulse-orange 2s infinite; */ /* REMOVIDA */
         }
 
         .status-text {
@@ -1365,15 +1360,6 @@
             { valor: 0, label: 'Dom' }
         ];
 
-        // Variáveis para controle de intervalos - DESATIVADOS
-        let updateIntervals = {
-            sensors: null,
-            status: null,
-            esp32: null,
-            weather: null,
-            bomba: null
-        };
-
         // Sistema de Logging
         const logger = {
             info: (message, data) => {
@@ -1387,13 +1373,10 @@
             }
         };
 
-        // FUNÇÃO DE LOGOUT
+        // FUNÇÃO DE LOGOUT SEGURA
         async function fazerLogout() {
             try {
                 logger.info('Iniciando logout...');
-                
-                // Parar todos os intervalos antes do logout
-                stopAllIntervals();
                 
                 const response = await fetch('/api/logout', {
                     method: 'POST',
@@ -1416,32 +1399,27 @@
             }
         }
 
-        // Parar todos os intervalos
-        function stopAllIntervals() {
-            Object.values(updateIntervals).forEach(interval => {
-                if (interval) {
-                    clearInterval(interval);
-                }
-            });
-        }
-
-        // INTERCEPTAR ERROS 401
+        // INTERCEPTADOR DE ERROS 401 - CORRIGIDO
         function setupErrorInterceptor() {
             const originalFetch = window.fetch;
             window.fetch = async function(...args) {
                 try {
                     const response = await originalFetch.apply(this, args);
                     
+                    // 🚨 CORREÇÃO: Só redireciona para login se for erro 401
                     if (response.status === 401) {
                         logger.warn('Sessão expirada, fazendo logout...');
-                        stopAllIntervals();
-                        window.location.href = '/';
+                        // Pequeno delay para evitar loop rápido
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
                         return response;
                     }
                     
                     return response;
                 } catch (error) {
                     logger.error('Erro na requisição:', error);
+                    // 🚨 CORREÇÃO: Não redireciona em caso de erro de rede
                     throw error;
                 }
             };
@@ -1460,12 +1438,7 @@
                 await checkServerStatus();
                 await loadIrrigationConfig();
                 
-                // 🚨 NÃO configurar intervalos automáticos - evita travamento
-                // setupControlledIntervals();
-                
-                // Solicitar permissão para notificações
-                requestNotificationPermission();
-                
+                // 🚨 CORREÇÃO CRÍTICA: NÃO configurar intervalos automáticos
                 logger.info('Interface inicializada SEM atualizações automáticas');
                 updateStatusBar('✅ Sistema pronto - Use os botões para atualizar', 'online');
                 
@@ -1473,22 +1446,6 @@
                 logger.error('Erro na inicialização da interface:', error);
                 updateStatusBar('❌ Erro na inicialização', 'offline');
             }
-        }
-
-        // Configurar intervalos controlados - DESATIVADO
-        function setupControlledIntervals() {
-            // Limpar intervalos existentes
-            stopAllIntervals();
-            
-            // 🚨 INTERVALOS DESATIVADOS para evitar travamento
-            /*
-            updateIntervals.sensors = setInterval(updateSensors, 30000);
-            updateIntervals.status = setInterval(checkServerStatus, 45000);
-            updateIntervals.esp32 = setInterval(() => checkESP32Status(), 90000);
-            updateIntervals.weather = setInterval(atualizarClimaReal, 600000);
-            */
-            
-            logger.info('Intervalos de atualização DESATIVADOS');
         }
 
         // Sistema de Notificações
@@ -1866,30 +1823,6 @@
                 
             } catch (error) {
                 updateStatusBar('❌ Servidor offline', 'offline');
-            }
-        }
-
-        // Verificar status detalhado do ESP32
-        async function checkESP32Status() {
-            try {
-                const response = await fetch('/api/esp32-status');
-                const data = await response.json();
-                
-                if (data.connected) {
-                    logger.info('ESP32 conectado:', {
-                        device: data.deviceId,
-                        ip: data.ipAddress,
-                        uptime: data.uptime
-                    });
-                    return { connected: true, status: 'online' };
-                } else {
-                    logger.warn('ESP32 desconectado');
-                    return { connected: false, status: 'offline' };
-                }
-                
-            } catch (error) {
-                logger.error('Erro ao verificar status ESP32:', error);
-                return { connected: false, status: 'offline' };
             }
         }
 
