@@ -8,17 +8,25 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🚨 CORS MÁXIMO - PERMITE TUDO
+// CORS configurado
 app.use(cors({
-    origin: true, // PERMITE QUALQUER ORIGIN
+    origin: ['http://localhost:3000', 'http://192.168.1.100:3000', 'https://casaautomacao.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', '*']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
+
+// Headers de segurança
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
 
 // Arquivo para persistência
 const STATE_FILE = 'devices-state.json';
@@ -37,7 +45,21 @@ function loadState() {
     try {
         if (fs.existsSync(STATE_FILE)) {
             const data = fs.readFileSync(STATE_FILE, 'utf8');
-            return JSON.parse(data);
+            const saved = JSON.parse(data);
+            return {
+                lights: saved.lights || {
+                    sala: false, quarto1: false, quarto2: false, quarto3: false,
+                    corredor: false, cozinha: false, banheiro: false
+                },
+                outlets: saved.outlets || {
+                    tomada_sala: false, tomada_cozinha: false, tomada_quarto1: false,
+                    tomada_quarto2: false, tomada_quarto3: false
+                },
+                irrigation: saved.irrigation || {
+                    bomba_irrigacao: false, modo: 'manual', programacoes: [], evitar_chuva: true
+                },
+                sensorData: saved.sensorData || []
+            };
         }
     } catch (error) {
         console.log('❌ Erro ao carregar estado:', error.message);
@@ -63,66 +85,175 @@ function loadState() {
 function saveState(state) {
     try {
         fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+        console.log('💾 Estado salvo');
     } catch (error) {
         console.error('❌ Erro ao salvar estado:', error);
     }
 }
 
-let devicesState = loadState();
-
-// 🚨 MIDDLEWARE DE AUTENTICAÇÃO SIMPLIFICADO AO MÁXIMO
-function checkAuth(req, res, next) {
-    console.log(`📍 ${req.method} ${req.path} | Cookie:`, req.cookies.authToken ? 'SIM' : 'NÃO');
-    
-    // Rotas públicas
-    if (['/', '/login.html', '/api/login', '/api/logout', '/api/status', '/health'].includes(req.path)) {
-        return next();
-    }
-    
-    // Rotas ESP32
-    if (['/api/data', '/api/devices'].includes(req.path)) {
-        return next();
-    }
-    
-    // 🚨 VERIFICA SE ESTÁ AUTENTICADO
-    if (req.cookies.authToken === 'admin123') {
-        console.log('✅ AUTENTICADO');
-        return next();
-    }
-    
-    console.log('❌ NÃO AUTENTICADO - REDIRECIONANDO PARA LOGIN');
-    return res.redirect('/');
+// Atualizar status do ESP32
+function updateESP32Status(device, ip) {
+    esp32Status = {
+        connected: true,
+        lastSeen: new Date(),
+        lastHeartbeat: new Date(),
+        deviceId: device || 'ESP32-AUTOMACAO-V3',
+        ipAddress: ip || 'Desconhecido'
+    };
+    console.log(`📡 ESP32 conectado: ${device} | IP: ${ip}`);
 }
 
-app.use(checkAuth);
+// Verificar se ESP32 está conectado
+function checkESP32Connection() {
+    if (esp32Status.lastHeartbeat) {
+        const timeSinceLastHeartbeat = new Date() - esp32Status.lastHeartbeat;
+        if (timeSinceLastHeartbeat > 120000) {
+            esp32Status.connected = false;
+            console.log('⚠️ ESP32 desconectado');
+        }
+    }
+    return esp32Status.connected;
+}
 
-// 🚨 ROTA PRINCIPAL - SEMPRE LOGIN
+// Inicializar dados
+let devicesState = loadState();
+setInterval(checkESP32Connection, 60000);
+
+// Função para buscar dados do clima
+async function fetchWeatherData() {
+    try {
+        const API_KEY = process.env.OPENWEATHER_API_KEY;
+        if (!API_KEY) throw new Error('API key não configurada');
+
+        const lat = -22.9068;
+        const lon = -43.1729;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=pt_br`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Erro API: ${response.status}`);
+        
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Erro ao buscar clima:', error);
+        return null;
+    }
+}
+
+// Verificar se está chovendo
+async function isRaining() {
+    try {
+        const weatherData = await fetchWeatherData();
+        if (weatherData && weatherData.weather && weatherData.weather.length > 0) {
+            const condition = weatherData.weather[0].main.toLowerCase();
+            return condition.includes('rain') || condition.includes('drizzle') || condition.includes('storm');
+        }
+        return false;
+    } catch (error) {
+        console.error('❌ Erro ao verificar chuva:', error);
+        return false;
+    }
+}
+
+// 🚨 MIDDLEWARE DE AUTENTICAÇÃO CORRETO
+function requireAuth(req, res, next) {
+    console.log(`\n🔐 [AUTH] ${req.method} ${req.path}`);
+    
+    // 🚨 ROTAS PÚBLICAS - SEMPRE ACESSÍVEIS
+    const publicRoutes = [
+        '/', 
+        '/login.html',
+        '/api/login', 
+        '/api/logout',
+        '/api/status',
+        '/health',
+        '/favicon.ico',
+        '/clear' // 🚨 ADICIONADA - Rota de limpeza
+    ];
+
+    // 🚨 ROTAS DO ESP32 - SEMPRE ACESSÍVEIS
+    const esp32Routes = [
+        '/api/data',
+        '/api/devices'
+    ];
+
+    // Verifica se é rota pública
+    if (publicRoutes.includes(req.path)) {
+        console.log(`✅ [PUBLIC] Rota pública liberada: ${req.path}`);
+        return next();
+    }
+
+    // Verifica se é rota do ESP32
+    if (esp32Routes.includes(req.path) && 
+        ((req.path === '/api/data' && req.method === 'POST') || 
+         (req.path === '/api/devices' && req.method === 'GET'))) {
+        console.log(`✅ [ESP32] Rota ESP32 liberada: ${req.path}`);
+        return next();
+    }
+
+    // 🚨 VERIFICA AUTENTICAÇÃO PARA TODAS AS OUTRAS ROTAS
+    const authToken = req.cookies?.authToken;
+    console.log(`🔑 [TOKEN] ${authToken ? 'PRESENTE' : 'AUSENTE'}`);
+
+    if (authToken === 'admin123') {
+        console.log(`✅ [AUTH] Usuário autenticado: ${req.path}`);
+        return next();
+    }
+
+    console.log(`❌ [AUTH] ACESSO NEGADO: ${req.path}`);
+    
+    if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Não autorizado - Faça login' });
+    } else {
+        // 🚨 CORREÇÃO: Para páginas, SEMPRE redireciona para login
+        console.log(`🔄 [REDIRECT] Redirecionando para login: ${req.path}`);
+        return res.redirect('/');
+    }
+}
+
+// Aplica o middleware
+app.use(requireAuth);
+
+// 🚨 ROTA DE LIMPEZA - FORÇA LOGOUT E VAI PARA LOGIN
+app.get('/clear', (req, res) => {
+    console.log('🧹 [CLEAR] Limpando cookies e redirecionando para login');
+    res.clearCookie('authToken');
+    res.redirect('/');
+});
+
+// 🚨 ROTA PRINCIPAL - SEMPRE serve login
 app.get('/', (req, res) => {
-    console.log('📄 SERVINDO LOGIN');
+    console.log('📄 [ROUTE] / -> Servindo LOGIN');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// 🚨 ROTA DO SISTEMA - SÓ SE AUTENTICADO
+// 🚨 ROTA DO SISTEMA - SÓ serve se autenticado
 app.get('/sistema', (req, res) => {
-    console.log('📄 SERVINDO SISTEMA');
+    console.log('📄 [ROUTE] /sistema -> Servindo SISTEMA (após autenticação)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// 🚨 ROTA ALTERNATIVA - SÓ serve se autenticado
 app.get('/index.html', (req, res) => {
-    console.log('📄 SERVINDO INDEX');
+    console.log('📄 [ROUTE] /index.html -> Servindo SISTEMA (após autenticação)');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 🚨 LOGIN - COOKIE MÁXIMO SIMPLES
+// Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    console.log('🔐 LOGIN:', username);
+    console.log('🔐 [LOGIN] Tentativa:', username);
     
     if (username === 'admin' && password === 'admin123') {
-        // 🚨 COOKIE SUPER SIMPLES - SEM OPÇÕES COMPLEXAS
-        res.cookie('authToken', 'admin123');
+        // 🚨 CORREÇÃO: Cookie SIMPLES para desenvolvimento
+        res.cookie('authToken', 'admin123', {
+            maxAge: 24 * 60 * 60 * 1000,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
+        });
         
-        console.log('✅ LOGIN BEM-SUCEDIDO');
+        console.log('✅ [LOGIN] Bem-sucedido - Cookie configurado');
         
         res.json({ 
             success: true, 
@@ -130,7 +261,7 @@ app.post('/api/login', (req, res) => {
             redirect: '/sistema'
         });
     } else {
-        console.log('❌ LOGIN FALHOU');
+        console.log('❌ [LOGIN] Falhou');
         res.status(401).json({ 
             success: false, 
             message: 'Usuário ou senha incorretos' 
@@ -138,9 +269,9 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// LOGOUT
+// Logout
 app.post('/api/logout', (req, res) => {
-    console.log('🚪 LOGOUT');
+    console.log('🚪 [LOGOUT] Solicitado');
     res.clearCookie('authToken');
     res.json({ 
         success: true, 
@@ -149,28 +280,220 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// STATUS
+// Status do servidor
 app.get('/api/status', (req, res) => {
+    const espConnected = checkESP32Connection();
     res.json({ 
+        message: '🚀 Servidor Automação V3.0',
         status: 'online',
-        message: 'Servidor funcionando'
+        esp32: { connected: espConnected },
+        systemStatus: espConnected ? '✅ Sistema normal' : '⚠️ ESP32 offline'
     });
 });
 
-// 🚨 ADICIONE ESTAS ROTAS BÁSICAS PARA TESTE
-app.get('/api/test-auth', (req, res) => {
+// Status ESP32
+app.get('/api/esp32-status', (req, res) => {
+    res.json({
+        connected: esp32Status.connected,
+        lastSeen: esp32Status.lastSeen,
+        deviceId: esp32Status.deviceId,
+        ipAddress: esp32Status.ipAddress
+    });
+});
+
+// Clima
+app.get('/api/weather', async (req, res) => {
+    try {
+        const weatherData = await fetchWeatherData();
+        if (weatherData) {
+            res.json(weatherData);
+        } else {
+            res.status(500).json({ error: 'Erro ao buscar clima' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Verificar chuva
+app.get('/api/weather/raining', async (req, res) => {
+    try {
+        const raining = await isRaining();
+        res.json({ raining });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ESP32 envia dados
+app.post('/api/data', (req, res) => {
+    const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi } = req.body;
+
+    if (typeof temperature === 'undefined' || typeof gas_level === 'undefined') {
+        return res.status(400).json({ error: 'Dados inválidos' });
+    }
+
+    const newData = {
+        temperature, gas_level, gas_alert: gas_alert || false,
+        device: device || 'ESP32', heartbeat: heartbeat || false,
+        wifi_rssi: wifi_rssi || 0, timestamp: new Date().toLocaleString('pt-BR'),
+        receivedAt: new Date()
+    };
+
+    if (!devicesState.sensorData) devicesState.sensorData = [];
+    devicesState.sensorData.unshift(newData);
+    if (devicesState.sensorData.length > 100) {
+        devicesState.sensorData = devicesState.sensorData.slice(0, 100);
+    }
+
+    saveState(devicesState);
+    const clientIP = req.ip || req.connection.remoteAddress;
+    updateESP32Status(device, clientIP);
+
+    console.log(heartbeat ? '💓 Heartbeat' : '📨 Dados recebidos');
+    
     res.json({ 
-        authenticated: req.cookies.authToken === 'admin123',
-        cookie: req.cookies.authToken 
+        status: 'OK', 
+        message: heartbeat ? 'Heartbeat recebido!' : 'Dados salvos!',
+        devices: devicesState
     });
 });
 
-app.get('/api/test-cookie', (req, res) => {
-    res.cookie('testCookie', 'funcionando');
-    res.json({ message: 'Cookie setado' });
+// ESP32 busca dispositivos
+app.get('/api/devices', (req, res) => {
+    const clientIP = req.ip || req.connection.remoteAddress;
+    updateESP32Status('ESP32-AUTOMACAO-V3', clientIP);
+    res.json(devicesState);
+});
+
+// Controlar dispositivos
+app.post('/api/control', async (req, res) => {
+    const { type, device, state } = req.body;
+    
+    if (!type || !device || typeof state === 'undefined') {
+        return res.status(400).json({ error: 'Dados incompletos' });
+    }
+    
+    if (!['lights', 'outlets', 'irrigation'].includes(type)) {
+        return res.status(400).json({ error: 'Tipo inválido' });
+    }
+    
+    if (!devicesState[type] || !devicesState[type].hasOwnProperty(device)) {
+        return res.status(400).json({ error: 'Dispositivo não encontrado' });
+    }
+    
+    if (type === 'irrigation' && device === 'bomba_irrigacao' && state === true) {
+        if (devicesState.irrigation.modo === 'automatico' && devicesState.irrigation.evitar_chuva) {
+            const raining = await isRaining();
+            if (raining) {
+                return res.status(400).json({ 
+                    error: 'Irrigação bloqueada - Está chovendo'
+                });
+            }
+        }
+    }
+    
+    const espConnected = checkESP32Connection();
+    if (!espConnected && type !== 'irrigation') {
+        return res.status(503).json({ 
+            error: 'ESP32 desconectado'
+        });
+    }
+    
+    devicesState[type][device] = state;
+    saveState(devicesState);
+    
+    console.log(`🎛️ ${type} ${device}: ${state ? 'LIGADO' : 'DESLIGADO'}`);
+    res.json({ 
+        status: 'OK', 
+        message: `Comando enviado - ${device} ${state ? 'ligado' : 'desligado'}`
+    });
+});
+
+// Dados dos sensores
+app.get('/api/data', (req, res) => {
+    const espConnected = checkESP32Connection();
+    res.json({ 
+        data: devicesState.sensorData || [],
+        esp32: { connected: espConnected },
+        summary: {
+            total_readings: devicesState.sensorData?.length || 0,
+            last_temperature: devicesState.sensorData?.[0]?.temperature || 'N/A',
+            last_gas_level: devicesState.sensorData?.[0]?.gas_level || 'N/A'
+        }
+    });
+});
+
+// Reset dispositivos
+app.post('/api/reset', (req, res) => {
+    const espConnected = checkESP32Connection();
+    if (!espConnected) {
+        return res.status(503).json({ error: 'ESP32 desconectado' });
+    }
+    
+    Object.keys(devicesState.lights).forEach(key => devicesState.lights[key] = false);
+    Object.keys(devicesState.outlets).forEach(key => devicesState.outlets[key] = false);
+    devicesState.irrigation.bomba_irrigacao = false;
+    
+    saveState(devicesState);
+    console.log('🔄 Todos os dispositivos resetados');
+    res.json({ status: 'OK', message: 'Todos os dispositivos desligados' });
+});
+
+// Irrigação
+app.get('/api/irrigation', (req, res) => {
+    res.json(devicesState.irrigation);
+});
+
+app.post('/api/irrigation/save', (req, res) => {
+    const { modo, programacoes, evitar_chuva } = req.body;
+    devicesState.irrigation.modo = modo;
+    devicesState.irrigation.programacoes = programacoes || [];
+    devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
+    saveState(devicesState);
+    console.log('💧 Configurações salvas');
+    res.json({ status: 'OK', message: 'Configurações salvas' });
+});
+
+app.post('/api/irrigation/control', async (req, res) => {
+    const { state } = req.body;
+    
+    if (state === true && devicesState.irrigation.evitar_chuva) {
+        const raining = await isRaining();
+        if (raining) {
+            return res.status(400).json({ error: 'Irrigação bloqueada - Está chovendo' });
+        }
+    }
+    
+    devicesState.irrigation.bomba_irrigacao = state;
+    saveState(devicesState);
+    console.log(`💧 Bomba: ${state ? 'LIGADA' : 'DESLIGADA'}`);
+    res.json({ status: 'OK', message: `Bomba ${state ? 'ligada' : 'desligada'}` });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        esp32: { connected: esp32Status.connected }
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    console.log('❌ Rota não encontrada:', req.path);
+    res.status(404).json({ error: 'Rota não encontrada' });
 });
 
 app.listen(PORT, () => {
-    console.log(`\n🚀 SERVIDOR RODANDO: http://localhost:${PORT}`);
-    console.log('🔐 SISTEMA DE LOGIN: ATIVADO\n');
+    console.log(`\n🔥 Servidor Automação V3.0 rodando na porta ${PORT}`);
+    console.log(`🌐 Acesse: http://localhost:${PORT}`);
+    console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
+    console.log('📡 Monitoramento ESP32: ATIVADO');
+    console.log('💧 Sistema de Irrigação: ATIVADO');
+    console.log('🔐 Sistema de Login: ATIVADO');
+    console.log('🧹 Rota de limpeza: http://localhost:3000/clear');
+    console.log('🌤️  API Clima: ' + (process.env.OPENWEATHER_API_KEY ? 'CONFIGURADA' : 'NÃO CONFIGURADA'));
+    console.log('');
 });
