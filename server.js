@@ -148,35 +148,39 @@ async function isRaining() {
     }
 }
 
-// MIDDLEWARE DE AUTENTICAÇÃO CORRIGIDO
+// MIDDLEWARE DE AUTENTICAÇÃO CORRIGIDO - SEM LOOP
 function requireAuth(req, res, next) {
-    // Rotas públicas que não precisam de autenticação
+    // Rotas públicas que não precisam de autenticação (LISTA EXPANDIDA)
     const publicRoutes = [
         '/', 
-        '/login.html', 
+        '/login.html',
+        '/index.html',
+        '/style.css',
+        '/script.js',
         '/api/login', 
         '/api/logout',
         '/api/status',
+        '/api/weather',
+        '/api/weather/raining',
         '/health',
         '/favicon.ico',
-        '/sistema' // ADICIONADO para evitar loop
+        '/manifest.json'
     ];
     
-    // Verificação CORRIGIDA - mais flexível
-    const isPublicRoute = publicRoutes.some(route => {
-        const path = req.path.toLowerCase();
-        const routeLower = route.toLowerCase();
-        return path === routeLower || 
-               path.startsWith('/public/') ||
-               path === '' ||
-               path.includes('login');
-    });
+    // Verificação CORRIGIDA - mais precisa
+    const isPublicRoute = publicRoutes.some(route => req.path === route);
+    const isStaticFile = req.path.startsWith('/public/') || 
+                         req.path.endsWith('.css') || 
+                         req.path.endsWith('.js') ||
+                         req.path.endsWith('.ico') ||
+                         req.path.endsWith('.png') ||
+                         req.path.endsWith('.jpg');
     
-    if (isPublicRoute) {
+    if (isPublicRoute || isStaticFile) {
         return next();
     }
     
-    // Verificação de autenticação SIMPLIFICADA
+    // Verificação de autenticação
     const authToken = req.cookies?.authToken;
     
     if (authToken === 'admin123') {
@@ -195,26 +199,22 @@ function requireAuth(req, res, next) {
 // Aplicar middleware de autenticação em TODAS as rotas
 app.use(requireAuth);
 
-// Rotas
-
-// Página de login - CORRIGIDA (SEM redirecionamento automático)
+// ROTA PRINCIPAL CORRIGIDA - SEM REDIRECIONAMENTO AUTOMÁTICO
 app.get('/', (req, res) => {
-    // SEMPRE mostrar a página de login, independente de autenticação
-    // O redirecionamento será feito pelo cliente após login bem-sucedido
+    const authToken = req.cookies?.authToken;
+    
+    // Se já está autenticado, redirecionar para o sistema
+    if (authToken === 'admin123') {
+        return res.redirect('/sistema');
+    }
+    
+    // Se não está autenticado, mostrar login
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Página do sistema - REQUER autenticação
+// Página do sistema - REQUER autenticação (já verificada pelo middleware)
 app.get('/sistema', (req, res) => {
-    // Verificar autenticação manualmente para esta rota específica
-    const authToken = req.cookies?.authToken;
-    
-    if (authToken === 'admin123') {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    } else {
-        console.log('❌ Tentativa de acesso ao sistema sem autenticação');
-        res.redirect('/');
-    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Login - CORRIGIDO
@@ -238,7 +238,7 @@ app.post('/api/login', (req, res) => {
             success: true, 
             token: 'admin123',
             message: 'Login realizado com sucesso',
-            redirect: '/sistema' // Informar o cliente para redirecionar
+            redirect: '/sistema'
         });
     } else {
         console.log('❌ Login falhou para:', username);
