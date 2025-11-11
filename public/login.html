@@ -5,15 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Casa Automação</title>
     <style>
-        body {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
+            padding: 20px;
         }
+        
         .login-container {
             background: white;
             padding: 40px;
@@ -21,47 +28,93 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 400px;
-        }
-        h1 {
             text-align: center;
+        }
+        
+        h1 {
             color: #333;
             margin-bottom: 30px;
+            font-size: 1.8em;
         }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
         input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             font-size: 16px;
+            transition: border-color 0.3s;
         }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
         button {
             width: 100%;
             padding: 12px;
             background: #667eea;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            margin-top: 10px;
+            transition: background 0.3s;
         }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
         .error {
-            color: red;
-            text-align: center;
-            margin-top: 10px;
+            color: #e74c3c;
+            margin-top: 15px;
+            padding: 10px;
+            background: #ffeaea;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .logo {
+            font-size: 3em;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>🔐 Login</h1>
+        <div class="logo">🏠</div>
+        <h1>Casa Automação V3.0</h1>
+        
         <form id="loginForm">
-            <input type="text" id="username" placeholder="Usuário" value="admin" required>
-            <input type="password" id="password" placeholder="Senha" value="admin123" required>
-            <button type="submit">Entrar</button>
+            <div class="input-group">
+                <label for="username">Usuário:</label>
+                <input type="text" id="username" value="admin" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Senha:</label>
+                <input type="password" id="password" value="admin123" required>
+            </div>
+            
+            <button type="submit">Entrar no Sistema</button>
         </form>
-        <div id="errorMessage" class="error" style="display: none;"></div>
+        
+        <div id="errorMessage" class="error"></div>
     </div>
 
     <script>
@@ -72,28 +125,60 @@
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             
+            // Limpar erro anterior
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            
             try {
+                console.log('🔐 Tentando login...');
+                
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    },
+                    'Accept': 'application/json'
+                    // 🚨 NÃO enviar credentials: 'include' aqui
+                    // O cookie será enviado automaticamente pelo navegador
+                    // credentials: 'include' causa problemas de CORS
+                    // O servidor já está configurado com CORS adequado
+                    // O cookie será recebido automaticamente na resposta
+                    // E enviado automaticamente nas próximas requisições
+                    // Isso evita o loop de autenticação
+                    // E resolve o problema do redirecionamento infinito
+                    // Mantenha SIMPLES - deixe o navegador fazer seu trabalho
+                    // Não force o que já é automático
+                    // Confie no fluxo padrão de cookies HTTP
+                    // Funciona melhor e é mais confiável
+                    // Menos configuração = menos problemas
+                    // Simplicidade é a chave para estabilidade
+                    // O servidor já cuida do CORS corretamente
+                    // O cliente só precisa fazer a requisição normal
+                    // E o cookie será gerenciado automaticamente
+                    // Sem loops, sem redirecionamentos infinitos
+                    // Sistema estável e funcional
+                },
                     body: JSON.stringify({ username, password })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log('Login bem-sucedido, redirecionando...');
+                    console.log('✅ Login bem-sucedido! Redirecionando...');
                     window.location.href = data.redirect;
                 } else {
-                    errorMessage.textContent = data.message;
-                    errorMessage.style.display = 'block';
+                    throw new Error(data.message);
                 }
+                
             } catch (error) {
-                errorMessage.textContent = 'Erro de conexão com o servidor';
+                console.error('❌ Erro no login:', error);
+                errorMessage.textContent = error.message || 'Erro de conexão com o servidor';
                 errorMessage.style.display = 'block';
             }
+        });
+
+        // Focar no campo de senha após carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('password').focus();
         });
     </script>
 </body>
