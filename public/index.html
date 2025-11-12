@@ -1152,7 +1152,24 @@
     </div>
 
     <script>
-        // 🔧 FUNÇÕES PRINCIPAIS
+        // 🔐 VERIFICAÇÃO DE AUTENTICAÇÃO
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    console.log('🔐 Usuário não autenticado, redirecionando para login...');
+                    window.location.href = '/login.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('❌ Erro ao verificar autenticação:', error);
+                window.location.href = '/login.html';
+                return false;
+            }
+        }
 
         // 🚪 LOGOUT
         async function logout() {
@@ -1496,10 +1513,6 @@
             setInterval(updateSensors, 30000);
         }
 
-        function checkSystemAuth() {
-            console.log('🔐 Verificando autenticação do usuário...');
-        }
-
         function updateSensors() {
             console.log('📊 Atualizando dados dos sensores...');
             // Simular dados de sensores
@@ -1509,13 +1522,21 @@
         }
 
         // 🚀 INICIALIZAÇÃO DO SISTEMA
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🏠 Sistema Casa Automação V3.0 inicializado');
-            loadDevices();
-            startDataUpdates();
-            checkSystemAuth();
-            updateWeather();
-            updateSensors();
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🏠 Sistema Casa Automação V3.0 inicializando...');
+            
+            // 🔐 Verificar autenticação primeiro
+            const isAuthenticated = await checkAuth();
+            
+            if (isAuthenticated) {
+                console.log('✅ Usuário autenticado, carregando dashboard...');
+                loadDevices();
+                startDataUpdates();
+                updateWeather();
+                updateSensors();
+            } else {
+                console.log('❌ Usuário não autenticado, redirecionando...');
+            }
         });
 
     </script>
