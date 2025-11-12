@@ -216,17 +216,6 @@
             0%, 100% { transform: scale(1) translateY(0px); filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5)); }
             50% { transform: scale(1.1) translateY(-2px); filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8)); }
         }
-        .internet-icon {
-            width: 20px;
-            height: 20px;
-            animation: globeRotate 3s ease-in-out infinite;
-        }
-        @keyframes globeRotate {
-            0%, 100% { transform: rotate(0deg) scale(1); filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6)); }
-            25% { transform: rotate(5deg) scale(1.05); filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8)); }
-            50% { transform: rotate(0deg) scale(1.1); filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1)); }
-            75% { transform: rotate(-5deg) scale(1.05); filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8)); }
-        }
 
         /* Animações de Ícones Meteorológicos */
         .weather-icon-sun {
@@ -269,10 +258,6 @@
             animation: float 2s ease-in-out infinite !important;
             color: #81D4FA !important;
         }
-        .icon-pressure {
-            animation: breathe 2.5s ease-in-out infinite !important;
-            color: #AED581 !important;
-        }
 
         /* Animações Base */
         @keyframes float {
@@ -306,10 +291,6 @@
         @keyframes drip {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(2px) scale(1.05); }
-        }
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
         }
 
         /* Cards e Grids */
@@ -447,6 +428,12 @@
             color: #2d3748;
             font-size: 0.8em;
         }
+        .device-compact-room {
+            font-size: 0.7em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
 
         /* Switch Toggle */
         .switch {
@@ -567,10 +554,6 @@
         .status-off {
             color: #f44336;
         }
-        .room-icon {
-            font-size: 0.8em;
-            margin-right: 3px;
-        }
 
         /* Indicador ESP32 */
         .status-content {
@@ -596,10 +579,6 @@
         }
         .esp32-indicator.offline {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            color: white;
-        }
-        .esp32-indicator.connecting {
-            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
             color: white;
         }
         .status-text {
@@ -1401,7 +1380,7 @@
         function loadDevices() {
             console.log('📡 Carregando dispositivos...');
             
-            // Simular lâmpadas
+            // LÂMPADAS COM CÔMODOS
             const lightsContainer = document.getElementById('lights-container');
             if (lightsContainer) {
                 lightsContainer.innerHTML = `
@@ -1409,7 +1388,8 @@
                         <div class="device-compact-icon">
                             <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
                         </div>
-                        <div class="device-compact-name">Sala</div>
+                        <div class="device-compact-name">Lâmpada Principal</div>
+                        <div class="device-compact-room">Sala de Estar</div>
                         <label class="switch">
                             <input type="checkbox" checked>
                             <span class="slider"></span>
@@ -1420,7 +1400,32 @@
                         <div class="device-compact-icon">
                             <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
                         </div>
-                        <div class="device-compact-name">Quarto</div>
+                        <div class="device-compact-name">Luz do Quarto</div>
+                        <div class="device-compact-room">Quarto Principal</div>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                        <div class="device-status status-on">Online</div>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
+                        </div>
+                        <div class="device-compact-name">Luz da Cozinha</div>
+                        <div class="device-compact-room">Cozinha</div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <div class="device-status status-on">Online</div>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
+                        </div>
+                        <div class="device-compact-name">Luz da Varanda</div>
+                        <div class="device-compact-room">Varanda</div>
                         <label class="switch">
                             <input type="checkbox">
                             <span class="slider"></span>
@@ -1430,7 +1435,7 @@
                 `;
             }
 
-            // Simular tomadas
+            // TOMADAS COM CÔMODOS
             const outletsContainer = document.getElementById('outlets-container');
             if (outletsContainer) {
                 outletsContainer.innerHTML = `
@@ -1438,7 +1443,8 @@
                         <div class="device-compact-icon">
                             <i class="fas fa-plug" style="color: #667eea;"></i>
                         </div>
-                        <div class="device-compact-name">TV</div>
+                        <div class="device-compact-name">Tomada TV</div>
+                        <div class="device-compact-room">Sala de Estar</div>
                         <label class="switch">
                             <input type="checkbox" checked>
                             <span class="slider"></span>
@@ -1449,7 +1455,32 @@
                         <div class="device-compact-icon">
                             <i class="fas fa-plug" style="color: #667eea;"></i>
                         </div>
-                        <div class="device-compact-name">Computador</div>
+                        <div class="device-compact-name">Tomada Computador</div>
+                        <div class="device-compact-room">Escritório</div>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                        <div class="device-status status-on">Online</div>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <i class="fas fa-plug" style="color: #667eea;"></i>
+                        </div>
+                        <div class="device-compact-name">Tomada Geladeira</div>
+                        <div class="device-compact-room">Cozinha</div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <div class="device-status status-on">Online</div>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <i class="fas fa-plug" style="color: #667eea;"></i>
+                        </div>
+                        <div class="device-compact-name">Tomada Carregador</div>
+                        <div class="device-compact-room">Quarto</div>
                         <label class="switch">
                             <input type="checkbox">
                             <span class="slider"></span>
