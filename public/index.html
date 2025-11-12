@@ -1152,40 +1152,26 @@
     </div>
 
     <script>
-        // 🔐 VERIFICAÇÃO DE AUTENTICAÇÃO
-        async function checkAuth() {
-            try {
-                const response = await fetch('/api/check-auth');
-                const data = await response.json();
-                
-                if (!data.authenticated) {
-                    console.log('🔐 Usuário não autenticado, redirecionando para login...');
-                    window.location.href = '/login.html';
-                    return false;
-                }
-                return true;
-            } catch (error) {
-                console.error('❌ Erro ao verificar autenticação:', error);
-                window.location.href = '/login.html';
+        // 🔐 VERIFICAÇÃO DE AUTENTICAÇÃO SIMPLIFICADA
+        function checkAuth() {
+            // Simulação simples - em produção isso viria do backend
+            const isAuthenticated = sessionStorage.getItem('authenticated') === 'true';
+            
+            if (!isAuthenticated) {
+                console.log('🔐 Usuário não autenticado, redirecionando para login...');
+                window.location.href = 'login.html';
                 return false;
             }
+            return true;
         }
 
         // 🚪 LOGOUT
-        async function logout() {
-            try {
-                const response = await fetch('/api/logout', { method: 'POST' });
-                const data = await response.json();
-                if (data.success) {
-                    window.location.href = data.redirect;
-                }
-            } catch (error) {
-                console.error('❌ Erro no logout:', error);
-                window.location.href = '/login.html';
-            }
+        function logout() {
+            sessionStorage.removeItem('authenticated');
+            window.location.href = 'login.html';
         }
 
-        // 💡 CONTROLE DE LÂMPADAS
+        // 💡 CONTROLE DE LÂMPADAS - COM TODOS OS CÔMODOS
         function controlAllLights(state) {
             console.log(`${state ? 'Ligar' : 'Desligar'} todas as lâmpadas`);
             const lights = document.querySelectorAll('#lights-container .device-compact-item');
@@ -1201,7 +1187,7 @@
             });
         }
 
-        // 🔌 CONTROLE DE TOMADAS
+        // 🔌 CONTROLE DE TOMADAS - COM TODOS OS CÔMODOS
         function controlAllOutlets(state) {
             console.log(`${state ? 'Ligar' : 'Desligar'} todas as tomadas`);
             const outlets = document.querySelectorAll('#outlets-container .device-compact-item');
@@ -1397,7 +1383,7 @@
         function loadDevices() {
             console.log('📡 Carregando dispositivos...');
             
-            // LÂMPADAS COM CÔMODOS
+            // LÂMPADAS COM TODOS OS CÔMODOS
             const lightsContainer = document.getElementById('lights-container');
             if (lightsContainer) {
                 lightsContainer.innerHTML = `
@@ -1452,7 +1438,7 @@
                 `;
             }
 
-            // TOMADAS COM CÔMODOS
+            // TOMADAS COM TODOS OS CÔMODOS
             const outletsContainer = document.getElementById('outlets-container');
             if (outletsContainer) {
                 outletsContainer.innerHTML = `
@@ -1522,11 +1508,11 @@
         }
 
         // 🚀 INICIALIZAÇÃO DO SISTEMA
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             console.log('🏠 Sistema Casa Automação V3.0 inicializando...');
             
             // 🔐 Verificar autenticação primeiro
-            const isAuthenticated = await checkAuth();
+            const isAuthenticated = checkAuth();
             
             if (isAuthenticated) {
                 console.log('✅ Usuário autenticado, carregando dashboard...');
