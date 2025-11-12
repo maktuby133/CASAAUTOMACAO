@@ -220,7 +220,7 @@
             transform: translateY(-1px);
         }
 
-        /* Ícones Animados - ATUALIZADOS */
+        /* Ícones Animados */
         .lamp-icon-on {
             width: 22px;
             height: 22px;
@@ -580,49 +580,6 @@
             color: white;
         }
 
-        /* Status Bar - REMOVIDA DA IRRIGAÇÃO */
-        .status-bar {
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.85em;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .online {
-            color: #4CAF50;
-            border-left: 3px solid #4CAF50;
-        }
-
-        .offline {
-            color: #f44336;
-            border-left: 3px solid #f44336;
-        }
-
-        .device-status {
-            margin-top: 4px;
-            font-size: 0.65em;
-            font-weight: 500;
-        }
-
-        .status-on {
-            color: #4CAF50;
-        }
-
-        .status-off {
-            color: #f44336;
-        }
-
-        .room-icon {
-            font-size: 0.8em;
-            margin-right: 3px;
-        }
-
         /* Animações de Ícones Meteorológicos */
         .weather-icon-sun {
             color: #FFD700 !important;
@@ -724,8 +681,6 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.08); }
         }
-
-        /* Restante do CSS permanece igual... */
 
         /* Responsividade */
         @media (max-width: 768px) {
@@ -978,9 +933,168 @@
         </div>
     </div>
 
-    <!-- O restante do HTML permanece igual... -->
-
+    <!-- Script principal -->
     <script>
+        // 🚨 CORREÇÃO: Função logout global
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.redirect;
+                }
+            } catch (error) {
+                console.error('❌ Erro no logout:', error);
+                window.location.href = '/login.html';
+            }
+        }
+
+        // 🆕 FUNÇÕES PARA CARREGAR DISPOSITIVOS
+        function loadDevices() {
+            // Carregar lâmpadas
+            const lightsContainer = document.getElementById('lights-container');
+            if (lightsContainer) {
+                lightsContainer.innerHTML = `
+                    <div class="device-compact-item active">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
+                        </div>
+                        <div class="device-compact-name">Sala</div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="toggleLight('sala', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-off" alt="Lâmpada">
+                        </div>
+                        <div class="device-compact-name">Quarto</div>
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleLight('quarto', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="device-compact-item active">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
+                        </div>
+                        <div class="device-compact-name">Cozinha</div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="toggleLight('cozinha', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-off" alt="Lâmpada">
+                        </div>
+                        <div class="device-compact-name">Banheiro</div>
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleLight('banheiro', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+            }
+
+            // Carregar tomadas
+            const outletsContainer = document.getElementById('outlets-container');
+            if (outletsContainer) {
+                outletsContainer.innerHTML = `
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=a4ENDmLqL45i&format=png&color=000000" class="outlet-icon-off" alt="Tomada">
+                        </div>
+                        <div class="device-compact-name">TV</div>
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleOutlet('tv', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="device-compact-item active">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=PdXmZzryEOOW&format=png&color=000000" class="outlet-icon-on" alt="Tomada">
+                        </div>
+                        <div class="device-compact-name">Computador</div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="toggleOutlet('computador', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="device-compact-item">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=a4ENDmLqL45i&format=png&color=000000" class="outlet-icon-off" alt="Tomada">
+                        </div>
+                        <div class="device-compact-name">Ventilador</div>
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleOutlet('ventilador', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="device-compact-item active">
+                        <div class="device-compact-icon">
+                            <img src="https://img.icons8.com/?size=100&id=PdXmZzryEOOW&format=png&color=000000" class="outlet-icon-on" alt="Tomada">
+                        </div>
+                        <div class="device-compact-name">Carregador</div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="toggleOutlet('carregador', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+            }
+        }
+
+        // 🆕 FUNÇÕES DE CONTROLE
+        function toggleLight(room, state) {
+            console.log(`Lâmpada ${room}: ${state ? 'LIGADA' : 'DESLIGADA'}`);
+            // Aqui você faria a chamada para a API
+        }
+
+        function toggleOutlet(device, state) {
+            console.log(`Tomada ${device}: ${state ? 'LIGADA' : 'DESLIGADA'}`);
+            // Aqui você faria a chamada para a API
+        }
+
+        function controlAllLights(state) {
+            const switches = document.querySelectorAll('#lights-container .switch input');
+            switches.forEach(switchElem => {
+                switchElem.checked = state;
+                const room = switchElem.closest('.device-compact-item').querySelector('.device-compact-name').textContent;
+                toggleLight(room.toLowerCase(), state);
+            });
+        }
+
+        function controlAllOutlets(state) {
+            const switches = document.querySelectorAll('#outlets-container .switch input');
+            switches.forEach(switchElem => {
+                switchElem.checked = state;
+                const device = switchElem.closest('.device-compact-item').querySelector('.device-compact-name').textContent;
+                toggleOutlet(device.toLowerCase(), state);
+            });
+        }
+
+        function controlIrrigation(state) {
+            console.log(`Irrigação: ${state ? 'LIGADA' : 'DESLIGADA'}`);
+            updateIrrigationIcon(state);
+            // Aqui você faria a chamada para a API
+        }
+
+        function openIrrigationModal() {
+            console.log('Abrindo modal de irrigação');
+            // Implementação do modal
+        }
+
+        function checkWeather() {
+            console.log('Verificando clima...');
+            updateWeather();
+        }
+
         // 🆕 FUNÇÃO PARA ATUALIZAR ÍCONE DE IRRIGAÇÃO
         function updateIrrigationIcon(isOn) {
             const irrigationIcon = document.getElementById('irrigation-main-icon');
@@ -995,7 +1109,142 @@
             }
         }
 
-        // As demais funções JavaScript permanecem iguais...
+        // 🆕 FUNÇÕES PARA METEOROLOGIA - CORRIGIDAS
+        async function updateWeather() {
+            try {
+                // Simulação de dados de clima (substitua pela sua API real)
+                const mockWeatherData = {
+                    main: {
+                        temp: 28,
+                        feels_like: 30,
+                        humidity: 65,
+                        pressure: 1013
+                    },
+                    weather: [{
+                        main: "Clear",
+                        description: "céu limpo"
+                    }],
+                    wind: {
+                        speed: 3.5
+                    },
+                    name: "Rio de Janeiro"
+                };
+
+                const data = mockWeatherData;
+                
+                // Temperatura principal
+                const mainTempElement = document.getElementById('weather-main-temp');
+                if (mainTempElement) {
+                    mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
+                }
+                
+                // Descrição principal
+                const mainDescElement = document.getElementById('weather-main-desc');
+                if (mainDescElement && data.weather && data.weather[0]) {
+                    mainDescElement.textContent = data.weather[0].description;
+                }
+                
+                // Ícone principal
+                const mainIconElement = document.getElementById('weather-main-icon');
+                if (mainIconElement && data.weather && data.weather[0]) {
+                    const weatherMain = data.weather[0].main.toLowerCase();
+                    mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+                }
+                
+                // Sensação térmica
+                const feelsLikeElement = document.getElementById('weather-feels-like');
+                if (feelsLikeElement) {
+                    feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
+                }
+                
+                // Umidade
+                const humidityElement = document.getElementById('weather-humidity');
+                if (humidityElement) {
+                    humidityElement.textContent = `${data.main.humidity}%`;
+                }
+                
+                // Vento
+                const windElement = document.getElementById('weather-wind');
+                if (windElement && data.wind) {
+                    windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+                }
+                
+                // Pressão
+                const pressureElement = document.getElementById('weather-pressure');
+                if (pressureElement) {
+                    pressureElement.textContent = `${data.main.pressure} hPa`;
+                }
+                
+                // Cidade
+                const cityElement = document.getElementById('weather-city');
+                if (cityElement && data.name) {
+                    cityElement.textContent = `${data.name}, BR`;
+                }
+                
+                // Horário de atualização
+                const timeElement = document.getElementById('weather-update-time');
+                if (timeElement) {
+                    const now = new Date();
+                    timeElement.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                }
+
+                console.log('✅ Dados meteorológicos atualizados com sucesso!');
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar clima:', error);
+                // Fallback para dados básicos
+                document.getElementById('weather-main-temp').textContent = '25°C';
+                document.getElementById('weather-main-desc').textContent = 'parcialmente nublado';
+            }
+        }
+
+        function getWeatherMainIcon(weatherMain) {
+            const icons = {
+                'clear': 'fa-sun',
+                'clouds': 'fa-cloud',
+                'rain': 'fa-cloud-rain',
+                'drizzle': 'fa-cloud-drizzle',
+                'thunderstorm': 'fa-bolt',
+                'snow': 'fa-snowflake',
+                'mist': 'fa-smog',
+                'fog': 'fa-smog'
+            };
+            
+            return icons[weatherMain] || 'fa-cloud';
+        }
+
+        function getWeatherAnimationClass(weatherMain) {
+            const animations = {
+                'clear': 'weather-icon-sun',
+                'clouds': 'weather-icon-cloud',
+                'rain': 'weather-icon-rain',
+                'drizzle': 'weather-icon-rain',
+                'thunderstorm': 'weather-icon-storm',
+                'snow': 'weather-icon-snow',
+                'mist': 'weather-icon-mist',
+                'fog': 'weather-icon-mist'
+            };
+            
+            return animations[weatherMain] || 'weather-icon-cloud';
+        }
+
+        // Inicialização do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            loadDevices();
+            updateWeather(); // 🆕 Carregar clima inicial
+        });
+
+        // 🆕 Exportar funções para uso global
+        window.controlAllLights = controlAllLights;
+        window.controlAllOutlets = controlAllOutlets;
+        window.controlIrrigation = controlIrrigation;
+        window.openIrrigationModal = openIrrigationModal;
+        window.checkWeather = checkWeather;
+        window.toggleLight = toggleLight;
+        window.toggleOutlet = toggleOutlet;
+        window.updateWeather = updateWeather;
+        window.updateIrrigationIcon = updateIrrigationIcon;
     </script>
 </body>
 </html>
