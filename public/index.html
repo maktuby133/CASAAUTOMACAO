@@ -56,8 +56,8 @@
         }
 
         .title-icon {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: float 3s ease-in-out infinite;
         }
 
@@ -83,40 +83,11 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        .esp32-status-top {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            justify-content: center;
-        }
-
-        .esp32-indicator {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .esp32-indicator.online {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-        }
-
-        .esp32-indicator.offline {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            color: white;
-        }
-
-        /* METEOROLOGIA MAIS FINA */
+        /* 🆕 METEOROLOGIA EXPANDIDA - MAIS COMPACTA */
         .weather-expanded {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: 15px;
-            padding: 12px 20px;
+            padding: 15px;
             color: white;
             margin-bottom: 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
@@ -124,7 +95,7 @@
             grid-template-columns: 1fr 2fr 1fr;
             gap: 15px;
             align-items: center;
-            height: 140px;
+            height: auto;
         }
 
         .weather-main {
@@ -143,7 +114,7 @@
         .weather-temp-main {
             font-size: 2.2em;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .weather-desc-main {
@@ -155,8 +126,8 @@
         .weather-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            padding: 10px;
+            gap: 12px;
+            padding: 12px;
             background: rgba(255,255,255,0.1);
             border-radius: 10px;
             backdrop-filter: blur(10px);
@@ -169,7 +140,7 @@
         }
 
         .weather-detail-icon {
-            font-size: 1.1em;
+            font-size: 1.2em;
             opacity: 0.9;
             width: 25px;
             text-align: center;
@@ -181,12 +152,12 @@
         }
 
         .weather-detail-label {
-            font-size: 0.7em;
+            font-size: 0.75em;
             opacity: 0.8;
         }
 
         .weather-detail-value {
-            font-size: 0.9em;
+            font-size: 1em;
             font-weight: 600;
         }
 
@@ -199,9 +170,9 @@
         }
 
         .weather-city {
-            font-size: 1.1em;
+            font-size: 1.2em;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -212,27 +183,132 @@
             opacity: 0.8;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .weather-update-btn {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 20px;
             cursor: pointer;
             margin-top: 8px;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.75em;
+            gap: 4px;
+            font-size: 0.8em;
         }
 
         .weather-update-btn:hover {
             background: rgba(255,255,255,0.3);
             transform: translateY(-2px);
+        }
+
+        /* Ícones Animados - ATUALIZADOS */
+        .lamp-icon-on {
+            width: 22px;
+            height: 22px;
+            animation: lampGlow 1.5s ease-in-out infinite;
+        }
+
+        .lamp-icon-off {
+            width: 22px;
+            height: 22px;
+            opacity: 0.6;
+        }
+
+        @keyframes lampGlow {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,0,0.5));
+            }
+            50% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,0,0.8));
+            }
+        }
+
+        .outlet-icon-on {
+            width: 22px;
+            height: 22px;
+            animation: plugPulse 4s ease-in-out infinite;
+        }
+
+        .outlet-icon-off {
+            width: 22px;
+            height: 22px;
+            opacity: 0.6;
+        }
+
+        @keyframes plugPulse {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1);
+            }
+            25% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.2);
+            }
+            50% { 
+                transform: scale(1.05) rotate(-3deg);
+                filter: brightness(1.1);
+            }
+            75% { 
+                transform: scale(1.15) rotate(2deg);
+                filter: brightness(1.3);
+            }
+        }
+
+        .irrigation-icon-on {
+            width: 40px;
+            height: 40px;
+            animation: waterDrop 2s ease-in-out infinite;
+            margin-left: auto;
+        }
+
+        .irrigation-icon-off {
+            width: 40px;
+            height: 40px;
+            opacity: 0.6;
+            margin-left: auto;
+        }
+
+        @keyframes waterDrop {
+            0%, 100% { 
+                transform: scale(1) translateY(0px);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5));
+            }
+            50% { 
+                transform: scale(1.1) translateY(-2px);
+                filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8));
+            }
+        }
+
+        .internet-icon {
+            width: 20px;
+            height: 20px;
+            animation: globeRotate 3s ease-in-out infinite;
+        }
+
+        @keyframes globeRotate {
+            0%, 100% { 
+                transform: rotate(0deg) scale(1);
+                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
+            }
+            25% { 
+                transform: rotate(5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+            50% { 
+                transform: rotate(0deg) scale(1.1);
+                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
+            }
+            75% { 
+                transform: rotate(-5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
         }
 
         /* Animações de Ícones Meteorológicos */
@@ -426,6 +502,11 @@
             border: 1px solid rgba(255,255,255,0.3);
         }
 
+        /* 🆕 CARD DE IRRIGAÇÃO MAIS COMPACTO */
+        .card.irrigation-card {
+            padding: 15px 20px;
+        }
+
         .card h2 {
             color: #2d3748;
             margin-bottom: 15px;
@@ -597,32 +678,7 @@
             color: white;
         }
 
-        /* CARD DE IRRIGAÇÃO MAIS FINO */
-        .irrigation-card {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 15px;
-            padding: 15px 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            margin-bottom: 15px;
-        }
-
-        .irrigation-card h2 {
-            color: #2d3748;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            font-size: 1.4em;
-        }
-
-        .irrigation-icon-large {
-            width: 60px !important;
-            height: 60px !important;
-            animation: waterDrop 2s ease-in-out infinite;
-        }
-
+        /* Status Bar - ATUALIZADA PARA IRRIGAÇÃO */
         .status-bar {
             background: rgba(255,255,255,0.95);
             padding: 10px;
@@ -631,7 +687,9 @@
             font-weight: 600;
             font-size: 0.85em;
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .online {
@@ -663,82 +721,314 @@
             margin-right: 3px;
         }
 
-        /* NOVOS ÍCONES ANIMADOS */
-        .lamp-icon-on {
-            width: 22px;
-            height: 22px;
-            animation: lampGlow 1.5s ease-in-out infinite;
+        /* Indicador ESP32 */
+        .status-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            flex-wrap: wrap;
         }
 
-        .lamp-icon-off {
-            width: 22px;
-            height: 22px;
-            opacity: 0.6;
+        .esp32-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
 
-        .outlet-icon-on {
-            width: 22px;
-            height: 22px;
-            animation: plugPulse 4s ease-in-out infinite;
+        .esp32-indicator.online {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
         }
 
-        .outlet-icon-off {
-            width: 22px;
-            height: 22px;
-            opacity: 0.6;
+        .esp32-indicator.offline {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
         }
 
-        .irrigation-icon-on {
-            width: 22px;
-            height: 22px;
-            animation: waterDrop 2s ease-in-out infinite;
+        .esp32-indicator.connecting {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+            color: white;
         }
 
-        .irrigation-icon-off {
-            width: 22px;
-            height: 22px;
-            opacity: 0.6;
+        .status-text {
+            flex: 1;
+            text-align: center;
         }
 
-        @keyframes lampGlow {
-            0%, 100% { 
-                transform: scale(1) rotate(0deg);
-                filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,0,0.5));
-            }
-            50% { 
-                transform: scale(1.1) rotate(5deg);
-                filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,0,0.8));
-            }
+        /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
         }
 
-        @keyframes plugPulse {
-            0%, 100% { 
-                transform: scale(1) rotate(0deg);
-                filter: brightness(1);
-            }
-            25% { 
-                transform: scale(1.1) rotate(5deg);
-                filter: brightness(1.2);
-            }
-            50% { 
-                transform: scale(1.05) rotate(-3deg);
-                filter: brightness(1.1);
-            }
-            75% { 
-                transform: scale(1.15) rotate(2deg);
-                filter: brightness(1.3);
-            }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
 
-        @keyframes waterDrop {
-            0%, 100% { 
-                transform: scale(1) translateY(0px);
-                filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5));
-            }
-            50% { 
-                transform: scale(1.1) translateY(-2px);
-                filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8));
-            }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #2d3748;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .modal-section h3 {
+            margin-bottom: 15px;
+            color: #2d3748;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 🆕 SELEÇÃO DE DIAS DA SEMANA */
+        .days-selection {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .day-checkbox {
+            display: none;
+        }
+
+        .day-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 5px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .day-label:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .day-checkbox:checked + .day-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .day-abbr {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .day-full {
+            font-size: 0.7em;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* 🆕 SELEÇÃO DE HORA COM RELÓGIO */
+        .time-selection {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input {
+            flex: 1;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .time-picker-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .time-picker-btn:hover {
+            background: #5a6fd8;
+        }
+
+        /* 🆕 LISTA DE PROGRAMAÇÕES MELHORADA */
+        .programming-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .programming-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #00b894;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .programming-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .programming-time {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1.1em;
+        }
+
+        .programming-days {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .day-badge {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 500;
+        }
+
+        .day-badge.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .delete-programming {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.3s;
+        }
+
+        .delete-programming:hover {
+            background: #ee5a24;
+        }
+
+        .no-programming {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* Scrollbar personalizado */
+        .devices-compact::-webkit-scrollbar,
+        .programming-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .devices-compact::-webkit-scrollbar-track,
+        .programming-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .devices-compact::-webkit-scrollbar-thumb,
+        .programming-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .devices-compact::-webkit-scrollbar-thumb:hover,
+        .programming-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
 
         /* Responsividade */
@@ -755,7 +1045,6 @@
                 grid-template-columns: 1fr;
                 gap: 15px;
                 text-align: center;
-                height: auto;
             }
             
             .weather-details {
@@ -764,6 +1053,15 @@
             
             .header h1 {
                 font-size: 1.8em;
+            }
+            
+            .days-selection {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .status-content {
+                flex-direction: column;
+                gap: 10px;
             }
         }
 
@@ -779,6 +1077,10 @@
             
             .logout-btn {
                 align-self: center;
+            }
+            
+            .days-selection {
+                grid-template-columns: repeat(3, 1fr);
             }
             
             .controls {
@@ -797,7 +1099,7 @@
         <div class="header">
             <div class="header-content">
                 <h1>
-                    <img src="https://img.icons8.com/?size=100&id=fO9dIRaojleL&format=png&color=000000" class="title-icon" alt="Casa Automação">
+                    <img src="https://img.icons8.com/?size=100&id=fO9dIRaojleL&format=png&color=000000" class="title-icon" alt="Casa">
                     Casa Automação V3.0
                 </h1>
             </div>
@@ -807,15 +1109,7 @@
             </button>
         </div>
 
-        <!-- Status ESP32 movido para cima -->
-        <div class="esp32-status-top">
-            <div class="esp32-indicator online" id="esp32-status">
-                <i class="fas fa-microchip"></i>
-                <span>ESP32 Online</span>
-            </div>
-        </div>
-
-        <!-- METEOROLOGIA MAIS FINA -->
+        <!-- 🆕 METEOROLOGIA EXPANDIDA - MAIS COMPACTA -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
@@ -932,13 +1226,12 @@
             <!-- Controle de Tomadas -->
             <div class="card">
                 <h2>
-                    <img src="https://img.icons8.com/?size=100&id=ypDb45W4eZAn&format=png&color=000000" class="outlet-icon-on" alt="Tomada">
+                    <img src="https://img.icons8.com/?size=100&id=a4ENDmLqL45i&format=png&color=000000" class="outlet-icon-off" alt="Tomada">
                     Controle de Tomadas
                 </h2>
                 <div class="devices-compact" id="outlets-container">
                     <!-- Tomadas serão carregadas via JavaScript -->
                 </div>
-                <!-- BOTÕES ADICIONADOS NA PARTE DE BAIXO -->
                 <div class="controls">
                     <button class="btn btn-success" onclick="controlAllOutlets(true)">
                         <i class="fas fa-plug"></i>
@@ -952,21 +1245,22 @@
             </div>
         </div>
 
-        <!-- CARD DE IRRIGAÇÃO MAIS FINO -->
-        <div class="irrigation-card">
+        <!-- Sistema de Irrigação - MAIS COMPACTO -->
+        <div class="card irrigation-card">
             <h2>
-                <img src="https://img.icons8.com/?size=100&id=-gzG_38s0oVM&format=png&color=000000" class="irrigation-icon-large" id="irrigation-main-icon" alt="Irrigação">
+                <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-icon-off" alt="Irrigação">
                 Sistema de Irrigação
             </h2>
             <div class="status-bar">
                 <div class="status-content">
+                    <div class="esp32-indicator online" id="esp32-status">
+                        <i class="fas fa-microchip"></i>
+                        <span>ESP32 Online</span>
+                    </div>
                     <div class="status-text">
                         Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
                     </div>
-                    <div class="device-status">
-                        Modo: <span id="irrigation-mode">Manual</span> | 
-                        Evitar Chuva: <span id="rain-avoidance">Ativado</span>
-                    </div>
+                    <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-icon-off" alt="Irrigação Desligada" id="irrigation-main-icon">
                 </div>
             </div>
             <div class="controls">
@@ -990,148 +1284,388 @@
         </div>
     </div>
 
+    <!-- 🆕 MODAL DE IRRIGAÇÃO MELHORADO -->
+    <div class="modal-overlay" id="irrigation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-tint"></i>
+                    Configurações de Irrigação
+                </h2>
+                <button class="close-modal" onclick="closeIrrigationModal()">&times;</button>
+            </div>
+            
+            <div class="modal-section">
+                <h3><i class="fas fa-cogs"></i> Modo de Operação</h3>
+                <div class="form-group">
+                    <label for="irrigation-mode-select">Selecione o modo de operação:</label>
+                    <select id="irrigation-mode-select">
+                        <option value="manual">Manual</option>
+                        <option value="automatico">Automático</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3><i class="fas fa-cloud-rain"></i> Preferências</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="avoid-rain-checkbox" checked>
+                        Evitar irrigação quando estiver chovendo
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-section" id="programming-section">
+                <h3><i class="fas fa-clock"></i> Programaçõe Automáticas</h3>
+                <div class="form-group">
+                    <label>Selecione os dias da semana:</label>
+                    <div class="days-selection">
+                        <input type="checkbox" id="day-seg" class="day-checkbox" value="seg">
+                        <label for="day-seg" class="day-label">
+                            <span class="day-abbr">SEG</span>
+                            <span class="day-full">Segunda</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-ter" class="day-checkbox" value="ter">
+                        <label for="day-ter" class="day-label">
+                            <span class="day-abbr">TER</span>
+                            <span class="day-full">Terça</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-qua" class="day-checkbox" value="qua">
+                        <label for="day-qua" class="day-label">
+                            <span class="day-abbr">QUA</span>
+                            <span class="day-full">Quarta</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-qui" class="day-checkbox" value="qui">
+                        <label for="day-qui" class="day-label">
+                            <span class="day-abbr">QUI</span>
+                            <span class="day-full">Quinta</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-sex" class="day-checkbox" value="sex">
+                        <label for="day-sex" class="day-label">
+                            <span class="day-abbr">SEX</span>
+                            <span class="day-full">Sexta</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-sab" class="day-checkbox" value="sab">
+                        <label for="day-sab" class="day-label">
+                            <span class="day-abbr">SAB</span>
+                            <span class="day-full">Sábado</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-dom" class="day-checkbox" value="dom">
+                        <label for="day-dom" class="day-label">
+                            <span class="day-abbr">DOM</span>
+                            <span class="day-full">Domingo</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horário da irrigação:</label>
+                    <div class="time-selection">
+                        <input type="time" id="irrigation-time" class="time-input" value="08:00">
+                        <button type="button" class="time-picker-btn" onclick="showTimePicker()">
+                            <i class="fas fa-clock"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="addProgramming()" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-plus"></i>
+                    Adicionar Programação
+                </button>
+                
+                <div class="programming-list" id="programming-list">
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-success" onclick="saveIrrigationSettings()">
+                    <i class="fas fa-save"></i>
+                    Salvar Configurações
+                </button>
+                <button class="btn btn-danger" onclick="closeIrrigationModal()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script principal -->
+    <script src="script.js"></script>
     <script>
-        // 🚨 CORREÇÃO CRÍTICA: Função logout corrigida
+        // 🚨 CORREÇÃO: Função logout global
         async function logout() {
             try {
-                console.log('🚪 Iniciando logout...');
-                
-                // Tentar fazer logout via API
                 const response = await fetch('/api/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include'
+                    method: 'POST'
                 });
                 
-                // Limpar cookies localmente também
-                document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname + ';';
+                const data = await response.json();
                 
-                console.log('✅ Logout realizado, redirecionando...');
-                
-                // Redirecionar para login após um pequeno delay
-                setTimeout(() => {
-                    window.location.href = '/login.html';
-                }, 500);
-                
+                if (data.success) {
+                    window.location.href = data.redirect;
+                }
             } catch (error) {
                 console.error('❌ Erro no logout:', error);
-                // Fallback: redirecionar mesmo com erro
-                document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                 window.location.href = '/login.html';
             }
         }
 
-        // Funções de controle
-        async function controlAllLights(state) {
-            showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        // 🆕 FUNÇÕES PARA O MODAL DE IRRIGAÇÃO MELHORADO
+        function showTimePicker() {
+            const timeInput = document.getElementById('irrigation-time');
+            timeInput.showPicker(); // Abre o seletor nativo de hora
         }
 
-        async function controlAllOutlets(state) {
-            showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
-        }
+        function addProgramming() {
+            const timeInput = document.getElementById('irrigation-time');
+            const selectedTime = timeInput.value;
+            
+            if (!selectedTime) {
+                alert('Por favor, selecione um horário.');
+                return;
+            }
 
-        async function controlIrrigation(state) {
-            showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
-        }
+            // Coletar dias selecionados
+            const selectedDays = [];
+            const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
+            
+            if (dayCheckboxes.length === 0) {
+                alert('Por favor, selecione pelo menos um dia da semana.');
+                return;
+            }
 
-        async function updateWeather() {
-            showNotification('Clima atualizado', 'info');
-        }
-
-        async function checkWeather() {
-            showNotification('Verificando condições climáticas...', 'info');
-        }
-
-        function openIrrigationModal() {
-            showNotification('Abrindo configurações de irrigação', 'info');
-        }
-
-        // Sistema de notificações
-        function showNotification(message, type = 'info') {
-            const existingNotifications = document.querySelectorAll('.custom-notification');
-            existingNotifications.forEach(notif => {
-                if (notif.parentNode) {
-                    notif.parentNode.removeChild(notif);
-                }
+            dayCheckboxes.forEach(checkbox => {
+                selectedDays.push(checkbox.value);
             });
 
-            const notification = document.createElement('div');
-            notification.className = 'custom-notification';
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 8px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                animation: slideInRight 0.3s ease;
-                max-width: 400px;
-                word-wrap: break-word;
+            // Criar nova programação
+            const newProgramming = {
+                hora: selectedTime,
+                dias: selectedDays
+            };
+
+            // Adicionar à lista visual
+            addProgrammingToList(newProgramming);
+            
+            // Limpar seleção
+            timeInput.value = '08:00';
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+        }
+
+        function addProgrammingToList(programming) {
+            const programmingList = document.getElementById('programming-list');
+            
+            // Remover mensagem "nenhuma programação" se for a primeira
+            if (programmingList.querySelector('.no-programming')) {
+                programmingList.innerHTML = '';
+            }
+
+            const programmingElement = document.createElement('div');
+            programmingElement.className = 'programming-item';
+            programmingElement.innerHTML = `
+                <div class="programming-header">
+                    <span class="programming-time">${programming.hora}</span>
+                    <button class="delete-programming" onclick="removeProgramming(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="programming-days">
+                    ${getDaysBadges(programming.dias)}
+                </div>
             `;
             
-            const colors = {
-                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
-                error: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
-                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
-                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
+            programmingList.appendChild(programmingElement);
+        }
+
+        function getDaysBadges(days) {
+            const dayNames = {
+                'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+                'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
             };
             
-            notification.style.background = colors[type] || colors.info;
+            return days.map(day => 
+                `<span class="day-badge active">${dayNames[day]}</span>`
+            ).join('');
+        }
+
+        function removeProgramming(button) {
+            const programmingItem = button.closest('.programming-item');
+            programmingItem.remove();
             
-            const icons = {
-                success: '✅',
-                error: '❌',
-                info: 'ℹ️',
-                warning: '⚠️'
-            };
+            const programmingList = document.getElementById('programming-list');
+            if (programmingList.children.length === 0) {
+                programmingList.innerHTML = `
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                `;
+            }
+        }
+
+        function getSelectedProgrammings() {
+            const programmingList = document.getElementById('programming-list');
+            const programmings = [];
             
-            notification.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
+            programmingList.querySelectorAll('.programming-item').forEach(item => {
+                const time = item.querySelector('.programming-time').textContent;
+                const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
+                    const dayText = badge.textContent.toLowerCase();
+                    const dayMap = {'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 'sex': 'sex', 'sab': 'sab', 'dom': 'dom'};
+                    return dayMap[dayText];
+                }).filter(day => day);
+                
+                programmings.push({
+                    hora: time,
+                    dias: days
+                });
+            });
             
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOutRight 0.3s ease';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
+            return programmings;
+        }
+
+        // 🆕 FUNÇÕES PARA METEOROLOGIA EXPANDIDA
+        async function updateWeather() {
+            try {
+                const response = await fetch('/api/weather');
+                const data = await response.json();
+                
+                if (data && data.main) {
+                    // Temperatura principal
+                    const mainTempElement = document.getElementById('weather-main-temp');
+                    if (mainTempElement) {
+                        mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
                     }
-                }, 300);
-            }, 4000);
+                    
+                    // Descrição principal
+                    const mainDescElement = document.getElementById('weather-main-desc');
+                    if (mainDescElement && data.weather && data.weather[0]) {
+                        mainDescElement.textContent = data.weather[0].description;
+                    }
+                    
+                    // Ícone principal
+                    const mainIconElement = document.getElementById('weather-main-icon');
+                    if (mainIconElement && data.weather && data.weather[0]) {
+                        const weatherMain = data.weather[0].main.toLowerCase();
+                        mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+                    }
+                    
+                    // Sensação térmica
+                    const feelsLikeElement = document.getElementById('weather-feels-like');
+                    if (feelsLikeElement) {
+                        feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
+                    }
+                    
+                    // Umidade
+                    const humidityElement = document.getElementById('weather-humidity');
+                    if (humidityElement) {
+                        humidityElement.textContent = `${data.main.humidity}%`;
+                    }
+                    
+                    // Vento
+                    const windElement = document.getElementById('weather-wind');
+                    if (windElement && data.wind) {
+                        windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+                    }
+                    
+                    // Pressão
+                    const pressureElement = document.getElementById('weather-pressure');
+                    if (pressureElement) {
+                        pressureElement.textContent = `${data.main.pressure} hPa`;
+                    }
+                    
+                    // Cidade
+                    const cityElement = document.getElementById('weather-city');
+                    if (cityElement && data.name) {
+                        cityElement.textContent = `${data.name}, BR`;
+                    }
+                    
+                    // Horário de atualização
+                    const timeElement = document.getElementById('weather-update-time');
+                    if (timeElement) {
+                        const now = new Date();
+                        timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro ao atualizar clima:', error);
+            }
         }
 
-        // Adicionar estilos de animação para notificações
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOutRight {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
+        function getWeatherMainIcon(weatherMain) {
+            const icons = {
+                'clear': 'fa-sun',
+                'clouds': 'fa-cloud',
+                'rain': 'fa-cloud-rain',
+                'drizzle': 'fa-cloud-drizzle',
+                'thunderstorm': 'fa-bolt',
+                'snow': 'fa-snowflake',
+                'mist': 'fa-smog',
+                'fog': 'fa-smog'
+            };
+            
+            return icons[weatherMain] || 'fa-cloud';
         }
 
-        // Exportar funções globais
-        window.controlAllLights = controlAllLights;
-        window.controlAllOutlets = controlAllOutlets;
-        window.controlIrrigation = controlIrrigation;
-        window.openIrrigationModal = openIrrigationModal;
-        window.checkWeather = checkWeather;
+        function getWeatherAnimationClass(weatherMain) {
+            const animations = {
+                'clear': 'weather-icon-sun',
+                'clouds': 'weather-icon-cloud',
+                'rain': 'weather-icon-rain',
+                'drizzle': 'weather-icon-rain',
+                'thunderstorm': 'weather-icon-storm',
+                'snow': 'weather-icon-snow',
+                'mist': 'weather-icon-mist',
+                'fog': 'weather-icon-mist'
+            };
+            
+            return animations[weatherMain] || 'weather-icon-cloud';
+        }
+
+        // 🆕 FUNÇÃO PARA ATUALIZAR ÍCONE DE IRRIGAÇÃO
+        function updateIrrigationIcon(isOn) {
+            const irrigationIcon = document.getElementById('irrigation-main-icon');
+            if (irrigationIcon) {
+                if (isOn) {
+                    irrigationIcon.src = 'https://img.icons8.com/?size=100&id=fO9dIRaojleL&format=png&color=000000';
+                    irrigationIcon.className = 'irrigation-icon-on';
+                } else {
+                    irrigationIcon.src = 'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+                    irrigationIcon.className = 'irrigation-icon-off';
+                }
+            }
+        }
+
+        // Inicialização do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            loadDevices();
+            startDataUpdates();
+            checkSystemAuth();
+            updateWeather(); // 🆕 Carregar clima inicial
+        });
+
+        // 🆕 Exportar funções para o script principal
+        window.showTimePicker = showTimePicker;
+        window.addProgramming = addProgramming;
+        window.removeProgramming = removeProgramming;
+        window.getSelectedProgrammings = getSelectedProgrammings;
         window.updateWeather = updateWeather;
-        window.logout = logout;
-
-        console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+        window.updateIrrigationIcon = updateIrrigationIcon;
     </script>
 </body>
 </html>
