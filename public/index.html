@@ -12,6 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -19,10 +20,12 @@
             padding: 15px;
             color: #333;
         }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -33,12 +36,14 @@
             padding: 8px;
             position: relative;
         }
+
         .header-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
+
         .header h1 {
             font-size: 2.2em;
             margin-bottom: 5px;
@@ -49,11 +54,13 @@
             justify-content: center;
             gap: 15px;
         }
+
         .title-icon {
             width: 40px;
             height: 40px;
             animation: float 3s ease-in-out infinite;
         }
+
         .logout-btn {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -69,121 +76,132 @@
             gap: 5px;
             backdrop-filter: blur(10px);
         }
+
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        /* 🌤️ METEOROLOGIA EXPANDIDA MELHORADA */
+        /* 🆕 METEOROLOGIA EXPANDIDA */
         .weather-expanded {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: 15px;
-            padding: 15px 20px;
+            padding: 20px;
             color: white;
             margin-bottom: 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
             gap: 20px;
-            min-height: 120px;
+            align-items: center;
         }
+
         .weather-main {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
-            flex: 0 0 auto;
+            text-align: center;
         }
+
         .weather-icon-large {
-            font-size: 3.5em !important;
+            font-size: 4em !important;
+            margin-bottom: 10px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
+
         .weather-temp-main {
-            font-size: 2.8em;
+            font-size: 3em;
             font-weight: 700;
-            line-height: 1;
+            margin-bottom: 5px;
         }
+
         .weather-desc-main {
-            font-size: 1.1em;
+            font-size: 1.2em;
             opacity: 0.9;
             text-transform: capitalize;
-            margin-top: 5px;
         }
+
         .weather-details {
-            display: flex;
-            gap: 25px;
-            flex: 1;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
         }
+
         .weather-detail-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            min-width: 140px;
         }
+
         .weather-detail-icon {
             font-size: 1.4em;
             opacity: 0.9;
             width: 30px;
             text-align: center;
         }
+
         .weather-detail-text {
             display: flex;
             flex-direction: column;
         }
+
         .weather-detail-label {
-            font-size: 0.75em;
+            font-size: 0.8em;
             opacity: 0.8;
-            font-weight: 500;
         }
+
         .weather-detail-value {
             font-size: 1.1em;
             font-weight: 600;
         }
+
         .weather-location {
+            text-align: center;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            flex: 0 0 auto;
-            text-align: right;
+            align-items: center;
+            justify-content: center;
         }
+
         .weather-city {
-            font-size: 1.3em;
+            font-size: 1.4em;
             font-weight: 600;
             margin-bottom: 5px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
+
         .weather-time {
-            font-size: 0.85em;
+            font-size: 0.9em;
             opacity: 0.8;
             display: flex;
             align-items: center;
             gap: 5px;
-            margin-bottom: 8px;
         }
+
         .weather-update-btn {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
+            padding: 8px 15px;
+            border-radius: 20px;
             cursor: pointer;
+            margin-top: 10px;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 0.75em;
         }
+
         .weather-update-btn:hover {
             background: rgba(255,255,255,0.3);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
         /* Ícones Animados */
@@ -192,29 +210,83 @@
             height: 22px;
             animation: lampGlow 1.5s ease-in-out infinite;
         }
+
         @keyframes lampGlow {
-            0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,0,0.5)); }
-            50% { transform: scale(1.1) rotate(5deg); filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,0,0.8)); }
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,0,0.5));
+            }
+            50% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.3) drop-shadow(0 0 10px rgba(255,255,0,0.8));
+            }
         }
+
         .outlet-icon {
             width: 22px;
             height: 22px;
             animation: plugPulse 4s ease-in-out infinite;
         }
+
         @keyframes plugPulse {
-            0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
-            25% { transform: scale(1.1) rotate(5deg); filter: brightness(1.2); }
-            50% { transform: scale(1.05) rotate(-3deg); filter: brightness(1.1); }
-            75% { transform: scale(1.15) rotate(2deg); filter: brightness(1.3); }
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1);
+            }
+            25% { 
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.2);
+            }
+            50% { 
+                transform: scale(1.05) rotate(-3deg);
+                filter: brightness(1.1);
+            }
+            75% { 
+                transform: scale(1.15) rotate(2deg);
+                filter: brightness(1.3);
+            }
         }
+
         .irrigation-icon {
             width: 22px;
             height: 22px;
             animation: waterDrop 2s ease-in-out infinite;
         }
+
         @keyframes waterDrop {
-            0%, 100% { transform: scale(1) translateY(0px); filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5)); }
-            50% { transform: scale(1.1) translateY(-2px); filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8)); }
+            0%, 100% { 
+                transform: scale(1) translateY(0px);
+                filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5));
+            }
+            50% { 
+                transform: scale(1.1) translateY(-2px);
+                filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8));
+            }
+        }
+
+        .internet-icon {
+            width: 20px;
+            height: 20px;
+            animation: globeRotate 3s ease-in-out infinite;
+        }
+
+        @keyframes globeRotate {
+            0%, 100% { 
+                transform: rotate(0deg) scale(1);
+                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
+            }
+            25% { 
+                transform: rotate(5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+            50% { 
+                transform: rotate(0deg) scale(1.1);
+                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
+            }
+            75% { 
+                transform: rotate(-5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
         }
 
         /* Animações de Ícones Meteorológicos */
@@ -222,41 +294,55 @@
             color: #FFD700 !important;
             animation: spin 10s linear infinite !important;
         }
+
         .weather-icon-cloud {
             color: #FFFFFF !important;
             animation: float 4s ease-in-out infinite !important;
         }
+
         .weather-icon-cloud-sun {
             color: #FFD700 !important;
             animation: float 3s ease-in-out infinite !important;
         }
+
         .weather-icon-rain {
             color: #4FC3F7 !important;
             animation: rainDrop 2s ease-in-out infinite !important;
         }
+
         .weather-icon-storm {
             color: #FF9800 !important;
             animation: flash 1.5s ease-in-out infinite !important;
         }
+
         .weather-icon-snow {
             color: #E3F2FD !important;
             animation: snowFall 3s ease-in-out infinite !important;
         }
+
         .weather-icon-mist {
             color: #BDBDBD !important;
             animation: fade 4s ease-in-out infinite !important;
         }
+
         .icon-thermometer {
             animation: pulse 2s ease-in-out infinite !important;
             color: #FF6B6B !important;
         }
+
         .icon-humidity {
             animation: drip 3s ease-in-out infinite !important;
             color: #4FC3F7 !important;
         }
+
         .icon-wind {
             animation: float 2s ease-in-out infinite !important;
             color: #81D4FA !important;
+        }
+
+        .icon-pressure {
+            animation: breathe 2.5s ease-in-out infinite !important;
+            color: #AED581 !important;
         }
 
         /* Animações Base */
@@ -264,33 +350,45 @@
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-3px); }
         }
+
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
         @keyframes rainDrop {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(2px); }
         }
+
         @keyframes flash {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
         }
+
         @keyframes snowFall {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(3px) rotate(180deg); }
         }
+
         @keyframes fade {
             0%, 100% { opacity: 0.7; }
             50% { opacity: 1; }
         }
+
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
+
         @keyframes drip {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(2px) scale(1.05); }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
         /* Cards e Grids */
@@ -302,6 +400,7 @@
             border: 1px solid rgba(255,255,255,0.3);
             margin-bottom: 15px;
         }
+
         .monitoring-card h2 {
             color: #2d3748;
             margin-bottom: 12px;
@@ -311,12 +410,14 @@
             font-weight: 600;
             font-size: 1.4em;
         }
+
         .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-bottom: 0;
         }
+
         .sensor-compact-item {
             text-align: center;
             padding: 12px;
@@ -326,41 +427,51 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
         }
+
         .sensor-compact-item:hover {
             transform: translateY(-2px);
         }
+
         .sensor-compact-item.gas {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
+
         .sensor-compact-item.alert {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
         }
+
         .sensor-compact-item.temperature {
             background: linear-gradient(135deg, #ff7676 0%, #f54ea2 100%);
         }
+
         .sensor-compact-item.humidity {
             background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
         }
+
         .sensor-compact-icon {
             font-size: 1.6em;
             margin-bottom: 6px;
         }
+
         .sensor-compact-value {
             font-size: 1.4em;
             font-weight: 700;
             margin: 3px 0;
         }
+
         .sensor-compact-label {
             font-size: 0.75em;
             opacity: 0.95;
             font-weight: 500;
         }
+
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-bottom: 15px;
         }
+
         .card {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 15px;
@@ -368,6 +479,7 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             border: 1px solid rgba(255,255,255,0.3);
         }
+
         .card h2 {
             color: #2d3748;
             margin-bottom: 15px;
@@ -377,6 +489,7 @@
             font-weight: 600;
             font-size: 1.4em;
         }
+
         .devices-compact {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -385,6 +498,7 @@
             overflow-y: auto;
             padding-right: 5px;
         }
+
         .device-compact-item {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             padding: 12px;
@@ -394,14 +508,17 @@
             transition: all 0.3s ease;
             cursor: pointer;
         }
+
         .device-compact-item:hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 12px rgba(0,0,0,0.1);
         }
+
         .device-compact-item.active {
             background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
             border-color: #fd9644;
         }
+
         .device-compact-icon {
             width: 40px;
             height: 40px;
@@ -414,25 +531,22 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
+
         .device-compact-item:hover .device-compact-icon {
             transform: scale(1.1);
         }
+
         .device-compact-icon img {
             width: 22px;
             height: 22px;
             object-fit: contain;
         }
+
         .device-compact-name {
             font-weight: 600;
             margin-bottom: 8px;
             color: #2d3748;
             font-size: 0.8em;
-        }
-        .device-compact-room {
-            font-size: 0.7em;
-            color: #666;
-            margin-bottom: 8px;
-            font-weight: 500;
         }
 
         /* Switch Toggle */
@@ -442,11 +556,13 @@
             width: 40px;
             height: 22px;
         }
+
         .switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
+
         .slider {
             position: absolute;
             cursor: pointer;
@@ -458,6 +574,7 @@
             transition: .4s;
             border-radius: 34px;
         }
+
         .slider:before {
             position: absolute;
             content: "";
@@ -470,9 +587,11 @@
             border-radius: 50%;
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
+
         input:checked + .slider {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
+
         input:checked + .slider:before {
             transform: translateX(18px);
         }
@@ -485,6 +604,7 @@
             margin: 15px 0;
             flex-wrap: wrap;
         }
+
         .btn {
             padding: 8px 16px;
             border: none;
@@ -498,28 +618,34 @@
             gap: 5px;
             box-shadow: 0 3px 8px rgba(0,0,0,0.15);
         }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 12px rgba(0,0,0,0.2);
         }
+
         .btn-success {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
         }
+
         .btn-danger {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
         }
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+
         .btn-weather {
             background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
             color: white;
             font-size: 0.75em;
             padding: 6px 12px;
         }
+
         .btn-irrigation {
             background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
             color: white;
@@ -535,24 +661,34 @@
             font-size: 0.85em;
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
         }
+
         .online {
             color: #4CAF50;
             border-left: 3px solid #4CAF50;
         }
+
         .offline {
             color: #f44336;
             border-left: 3px solid #f44336;
         }
+
         .device-status {
             margin-top: 4px;
             font-size: 0.65em;
             font-weight: 500;
         }
+
         .status-on {
             color: #4CAF50;
         }
+
         .status-off {
             color: #f44336;
+        }
+
+        .room-icon {
+            font-size: 0.8em;
+            margin-right: 3px;
         }
 
         /* Indicador ESP32 */
@@ -563,6 +699,7 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .esp32-indicator {
             display: flex;
             align-items: center;
@@ -573,20 +710,28 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
+
         .esp32-indicator.online {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
         }
+
         .esp32-indicator.offline {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
         }
+
+        .esp32-indicator.connecting {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+            color: white;
+        }
+
         .status-text {
             flex: 1;
             text-align: center;
         }
 
-        /* 🪟 MODAL DE IRRIGAÇÃO MELHORADO */
+        /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -600,6 +745,7 @@
             z-index: 1000;
             padding: 20px;
         }
+
         .modal-content {
             background: white;
             border-radius: 15px;
@@ -610,6 +756,7 @@
             overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -618,6 +765,7 @@
             border-bottom: 2px solid #f0f0f0;
             padding-bottom: 15px;
         }
+
         .modal-header h2 {
             color: #2d3748;
             margin: 0;
@@ -625,6 +773,7 @@
             align-items: center;
             gap: 10px;
         }
+
         .close-modal {
             background: none;
             border: none;
@@ -633,9 +782,11 @@
             color: #666;
             padding: 5px;
         }
+
         .close-modal:hover {
             color: #333;
         }
+
         .modal-section {
             margin-bottom: 20px;
             padding: 20px;
@@ -643,6 +794,7 @@
             border-radius: 10px;
             border-left: 4px solid #667eea;
         }
+
         .modal-section h3 {
             margin-bottom: 15px;
             color: #2d3748;
@@ -651,16 +803,20 @@
             align-items: center;
             gap: 8px;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
             color: #555;
         }
-        .form-group input, .form-group select {
+
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #ddd;
@@ -668,22 +824,26 @@
             font-size: 14px;
             transition: border-color 0.3s;
         }
-        .form-group input:focus, .form-group select:focus {
+
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
 
-        /* 📅 SELEÇÃO DE DIAS DA SEMANA */
+        /* 🆕 SELEÇÃO DE DIAS DA SEMANA */
         .days-selection {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 8px;
             margin-top: 10px;
         }
+
         .day-checkbox {
             display: none;
         }
+
         .day-label {
             display: flex;
             flex-direction: column;
@@ -696,37 +856,43 @@
             transition: all 0.3s ease;
             text-align: center;
         }
+
         .day-label:hover {
             border-color: #667eea;
             transform: translateY(-2px);
         }
+
         .day-checkbox:checked + .day-label {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: #667eea;
         }
+
         .day-abbr {
             font-weight: 600;
             font-size: 0.9em;
         }
+
         .day-full {
             font-size: 0.7em;
             opacity: 0.8;
             margin-top: 2px;
         }
 
-        /* ⏰ SELEÇÃO DE HORA COM RELÓGIO */
+        /* 🆕 SELEÇÃO DE HORA COM RELÓGIO */
         .time-selection {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .time-input {
             flex: 1;
             text-align: center;
             font-size: 1.1em;
             font-weight: 600;
         }
+
         .time-picker-btn {
             background: #667eea;
             color: white;
@@ -736,16 +902,18 @@
             cursor: pointer;
             transition: background 0.3s;
         }
+
         .time-picker-btn:hover {
             background: #5a6fd8;
         }
 
-        /* 📋 LISTA DE PROGRAMAÇÕES MELHORADA */
+        /* 🆕 LISTA DE PROGRAMAÇÕES MELHORADA */
         .programming-list {
             max-height: 200px;
             overflow-y: auto;
             margin-top: 15px;
         }
+
         .programming-item {
             background: white;
             padding: 15px;
@@ -754,23 +922,27 @@
             border-left: 4px solid #00b894;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
         .programming-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
         }
+
         .programming-time {
             font-weight: 600;
             color: #2d3748;
             font-size: 1.1em;
         }
+
         .programming-days {
             display: flex;
             gap: 5px;
             flex-wrap: wrap;
             margin-top: 5px;
         }
+
         .day-badge {
             background: #e9ecef;
             padding: 2px 6px;
@@ -778,10 +950,12 @@
             font-size: 0.7em;
             font-weight: 500;
         }
+
         .day-badge.active {
             background: #667eea;
             color: white;
         }
+
         .delete-programming {
             background: #ff6b6b;
             color: white;
@@ -792,9 +966,11 @@
             font-size: 0.8em;
             transition: background 0.3s;
         }
+
         .delete-programming:hover {
             background: #ee5a24;
         }
+
         .no-programming {
             text-align: center;
             color: #666;
@@ -803,18 +979,25 @@
         }
 
         /* Scrollbar personalizado */
-        .devices-compact::-webkit-scrollbar, .programming-list::-webkit-scrollbar {
+        .devices-compact::-webkit-scrollbar,
+        .programming-list::-webkit-scrollbar {
             width: 6px;
         }
-        .devices-compact::-webkit-scrollbar-track, .programming-list::-webkit-scrollbar-track {
+
+        .devices-compact::-webkit-scrollbar-track,
+        .programming-list::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 3px;
         }
-        .devices-compact::-webkit-scrollbar-thumb, .programming-list::-webkit-scrollbar-thumb {
+
+        .devices-compact::-webkit-scrollbar-thumb,
+        .programming-list::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
-        .devices-compact::-webkit-scrollbar-thumb:hover, .programming-list::-webkit-scrollbar-thumb:hover {
+
+        .devices-compact::-webkit-scrollbar-thumb:hover,
+        .programming-list::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
 
@@ -823,50 +1006,52 @@
             .main-grid {
                 grid-template-columns: 1fr;
             }
+            
             .sensors-compact {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
             .weather-expanded {
-                flex-direction: column;
-                text-align: center;
+                grid-template-columns: 1fr;
                 gap: 15px;
-            }
-            .weather-details {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .weather-detail-item {
-                min-width: auto;
-                justify-content: center;
-            }
-            .weather-location {
-                align-items: center;
                 text-align: center;
             }
+            
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+            
             .header h1 {
                 font-size: 1.8em;
             }
+            
             .days-selection {
                 grid-template-columns: repeat(4, 1fr);
             }
         }
+
         @media (max-width: 480px) {
             .sensors-compact {
                 grid-template-columns: 1fr;
             }
+            
             .header {
                 flex-direction: column;
                 gap: 10px;
             }
+            
             .logout-btn {
                 align-self: center;
             }
+            
             .days-selection {
                 grid-template-columns: repeat(3, 1fr);
             }
+            
             .controls {
                 flex-direction: column;
             }
+            
             .btn {
                 width: 100%;
                 justify-content: center;
@@ -884,24 +1069,23 @@
                 </h1>
             </div>
             <button class="logout-btn" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Sair do Sistema
+                <i class="fas fa-sign-out-alt"></i>
+                Sair do Sistema
             </button>
         </div>
 
-        <!-- 🌤️ METEOROLOGIA EXPANDIDA MELHORADA -->
+        <!-- 🆕 METEOROLOGIA EXPANDIDA -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
-                <div>
-                    <div class="weather-temp-main" id="weather-main-temp">--°C</div>
-                    <div class="weather-desc-main" id="weather-main-desc">Carregando...</div>
-                </div>
+                <div class="weather-temp-main" id="weather-main-temp">--°C</div>
+                <div class="weather-desc-main" id="weather-main-desc">Carregando...</div>
             </div>
             <div class="weather-details">
                 <div class="weather-detail-item">
                     <i class="fas fa-temperature-low icon-thermometer weather-detail-icon"></i>
                     <div class="weather-detail-text">
-                        <div class="weather-detail-label">Sensação Térmica</div>
+                        <div class="weather-detail-label">Sensação</div>
                         <div class="weather-detail-value" id="weather-feels-like">--°C</div>
                     </div>
                 </div>
@@ -915,8 +1099,15 @@
                 <div class="weather-detail-item">
                     <i class="fas fa-wind icon-wind weather-detail-icon"></i>
                     <div class="weather-detail-text">
-                        <div class="weather-detail-label">Velocidade do Vento</div>
+                        <div class="weather-detail-label">Vento</div>
                         <div class="weather-detail-value" id="weather-wind">-- km/h</div>
+                    </div>
+                </div>
+                <div class="weather-detail-item">
+                    <i class="fas fa-tachometer-alt icon-pressure weather-detail-icon"></i>
+                    <div class="weather-detail-text">
+                        <div class="weather-detail-label">Pressão</div>
+                        <div class="weather-detail-value" id="weather-pressure">-- hPa</div>
                     </div>
                 </div>
             </div>
@@ -930,7 +1121,8 @@
                     <span id="weather-update-time">Atualizado: --:--</span>
                 </div>
                 <button class="weather-update-btn" onclick="updateWeather()">
-                    <i class="fas fa-sync-alt"></i> Atualizar
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar
                 </button>
             </div>
         </div>
@@ -938,7 +1130,8 @@
         <!-- Monitoramento de Sensores -->
         <div class="monitoring-card">
             <h2>
-                <i class="fas fa-chart-line"></i> Monitoramento em Tempo Real
+                <i class="fas fa-chart-line"></i>
+                Monitoramento em Tempo Real
             </h2>
             <div class="sensors-compact">
                 <div class="sensor-compact-item temperature">
@@ -967,7 +1160,7 @@
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     <div class="sensor-compact-value" id="sensor-alert">NORMAL</div>
-                    <div class="sensor-compact-label">Status do Gás</div>
+                    <div class="sensor-compact-label">Status Gás</div>
                 </div>
             </div>
         </div>
@@ -985,10 +1178,12 @@
                 </div>
                 <div class="controls">
                     <button class="btn btn-success" onclick="controlAllLights(true)">
-                        <i class="fas fa-power-off"></i> Ligar Todas
+                        <i class="fas fa-power-off"></i>
+                        Ligar Todas
                     </button>
                     <button class="btn btn-danger" onclick="controlAllLights(false)">
-                        <i class="fas fa-power-off"></i> Desligar Todas
+                        <i class="fas fa-power-off"></i>
+                        Desligar Todas
                     </button>
                 </div>
             </div>
@@ -1004,10 +1199,12 @@
                 </div>
                 <div class="controls">
                     <button class="btn btn-success" onclick="controlAllOutlets(true)">
-                        <i class="fas fa-plug"></i> Ligar Todas
+                        <i class="fas fa-plug"></i>
+                        Ligar Todas
                     </button>
                     <button class="btn btn-danger" onclick="controlAllOutlets(false)">
-                        <i class="fas fa-plug"></i> Desligar Todas
+                        <i class="fas fa-plug"></i>
+                        Desligar Todas
                     </button>
                 </div>
             </div>
@@ -1029,36 +1226,43 @@
                         Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
                     </div>
                     <div class="device-status">
-                        Modo: <span id="irrigation-mode">Manual</span> | Evitar Chuva: <span id="rain-avoidance">Ativado</span>
+                        Modo: <span id="irrigation-mode">Manual</span> | 
+                        Evitar Chuva: <span id="rain-avoidance">Ativado</span>
                     </div>
                 </div>
             </div>
             <div class="controls">
                 <button class="btn btn-success" onclick="controlIrrigation(true)">
-                    <i class="fas fa-play"></i> Ligar Bomba
+                    <i class="fas fa-play"></i>
+                    Ligar Bomba
                 </button>
                 <button class="btn btn-danger" onclick="controlIrrigation(false)">
-                    <i class="fas fa-stop"></i> Desligar Bomba
+                    <i class="fas fa-stop"></i>
+                    Desligar Bomba
                 </button>
                 <button class="btn btn-primary" onclick="openIrrigationModal()">
-                    <i class="fas fa-cog"></i> Configurar
+                    <i class="fas fa-cog"></i>
+                    Configurar
                 </button>
                 <button class="btn btn-weather" onclick="checkWeather()">
-                    <i class="fas fa-cloud-sun"></i> Verificar Clima
+                    <i class="fas fa-cloud-sun"></i>
+                    Verificar Clima
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 🪟 MODAL DE IRRIGAÇÃO MELHORADO -->
+    <!-- 🆕 MODAL DE IRRIGAÇÃO MELHORADO -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>
-                    <i class="fas fa-tint"></i> Configurações de Irrigação
+                    <i class="fas fa-tint"></i>
+                    Configurações de Irrigação
                 </h2>
                 <button class="close-modal" onclick="closeIrrigationModal()">&times;</button>
             </div>
+            
             <div class="modal-section">
                 <h3><i class="fas fa-cogs"></i> Modo de Operação</h3>
                 <div class="form-group">
@@ -1069,6 +1273,7 @@
                     </select>
                 </div>
             </div>
+
             <div class="modal-section">
                 <h3><i class="fas fa-cloud-rain"></i> Preferências</h3>
                 <div class="form-group">
@@ -1078,8 +1283,9 @@
                     </label>
                 </div>
             </div>
+
             <div class="modal-section" id="programming-section">
-                <h3><i class="fas fa-clock"></i> Programações Automáticas</h3>
+                               <h3><i class="fas fa-clock"></i> Programaçõe Automáticas</h3>
                 <div class="form-group">
                     <label>Selecione os dias da semana:</label>
                     <div class="days-selection">
@@ -1088,31 +1294,37 @@
                             <span class="day-abbr">SEG</span>
                             <span class="day-full">Segunda</span>
                         </label>
+                        
                         <input type="checkbox" id="day-ter" class="day-checkbox" value="ter">
                         <label for="day-ter" class="day-label">
                             <span class="day-abbr">TER</span>
                             <span class="day-full">Terça</span>
                         </label>
+                        
                         <input type="checkbox" id="day-qua" class="day-checkbox" value="qua">
                         <label for="day-qua" class="day-label">
                             <span class="day-abbr">QUA</span>
                             <span class="day-full">Quarta</span>
                         </label>
+                        
                         <input type="checkbox" id="day-qui" class="day-checkbox" value="qui">
                         <label for="day-qui" class="day-label">
                             <span class="day-abbr">QUI</span>
                             <span class="day-full">Quinta</span>
                         </label>
+                        
                         <input type="checkbox" id="day-sex" class="day-checkbox" value="sex">
                         <label for="day-sex" class="day-label">
                             <span class="day-abbr">SEX</span>
                             <span class="day-full">Sexta</span>
                         </label>
+                        
                         <input type="checkbox" id="day-sab" class="day-checkbox" value="sab">
                         <label for="day-sab" class="day-label">
                             <span class="day-abbr">SAB</span>
                             <span class="day-full">Sábado</span>
                         </label>
+                        
                         <input type="checkbox" id="day-dom" class="day-checkbox" value="dom">
                         <label for="day-dom" class="day-label">
                             <span class="day-abbr">DOM</span>
@@ -1120,6 +1332,7 @@
                         </label>
                     </div>
                 </div>
+                
                 <div class="form-group">
                     <label>Horário da irrigação:</label>
                     <div class="time-selection">
@@ -1129,9 +1342,12 @@
                         </button>
                     </div>
                 </div>
+                
                 <button class="btn btn-primary" onclick="addProgramming()" style="width: 100%; margin-top: 10px;">
-                    <i class="fas fa-plus"></i> Adicionar Programação
+                    <i class="fas fa-plus"></i>
+                    Adicionar Programação
                 </button>
+                
                 <div class="programming-list" id="programming-list">
                     <div class="no-programming">
                         <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
@@ -1140,125 +1356,60 @@
                     </div>
                 </div>
             </div>
+
             <div class="controls">
                 <button class="btn btn-success" onclick="saveIrrigationSettings()">
-                    <i class="fas fa-save"></i> Salvar Configurações
+                    <i class="fas fa-save"></i>
+                    Salvar Configurações
                 </button>
                 <button class="btn btn-danger" onclick="closeIrrigationModal()">
-                    <i class="fas fa-times"></i> Cancelar
+                    <i class="fas fa-times"></i>
+                    Cancelar
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Script principal -->
+    <script src="script.js"></script>
     <script>
-        // 🔐 VERIFICAÇÃO DE AUTENTICAÇÃO SIMPLIFICADA
-        function checkAuth() {
-            // Simulação simples - em produção isso viria do backend
-            const isAuthenticated = sessionStorage.getItem('authenticated') === 'true';
-            
-            if (!isAuthenticated) {
-                console.log('🔐 Usuário não autenticado, redirecionando para login...');
-                window.location.href = 'login.html';
-                return false;
-            }
-            return true;
-        }
-
-        // 🚪 LOGOUT
-        function logout() {
-            sessionStorage.removeItem('authenticated');
-            window.location.href = 'login.html';
-        }
-
-        // 💡 CONTROLE DE LÂMPADAS - COM TODOS OS CÔMODOS
-        function controlAllLights(state) {
-            console.log(`${state ? 'Ligar' : 'Desligar'} todas as lâmpadas`);
-            const lights = document.querySelectorAll('#lights-container .device-compact-item');
-            lights.forEach(light => {
-                const switchInput = light.querySelector('input[type="checkbox"]');
-                if (switchInput) switchInput.checked = state;
+        // 🚨 CORREÇÃO: Função logout global
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
                 
-                if (state) {
-                    light.classList.add('active');
-                } else {
-                    light.classList.remove('active');
-                }
-            });
-        }
-
-        // 🔌 CONTROLE DE TOMADAS - COM TODOS OS CÔMODOS
-        function controlAllOutlets(state) {
-            console.log(`${state ? 'Ligar' : 'Desligar'} todas as tomadas`);
-            const outlets = document.querySelectorAll('#outlets-container .device-compact-item');
-            outlets.forEach(outlet => {
-                const switchInput = outlet.querySelector('input[type="checkbox"]');
-                if (switchInput) switchInput.checked = state;
+                const data = await response.json();
                 
-                if (state) {
-                    outlet.classList.add('active');
-                } else {
-                    outlet.classList.remove('active');
+                if (data.success) {
+                    window.location.href = data.redirect;
                 }
-            });
-        }
-
-        // 💧 CONTROLE DE IRRIGAÇÃO
-        function controlIrrigation(state) {
-            console.log(`Controle de irrigação: ${state ? 'LIGAR' : 'DESLIGAR'}`);
-            const statusElement = document.getElementById('irrigation-status');
-            if (statusElement) {
-                statusElement.textContent = state ? 'LIGADA' : 'DESLIGADA';
-                statusElement.className = state ? 'status-on' : 'status-off';
+            } catch (error) {
+                console.error('❌ Erro no logout:', error);
+                window.location.href = '/login.html';
             }
         }
 
-        function checkWeather() {
-            console.log('Verificando condições climáticas...');
-            updateWeather();
-        }
-
-        // 🪟 MODAL DE IRRIGAÇÃO
-        function openIrrigationModal() {
-            document.getElementById('irrigation-modal').style.display = 'flex';
-        }
-
-        function closeIrrigationModal() {
-            document.getElementById('irrigation-modal').style.display = 'none';
-        }
-
-        function saveIrrigationSettings() {
-            const mode = document.getElementById('irrigation-mode-select').value;
-            const avoidRain = document.getElementById('avoid-rain-checkbox').checked;
-            const programmings = getSelectedProgrammings();
-            
-            console.log('Configurações salvas:', { mode, avoidRain, programmings });
-            
-            // Atualizar interface
-            document.getElementById('irrigation-mode').textContent = 
-                mode === 'automatico' ? 'Automático' : 'Manual';
-            document.getElementById('rain-avoidance').textContent = 
-                avoidRain ? 'Ativado' : 'Desativado';
-            
-            closeIrrigationModal();
-        }
-
-        // ⏰ FUNÇÕES DE PROGRAMAÇÃO
+        // 🆕 FUNÇÕES PARA O MODAL DE IRRIGAÇÃO MELHORADO
         function showTimePicker() {
             const timeInput = document.getElementById('irrigation-time');
-            timeInput.showPicker();
+            timeInput.showPicker(); // Abre o seletor nativo de hora
         }
 
         function addProgramming() {
             const timeInput = document.getElementById('irrigation-time');
             const selectedTime = timeInput.value;
+            
             if (!selectedTime) {
                 alert('Por favor, selecione um horário.');
                 return;
             }
 
+            // Coletar dias selecionados
             const selectedDays = [];
             const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
+            
             if (dayCheckboxes.length === 0) {
                 alert('Por favor, selecione pelo menos um dia da semana.');
                 return;
@@ -1268,18 +1419,24 @@
                 selectedDays.push(checkbox.value);
             });
 
+            // Criar nova programação
             const newProgramming = {
                 hora: selectedTime,
                 dias: selectedDays
             };
 
+            // Adicionar à lista visual
             addProgrammingToList(newProgramming);
+            
+            // Limpar seleção
             timeInput.value = '08:00';
             document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
         }
 
         function addProgrammingToList(programming) {
             const programmingList = document.getElementById('programming-list');
+            
+            // Remover mensagem "nenhuma programação" se for a primeira
             if (programmingList.querySelector('.no-programming')) {
                 programmingList.innerHTML = '';
             }
@@ -1297,14 +1454,16 @@
                     ${getDaysBadges(programming.dias)}
                 </div>
             `;
+            
             programmingList.appendChild(programmingElement);
         }
 
         function getDaysBadges(days) {
             const dayNames = {
-                'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 'qui': 'Qui',
-                'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
+                'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+                'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
             };
+            
             return days.map(day => 
                 `<span class="day-badge active">${dayNames[day]}</span>`
             ).join('');
@@ -1319,7 +1478,8 @@
                 programmingList.innerHTML = `
                     <div class="no-programming">
                         <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
-                        <br> Nenhuma programação configurada
+                        <br>
+                        Nenhuma programação configurada
                     </div>
                 `;
             }
@@ -1333,198 +1493,132 @@
                 const time = item.querySelector('.programming-time').textContent;
                 const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
                     const dayText = badge.textContent.toLowerCase();
-                    const dayMap = {
-                        'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui',
-                        'sex': 'sex', 'sab': 'sab', 'dom': 'dom'
-                    };
+                    const dayMap = {'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 'sex': 'sex', 'sab': 'sab', 'dom': 'dom'};
                     return dayMap[dayText];
                 }).filter(day => day);
                 
-                programmings.push({ hora: time, dias: days });
+                programmings.push({
+                    hora: time,
+                    dias: days
+                });
             });
             
             return programmings;
         }
 
-        // 🌤️ FUNÇÕES DE METEOROLOGIA
+        // 🆕 FUNÇÕES PARA METEOROLOGIA EXPANDIDA
         async function updateWeather() {
             try {
-                // Simulação de dados meteorológicos
-                const mockWeatherData = {
-                    main: {
-                        temp: 25,
-                        feels_like: 27,
-                        humidity: 65,
-                        pressure: 1013
-                    },
-                    weather: [{ description: 'céu limpo', main: 'Clear' }],
-                    wind: { speed: 3.5 },
-                    name: 'Rio de Janeiro'
-                };
-
-                // Atualizar interface com dados simulados
-                document.getElementById('weather-main-temp').textContent = `${mockWeatherData.main.temp}°C`;
-                document.getElementById('weather-main-desc').textContent = mockWeatherData.weather[0].description;
-                document.getElementById('weather-feels-like').textContent = `${mockWeatherData.main.feels_like}°C`;
-                document.getElementById('weather-humidity').textContent = `${mockWeatherData.main.humidity}%`;
-                document.getElementById('weather-wind').textContent = `${Math.round(mockWeatherData.wind.speed * 3.6)} km/h`;
-                document.getElementById('weather-city').textContent = `${mockWeatherData.name}, BR`;
-
-                const now = new Date();
-                document.getElementById('weather-update-time').textContent = 
-                    `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
+                const response = await fetch('/api/weather');
+                const data = await response.json();
+                
+                if (data && data.main) {
+                    // Temperatura principal
+                    const mainTempElement = document.getElementById('weather-main-temp');
+                    if (mainTempElement) {
+                        mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
+                    }
+                    
+                    // Descrição principal
+                    const mainDescElement = document.getElementById('weather-main-desc');
+                    if (mainDescElement && data.weather && data.weather[0]) {
+                        mainDescElement.textContent = data.weather[0].description;
+                    }
+                    
+                    // Ícone principal
+                    const mainIconElement = document.getElementById('weather-main-icon');
+                    if (mainIconElement && data.weather && data.weather[0]) {
+                        const weatherMain = data.weather[0].main.toLowerCase();
+                        mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+                    }
+                    
+                    // Sensação térmica
+                    const feelsLikeElement = document.getElementById('weather-feels-like');
+                    if (feelsLikeElement) {
+                        feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
+                    }
+                    
+                    // Umidade
+                    const humidityElement = document.getElementById('weather-humidity');
+                    if (humidityElement) {
+                        humidityElement.textContent = `${data.main.humidity}%`;
+                    }
+                    
+                    // Vento
+                    const windElement = document.getElementById('weather-wind');
+                    if (windElement && data.wind) {
+                        windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+                    }
+                    
+                    // Pressão
+                    const pressureElement = document.getElementById('weather-pressure');
+                    if (pressureElement) {
+                        pressureElement.textContent = `${data.main.pressure} hPa`;
+                    }
+                    
+                    // Cidade
+                    const cityElement = document.getElementById('weather-city');
+                    if (cityElement && data.name) {
+                        cityElement.textContent = `${data.name}, BR`;
+                    }
+                    
+                    // Horário de atualização
+                    const timeElement = document.getElementById('weather-update-time');
+                    if (timeElement) {
+                        const now = new Date();
+                        timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                    }
+                }
             } catch (error) {
                 console.error('❌ Erro ao atualizar clima:', error);
             }
         }
 
-        // 🔄 FUNÇÕES DE INICIALIZAÇÃO
-        function loadDevices() {
-            console.log('📡 Carregando dispositivos...');
+        function getWeatherMainIcon(weatherMain) {
+            const icons = {
+                'clear': 'fa-sun',
+                'clouds': 'fa-cloud',
+                'rain': 'fa-cloud-rain',
+                'drizzle': 'fa-cloud-drizzle',
+                'thunderstorm': 'fa-bolt',
+                'snow': 'fa-snowflake',
+                'mist': 'fa-smog',
+                'fog': 'fa-smog'
+            };
             
-            // LÂMPADAS COM TODOS OS CÔMODOS
-            const lightsContainer = document.getElementById('lights-container');
-            if (lightsContainer) {
-                lightsContainer.innerHTML = `
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
-                        </div>
-                        <div class="device-compact-name">Lâmpada Principal</div>
-                        <div class="device-compact-room">Sala de Estar</div>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
-                        </div>
-                        <div class="device-compact-name">Luz do Quarto</div>
-                        <div class="device-compact-room">Quarto Principal</div>
-                        <label class="switch">
-                            <input type="checkbox">
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
-                        </div>
-                        <div class="device-compact-name">Luz da Cozinha</div>
-                        <div class="device-compact-room">Cozinha</div>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-lightbulb" style="color: #FFD700;"></i>
-                        </div>
-                        <div class="device-compact-name">Luz da Varanda</div>
-                        <div class="device-compact-room">Varanda</div>
-                        <label class="switch">
-                            <input type="checkbox">
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                `;
-            }
-
-            // TOMADAS COM TODOS OS CÔMODOS
-            const outletsContainer = document.getElementById('outlets-container');
-            if (outletsContainer) {
-                outletsContainer.innerHTML = `
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-plug" style="color: #667eea;"></i>
-                        </div>
-                        <div class="device-compact-name">Tomada TV</div>
-                        <div class="device-compact-room">Sala de Estar</div>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-plug" style="color: #667eea;"></i>
-                        </div>
-                        <div class="device-compact-name">Tomada Computador</div>
-                        <div class="device-compact-room">Escritório</div>
-                        <label class="switch">
-                            <input type="checkbox">
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-plug" style="color: #667eea;"></i>
-                        </div>
-                        <div class="device-compact-name">Tomada Geladeira</div>
-                        <div class="device-compact-room">Cozinha</div>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                    <div class="device-compact-item">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-plug" style="color: #667eea;"></i>
-                        </div>
-                        <div class="device-compact-name">Tomada Carregador</div>
-                        <div class="device-compact-room">Quarto</div>
-                        <label class="switch">
-                            <input type="checkbox">
-                            <span class="slider"></span>
-                        </label>
-                        <div class="device-status status-on">Online</div>
-                    </div>
-                `;
-            }
+            return icons[weatherMain] || 'fa-cloud';
         }
 
-        function startDataUpdates() {
-            console.log('🔄 Iniciando atualizações em tempo real');
-            setInterval(updateSensors, 30000);
+        function getWeatherAnimationClass(weatherMain) {
+            const animations = {
+                'clear': 'weather-icon-sun',
+                'clouds': 'weather-icon-cloud',
+                'rain': 'weather-icon-rain',
+                'drizzle': 'weather-icon-rain',
+                'thunderstorm': 'weather-icon-storm',
+                'snow': 'weather-icon-snow',
+                'mist': 'weather-icon-mist',
+                'fog': 'weather-icon-mist'
+            };
+            
+            return animations[weatherMain] || 'weather-icon-cloud';
         }
 
-        function updateSensors() {
-            console.log('📊 Atualizando dados dos sensores...');
-            // Simular dados de sensores
-            document.getElementById('sensor-temperature').textContent = `${Math.floor(Math.random() * 10) + 22}°C`;
-            document.getElementById('sensor-humidity').textContent = `${Math.floor(Math.random() * 20) + 60}%`;
-            document.getElementById('sensor-gas').textContent = `${Math.floor(Math.random() * 100)} PPM`;
-        }
-
-        // 🚀 INICIALIZAÇÃO DO SISTEMA
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🏠 Sistema Casa Automação V3.0 inicializando...');
-            
-            // 🔐 Verificar autenticação primeiro
-            const isAuthenticated = checkAuth();
-            
-            if (isAuthenticated) {
-                console.log('✅ Usuário autenticado, carregando dashboard...');
-                loadDevices();
-                startDataUpdates();
-                updateWeather();
-                updateSensors();
-            } else {
-                console.log('❌ Usuário não autenticado, redirecionando...');
-            }
+            console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            loadDevices();
+            startDataUpdates();
+            checkSystemAuth();
+            updateWeather(); // 🆕 Carregar clima inicial
         });
 
+        // 🆕 Exportar funções para o script principal
+        window.showTimePicker = showTimePicker;
+        window.addProgramming = addProgramming;
+        window.removeProgramming = removeProgramming;
+        window.getSelectedProgrammings = getSelectedProgrammings;
+        window.updateWeather = updateWeather;
     </script>
 </body>
 </html>
