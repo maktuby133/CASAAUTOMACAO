@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS mantido igual ao original */
         * {
             margin: 0;
             padding: 0;
@@ -193,7 +192,7 @@
             transform: translateY(-2px);
         }
 
-        /* 🆕 METEOROLOGIA COMPACTA - INFORMAÇÕES LADO A LADO */
+        /* METEOROLOGIA COMPACTA */
         .weather-compact {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: var(--border-radius);
@@ -205,7 +204,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 15px;
-            height: 40px; /* Altura ainda mais compacta */
+            height: 40px;
         }
 
         .weather-compact-main {
@@ -541,7 +540,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 1.4em;
-            justify-content: center; /* Centralizado */
+            justify-content: center;
         }
 
         .sensors-compact {
@@ -614,7 +613,7 @@
             color: var(--text-primary);
             display: flex;
             flex-direction: column;
-            position: relative; /* Para posicionar ícone de irrigação */
+            position: relative;
         }
 
         .card h2 {
@@ -625,7 +624,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 1.4em;
-            justify-content: center; /* Centralizado */
+            justify-content: center;
         }
 
         .devices-compact {
@@ -813,7 +812,7 @@
             font-size: 0.85em;
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
             color: var(--text-primary);
-            position: relative; /* Para posicionar ícone de irrigação */
+            position: relative;
         }
 
         body[data-theme="dark"] .status-bar {
@@ -889,7 +888,7 @@
             text-align: center;
         }
 
-        /* 🆕 ÍCONE DE IRRIGAÇÃO GRANDE */
+        /* ÍCONE DE IRRIGAÇÃO GRANDE */
         .irrigation-large-icon {
             position: absolute;
             right: 20px;
@@ -902,10 +901,10 @@
         }
 
         .irrigation-card {
-            position: relative; /* Para posicionar o ícone grande */
+            position: relative;
         }
 
-        /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
+        /* MODAL DE IRRIGAÇÃO MELHORADO */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -1024,7 +1023,7 @@
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
 
-        /* 🆕 SELEÇÃO DE DIAS DA SEMANA */
+        /* SELEÇÃO DE DIAS DA SEMANA */
         .days-selection {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -1077,7 +1076,7 @@
             margin-top: 2px;
         }
 
-        /* 🆕 SELEÇÃO DE HORA COM RELÓGIO */
+        /* SELEÇÃO DE HORA COM RELÓGIO */
         .time-selection {
             display: flex;
             align-items: center;
@@ -1105,7 +1104,7 @@
             background: #5a6fd8;
         }
 
-        /* 🆕 LISTA DE PROGRAMAÇÕES MELHORADA */
+        /* LISTA DE PROGRAMAÇÕES MELHORADA */
         .programming-list {
             max-height: 200px;
             overflow-y: auto;
@@ -1229,7 +1228,7 @@
             background: #a8a8a8;
         }
 
-        /* Responsividade para a versão compacta */
+        /* Responsividade */
         @media (max-width: 1024px) {
             .weather-compact {
                 height: auto;
@@ -1376,7 +1375,7 @@
             </div>
         </div>
 
-        <!-- 🆕 METEOROLOGIA COMPACTA - INFORMAÇÕES LADO A LADO -->
+        <!-- METEOROLOGIA COMPACTA -->
         <div class="weather-compact">
             <div class="weather-compact-main">
                 <div class="weather-compact-temp">
@@ -1516,7 +1515,7 @@
                 Sistema de Irrigação
             </h2>
             
-            <!-- 🆕 ÍCONE GRANDE DE IRRIGAÇÃO -->
+            <!-- ÍCONE GRANDE DE IRRIGAÇÃO -->
             <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
             
             <div class="status-bar">
@@ -1555,7 +1554,7 @@
         </div>
     </div>
 
-    <!-- 🆕 MODAL DE IRRIGAÇÃO MELHORADO -->
+    <!-- MODAL DE IRRIGAÇÃO MELHORADO -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1674,7 +1673,25 @@
     </div>
 
     <script>
-        // 🚨 CORREÇÃO: Função logout global corrigida
+        // ==============================
+        // SISTEMA DE AUTENTICAÇÃO
+        // ==============================
+        
+        // Verificar se o usuário está autenticado
+        function checkAuth() {
+            const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
+            const userData = localStorage.getItem('casa-automacao-user');
+            
+            if (!isAuthenticated || !userData) {
+                // Redirecionar para login se não estiver autenticado
+                window.location.href = '/login.html';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Logout completo
         async function logout() {
             try {
                 // Mostrar loading
@@ -1683,14 +1700,22 @@
                 logoutBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Saindo...';
                 logoutBtn.classList.add('loading');
 
+                // Limpar dados de autenticação
+                localStorage.removeItem('casa-automacao-authenticated');
+                localStorage.removeItem('casa-automacao-user');
+                localStorage.removeItem('casa-automacao-login-data');
+                
+                // Parar todas as verificações automáticas
+                clearAllIntervals();
+                
                 // Simular requisição de logout
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Redirecionar para a página de login
                 showNotification('Logout realizado com sucesso!', 'success');
                 setTimeout(() => {
                     window.location.href = '/login.html';
-                }, 1000);
+                }, 800);
                 
             } catch (error) {
                 console.error('❌ Erro no logout:', error);
@@ -1699,18 +1724,104 @@
                 // Fallback para redirecionamento
                 setTimeout(() => {
                     window.location.href = '/login.html';
-                }, 2000);
-            } finally {
-                // Restaurar botão
-                const logoutBtn = document.querySelector('.logout-btn');
-                if (logoutBtn) {
-                    logoutBtn.innerHTML = originalText;
-                    logoutBtn.classList.remove('loading');
-                }
+                }, 1500);
             }
         }
 
-        // 🆕 SISTEMA DE NOTIFICAÇÕES
+        // Parar todas as verificações automáticas
+        function clearAllIntervals() {
+            const highestIntervalId = setInterval(() => {}, 0);
+            for (let i = 0; i < highestIntervalId; i++) {
+                clearInterval(i);
+            }
+        }
+
+        // ==============================
+        // SISTEMA DE IRRIGAÇÃO AUTOMÁTICA
+        // ==============================
+        
+        let irrigationInterval;
+        let scheduledIrrigations = [];
+
+        // Sistema de verificação de programações
+        function startIrrigationScheduler() {
+            // Verificar a cada minuto se há programações para executar
+            irrigationInterval = setInterval(() => {
+                checkScheduledIrrigations();
+            }, 60000); // Verificar a cada minuto
+            
+            // Verificar imediatamente ao iniciar
+            checkScheduledIrrigations();
+        }
+
+        // Verificar programações agendadas
+        function checkScheduledIrrigations() {
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            const currentDay = getCurrentDayAbbr();
+            
+            console.log(`🔍 Verificando programações: ${currentTime} - ${currentDay}`);
+            
+            scheduledIrrigations.forEach((schedule, index) => {
+                // Verificar se é o horário e dia correto
+                if (schedule.hora === currentTime && schedule.dias.includes(currentDay)) {
+                    console.log(`🚀 Executando programação: ${schedule.hora} nos dias: ${schedule.dias.join(', ')}`);
+                    
+                    // Verificar se deve evitar chuva
+                    const avoidRain = document.getElementById('avoid-rain-checkbox')?.checked;
+                    
+                    if (avoidRain) {
+                        checkWeatherBeforeIrrigation(schedule);
+                    } else {
+                        executeIrrigation(schedule);
+                    }
+                }
+            });
+        }
+
+        // Obter abreviação do dia atual
+        function getCurrentDayAbbr() {
+            const days = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+            return days[new Date().getDay()];
+        }
+
+        // Verificar clima antes de irrigar
+        function checkWeatherBeforeIrrigation(schedule) {
+            console.log('🌧️ Verificando condições climáticas...');
+            
+            // Simular verificação de clima (substituir por API real)
+            const isRaining = Math.random() < 0.2; // 20% de chance de chuva
+            
+            if (isRaining) {
+                console.log('⛈️ Chuva detectada - Cancelando irrigação automática');
+                showNotification('Irrigação automática cancelada devido à chuva', 'warning');
+            } else {
+                console.log('☀️ Clima favorável - Executando irrigação');
+                executeIrrigation(schedule);
+            }
+        }
+
+        // Executar irrigação
+        function executeIrrigation(schedule) {
+            console.log('💧 EXECUTANDO IRRIGAÇÃO AUTOMÁTICA');
+            
+            // Simular acionamento do relé
+            controlIrrigation(true);
+            
+            showNotification(`Irrigação automática iniciada - ${schedule.hora}`, 'success');
+            
+            // Programar desligamento após 10 minutos (simulação)
+            setTimeout(() => {
+                controlIrrigation(false);
+                showNotification('Irrigação automática concluída', 'info');
+            }, 600000); // 10 minutos
+        }
+
+        // ==============================
+        // SISTEMA DE NOTIFICAÇÕES
+        // ==============================
+        
         function showNotification(message, type = 'info', duration = 5000) {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -1741,13 +1852,10 @@
             return icons[type] || 'info-circle';
         }
 
-        // 🆕 TRATAMENTO DE ERRO ROBUSTO
-        function handleApiError(error, context) {
-            console.error(`❌ Erro em ${context}:`, error);
-            showNotification(`Erro em ${context}. Tente novamente.`, 'error');
-        }
-
-        // 🆕 SISTEMA DE TEMA
+        // ==============================
+        // SISTEMA DE TEMA
+        // ==============================
+        
         function toggleTheme() {
             const currentTheme = document.body.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -1761,7 +1869,10 @@
             showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
         }
 
-        // 🆕 PERSISTÊNCIA LOCAL
+        // ==============================
+        // PERSISTÊNCIA LOCAL
+        // ==============================
+        
         function saveToLocalStorage(key, data) {
             try {
                 localStorage.setItem(`casa-automacao-${key}`, JSON.stringify(data));
@@ -1780,7 +1891,10 @@
             }
         }
 
-        // 🆕 VERIFICAÇÃO DE CONEXÃO
+        // ==============================
+        // VERIFICAÇÃO DE CONEXÃO
+        // ==============================
+        
         function checkConnection() {
             const offlineIndicator = document.getElementById('offline-indicator');
             if (!navigator.onLine) {
@@ -1791,21 +1905,10 @@
             }
         }
 
-        // 🆕 ATUALIZAÇÃO AUTOMÁTICA
-        function startAutoRefresh() {
-            // Atualizar a cada 30 segundos
-            setInterval(() => {
-                updateWeather();
-                updateSensorData();
-            }, 30000);
-            
-            // Atualizar a cada 5 segundos (dados críticos)
-            setInterval(() => {
-                updateDeviceStatus();
-            }, 5000);
-        }
-
-        // 🆕 VALIDAÇÃO DE CONFIGURAÇÕES DE IRRIGAÇÃO
+        // ==============================
+        // VALIDAÇÃO DE CONFIGURAÇÕES
+        // ==============================
+        
         function validateIrrigationSettings() {
             const mode = document.getElementById('irrigation-mode-select').value;
             const programmings = getSelectedProgrammings();
@@ -1818,10 +1921,13 @@
             return true;
         }
 
-        // 🆕 FUNÇÕES PARA O MODAL DE IRRIGAÇÃO MELHORADO
+        // ==============================
+        // FUNÇÕES DO MODAL DE IRRIGAÇÃO
+        // ==============================
+        
         function showTimePicker() {
             const timeInput = document.getElementById('irrigation-time');
-            timeInput.showPicker(); // Abre o seletor nativo de hora
+            timeInput.showPicker();
         }
 
         function addProgramming() {
@@ -1849,7 +1955,8 @@
             // Criar nova programação
             const newProgramming = {
                 hora: selectedTime,
-                dias: selectedDays
+                dias: selectedDays,
+                id: Date.now() // ID único
             };
 
             // Adicionar à lista visual
@@ -1870,6 +1977,7 @@
 
             const programmingElement = document.createElement('div');
             programmingElement.className = 'programming-item';
+            programmingElement.dataset.id = programming.id;
             programmingElement.innerHTML = `
                 <div class="programming-header">
                     <span class="programming-time">${programming.hora}</span>
@@ -1883,6 +1991,9 @@
             `;
             
             programmingList.appendChild(programmingElement);
+            
+            // Adicionar à lista de programações agendadas
+            scheduledIrrigations.push(programming);
         }
 
         function getDaysBadges(days) {
@@ -1898,6 +2009,11 @@
 
         function removeProgramming(button) {
             const programmingItem = button.closest('.programming-item');
+            const programmingId = programmingItem.dataset.id;
+            
+            // Remover da lista de programações
+            scheduledIrrigations = scheduledIrrigations.filter(p => p.id != programmingId);
+            
             programmingItem.remove();
             
             const programmingList = document.getElementById('programming-list');
@@ -1913,30 +2029,16 @@
         }
 
         function getSelectedProgrammings() {
-            const programmingList = document.getElementById('programming-list');
-            const programmings = [];
-            
-            programmingList.querySelectorAll('.programming-item').forEach(item => {
-                const time = item.querySelector('.programming-time').textContent;
-                const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
-                    const dayText = badge.textContent.toLowerCase();
-                    const dayMap = {'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 'sex': 'sex', 'sab': 'sab', 'dom': 'dom'};
-                    return dayMap[dayText];
-                }).filter(day => day);
-                
-                programmings.push({
-                    hora: time,
-                    dias: days
-                });
-            });
-            
-            return programmings;
+            return scheduledIrrigations;
         }
 
-        // 🆕 FUNÇÕES PARA METEOROLOGIA COMPACTA - CORRIGIDAS
+        // ==============================
+        // METEOROLOGIA
+        // ==============================
+        
         async function updateWeather() {
             try {
-                // Simular dados de clima (substitua por chamada real à API)
+                // Simular dados de clima
                 const mockWeatherData = {
                     main: {
                         temp: 28,
@@ -1956,61 +2058,22 @@
                 
                 const data = mockWeatherData;
                 
-                // Temperatura principal
-                const mainTempElement = document.getElementById('weather-main-temp');
-                if (mainTempElement) {
-                    mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
-                }
+                // Atualizar interface
+                document.getElementById('weather-main-temp').textContent = `${Math.round(data.main.temp)}°C`;
+                document.getElementById('weather-main-desc').textContent = data.weather[0].description;
                 
-                // Descrição principal
-                const mainDescElement = document.getElementById('weather-main-desc');
-                if (mainDescElement && data.weather && data.weather[0]) {
-                    mainDescElement.textContent = data.weather[0].description;
-                }
-                
-                // Ícone principal
                 const mainIconElement = document.getElementById('weather-main-icon');
-                if (mainIconElement && data.weather && data.weather[0]) {
-                    const weatherMain = data.weather[0].main.toLowerCase();
-                    mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-compact-icon ${getWeatherAnimationClass(weatherMain)}`;
-                }
+                const weatherMain = data.weather[0].main.toLowerCase();
+                mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-compact-icon ${getWeatherAnimationClass(weatherMain)}`;
                 
-                // Sensação térmica
-                const feelsLikeElement = document.getElementById('weather-feels-like');
-                if (feelsLikeElement) {
-                    feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
-                }
+                document.getElementById('weather-feels-like').textContent = `${Math.round(data.main.feels_like)}°C`;
+                document.getElementById('weather-humidity').textContent = `${data.main.humidity}%`;
+                document.getElementById('weather-wind').textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+                document.getElementById('weather-pressure').textContent = `${data.main.pressure} hPa`;
+                document.getElementById('weather-city').textContent = `${data.name}, BR`;
                 
-                // Umidade
-                const humidityElement = document.getElementById('weather-humidity');
-                if (humidityElement) {
-                    humidityElement.textContent = `${data.main.humidity}%`;
-                }
-                
-                // Vento
-                const windElement = document.getElementById('weather-wind');
-                if (windElement && data.wind) {
-                    windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
-                }
-                
-                // Pressão
-                const pressureElement = document.getElementById('weather-pressure');
-                if (pressureElement) {
-                    pressureElement.textContent = `${data.main.pressure} hPa`;
-                }
-                
-                // Cidade
-                const cityElement = document.getElementById('weather-city');
-                if (cityElement && data.name) {
-                    cityElement.textContent = `${data.name}, BR`;
-                }
-                
-                // Horário de atualização
-                const timeElement = document.getElementById('weather-update-time');
-                if (timeElement) {
-                    const now = new Date();
-                    timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                }
+                const now = new Date();
+                document.getElementById('weather-update-time').textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                 
             } catch (error) {
                 console.error('❌ Erro ao atualizar clima:', error);
@@ -2048,7 +2111,10 @@
             return animations[weatherMain] || 'weather-icon-cloud';
         }
 
-        // 🆕 FUNÇÃO FALTANTE: Atualização de dados do sistema
+        // ==============================
+        // ATUALIZAÇÃO DE DADOS
+        // ==============================
+        
         function startDataUpdates() {
             console.log('📊 Iniciando atualizações automáticas de dados');
             
@@ -2068,16 +2134,13 @@
             }, 15 * 60 * 1000);
         }
 
-        // 🆕 MELHORIA: Função para atualizar status dos dispositivos
         function updateDeviceStatus() {
             try {
-                // Simular verificação de status dos dispositivos
                 const devices = document.querySelectorAll('.device-compact-item');
                 devices.forEach(device => {
                     const checkbox = device.querySelector('input[type="checkbox"]');
-                    const isActive = checkbox.checked;
+                    const isActive = checkbox?.checked;
                     
-                    // Atualizar visual do dispositivo
                     if (isActive) {
                         device.classList.add('active');
                     } else {
@@ -2097,10 +2160,9 @@
                     }
                 });
                 
-                // Atualizar status do ESP32 (simulação)
+                // Atualizar status do ESP32
                 const esp32Status = document.getElementById('esp32-status');
                 if (esp32Status) {
-                    // Simular status online (90% do tempo)
                     const isOnline = Math.random() > 0.1;
                     esp32Status.className = `esp32-indicator ${isOnline ? 'online' : 'offline'}`;
                     esp32Status.innerHTML = `<i class="fas fa-microchip"></i><span>ESP32 ${isOnline ? 'Online' : 'Offline'}</span>`;
@@ -2111,39 +2173,36 @@
             }
         }
 
-        // 🆕 MELHORIA: Função para simular dados de sensores mais realistas
         function updateSensorData() {
             try {
-                // Simular dados realistas dos sensores
                 const now = new Date();
                 const hour = now.getHours();
                 
                 // Temperatura varia conforme a hora do dia
                 let baseTemp = 22;
-                if (hour >= 12 && hour <= 16) baseTemp = 28; // Mais quente à tarde
-                if (hour >= 22 || hour <= 6) baseTemp = 20;  // Mais frio à noite
+                if (hour >= 12 && hour <= 16) baseTemp = 28;
+                if (hour >= 22 || hour <= 6) baseTemp = 20;
                 
-                const temperature = baseTemp + (Math.random() * 4 - 2); // Variação de ±2°C
+                const temperature = baseTemp + (Math.random() * 4 - 2);
                 document.getElementById('sensor-temperature').textContent = `${Math.round(temperature)}°C`;
                 
-                // Umidade varia inversamente à temperatura
+                // Umidade
                 const humidity = 60 + (25 - (temperature - 20)) + (Math.random() * 10 - 5);
                 document.getElementById('sensor-humidity').textContent = `${Math.max(30, Math.min(90, Math.round(humidity)))}%`;
                 
-                // Nível de gás (normalmente baixo, com pequena chance de pico)
+                // Nível de gás
                 let gasLevel = Math.random() * 30;
-                if (Math.random() < 0.05) gasLevel = 50 + Math.random() * 50; // 5% de chance de pico
+                if (Math.random() < 0.05) gasLevel = 50 + Math.random() * 50;
                 document.getElementById('sensor-gas').textContent = Math.round(gasLevel);
                 
-                // Status de alerta baseado no nível de gás
+                // Status de alerta
                 const alertElement = document.getElementById('sensor-alert');
                 if (gasLevel > 80) {
                     alertElement.textContent = 'ALERTA!';
                     alertElement.style.color = '#ff4444';
                     alertElement.style.fontWeight = 'bold';
                     
-                    // Notificação de emergência
-                    if (Math.random() < 0.3) { // 30% de chance de notificar
+                    if (Math.random() < 0.3) {
                         showNotification('⚠️ ALERTA: Nível de gás elevado detectado!', 'error', 10000);
                     }
                 } else if (gasLevel > 50) {
@@ -2161,17 +2220,20 @@
             }
         }
 
-        // 🆕 CORREÇÃO: Função para dispositivos - corrigida para manter estado
+        // ==============================
+        // CONTROLE DE DISPOSITIVOS
+        // ==============================
+        
         function loadDevices() {
             // Carregar lâmpadas
             const lightsContainer = document.getElementById('lights-container');
             const lights = [
-                { id: 'lamp-sala', name: 'Sala', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
-                { id: 'lamp-quarto', name: 'Quarto', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' },
-                { id: 'lamp-cozinha', name: 'Cozinha', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
-                { id: 'lamp-banheiro', name: 'Banheiro', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' },
-                { id: 'lamp-varanda', name: 'Varanda', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
-                { id: 'lamp-garagem', name: 'Garagem', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' }
+                { id: 'lamp-sala', name: 'Sala', state: true },
+                { id: 'lamp-quarto', name: 'Quarto', state: false },
+                { id: 'lamp-cozinha', name: 'Cozinha', state: true },
+                { id: 'lamp-banheiro', name: 'Banheiro', state: false },
+                { id: 'lamp-varanda', name: 'Varanda', state: true },
+                { id: 'lamp-garagem', name: 'Garagem', state: false }
             ];
 
             lights.forEach(light => {
@@ -2179,7 +2241,8 @@
                 lightElement.className = `device-compact-item ${light.state ? 'active' : ''}`;
                 lightElement.innerHTML = `
                     <div class="device-compact-icon">
-                        <img src="${light.icon}" alt="${light.name}" class="${light.state ? 'lamp-icon-on' : 'lamp-icon-off'}">
+                        <img src="${light.state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
+                             alt="${light.name}" class="${light.state ? 'lamp-icon-on' : 'lamp-icon-off'}">
                     </div>
                     <div class="device-compact-name">${light.name}</div>
                     <label class="switch">
@@ -2218,12 +2281,10 @@
             });
         }
 
-        // 🆕 CORREÇÃO: Função toggleDevice corrigida para manter estado visual
         function toggleDevice(deviceId, state, checkboxElement) {
             console.log(`Dispositivo ${deviceId} ${state ? 'ligado' : 'desligado'}`);
             showNotification(`Dispositivo ${state ? 'ligado' : 'desligado'}`, 'success');
             
-            // Atualizar visual do dispositivo
             const deviceElement = checkboxElement.closest('.device-compact-item');
             if (state) {
                 deviceElement.classList.add('active');
@@ -2231,7 +2292,7 @@
                 deviceElement.classList.remove('active');
             }
             
-            // Atualizar ícone da lâmpada se for o caso
+            // Atualizar ícone da lâmpada
             if (deviceId.includes('lamp-')) {
                 const iconImg = deviceElement.querySelector('img');
                 if (iconImg) {
@@ -2245,7 +2306,7 @@
                 }
             }
             
-            // Atualizar ícone da tomada se for o caso
+            // Atualizar ícone da tomada
             if (deviceId.includes('outlet-')) {
                 const iconElement = deviceElement.querySelector('.fa-plug');
                 if (iconElement) {
@@ -2253,18 +2314,16 @@
                 }
             }
             
-            // 🆕 SALVAR ESTADO NO LOCALSTORAGE
+            // Salvar estado
             saveDeviceState(deviceId, state);
         }
 
-        // 🆕 FUNÇÃO PARA SALVAR ESTADO DOS DISPOSITIVOS
         function saveDeviceState(deviceId, state) {
             const deviceStates = loadFromLocalStorage('deviceStates') || {};
             deviceStates[deviceId] = state;
             saveToLocalStorage('deviceStates', deviceStates);
         }
 
-        // 🆕 FUNÇÃO PARA CARREGAR ESTADO DOS DISPOSITIVOS
         function loadDeviceStates() {
             const deviceStates = loadFromLocalStorage('deviceStates') || {};
             return deviceStates;
@@ -2290,9 +2349,12 @@
             showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
         }
 
-        // 🆕 CORREÇÃO: Função controlIrrigation com ícone grande
+        // ==============================
+        // CONTROLE DE IRRIGAÇÃO
+        // ==============================
+        
         function controlIrrigation(state) {
-            console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
+            console.log(`💧 Controle de irrigação: ${state ? 'LIGAR' : 'DESLIGAR'}`);
             const statusElement = document.getElementById('irrigation-status');
             const largeIcon = document.getElementById('irrigation-large-icon');
             
@@ -2302,14 +2364,24 @@
             // Atualizar ícone grande
             if (state) {
                 largeIcon.src = 'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000';
+                // Simular acionamento do relé
+                simulateRelayActivation(true);
             } else {
                 largeIcon.src = 'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+                // Simular desligamento do relé
+                simulateRelayActivation(false);
             }
             
             showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
-            
-            // Salvar estado da irrigação
             saveToLocalStorage('irrigationState', state);
+        }
+
+        // Simular acionamento do relé (substituir por comunicação real com ESP32)
+        function simulateRelayActivation(state) {
+            console.log(`🔌 Relé da irrigação: ${state ? 'ACIONADO' : 'DESLIGADO'}`);
+            
+            // Aqui você implementaria a comunicação com o ESP32
+            // Exemplo: fetch('/api/irrigation', { method: 'POST', body: JSON.stringify({ state }) })
         }
 
         function openIrrigationModal() {
@@ -2329,27 +2401,41 @@
         function saveIrrigationSettings() {
             if (!validateIrrigationSettings()) return;
             
-            console.log('Configurações de irrigação salvas');
             const mode = document.getElementById('irrigation-mode-select').value;
             const avoidRain = document.getElementById('avoid-rain-checkbox').checked;
-            const programmings = getSelectedProgrammings();
             
             document.getElementById('irrigation-mode').textContent = mode === 'automatico' ? 'Automático' : 'Manual';
             document.getElementById('rain-avoidance').textContent = avoidRain ? 'Ativado' : 'Desativado';
+            
+            // Salvar configurações
+            saveToLocalStorage('irrigationSettings', {
+                mode,
+                avoidRain,
+                programmings: scheduledIrrigations
+            });
+            
+            // Reiniciar agendador se modo automático
+            if (mode === 'automatico') {
+                startIrrigationScheduler();
+            }
             
             showNotification('Configurações de irrigação salvas com sucesso!', 'success');
             closeIrrigationModal();
         }
 
-        function checkSystemAuth() {
-            console.log('Sistema autenticado');
-        }
-
-        // Inicialização do sistema
+        // ==============================
+        // INICIALIZAÇÃO DO SISTEMA
+        // ==============================
+        
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Sistema Casa Automação V3.0 inicializado');
             
-            // Carregar tema salvo
+            // Verificar autenticação
+            if (!checkAuth()) {
+                return;
+            }
+            
+            // Carregar tema
             const savedTheme = loadFromLocalStorage('theme') || 'light';
             document.body.setAttribute('data-theme', savedTheme);
             const themeIcon = document.querySelector('.theme-toggle i');
@@ -2373,7 +2459,7 @@
             // Inicializar sistemas
             loadDevices();
             
-            // 🆕 CARREGAR ESTADOS SALVOS DOS DISPOSITIVOS
+            // Carregar estados salvos
             const deviceStates = loadDeviceStates();
             Object.keys(deviceStates).forEach(deviceId => {
                 const checkbox = document.querySelector(`[onchange*="${deviceId}"]`);
@@ -2383,30 +2469,49 @@
                 }
             });
             
-            // 🆕 CARREGAR ESTADO DA IRRIGAÇÃO
+            // Carregar estado da irrigação
             const irrigationState = loadFromLocalStorage('irrigationState') || false;
             if (irrigationState) {
                 controlIrrigation(irrigationState);
             }
             
+            // Carregar configurações de irrigação
+            const irrigationSettings = loadFromLocalStorage('irrigationSettings');
+            if (irrigationSettings) {
+                document.getElementById('irrigation-mode-select').value = irrigationSettings.mode;
+                document.getElementById('avoid-rain-checkbox').checked = irrigationSettings.avoidRain;
+                document.getElementById('irrigation-mode').textContent = irrigationSettings.mode === 'automatico' ? 'Automático' : 'Manual';
+                document.getElementById('rain-avoidance').textContent = irrigationSettings.avoidRain ? 'Ativado' : 'Desativado';
+                
+                // Carregar programações
+                if (irrigationSettings.programmings) {
+                    scheduledIrrigations = irrigationSettings.programmings;
+                    irrigationSettings.programmings.forEach(programming => {
+                        addProgrammingToList(programming);
+                    });
+                }
+                
+                // Iniciar agendador se modo automático
+                if (irrigationSettings.mode === 'automatico') {
+                    startIrrigationScheduler();
+                }
+            }
+            
+            // Iniciar sistemas
             startDataUpdates();
-            startAutoRefresh();
-            checkSystemAuth();
-            updateWeather(); // 🆕 Carregar clima inicial
-            updateSensorData(); // Carregar dados dos sensores
+            updateWeather();
+            updateSensorData();
             
             showNotification('Sistema inicializado com sucesso!', 'success', 3000);
         });
 
-        // 🆕 Exportar funções para o script principal
+        // Exportar funções para escopo global
         window.showTimePicker = showTimePicker;
         window.addProgramming = addProgramming;
         window.removeProgramming = removeProgramming;
         window.getSelectedProgrammings = getSelectedProgrammings;
         window.updateWeather = updateWeather;
         window.showNotification = showNotification;
-        window.handleApiError = handleApiError;
-        window.validateIrrigationSettings = validateIrrigationSettings;
         window.toggleDevice = toggleDevice;
         window.controlAllLights = controlAllLights;
         window.controlAllOutlets = controlAllOutlets;
