@@ -84,8 +84,8 @@
         }
 
         .title-icon {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: float 3s ease-in-out infinite;
         }
 
@@ -315,9 +315,15 @@
 
         /* Ícones Animados */
         .lamp-icon-on {
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             animation: lampGlow 1.5s ease-in-out infinite;
+        }
+
+        .lamp-icon-off {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
         }
 
         @keyframes lampGlow {
@@ -1263,7 +1269,7 @@
         <div class="header">
             <div class="header-content">
                 <h1>
-                    <img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" class="title-icon" alt="Casa" style="width: 50px; height: 50px;">
+                    <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" class="title-icon" alt="Casa">
                     Casa Automação V3.0
                 </h1>
             </div>
@@ -1375,7 +1381,7 @@
             <!-- Controle de Lâmpadas -->
             <div class="card">
                 <h2>
-                    <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada" style="width: 24px; height: 24px;">
+                    <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
                     Controle de Lâmpadas
                 </h2>
                 <div class="devices-compact" id="lights-container">
@@ -1575,7 +1581,6 @@
         </div>
     </div>
 
-    <!-- Script principal -->
     <script>
         // 🚨 CORREÇÃO: Função logout global
         async function logout() {
@@ -1947,31 +1952,104 @@
             return animations[weatherMain] || 'weather-icon-cloud';
         }
 
-        // Funções de exemplo para dispositivos
+        // Funções para dispositivos
         function loadDevices() {
-            console.log('Dispositivos carregados');
+            // Carregar lâmpadas
+            const lightsContainer = document.getElementById('lights-container');
+            const lights = [
+                { id: 'lamp-sala', name: 'Sala', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
+                { id: 'lamp-quarto', name: 'Quarto', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' },
+                { id: 'lamp-cozinha', name: 'Cozinha', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
+                { id: 'lamp-banheiro', name: 'Banheiro', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' },
+                { id: 'lamp-varanda', name: 'Varanda', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
+                { id: 'lamp-garagem', name: 'Garagem', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' }
+            ];
+
+            lights.forEach(light => {
+                const lightElement = document.createElement('div');
+                lightElement.className = `device-compact-item ${light.state ? 'active' : ''}`;
+                lightElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <img src="${light.icon}" alt="${light.name}">
+                    </div>
+                    <div class="device-compact-name">${light.name}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${light.state ? 'checked' : ''} onchange="toggleDevice('${light.id}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                lightsContainer.appendChild(lightElement);
+            });
+
+            // Carregar tomadas
+            const outletsContainer = document.getElementById('outlets-container');
+            const outlets = [
+                { id: 'outlet-sala', name: 'Sala TV', state: true },
+                { id: 'outlet-cozinha', name: 'Cozinha', state: false },
+                { id: 'outlet-quarto', name: 'Quarto', state: true },
+                { id: 'outlet-escritorio', name: 'Escritório', state: false },
+                { id: 'outlet-varanda', name: 'Varanda', state: true },
+                { id: 'outlet-garagem', name: 'Garagem', state: false }
+            ];
+
+            outlets.forEach(outlet => {
+                const outletElement = document.createElement('div');
+                outletElement.className = `device-compact-item ${outlet.state ? 'active' : ''}`;
+                outletElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="color: ${outlet.state ? '#4CAF50' : '#666'}"></i>
+                    </div>
+                    <div class="device-compact-name">${outlet.name}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${outlet.state ? 'checked' : ''} onchange="toggleDevice('${outlet.id}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                outletsContainer.appendChild(outletElement);
+            });
         }
 
-        function startDataUpdates() {
-            console.log('Atualizações de dados iniciadas');
-        }
-
-        function checkSystemAuth() {
-            console.log('Sistema autenticado');
+        function toggleDevice(deviceId, state) {
+            console.log(`Dispositivo ${deviceId} ${state ? 'ligado' : 'desligado'}`);
+            showNotification(`Dispositivo ${state ? 'ligado' : 'desligado'}`, 'success');
+            
+            // Atualizar ícone da lâmpada se for o caso
+            if (deviceId.includes('lamp-')) {
+                const deviceElement = document.querySelector(`[onchange="toggleDevice('${deviceId}', this.checked)"]`).closest('.device-compact-item');
+                const iconImg = deviceElement.querySelector('img');
+                if (iconImg) {
+                    iconImg.src = state ? 
+                        'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 
+                        'https://img.icons8.com/?size=100&id=55787&format=png&color=000000';
+                }
+            }
         }
 
         function controlAllLights(state) {
-            console.log(`Controle de lâmpadas: ${state ? 'Ligar' : 'Desligar'} todas`);
+            const lights = document.querySelectorAll('#lights-container input[type="checkbox"]');
+            lights.forEach(light => {
+                light.checked = state;
+                const deviceId = light.getAttribute('onchange').match(/'([^']+)'/)[1];
+                toggleDevice(deviceId, state);
+            });
             showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
         }
 
         function controlAllOutlets(state) {
-            console.log(`Controle de tomadas: ${state ? 'Ligar' : 'Desligar'} todas`);
+            const outlets = document.querySelectorAll('#outlets-container input[type="checkbox"]');
+            outlets.forEach(outlet => {
+                outlet.checked = state;
+                const deviceId = outlet.getAttribute('onchange').match(/'([^']+)'/)[1];
+                toggleDevice(deviceId, state);
+            });
             showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
         }
 
         function controlIrrigation(state) {
             console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
+            const statusElement = document.getElementById('irrigation-status');
+            statusElement.textContent = state ? 'LIGADA' : 'DESLIGADA';
+            statusElement.className = state ? 'status-on' : 'status-off';
             showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
         }
 
@@ -1989,17 +2067,34 @@
         }
 
         function saveIrrigationSettings() {
+            if (!validateIrrigationSettings()) return;
+            
             console.log('Configurações de irrigação salvas');
+            const mode = document.getElementById('irrigation-mode-select').value;
+            const avoidRain = document.getElementById('avoid-rain-checkbox').checked;
+            const programmings = getSelectedProgrammings();
+            
+            document.getElementById('irrigation-mode').textContent = mode === 'automatico' ? 'Automático' : 'Manual';
+            document.getElementById('rain-avoidance').textContent = avoidRain ? 'Ativado' : 'Desativado';
+            
             showNotification('Configurações de irrigação salvas com sucesso!', 'success');
             closeIrrigationModal();
         }
 
         function updateSensorData() {
             console.log('Dados dos sensores atualizados');
+            // Simular dados dos sensores
+            document.getElementById('sensor-temperature').textContent = `${Math.floor(Math.random() * 10) + 22}°C`;
+            document.getElementById('sensor-humidity').textContent = `${Math.floor(Math.random() * 20) + 50}%`;
+            document.getElementById('sensor-gas').textContent = Math.floor(Math.random() * 100);
         }
 
         function updateDeviceStatus() {
             console.log('Status dos dispositivos atualizado');
+        }
+
+        function checkSystemAuth() {
+            console.log('Sistema autenticado');
         }
 
         // Inicialização do sistema
@@ -2023,6 +2118,9 @@
             startAutoRefresh();
             checkSystemAuth();
             updateWeather(); // 🆕 Carregar clima inicial
+            updateSensorData(); // Carregar dados dos sensores
+            
+            showNotification('Sistema inicializado com sucesso!', 'success', 3000);
         });
 
         // 🆕 Exportar funções para o script principal
@@ -2034,6 +2132,14 @@
         window.showNotification = showNotification;
         window.handleApiError = handleApiError;
         window.validateIrrigationSettings = validateIrrigationSettings;
+        window.toggleDevice = toggleDevice;
+        window.controlAllLights = controlAllLights;
+        window.controlAllOutlets = controlAllOutlets;
+        window.controlIrrigation = controlIrrigation;
+        window.openIrrigationModal = openIrrigationModal;
+        window.closeIrrigationModal = closeIrrigationModal;
+        window.checkWeather = checkWeather;
+        window.saveIrrigationSettings = saveIrrigationSettings;
     </script>
 </body>
 </html>
