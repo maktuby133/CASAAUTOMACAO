@@ -192,11 +192,11 @@
             transform: translateY(-2px);
         }
 
-        /* 🆕 METEOROLOGIA EXPANDIDA - MELHORADA */
+        /* 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA */
         .weather-expanded {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: var(--border-radius);
-            padding: 15px 20px;
+            padding: 12px 20px;
             color: white;
             margin-bottom: 15px;
             box-shadow: var(--shadow);
@@ -204,7 +204,7 @@
             grid-template-columns: 1fr 2fr 1fr;
             gap: 15px;
             align-items: center;
-            height: 160px; /* Altura fixa para economizar espaço */
+            height: 120px; /* Altura reduzida */
         }
 
         .weather-main {
@@ -215,19 +215,19 @@
         }
 
         .weather-icon-large {
-            font-size: 3.5em !important;
+            font-size: 2.8em !important;
             margin-bottom: 5px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
 
         .weather-temp-main {
-            font-size: 2.5em;
+            font-size: 2em;
             font-weight: 700;
             margin-bottom: 5px;
         }
 
         .weather-desc-main {
-            font-size: 1em;
+            font-size: 0.9em;
             opacity: 0.9;
             text-transform: capitalize;
         }
@@ -235,8 +235,8 @@
         .weather-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 12px;
+            gap: 10px;
+            padding: 10px;
             background: rgba(255,255,255,0.1);
             border-radius: 10px;
             backdrop-filter: blur(10px);
@@ -249,7 +249,7 @@
         }
 
         .weather-detail-icon {
-            font-size: 1.2em;
+            font-size: 1.1em;
             opacity: 0.9;
             width: 25px;
             text-align: center;
@@ -261,12 +261,12 @@
         }
 
         .weather-detail-label {
-            font-size: 0.75em;
+            font-size: 0.7em;
             opacity: 0.8;
         }
 
         .weather-detail-value {
-            font-size: 1em;
+            font-size: 0.9em;
             font-weight: 600;
         }
 
@@ -279,7 +279,7 @@
         }
 
         .weather-city {
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: 600;
             margin-bottom: 5px;
             display: flex;
@@ -288,7 +288,7 @@
         }
 
         .weather-time {
-            font-size: 0.85em;
+            font-size: 0.8em;
             opacity: 0.8;
             display: flex;
             align-items: center;
@@ -307,7 +307,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 0.8em;
+            font-size: 0.75em;
         }
 
         .weather-update-btn:hover {
@@ -527,6 +527,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 1.4em;
+            justify-content: center; /* Centralizado */
         }
 
         .sensors-compact {
@@ -599,6 +600,7 @@
             color: var(--text-primary);
             display: flex;
             flex-direction: column;
+            position: relative; /* Para posicionar ícone de irrigação */
         }
 
         .card h2 {
@@ -609,6 +611,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 1.4em;
+            justify-content: center; /* Centralizado */
         }
 
         .devices-compact {
@@ -796,6 +799,7 @@
             font-size: 0.85em;
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
             color: var(--text-primary);
+            position: relative; /* Para posicionar ícone de irrigação */
         }
 
         body[data-theme="dark"] .status-bar {
@@ -869,6 +873,22 @@
         .status-text {
             flex: 1;
             text-align: center;
+        }
+
+        /* 🆕 ÍCONE DE IRRIGAÇÃO GRANDE */
+        .irrigation-large-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 80px;
+            transition: var(--transition);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .irrigation-card {
+            position: relative; /* Para posicionar o ícone grande */
         }
 
         /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
@@ -1228,6 +1248,12 @@
                 flex-direction: column;
                 gap: 5px;
             }
+            
+            .irrigation-large-icon {
+                width: 60px;
+                height: 60px;
+                right: 15px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1255,6 +1281,12 @@
             .btn {
                 width: 100%;
                 justify-content: center;
+            }
+            
+            .irrigation-large-icon {
+                width: 50px;
+                height: 50px;
+                right: 10px;
             }
         }
     </style>
@@ -1288,7 +1320,7 @@
             </div>
         </div>
 
-        <!-- 🆕 METEOROLOGIA EXPANDIDA - MELHORADA -->
+        <!-- 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
@@ -1425,11 +1457,15 @@
         </div>
 
         <!-- Sistema de Irrigação -->
-        <div class="card">
+        <div class="card irrigation-card">
             <h2>
                 <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
                 Sistema de Irrigação
             </h2>
+            
+            <!-- 🆕 ÍCONE GRANDE DE IRRIGAÇÃO -->
+            <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
+            
             <div class="status-bar">
                 <div class="status-content">
                     <div class="esp32-indicator online" id="esp32-status">
@@ -1923,7 +1959,8 @@
                     timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                 }
                 
-                showNotification('Dados meteorológicos atualizados!', 'success', 2000);
+                // 🆕 REMOVIDO: Notificação de atualização meteorológica
+                
             } catch (error) {
                 console.error('❌ Erro ao atualizar clima:', error);
                 showNotification('Erro ao carregar dados meteorológicos', 'error');
@@ -2164,6 +2201,22 @@
                     iconElement.style.color = state ? '#4CAF50' : '#666';
                 }
             }
+            
+            // 🆕 SALVAR ESTADO NO LOCALSTORAGE
+            saveDeviceState(deviceId, state);
+        }
+
+        // 🆕 FUNÇÃO PARA SALVAR ESTADO DOS DISPOSITIVOS
+        function saveDeviceState(deviceId, state) {
+            const deviceStates = loadFromLocalStorage('deviceStates') || {};
+            deviceStates[deviceId] = state;
+            saveToLocalStorage('deviceStates', deviceStates);
+        }
+
+        // 🆕 FUNÇÃO PARA CARREGAR ESTADO DOS DISPOSITIVOS
+        function loadDeviceStates() {
+            const deviceStates = loadFromLocalStorage('deviceStates') || {};
+            return deviceStates;
         }
 
         function controlAllLights(state) {
@@ -2186,12 +2239,26 @@
             showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
         }
 
+        // 🆕 CORREÇÃO: Função controlIrrigation com ícone grande
         function controlIrrigation(state) {
             console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
             const statusElement = document.getElementById('irrigation-status');
+            const largeIcon = document.getElementById('irrigation-large-icon');
+            
             statusElement.textContent = state ? 'LIGADA' : 'DESLIGADA';
             statusElement.className = state ? 'status-on' : 'status-off';
+            
+            // Atualizar ícone grande
+            if (state) {
+                largeIcon.src = 'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000';
+            } else {
+                largeIcon.src = 'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+            }
+            
             showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
+            
+            // Salvar estado da irrigação
+            saveToLocalStorage('irrigationState', state);
         }
 
         function openIrrigationModal() {
@@ -2254,6 +2321,23 @@
             
             // Inicializar sistemas
             loadDevices();
+            
+            // 🆕 CARREGAR ESTADOS SALVOS DOS DISPOSITIVOS
+            const deviceStates = loadDeviceStates();
+            Object.keys(deviceStates).forEach(deviceId => {
+                const checkbox = document.querySelector(`[onchange*="${deviceId}"]`);
+                if (checkbox) {
+                    checkbox.checked = deviceStates[deviceId];
+                    toggleDevice(deviceId, deviceStates[deviceId], checkbox);
+                }
+            });
+            
+            // 🆕 CARREGAR ESTADO DA IRRIGAÇÃO
+            const irrigationState = loadFromLocalStorage('irrigationState') || false;
+            if (irrigationState) {
+                controlIrrigation(irrigationState);
+            }
+            
             startDataUpdates();
             startAutoRefresh();
             checkSystemAuth();
