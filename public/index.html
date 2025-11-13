@@ -89,6 +89,12 @@
             animation: float 3s ease-in-out infinite;
         }
 
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .logout-btn {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -103,6 +109,7 @@
             align-items: center;
             gap: 5px;
             backdrop-filter: blur(10px);
+            white-space: nowrap;
         }
 
         .logout-btn:hover {
@@ -165,13 +172,10 @@
 
         /* Botão de Tema */
         .theme-toggle {
-            position: absolute;
-            top: 10px;
-            right: 120px;
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 20px;
-            padding: 6px 12px;
+            padding: 8px 12px;
             cursor: pointer;
             color: white;
             font-size: 0.8em;
@@ -180,6 +184,7 @@
             gap: 5px;
             backdrop-filter: blur(10px);
             transition: var(--transition);
+            white-space: nowrap;
         }
 
         .theme-toggle:hover {
@@ -584,6 +589,8 @@
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
         }
 
         .card h2 {
@@ -603,6 +610,7 @@
             max-height: 400px;
             overflow-y: auto;
             padding-right: 5px;
+            flex: 1;
         }
 
         .device-compact-item {
@@ -713,8 +721,10 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin: 15px 0;
+            margin: 15px 0 0 0;
             flex-wrap: wrap;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .btn {
@@ -1205,11 +1215,9 @@
                 grid-template-columns: repeat(4, 1fr);
             }
             
-            .theme-toggle {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-left: 10px;
+            .header-controls {
+                flex-direction: column;
+                gap: 5px;
             }
         }
 
@@ -1255,18 +1263,20 @@
         <div class="header">
             <div class="header-content">
                 <h1>
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgOUg5VjNIM1Y5Wk0xMCAyMlYxNkgxNlYyMkgxMFpNMyAyMlYxNkg5VjIySDNaTTQgOEg4VjRINFY4Wk0xMCAxNUgxNVYxMEgxMFYxNVpNMTYgOEgyMFY0SDE2VjhaTTEwIDhIMTRWNEgxMFY4Wk0xNiAxNUgyMFYxMEgxNlYxNVpNMTYgMjJIMjBWMTZIMTYgVjIyWiIgZmlsbD0iY3VycmVudENvbG9yIi8+Cjwvc3ZnPgo=" class="title-icon" alt="Casa">
+                    <img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" class="title-icon" alt="Casa" style="width: 50px; height: 50px;">
                     Casa Automação V3.0
                 </h1>
             </div>
-            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
-                <i class="fas fa-moon"></i>
-                Tema
-            </button>
-            <button class="logout-btn" onclick="logout()" aria-label="Sair do sistema">
-                <i class="fas fa-sign-out-alt"></i>
-                Sair do Sistema
-            </button>
+            <div class="header-controls">
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                    Tema
+                </button>
+                <button class="logout-btn" onclick="logout()" aria-label="Sair do sistema">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sair do Sistema
+                </button>
+            </div>
         </div>
 
         <!-- 🆕 METEOROLOGIA EXPANDIDA -->
@@ -1365,7 +1375,7 @@
             <!-- Controle de Lâmpadas -->
             <div class="card">
                 <h2>
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMjFDNy45IDIxIDcgMjAuMSA3IDE5VjE4IE0zIDEwVjE4SDdWMTlDNyAyMC4xIDcuOSAyMSA5IDIxQzEwLjEgMjEgMTEgMjAuMSAxMSAxOVYxOEgxNVYxMEgxMVY5QzExIDcuOSAxMC4xIDcgOSA3QzcuOSA3IDcgNy45IDcgOVYxMEgzWiIgZmlsbD0iY3VycmVudENvbG9yIi8+CjxwYXRoIGQ9Ik0xNi41IDExLjVMMTUgOEg5TDMuNSAxNi41QzMuMSAxNy4yIDMuMSAxOCAzLjUgMTguNUMzLjkgMTkgNC43IDE5LjUgNS41IDE5LjVIMTQuNUMxNS4zIDE5LjUgMTYuMSAxOSAxNi41IDE4LjVDMTYuOSAxOCAxNi45IDE3LjIgMTYuNSAxNi41TDE2IDE1LjVMMTYuNSAxMS41WiIgZmlsbD0iY3VycmVudENvbG9yIi8+CjxwYXRoIGQ9Ik0xNSA3VjEwSDE2TDE1LjUgMTRMMTYgMTVIMTZMMTYuNSAxNi41TDE1LjUgMThIMTZMMTUuNSAxOS41TDE0IDIxSDEwTDEwLjUgMTkuNUg5TDkuNSAxOEg5TDguNSAxNi41TDkgMTVIOEw4LjUgMTRIOFYYMTBIOUw3IDdIMTVaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz4KPC9zdmc+Cg==" class="lamp-icon-on" alt="Lâmpada">
+                    <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada" style="width: 24px; height: 24px;">
                     Controle de Lâmpadas
                 </h2>
                 <div class="devices-compact" id="lights-container">
@@ -1566,7 +1576,6 @@
     </div>
 
     <!-- Script principal -->
-    <script src="script.js"></script>
     <script>
         // 🚨 CORREÇÃO: Função logout global
         async function logout() {
@@ -1765,8 +1774,6 @@
             // Limpar seleção
             timeInput.value = '08:00';
             document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
-            
-            showNotification('Programação adicionada com sucesso!', 'success');
         }
 
         function addProgrammingToList(programming) {
@@ -1819,8 +1826,6 @@
                     </div>
                 `;
             }
-            
-            showNotification('Programação removida', 'info');
         }
 
         function getSelectedProgrammings() {
@@ -1907,11 +1912,8 @@
                         timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                     }
                 }
-                
-                showNotification('Clima atualizado com sucesso!', 'success', 2000);
             } catch (error) {
                 console.error('❌ Erro ao atualizar clima:', error);
-                showNotification('Erro ao atualizar dados do clima', 'error');
             }
         }
 
@@ -1945,6 +1947,61 @@
             return animations[weatherMain] || 'weather-icon-cloud';
         }
 
+        // Funções de exemplo para dispositivos
+        function loadDevices() {
+            console.log('Dispositivos carregados');
+        }
+
+        function startDataUpdates() {
+            console.log('Atualizações de dados iniciadas');
+        }
+
+        function checkSystemAuth() {
+            console.log('Sistema autenticado');
+        }
+
+        function controlAllLights(state) {
+            console.log(`Controle de lâmpadas: ${state ? 'Ligar' : 'Desligar'} todas`);
+            showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        }
+
+        function controlAllOutlets(state) {
+            console.log(`Controle de tomadas: ${state ? 'Ligar' : 'Desligar'} todas`);
+            showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        }
+
+        function controlIrrigation(state) {
+            console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
+            showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
+        }
+
+        function openIrrigationModal() {
+            document.getElementById('irrigation-modal').style.display = 'flex';
+        }
+
+        function closeIrrigationModal() {
+            document.getElementById('irrigation-modal').style.display = 'none';
+        }
+
+        function checkWeather() {
+            console.log('Verificando clima...');
+            showNotification('Verificando condições climáticas...', 'info');
+        }
+
+        function saveIrrigationSettings() {
+            console.log('Configurações de irrigação salvas');
+            showNotification('Configurações de irrigação salvas com sucesso!', 'success');
+            closeIrrigationModal();
+        }
+
+        function updateSensorData() {
+            console.log('Dados dos sensores atualizados');
+        }
+
+        function updateDeviceStatus() {
+            console.log('Status dos dispositivos atualizado');
+        }
+
         // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Sistema Casa Automação V3.0 inicializado');
@@ -1966,8 +2023,6 @@
             startAutoRefresh();
             checkSystemAuth();
             updateWeather(); // 🆕 Carregar clima inicial
-            
-            showNotification('Sistema inicializado com sucesso!', 'success', 3000);
         });
 
         // 🆕 Exportar funções para o script principal
