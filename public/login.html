@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Casa Automação</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -74,10 +75,17 @@
             font-weight: 600;
             cursor: pointer;
             transition: background 0.3s;
+            position: relative;
+            height: 48px;
         }
         
         button:hover {
             background: #5a6fd8;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         
         .error {
@@ -94,10 +102,29 @@
             margin-bottom: 20px;
         }
         
-        .loading {
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success {
+            color: #27ae60;
+            margin-top: 15px;
+            padding: 10px;
+            background: #eafaf1;
+            border-radius: 5px;
             display: none;
-            color: #667eea;
-            margin-top: 10px;
         }
     </style>
 </head>
@@ -109,73 +136,130 @@
         <form id="loginForm">
             <div class="input-group">
                 <label for="username">Usuário:</label>
-                <input type="text" id="username" value="admin" required>
+                <input type="text" id="username" placeholder="Digite seu usuário" required>
             </div>
             
             <div class="input-group">
                 <label for="password">Senha:</label>
-                <input type="password" id="password" value="admin123" required>
+                <input type="password" id="password" placeholder="Digite sua senha" required>
             </div>
             
             <button type="submit" id="loginBtn">
                 <span id="btnText">Entrar no Sistema</span>
-                <div class="loading" id="loading">Carregando...</div>
+                <span id="btnLoading" style="display: none;">
+                    <i class="loading-spinner"></i>
+                    Autenticando...
+                </span>
             </button>
         </form>
         
         <div id="errorMessage" class="error"></div>
+        <div id="successMessage" class="success"></div>
     </div>
 
     <script>
+        // Sistema de autenticação local - SEM loop de redirecionamento
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
             const loginBtn = document.getElementById('loginBtn');
             const btnText = document.getElementById('btnText');
-            const loading = document.getElementById('loading');
+            const btnLoading = document.getElementById('btnLoading');
             
-            // Limpar erro anterior e mostrar loading
+            // Limpar mensagens anteriores
             errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
             errorMessage.textContent = '';
+            successMessage.textContent = '';
+            
+            // Mostrar loading
             btnText.style.display = 'none';
-            loading.style.display = 'block';
+            btnLoading.style.display = 'inline';
             loginBtn.disabled = true;
             
             try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
+                // Simular delay de autenticação
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
-                const data = await response.json();
+                // Credenciais padrão - substitua por verificação real
+                const validCredentials = [
+                    { username: 'admin', password: 'admin123' },
+                    { username: 'usuario', password: 'senha123' },
+                    { username: 'teste', password: 'teste123' }
+                ];
                 
-                if (data.success) {
-                    console.log('✅ Login bem-sucedido! Redirecionando...');
-                    window.location.href = data.redirect;
+                const isValid = validCredentials.some(cred => 
+                    cred.username === username && cred.password === password
+                );
+                
+                if (isValid) {
+                    console.log('✅ Login bem-sucedido!');
+                    
+                    // Salvar dados de autenticação
+                    localStorage.setItem('casa-automacao-authenticated', 'true');
+                    localStorage.setItem('casa-automacao-user', JSON.stringify({
+                        username: username,
+                        loginTime: new Date().toISOString()
+                    }));
+                    
+                    // NÃO salvar credenciais no localStorage por segurança
+                    localStorage.removeItem('casa-automacao-login-data');
+                    
+                    successMessage.textContent = 'Login realizado com sucesso! Redirecionando...';
+                    successMessage.style.display = 'block';
+                    
+                    // Redirecionar após breve delay
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 1000);
+                    
                 } else {
-                    throw new Error(data.message);
+                    throw new Error('Usuário ou senha incorretos');
                 }
                 
             } catch (error) {
                 console.error('❌ Erro no login:', error);
-                errorMessage.textContent = error.message || 'Erro de conexão com o servidor';
+                errorMessage.textContent = error.message || 'Erro de autenticação';
                 errorMessage.style.display = 'block';
+                
+                // Focar no campo de senha para nova tentativa
+                document.getElementById('password').focus();
+                document.getElementById('password').select();
             } finally {
-                btnText.style.display = 'block';
-                loading.style.display = 'none';
+                // Restaurar botão
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
                 loginBtn.disabled = false;
             }
         });
 
-        // 🚨 CORREÇÃO: Removida verificação automática de auth que causava loop
+        // Preencher com dados de teste em ambiente de desenvolvimento
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('password').focus();
+            // Apenas preencher automaticamente se estiver em localhost
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                document.getElementById('username').value = 'admin';
+                document.getElementById('password').value = 'admin123';
+            }
+            
+            // Focar no campo apropriado
+            const username = document.getElementById('username').value;
+            if (username) {
+                document.getElementById('password').focus();
+                document.getElementById('password').select();
+            } else {
+                document.getElementById('username').focus();
+            }
+            
+            // Verificar se veio do logout
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout') === 'success') {
+                successMessage.textContent = 'Logout realizado com sucesso!';
+                successMessage.style.display = 'block';
+            }
         });
     </script>
 </body>
