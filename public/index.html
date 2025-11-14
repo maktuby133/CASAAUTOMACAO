@@ -192,7 +192,7 @@
             transform: translateY(-2px);
         }
 
-        /* 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA E TEXTO AJUSTADO */
+        /* 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA */
         .weather-expanded {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: var(--border-radius);
@@ -227,11 +227,9 @@
         }
 
         .weather-desc-main {
-            font-size: 0.85em; /* Texto menor para caber melhor */
+            font-size: 0.9em;
             opacity: 0.9;
             text-transform: capitalize;
-            max-width: 120px; /* Limitar largura do texto */
-            line-height: 1.2;
         }
 
         .weather-details {
@@ -268,7 +266,7 @@
         }
 
         .weather-detail-value {
-            font-size: 0.85em; /* Texto menor */
+            font-size: 0.9em;
             font-weight: 600;
         }
 
@@ -290,7 +288,7 @@
         }
 
         .weather-time {
-            font-size: 0.75em; /* Texto menor */
+            font-size: 0.8em;
             opacity: 0.8;
             display: flex;
             align-items: center;
@@ -893,23 +891,6 @@
             position: relative; /* Para posicionar o ícone grande */
         }
 
-        /* 🆕 TEMPORIZADOR DE IRRIGAÇÃO */
-        .irrigation-timer {
-            font-size: 0.8em;
-            font-weight: 600;
-            margin-top: 5px;
-            padding: 3px 8px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.2);
-            display: inline-block;
-        }
-
-        .timer-active {
-            background: var(--warning-gradient);
-            color: white;
-            animation: pulse 1.5s infinite;
-        }
-
         /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
         .modal-overlay {
             position: fixed;
@@ -1339,7 +1320,7 @@
             </div>
         </div>
 
-        <!-- 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA E TEXTO AJUSTADO -->
+        <!-- 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
@@ -1456,4 +1437,933 @@
             <!-- Controle de Tomadas -->
             <div class="card">
                 <h2>
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC45IDE2LjlMNy4xIDE0LjdNMTYuOSAxNi45TDE0LjcgMTQuN1oiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="outlet-icon" alt="Tomada">
+                    Controle de Tomadas
+                </h2>
+                <div class="devices-compact" id="outlets-container">
+                    <!-- Tomadas serão carregadas via JavaScript -->
+                </div>
+                <div class="controls">
+                    <button class="btn btn-success" onclick="controlAllOutlets(true)">
+                        <i class="fas fa-plug"></i>
+                        Ligar Todas
+                    </button>
+                    <button class="btn btn-danger" onclick="controlAllOutlets(false)">
+                        <i class="fas fa-plug"></i>
+                        Desligar Todas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sistema de Irrigação -->
+        <div class="card irrigation-card">
+            <h2>
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
+                Sistema de Irrigação
+            </h2>
+            
+            <!-- 🆕 ÍCONE GRANDE DE IRRIGAÇÃO -->
+            <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
+            
+            <div class="status-bar">
+                <div class="status-content">
+                    <div class="esp32-indicator online" id="esp32-status">
+                        <i class="fas fa-microchip"></i>
+                        <span>ESP32 Online</span>
+                    </div>
+                    <div class="status-text">
+                        Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
+                    </div>
+                    <div class="device-status">
+                        Modo: <span id="irrigation-mode">Manual</span> | 
+                        Evitar Chuva: <span id="rain-avoidance">Ativado</span>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-success" onclick="controlIrrigation(true)">
+                    <i class="fas fa-play"></i>
+                    Ligar Bomba
+                </button>
+                <button class="btn btn-danger" onclick="controlIrrigation(false)">
+                    <i class="fas fa-stop"></i>
+                    Desligar Bomba
+                </button>
+                <button class="btn btn-primary" onclick="openIrrigationModal()">
+                    <i class="fas fa-cog"></i>
+                    Configurar
+                </button>
+                <button class="btn btn-weather" onclick="checkWeather()">
+                    <i class="fas fa-cloud-sun"></i>
+                    Verificar Clima
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 MODAL DE IRRIGAÇÃO MELHORADO -->
+    <div class="modal-overlay" id="irrigation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-tint"></i>
+                    Configurações de Irrigação
+                </h2>
+                <button class="close-modal" onclick="closeIrrigationModal()">&times;</button>
+            </div>
+            
+            <div class="modal-section">
+                <h3><i class="fas fa-cogs"></i> Modo de Operação</h3>
+                <div class="form-group">
+                    <label for="irrigation-mode-select">Selecione o modo de operação:</label>
+                    <select id="irrigation-mode-select">
+                        <option value="manual">Manual</option>
+                        <option value="automatico">Automático</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3><i class="fas fa-cloud-rain"></i> Preferências</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="avoid-rain-checkbox" checked>
+                        Evitar irrigação quando estiver chovendo
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-section" id="programming-section">
+                <h3><i class="fas fa-clock"></i> Programaçõe Automáticas</h3>
+                <div class="form-group">
+                    <label>Selecione os dias da semana:</label>
+                    <div class="days-selection">
+                        <input type="checkbox" id="day-seg" class="day-checkbox" value="seg">
+                        <label for="day-seg" class="day-label">
+                            <span class="day-abbr">SEG</span>
+                            <span class="day-full">Segunda</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-ter" class="day-checkbox" value="ter">
+                        <label for="day-ter" class="day-label">
+                            <span class="day-abbr">TER</span>
+                            <span class="day-full">Terça</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-qua" class="day-checkbox" value="qua">
+                        <label for="day-qua" class="day-label">
+                            <span class="day-abbr">QUA</span>
+                            <span class="day-full">Quarta</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-qui" class="day-checkbox" value="qui">
+                        <label for="day-qui" class="day-label">
+                            <span class="day-abbr">QUI</span>
+                            <span class="day-full">Quinta</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-sex" class="day-checkbox" value="sex">
+                        <label for="day-sex" class="day-label">
+                            <span class="day-abbr">SEX</span>
+                            <span class="day-full">Sexta</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-sab" class="day-checkbox" value="sab">
+                        <label for="day-sab" class="day-label">
+                            <span class="day-abbr">SAB</span>
+                            <span class="day-full">Sábado</span>
+                        </label>
+                        
+                        <input type="checkbox" id="day-dom" class="day-checkbox" value="dom">
+                        <label for="day-dom" class="day-label">
+                            <span class="day-abbr">DOM</span>
+                            <span class="day-full">Domingo</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horário da irrigação:</label>
+                    <div class="time-selection">
+                        <input type="time" id="irrigation-time" class="time-input" value="08:00">
+                        <button type="button" class="time-picker-btn" onclick="showTimePicker()">
+                            <i class="fas fa-clock"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="addProgramming()" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-plus"></i>
+                    Adicionar Programação
+                </button>
+                
+                <div class="programming-list" id="programming-list">
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-success" onclick="saveIrrigationSettings()">
+                    <i class="fas fa-save"></i>
+                    Salvar Configurações
+                </button>
+                <button class="btn btn-danger" onclick="closeIrrigationModal()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🚨 CORREÇÃO: Função logout global corrigida
+        async function logout() {
+            try {
+                // Mostrar loading
+                const logoutBtn = document.querySelector('.logout-btn');
+                const originalText = logoutBtn.innerHTML;
+                logoutBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Saindo...';
+                logoutBtn.classList.add('loading');
+
+                // Simular requisição de logout
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Redirecionar para a página de login
+                showNotification('Logout realizado com sucesso!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ Erro no logout:', error);
+                showNotification('Erro ao fazer logout. Redirecionando...', 'error');
+                
+                // Fallback para redirecionamento
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+            } finally {
+                // Restaurar botão
+                const logoutBtn = document.querySelector('.logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.innerHTML = originalText;
+                    logoutBtn.classList.remove('loading');
+                }
+            }
+        }
+
+        // 🆕 SISTEMA DE NOTIFICAÇÕES
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${getNotificationIcon(type)}"></i>
+                ${message}
+            `;
+            
+            document.getElementById('notification-container').appendChild(notification);
+            
+            // Mostrar notificação
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // Remover após duração
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        function getNotificationIcon(type) {
+            const icons = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
+
+        // 🆕 TRATAMENTO DE ERRO ROBUSTO
+        function handleApiError(error, context) {
+            console.error(`❌ Erro em ${context}:`, error);
+            showNotification(`Erro em ${context}. Tente novamente.`, 'error');
+        }
+
+        // 🆕 SISTEMA DE TEMA
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.body.setAttribute('data-theme', newTheme);
+            saveToLocalStorage('theme', newTheme);
+            
+            const themeIcon = document.querySelector('.theme-toggle i');
+            themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
+        }
+
+        // 🆕 PERSISTÊNCIA LOCAL
+        function saveToLocalStorage(key, data) {
+            try {
+                localStorage.setItem(`casa-automacao-${key}`, JSON.stringify(data));
+            } catch (error) {
+                console.error('Erro ao salvar no localStorage:', error);
+            }
+        }
+
+        function loadFromLocalStorage(key) {
+            try {
+                const data = localStorage.getItem(`casa-automacao-${key}`);
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                console.error('Erro ao carregar do localStorage:', error);
+                return null;
+            }
+        }
+
+        // 🆕 VERIFICAÇÃO DE CONEXÃO
+        function checkConnection() {
+            const offlineIndicator = document.getElementById('offline-indicator');
+            if (!navigator.onLine) {
+                offlineIndicator.classList.add('show');
+                showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
+            } else {
+                offlineIndicator.classList.remove('show');
+            }
+        }
+
+        // 🆕 ATUALIZAÇÃO AUTOMÁTICA
+        function startAutoRefresh() {
+            // Atualizar a cada 30 segundos
+            setInterval(() => {
+                updateWeather();
+                updateSensorData();
+            }, 30000);
+            
+            // Atualizar a cada 5 segundos (dados críticos)
+            setInterval(() => {
+                updateDeviceStatus();
+            }, 5000);
+        }
+
+        // 🆕 VALIDAÇÃO DE CONFIGURAÇÕES DE IRRIGAÇÃO
+        function validateIrrigationSettings() {
+            const mode = document.getElementById('irrigation-mode-select').value;
+            const programmings = getSelectedProgrammings();
+            
+            if (mode === 'automatico' && programmings.length === 0) {
+                showNotification('Modo automático requer pelo menos uma programação!', 'warning');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 🆕 FUNÇÕES PARA O MODAL DE IRRIGAÇÃO MELHORADO
+        function showTimePicker() {
+            const timeInput = document.getElementById('irrigation-time');
+            timeInput.showPicker(); // Abre o seletor nativo de hora
+        }
+
+        function addProgramming() {
+            const timeInput = document.getElementById('irrigation-time');
+            const selectedTime = timeInput.value;
+            
+            if (!selectedTime) {
+                showNotification('Por favor, selecione um horário.', 'warning');
+                return;
+            }
+
+            // Coletar dias selecionados
+            const selectedDays = [];
+            const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
+            
+            if (dayCheckboxes.length === 0) {
+                showNotification('Por favor, selecione pelo menos um dia da semana.', 'warning');
+                return;
+            }
+
+            dayCheckboxes.forEach(checkbox => {
+                selectedDays.push(checkbox.value);
+            });
+
+            // Criar nova programação
+            const newProgramming = {
+                hora: selectedTime,
+                dias: selectedDays
+            };
+
+            // Adicionar à lista visual
+            addProgrammingToList(newProgramming);
+            
+            // Limpar seleção
+            timeInput.value = '08:00';
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+        }
+
+        function addProgrammingToList(programming) {
+            const programmingList = document.getElementById('programming-list');
+            
+            // Remover mensagem "nenhuma programação" se for a primeira
+            if (programmingList.querySelector('.no-programming')) {
+                programmingList.innerHTML = '';
+            }
+
+            const programmingElement = document.createElement('div');
+            programmingElement.className = 'programming-item';
+            programmingElement.innerHTML = `
+                <div class="programming-header">
+                    <span class="programming-time">${programming.hora}</span>
+                    <button class="delete-programming" onclick="removeProgramming(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="programming-days">
+                    ${getDaysBadges(programming.dias)}
+                </div>
+            `;
+            
+            programmingList.appendChild(programmingElement);
+        }
+
+        function getDaysBadges(days) {
+            const dayNames = {
+                'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+                'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
+            };
+            
+            return days.map(day => 
+                `<span class="day-badge active">${dayNames[day]}</span>`
+            ).join('');
+        }
+
+        function removeProgramming(button) {
+            const programmingItem = button.closest('.programming-item');
+            programmingItem.remove();
+            
+            const programmingList = document.getElementById('programming-list');
+            if (programmingList.children.length === 0) {
+                programmingList.innerHTML = `
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                `;
+            }
+        }
+
+        function getSelectedProgrammings() {
+            const programmingList = document.getElementById('programming-list');
+            const programmings = [];
+            
+            programmingList.querySelectorAll('.programming-item').forEach(item => {
+                const time = item.querySelector('.programming-time').textContent;
+                const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
+                    const dayText = badge.textContent.toLowerCase();
+                    const dayMap = {'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 'sex': 'sex', 'sab': 'sab', 'dom': 'dom'};
+                    return dayMap[dayText];
+                }).filter(day => day);
+                
+                programmings.push({
+                    hora: time,
+                    dias: days
+                });
+            });
+            
+            return programmings;
+        }
+
+        // 🆕 FUNÇÕES PARA METEOROLOGIA EXPANDIDA - CORRIGIDAS
+        async function updateWeather() {
+            try {
+                // Simular dados de clima (substitua por chamada real à API)
+                const mockWeatherData = {
+                    main: {
+                        temp: 28,
+                        feels_like: 30,
+                        humidity: 65,
+                        pressure: 1013
+                    },
+                    weather: [{
+                        main: 'Clouds',
+                        description: 'nublado'
+                    }],
+                    wind: {
+                        speed: 3.5
+                    },
+                    name: 'Rio de Janeiro'
+                };
+                
+                const data = mockWeatherData;
+                
+                // Temperatura principal
+                const mainTempElement = document.getElementById('weather-main-temp');
+                if (mainTempElement) {
+                    mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
+                }
+                
+                // Descrição principal
+                const mainDescElement = document.getElementById('weather-main-desc');
+                if (mainDescElement && data.weather && data.weather[0]) {
+                    mainDescElement.textContent = data.weather[0].description;
+                }
+                
+                // Ícone principal
+                const mainIconElement = document.getElementById('weather-main-icon');
+                if (mainIconElement && data.weather && data.weather[0]) {
+                    const weatherMain = data.weather[0].main.toLowerCase();
+                    mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+                }
+                
+                // Sensação térmica
+                const feelsLikeElement = document.getElementById('weather-feels-like');
+                if (feelsLikeElement) {
+                    feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
+                }
+                
+                // Umidade
+                const humidityElement = document.getElementById('weather-humidity');
+                if (humidityElement) {
+                    humidityElement.textContent = `${data.main.humidity}%`;
+                }
+                
+                // Vento
+                const windElement = document.getElementById('weather-wind');
+                if (windElement && data.wind) {
+                    windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+                }
+                
+                // Pressão
+                const pressureElement = document.getElementById('weather-pressure');
+                if (pressureElement) {
+                    pressureElement.textContent = `${data.main.pressure} hPa`;
+                }
+                
+                // Cidade
+                const cityElement = document.getElementById('weather-city');
+                if (cityElement && data.name) {
+                    cityElement.textContent = `${data.name}, BR`;
+                }
+                
+                // Horário de atualização
+                const timeElement = document.getElementById('weather-update-time');
+                if (timeElement) {
+                    const now = new Date();
+                    timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                }
+                
+                // 🆕 REMOVIDO: Notificação de atualização meteorológica
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar clima:', error);
+                showNotification('Erro ao carregar dados meteorológicos', 'error');
+            }
+        }
+
+        function getWeatherMainIcon(weatherMain) {
+            const icons = {
+                'clear': 'fa-sun',
+                'clouds': 'fa-cloud',
+                'rain': 'fa-cloud-rain',
+                'drizzle': 'fa-cloud-drizzle',
+                'thunderstorm': 'fa-bolt',
+                'snow': 'fa-snowflake',
+                'mist': 'fa-smog',
+                'fog': 'fa-smog'
+            };
+            
+            return icons[weatherMain] || 'fa-cloud';
+        }
+
+        function getWeatherAnimationClass(weatherMain) {
+            const animations = {
+                'clear': 'weather-icon-sun',
+                'clouds': 'weather-icon-cloud',
+                'rain': 'weather-icon-rain',
+                'drizzle': 'weather-icon-rain',
+                'thunderstorm': 'weather-icon-storm',
+                'snow': 'weather-icon-snow',
+                'mist': 'weather-icon-mist',
+                'fog': 'weather-icon-mist'
+            };
+            
+            return animations[weatherMain] || 'weather-icon-cloud';
+        }
+
+        // 🆕 FUNÇÃO FALTANTE: Atualização de dados do sistema
+        function startDataUpdates() {
+            console.log('📊 Iniciando atualizações automáticas de dados');
+            
+            // Atualizar dados dos sensores a cada 10 segundos
+            setInterval(() => {
+                updateSensorData();
+            }, 10000);
+            
+            // Atualizar status dos dispositivos a cada 5 segundos
+            setInterval(() => {
+                updateDeviceStatus();
+            }, 5000);
+            
+            // Atualizar clima a cada 15 minutos
+            setInterval(() => {
+                updateWeather();
+            }, 15 * 60 * 1000);
+        }
+
+        // 🆕 MELHORIA: Função para atualizar status dos dispositivos
+        function updateDeviceStatus() {
+            try {
+                // Simular verificação de status dos dispositivos
+                const devices = document.querySelectorAll('.device-compact-item');
+                devices.forEach(device => {
+                    const checkbox = device.querySelector('input[type="checkbox"]');
+                    const isActive = checkbox.checked;
+                    
+                    // Atualizar visual do dispositivo
+                    if (isActive) {
+                        device.classList.add('active');
+                    } else {
+                        device.classList.remove('active');
+                    }
+                    
+                    // Atualizar ícones das lâmpadas
+                    if (device.querySelector('img')) {
+                        const iconImg = device.querySelector('img');
+                        if (isActive) {
+                            iconImg.src = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
+                            iconImg.className = 'lamp-icon-on';
+                        } else {
+                            iconImg.src = 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000';
+                            iconImg.className = 'lamp-icon-off';
+                        }
+                    }
+                });
+                
+                // Atualizar status do ESP32 (simulação)
+                const esp32Status = document.getElementById('esp32-status');
+                if (esp32Status) {
+                    // Simular status online (90% do tempo)
+                    const isOnline = Math.random() > 0.1;
+                    esp32Status.className = `esp32-indicator ${isOnline ? 'online' : 'offline'}`;
+                    esp32Status.innerHTML = `<i class="fas fa-microchip"></i><span>ESP32 ${isOnline ? 'Online' : 'Offline'}</span>`;
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar status dos dispositivos:', error);
+            }
+        }
+
+        // 🆕 MELHORIA: Função para simular dados de sensores mais realistas
+        function updateSensorData() {
+            try {
+                // Simular dados realistas dos sensores
+                const now = new Date();
+                const hour = now.getHours();
+                
+                // Temperatura varia conforme a hora do dia
+                let baseTemp = 22;
+                if (hour >= 12 && hour <= 16) baseTemp = 28; // Mais quente à tarde
+                if (hour >= 22 || hour <= 6) baseTemp = 20;  // Mais frio à noite
+                
+                const temperature = baseTemp + (Math.random() * 4 - 2); // Variação de ±2°C
+                document.getElementById('sensor-temperature').textContent = `${Math.round(temperature)}°C`;
+                
+                // Umidade varia inversamente à temperatura
+                const humidity = 60 + (25 - (temperature - 20)) + (Math.random() * 10 - 5);
+                document.getElementById('sensor-humidity').textContent = `${Math.max(30, Math.min(90, Math.round(humidity)))}%`;
+                
+                // Nível de gás (normalmente baixo, com pequena chance de pico)
+                let gasLevel = Math.random() * 30;
+                if (Math.random() < 0.05) gasLevel = 50 + Math.random() * 50; // 5% de chance de pico
+                document.getElementById('sensor-gas').textContent = Math.round(gasLevel);
+                
+                // Status de alerta baseado no nível de gás
+                const alertElement = document.getElementById('sensor-alert');
+                if (gasLevel > 80) {
+                    alertElement.textContent = 'ALERTA!';
+                    alertElement.style.color = '#ff4444';
+                    alertElement.style.fontWeight = 'bold';
+                    
+                    // Notificação de emergência
+                    if (Math.random() < 0.3) { // 30% de chance de notificar
+                        showNotification('⚠️ ALERTA: Nível de gás elevado detectado!', 'error', 10000);
+                    }
+                } else if (gasLevel > 50) {
+                    alertElement.textContent = 'ATENÇÃO';
+                    alertElement.style.color = '#ff8800';
+                    alertElement.style.fontWeight = 'bold';
+                } else {
+                    alertElement.textContent = 'NORMAL';
+                    alertElement.style.color = '#4CAF50';
+                    alertElement.style.fontWeight = 'normal';
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar dados dos sensores:', error);
+            }
+        }
+
+        // 🆕 CORREÇÃO: Função para dispositivos - corrigida para manter estado
+        function loadDevices() {
+            // Carregar lâmpadas
+            const lightsContainer = document.getElementById('lights-container');
+            const lights = [
+                { id: 'lamp-sala', name: 'Sala', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
+                { id: 'lamp-quarto', name: 'Quarto', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' },
+                { id: 'lamp-cozinha', name: 'Cozinha', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
+                { id: 'lamp-banheiro', name: 'Banheiro', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' },
+                { id: 'lamp-varanda', name: 'Varanda', state: true, icon: 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' },
+                { id: 'lamp-garagem', name: 'Garagem', state: false, icon: 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000' }
+            ];
+
+            lights.forEach(light => {
+                const lightElement = document.createElement('div');
+                lightElement.className = `device-compact-item ${light.state ? 'active' : ''}`;
+                lightElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <img src="${light.icon}" alt="${light.name}" class="${light.state ? 'lamp-icon-on' : 'lamp-icon-off'}">
+                    </div>
+                    <div class="device-compact-name">${light.name}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${light.state ? 'checked' : ''} onchange="toggleDevice('${light.id}', this.checked, this)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                lightsContainer.appendChild(lightElement);
+            });
+
+            // Carregar tomadas
+            const outletsContainer = document.getElementById('outlets-container');
+            const outlets = [
+                { id: 'outlet-sala', name: 'Sala TV', state: true },
+                { id: 'outlet-cozinha', name: 'Cozinha', state: false },
+                { id: 'outlet-quarto', name: 'Quarto', state: true },
+                { id: 'outlet-escritorio', name: 'Escritório', state: false },
+                { id: 'outlet-varanda', name: 'Varanda', state: true },
+                { id: 'outlet-garagem', name: 'Garagem', state: false }
+            ];
+
+            outlets.forEach(outlet => {
+                const outletElement = document.createElement('div');
+                outletElement.className = `device-compact-item ${outlet.state ? 'active' : ''}`;
+                outletElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="color: ${outlet.state ? '#4CAF50' : '#666'}"></i>
+                    </div>
+                    <div class="device-compact-name">${outlet.name}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${outlet.state ? 'checked' : ''} onchange="toggleDevice('${outlet.id}', this.checked, this)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                outletsContainer.appendChild(outletElement);
+            });
+        }
+
+        // 🆕 CORREÇÃO: Função toggleDevice corrigida para manter estado visual
+        function toggleDevice(deviceId, state, checkboxElement) {
+            console.log(`Dispositivo ${deviceId} ${state ? 'ligado' : 'desligado'}`);
+            showNotification(`Dispositivo ${state ? 'ligado' : 'desligado'}`, 'success');
+            
+            // Atualizar visual do dispositivo
+            const deviceElement = checkboxElement.closest('.device-compact-item');
+            if (state) {
+                deviceElement.classList.add('active');
+            } else {
+                deviceElement.classList.remove('active');
+            }
+            
+            // Atualizar ícone da lâmpada se for o caso
+            if (deviceId.includes('lamp-')) {
+                const iconImg = deviceElement.querySelector('img');
+                if (iconImg) {
+                    if (state) {
+                        iconImg.src = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
+                        iconImg.className = 'lamp-icon-on';
+                    } else {
+                        iconImg.src = 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000';
+                        iconImg.className = 'lamp-icon-off';
+                    }
+                }
+            }
+            
+            // Atualizar ícone da tomada se for o caso
+            if (deviceId.includes('outlet-')) {
+                const iconElement = deviceElement.querySelector('.fa-plug');
+                if (iconElement) {
+                    iconElement.style.color = state ? '#4CAF50' : '#666';
+                }
+            }
+            
+            // 🆕 SALVAR ESTADO NO LOCALSTORAGE
+            saveDeviceState(deviceId, state);
+        }
+
+        // 🆕 FUNÇÃO PARA SALVAR ESTADO DOS DISPOSITIVOS
+        function saveDeviceState(deviceId, state) {
+            const deviceStates = loadFromLocalStorage('deviceStates') || {};
+            deviceStates[deviceId] = state;
+            saveToLocalStorage('deviceStates', deviceStates);
+        }
+
+        // 🆕 FUNÇÃO PARA CARREGAR ESTADO DOS DISPOSITIVOS
+        function loadDeviceStates() {
+            const deviceStates = loadFromLocalStorage('deviceStates') || {};
+            return deviceStates;
+        }
+
+        function controlAllLights(state) {
+            const lights = document.querySelectorAll('#lights-container input[type="checkbox"]');
+            lights.forEach(light => {
+                light.checked = state;
+                const deviceId = light.getAttribute('onchange').match(/'([^']+)'/)[1];
+                toggleDevice(deviceId, state, light);
+            });
+            showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        }
+
+        function controlAllOutlets(state) {
+            const outlets = document.querySelectorAll('#outlets-container input[type="checkbox"]');
+            outlets.forEach(outlet => {
+                outlet.checked = state;
+                const deviceId = outlet.getAttribute('onchange').match(/'([^']+)'/)[1];
+                toggleDevice(deviceId, state, outlet);
+            });
+            showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        }
+
+        // 🆕 CORREÇÃO: Função controlIrrigation com ícone grande
+        function controlIrrigation(state) {
+            console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
+            const statusElement = document.getElementById('irrigation-status');
+            const largeIcon = document.getElementById('irrigation-large-icon');
+            
+            statusElement.textContent = state ? 'LIGADA' : 'DESLIGADA';
+            statusElement.className = state ? 'status-on' : 'status-off';
+            
+            // Atualizar ícone grande
+            if (state) {
+                largeIcon.src = 'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000';
+            } else {
+                largeIcon.src = 'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+            }
+            
+            showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
+            
+            // Salvar estado da irrigação
+            saveToLocalStorage('irrigationState', state);
+        }
+
+        function openIrrigationModal() {
+            document.getElementById('irrigation-modal').style.display = 'flex';
+        }
+
+        function closeIrrigationModal() {
+            document.getElementById('irrigation-modal').style.display = 'none';
+        }
+
+        function checkWeather() {
+            console.log('Verificando clima...');
+            showNotification('Verificando condições climáticas...', 'info');
+            updateWeather();
+        }
+
+        function saveIrrigationSettings() {
+            if (!validateIrrigationSettings()) return;
+            
+            console.log('Configurações de irrigação salvas');
+            const mode = document.getElementById('irrigation-mode-select').value;
+            const avoidRain = document.getElementById('avoid-rain-checkbox').checked;
+            const programmings = getSelectedProgrammings();
+            
+            document.getElementById('irrigation-mode').textContent = mode === 'automatico' ? 'Automático' : 'Manual';
+            document.getElementById('rain-avoidance').textContent = avoidRain ? 'Ativado' : 'Desativado';
+            
+            showNotification('Configurações de irrigação salvas com sucesso!', 'success');
+            closeIrrigationModal();
+        }
+
+        function checkSystemAuth() {
+            console.log('Sistema autenticado');
+        }
+
+        // Inicialização do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            
+            // Carregar tema salvo
+            const savedTheme = loadFromLocalStorage('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            const themeIcon = document.querySelector('.theme-toggle i');
+            themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Configurar eventos
+            window.addEventListener('online', checkConnection);
+            window.addEventListener('offline', checkConnection);
+            checkConnection();
+            
+            // Fechar modal clicando fora
+            const modal = document.getElementById('irrigation-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeIrrigationModal();
+                    }
+                });
+            }
+            
+            // Inicializar sistemas
+            loadDevices();
+            
+            // 🆕 CARREGAR ESTADOS SALVOS DOS DISPOSITIVOS
+            const deviceStates = loadDeviceStates();
+            Object.keys(deviceStates).forEach(deviceId => {
+                const checkbox = document.querySelector(`[onchange*="${deviceId}"]`);
+                if (checkbox) {
+                    checkbox.checked = deviceStates[deviceId];
+                    toggleDevice(deviceId, deviceStates[deviceId], checkbox);
+                }
+            });
+            
+            // 🆕 CARREGAR ESTADO DA IRRIGAÇÃO
+            const irrigationState = loadFromLocalStorage('irrigationState') || false;
+            if (irrigationState) {
+                controlIrrigation(irrigationState);
+            }
+            
+            startDataUpdates();
+            startAutoRefresh();
+            checkSystemAuth();
+            updateWeather(); // 🆕 Carregar clima inicial
+            updateSensorData(); // Carregar dados dos sensores
+            
+            showNotification('Sistema inicializado com sucesso!', 'success', 3000);
+        });
+
+        // 🆕 Exportar funções para o script principal
+        window.showTimePicker = showTimePicker;
+        window.addProgramming = addProgramming;
+        window.removeProgramming = removeProgramming;
+        window.getSelectedProgrammings = getSelectedProgrammings;
+        window.updateWeather = updateWeather;
+        window.showNotification = showNotification;
+        window.handleApiError = handleApiError;
+        window.validateIrrigationSettings = validateIrrigationSettings;
+        window.toggleDevice = toggleDevice;
+        window.controlAllLights = controlAllLights;
+        window.controlAllOutlets = controlAllOutlets;
+        window.controlIrrigation = controlIrrigation;
+        window.openIrrigationModal = openIrrigationModal;
+        window.closeIrrigationModal = closeIrrigationModal;
+        window.checkWeather = checkWeather;
+        window.saveIrrigationSettings = saveIrrigationSettings;
+    </script>
+</body>
+</html>
