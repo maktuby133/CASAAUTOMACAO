@@ -3,264 +3,570 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Casa Automação</title>
+    <title>🔐 Login - Casa Automação</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
         }
-        
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --border-radius: 15px;
+            --shadow: 0 8px 20px rgba(0,0,0,0.15);
+            --transition: all 0.3s ease;
+        }
+
         body {
+            font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
-        
+
         .login-container {
-            background: white;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
             padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: var(--shadow);
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
-        
-        h1 {
-            color: #333;
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .logo {
             margin-bottom: 30px;
-            font-size: 1.8em;
         }
-        
-        .input-group {
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo-icon i {
+            font-size: 2.5em;
+            color: white;
+        }
+
+        .logo h1 {
+            color: var(--text-primary);
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: var(--text-secondary);
+            font-size: 1em;
+        }
+
+        .form-group {
             margin-bottom: 20px;
             text-align: left;
         }
-        
-        label {
+
+        .form-group label {
             display: block;
-            margin-bottom: 5px;
-            color: #555;
+            margin-bottom: 8px;
+            color: var(--text-primary);
             font-weight: 500;
+            font-size: 0.9em;
         }
-        
-        input {
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        .input-with-icon input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 12px 15px 12px 45px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: var(--transition);
+            background: #f8f9fa;
         }
-        
-        input:focus {
+
+        .input-with-icon input:focus {
             outline: none;
             border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
-        button {
+
+        .input-with-icon input.error {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-primary);
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        .remember-me input {
+            width: 16px;
+            height: 16px;
+        }
+
+        .forgot-password {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .forgot-password:hover {
+            color: #5a6fd8;
+            text-decoration: underline;
+        }
+
+        .login-btn {
             width: 100%;
-            padding: 12px;
-            background: #667eea;
+            padding: 14px;
+            background: var(--primary-gradient);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
-            position: relative;
-            height: 48px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
-        
-        button:hover {
-            background: #5a6fd8;
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
-        
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+
+        .login-btn:active {
+            transform: translateY(0);
         }
-        
-        .error {
-            color: #e74c3c;
-            margin-top: 15px;
-            padding: 10px;
-            background: #ffeaea;
-            border-radius: 5px;
-            display: none;
+
+        .login-btn.loading {
+            opacity: 0.8;
+            pointer-events: none;
         }
-        
-        .logo {
-            font-size: 3em;
-            margin-bottom: 20px;
-        }
-        
+
         .loading-spinner {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 2px solid #ffffff;
+            border: 2px solid #f3f3f3;
             border-top: 2px solid transparent;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-right: 8px;
         }
-        
+
+        .system-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .system-info h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .system-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .system-info li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .system-info li i {
+            color: #4CAF50;
+            font-size: 0.8em;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-gradient);
+        }
+
+        .notification.error {
+            background: var(--danger-gradient);
+        }
+
+        .notification.warning {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
-        
-        .success {
-            color: #27ae60;
-            margin-top: 15px;
-            padding: 10px;
-            background: #eafaf1;
-            border-radius: 5px;
-            display: none;
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            
+            .logo h1 {
+                font-size: 1.8em;
+            }
+            
+            .remember-forgot {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="notification-container"></div>
+
     <div class="login-container">
-        <div class="logo">🏠</div>
-        <h1>Casa Automação V3.0</h1>
-        
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <h1>Casa Automação</h1>
+            <p>V3.0 - Sistema Inteligente</p>
+        </div>
+
         <form id="loginForm">
-            <div class="input-group">
-                <label for="username">Usuário:</label>
-                <input type="text" id="username" placeholder="Digite seu usuário" required>
+            <div class="form-group">
+                <label for="username"><i class="fas fa-user"></i> Usuário</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required>
+                </div>
             </div>
-            
-            <div class="input-group">
-                <label for="password">Senha:</label>
-                <input type="password" id="password" placeholder="Digite sua senha" required>
+
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Senha</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
+                    <button type="button" class="toggle-password" id="togglePassword">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
-            
-            <button type="submit" id="loginBtn">
-                <span id="btnText">Entrar no Sistema</span>
-                <span id="btnLoading" style="display: none;">
-                    <i class="loading-spinner"></i>
-                    Autenticando...
-                </span>
+
+            <div class="remember-forgot">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    Lembrar-me
+                </label>
+                <a href="#" class="forgot-password">Esqueceu a senha?</a>
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                Entrar no Sistema
             </button>
         </form>
-        
-        <div id="errorMessage" class="error"></div>
-        <div id="successMessage" class="success"></div>
+
+        <div class="system-info">
+            <h3><i class="fas fa-info-circle"></i> Sistema de Automação</h3>
+            <ul>
+                <li><i class="fas fa-check"></i> Controle de iluminação inteligente</li>
+                <li><i class="fas fa-check"></i> Monitoramento de sensores em tempo real</li>
+                <li><i class="fas fa-check"></i> Sistema de irrigação automática</li>
+                <li><i class="fas fa-check"></i> Alertas de segurança</li>
+                <li><i class="fas fa-check"></i> Interface responsiva</li>
+            </ul>
+        </div>
     </div>
 
     <script>
-        // Sistema de autenticação local - SEM loop de redirecionamento
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Elementos do DOM
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+        const loginBtn = document.getElementById('loginBtn');
+
+        // Credenciais válidas (em produção, isso viria de um servidor)
+        const validCredentials = [
+            { username: 'admin', password: 'admin123' },
+            { username: 'usuario', password: 'user123' },
+            { username: 'charles', password: '061084Cc@' },
+            { username: 'casa', password: 'automacao2024' }
+        ];
+
+        // Mostrar/ocultar senha
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+
+        // Carregar credenciais salvas
+        function loadSavedCredentials() {
+            const savedUsername = localStorage.getItem('casa-automacao-username');
+            const savedPassword = localStorage.getItem('casa-automacao-password');
+            const rememberMe = localStorage.getItem('casa-automacao-remember') === 'true';
+
+            if (rememberMe && savedUsername && savedPassword) {
+                usernameInput.value = savedUsername;
+                passwordInput.value = savedPassword;
+                rememberMeCheckbox.checked = true;
+            }
+        }
+
+        // Salvar credenciais
+        function saveCredentials(username, password, remember) {
+            if (remember) {
+                localStorage.setItem('casa-automacao-username', username);
+                localStorage.setItem('casa-automacao-password', password);
+                localStorage.setItem('casa-automacao-remember', 'true');
+            } else {
+                localStorage.removeItem('casa-automacao-username');
+                localStorage.removeItem('casa-automacao-password');
+                localStorage.removeItem('casa-automacao-remember');
+            }
+        }
+
+        // Sistema de notificações
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${getNotificationIcon(type)}"></i>
+                ${message}
+            `;
             
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
-            const successMessage = document.getElementById('successMessage');
-            const loginBtn = document.getElementById('loginBtn');
-            const btnText = document.getElementById('btnText');
-            const btnLoading = document.getElementById('btnLoading');
+            document.getElementById('notification-container').appendChild(notification);
             
-            // Limpar mensagens anteriores
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-            errorMessage.textContent = '';
-            successMessage.textContent = '';
+            setTimeout(() => notification.classList.add('show'), 100);
             
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        function getNotificationIcon(type) {
+            const icons = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
+
+        // Validação de login
+        function validateLogin(username, password) {
+            return validCredentials.some(cred => 
+                cred.username === username && cred.password === password
+            );
+        }
+
+        // Processar login
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const rememberMe = rememberMeCheckbox.checked;
+
+            // Validações básicas
+            if (!username) {
+                showNotification('Por favor, digite o usuário', 'warning');
+                usernameInput.focus();
+                return;
+            }
+
+            if (!password) {
+                showNotification('Por favor, digite a senha', 'warning');
+                passwordInput.focus();
+                return;
+            }
+
             // Mostrar loading
-            btnText.style.display = 'none';
-            btnLoading.style.display = 'inline';
-            loginBtn.disabled = true;
-            
-            try {
-                // Simular delay de autenticação
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                // Credenciais padrão - substitua por verificação real
-                const validCredentials = [
-                    { username: 'admin', password: 'admin123' },
-                    { username: 'usuario', password: 'senha123' },
-                    { username: 'teste', password: 'teste123' }
-                ];
-                
-                const isValid = validCredentials.some(cred => 
-                    cred.username === username && cred.password === password
-                );
-                
-                if (isValid) {
-                    console.log('✅ Login bem-sucedido!');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Autenticando...';
+            loginBtn.classList.add('loading');
+
+            // Simular autenticação (em produção seria uma requisição AJAX)
+            setTimeout(() => {
+                if (validateLogin(username, password)) {
+                    // Salvar credenciais se solicitado
+                    saveCredentials(username, password, rememberMe);
                     
-                    // Salvar dados de autenticação
+                    // Salvar sessão
                     localStorage.setItem('casa-automacao-authenticated', 'true');
                     localStorage.setItem('casa-automacao-user', JSON.stringify({
                         username: username,
                         loginTime: new Date().toISOString()
                     }));
+
+                    showNotification('Login realizado com sucesso!', 'success');
                     
-                    // NÃO salvar credenciais no localStorage por segurança
-                    localStorage.removeItem('casa-automacao-login-data');
-                    
-                    successMessage.textContent = 'Login realizado com sucesso! Redirecionando...';
-                    successMessage.style.display = 'block';
-                    
-                    // Redirecionar após breve delay
+                    // Redirecionar para o dashboard
                     setTimeout(() => {
-                        window.location.href = '/index.html';
-                    }, 1000);
+                        window.location.href = 'index.html';
+                    }, 1500);
                     
                 } else {
-                    throw new Error('Usuário ou senha incorretos');
+                    showNotification('Usuário ou senha incorretos', 'error');
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.classList.remove('loading');
+                    
+                    // Efeito de shake no formulário
+                    loginForm.style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        loginForm.style.animation = '';
+                    }, 500);
                 }
-                
-            } catch (error) {
-                console.error('❌ Erro no login:', error);
-                errorMessage.textContent = error.message || 'Erro de autenticação';
-                errorMessage.style.display = 'block';
-                
-                // Focar no campo de senha para nova tentativa
-                document.getElementById('password').focus();
-                document.getElementById('password').select();
-            } finally {
-                // Restaurar botão
-                btnText.style.display = 'inline';
-                btnLoading.style.display = 'none';
-                loginBtn.disabled = false;
+            }, 2000);
+        }
+
+        // Event Listeners
+        loginForm.addEventListener('submit', handleLogin);
+
+        // Carregar credenciais salvas ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedCredentials();
+            
+            // Verificar se já está autenticado
+            const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
+            if (isAuthenticated) {
+                showNotification('Você já está autenticado. Redirecionando...', 'info');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
             }
+
+            // Adicionar estilo de shake
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            console.log('🔐 Sistema de login inicializado');
+            console.log('💡 Dicas de login:');
+            console.log('   - admin / admin123');
+            console.log('   - usuario / user123');
+            console.log('   - charles / 061084Cc@');
+            console.log('   - casa / automacao2024');
         });
 
-        // Preencher com dados de teste em ambiente de desenvolvimento
-        document.addEventListener('DOMContentLoaded', function() {
-            // Apenas preencher automaticamente se estiver em localhost
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                document.getElementById('username').value = 'admin';
-                document.getElementById('password').value = 'admin123';
-            }
-            
-            // Focar no campo apropriado
-            const username = document.getElementById('username').value;
-            if (username) {
-                document.getElementById('password').focus();
-                document.getElementById('password').select();
-            } else {
-                document.getElementById('username').focus();
-            }
-            
-            // Verificar se veio do logout
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('logout') === 'success') {
-                successMessage.textContent = 'Logout realizado com sucesso!';
-                successMessage.style.display = 'block';
-            }
-        });
+        // Prevenir acesso direto sem login
+        if (window.location.pathname.endsWith('index.html') && !localStorage.getItem('casa-automacao-authenticated')) {
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 </html>
