@@ -132,7 +132,8 @@ function updateLightsDisplay() {
         deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
         deviceElement.innerHTML = `
             <div class="device-compact-icon">
-                <i class="fas fa-lightbulb ${state ? 'text-warning' : 'text-muted'}"></i>
+                <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
+                     alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
             </div>
             <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
             <label class="switch">
@@ -155,7 +156,7 @@ function updateOutletsDisplay() {
         deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
         deviceElement.innerHTML = `
             <div class="device-compact-icon">
-                <i class="fas fa-plug ${state ? 'text-success' : 'text-muted'}"></i>
+                <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
             </div>
             <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
             <label class="switch">
@@ -172,6 +173,7 @@ function updateIrrigationDisplay() {
     const statusElement = document.getElementById('irrigation-status');
     const modeElement = document.getElementById('irrigation-mode');
     const rainElement = document.getElementById('rain-avoidance');
+    const largeIcon = document.getElementById('irrigation-large-icon');
     
     if (statusElement) {
         statusElement.textContent = irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA';
@@ -184,6 +186,12 @@ function updateIrrigationDisplay() {
     
     if (rainElement) {
         rainElement.textContent = irrigation.evitar_chuva ? 'Ativado' : 'Desativado';
+    }
+
+    if (largeIcon) {
+        largeIcon.src = irrigation.bomba_irrigacao ? 
+            'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000' : 
+            'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
     }
 }
 
@@ -310,19 +318,23 @@ function startDataUpdates() {
     // Atualizar dados a cada 5 segundos
     setInterval(async () => {
         await loadDevices();
-        await updateWeather();
-        await updateESP32Status();
+        await updateSensorData();
     }, 5000);
+    
+    // Atualizar clima a cada 15 minutos
+    setInterval(() => {
+        updateWeather();
+    }, 15 * 60 * 1000);
     
     // Carregar inicialmente
     loadDevices();
     updateWeather();
-    updateESP32Status();
+    updateSensorData();
 }
 
 async function updateSensorData() {
     try {
-        const response = await fetch('/api/data');
+        const response = await fetch('/api/sensor-data');
         const data = await response.json();
         
         if (data.data && data.data.length > 0) {
@@ -379,6 +391,18 @@ async function updateSensorData() {
                 } else if (isAlert) {
                     showNotification('⚠️ Alerta: Nível de gás elevado', 'warning');
                 }
+            }
+        }
+
+        // Atualizar status ESP32
+        const esp32StatusElement = document.getElementById('esp32-header-status');
+        if (esp32StatusElement) {
+            if (data.esp32.connected) {
+                esp32StatusElement.className = 'esp32-header-status online';
+                esp32StatusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Online</span>';
+            } else {
+                esp32StatusElement.className = 'esp32-header-status offline';
+                esp32StatusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Offline</span>';
             }
         }
     } catch (error) {
@@ -492,23 +516,19 @@ function getWeatherAnimationClass(weatherMain) {
     return animations[weatherMain] || 'weather-icon-cloud';
 }
 
-async function updateESP32Status() {
+async function checkWeather() {
     try {
-        const response = await fetch('/api/esp32-status');
+        const response = await fetch('/api/weather/raining');
         const data = await response.json();
         
-        const statusElement = document.getElementById('esp32-status');
-        if (statusElement) {
-            if (data.connected) {
-                statusElement.className = 'esp32-indicator online';
-                statusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Online</span>';
-            } else {
-                statusElement.className = 'esp32-indicator offline';
-                statusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Offline</span>';
-            }
+        if (data.raining) {
+            showNotification('⚠️ Está chovendo! A irrigação automática está bloqueada.', 'warning');
+        } else {
+            showNotification('☀️ Tempo seco - Irrigação automática permitida.', 'success');
         }
     } catch (error) {
-        console.error('❌ Erro ao atualizar status ESP32:', error);
+        console.error('❌ Erro ao verificar clima:', error);
+        showNotification('Erro ao verificar condições climáticas', 'error');
     }
 }
 
@@ -541,6 +561,12 @@ function loadIrrigationSettings() {
     const rainCheckbox = document.getElementById('avoid-rain-checkbox');
     if (rainCheckbox) {
         rainCheckbox.checked = irrigation.evitar_chuva !== false;
+    }
+    
+    // Duração
+    const durationInput = document.getElementById('irrigation-duration');
+    if (durationInput) {
+        durationInput.value = irrigation.duracao || 5;
     }
     
     // 🆕 Limpar e carregar programações
@@ -692,10 +718,12 @@ async function saveIrrigationSettings() {
     try {
         const modeSelect = document.getElementById('irrigation-mode-select');
         const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+        const durationInput = document.getElementById('irrigation-duration');
         
         const settings = {
             modo: modeSelect?.value || 'manual',
             evitar_chuva: rainCheckbox?.checked !== false,
+            duracao: parseInt(durationInput?.value) || 5,
             programacoes: getSelectedProgrammings()
         };
         
@@ -721,22 +749,6 @@ async function saveIrrigationSettings() {
     } catch (error) {
         console.error('❌ Erro ao salvar configurações:', error);
         showNotification('Erro de conexão ao salvar configurações', 'error');
-    }
-}
-
-async function checkWeather() {
-    try {
-        const response = await fetch('/api/weather/raining');
-        const data = await response.json();
-        
-        if (data.raining) {
-            showNotification('⚠️ Está chovendo! A irrigação automática está bloqueada.', 'warning');
-        } else {
-            showNotification('☀️ Tempo seco - Irrigação automática permitida.', 'success');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao verificar clima:', error);
-        showNotification('Erro ao verificar condições climáticas', 'error');
     }
 }
 
@@ -821,7 +833,7 @@ if (!document.querySelector('#notification-styles')) {
 // Prevenir fechamento acidental
 window.addEventListener('beforeunload', function (e) {
     // Opcional: Confirmar saída se houver operações pendentes
-    // const confirmationMessage = 'Tem certeza que deseja sair?';
+    // const confirmationMessage = 'Tem certeza que deseja saír?';
     // e.returnValue = confirmationMessage;
     // return confirmationMessage;
 });
