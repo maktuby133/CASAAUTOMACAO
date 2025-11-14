@@ -52,7 +52,11 @@ function loadState() {
             tomada_quarto2: false, tomada_quarto3: false
         },
         irrigation: {
-            bomba_irrigacao: false, modo: 'manual', programacoes: [], evitar_chuva: true
+            bomba_irrigacao: false, 
+            modo: 'manual', 
+            programacoes: [], 
+            evitar_chuva: true,
+            duracao: 5
         },
         sensorData: []
     };
@@ -73,7 +77,7 @@ function updateESP32Status(device, ip) {
         connected: true,
         lastSeen: new Date(),
         lastHeartbeat: new Date(),
-        deviceId: device || 'ESP32-AUTOMACAO-V3',
+        deviceId: device || 'ESP32-CASA-AUTOMACAO-V3',
         ipAddress: ip || 'Desconhecido'
     };
 }
@@ -275,10 +279,10 @@ app.get('/api/weather/raining', async (req, res) => {
 
 // 🚨 CORREÇÃO: ESP32 envia dados - SEM AUTENTICAÇÃO
 app.post('/api/data', (req, res) => {
-    const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi } = req.body;
+    const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
 
     console.log('📨 Dados recebidos do ESP32:', {
-        temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi
+        temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto
     });
 
     if (typeof temperature === 'undefined' || typeof gas_level === 'undefined') {
@@ -298,6 +302,11 @@ app.post('/api/data', (req, res) => {
         devicesState.sensorData = devicesState.sensorData.slice(0, 100);
     }
 
+    // Atualizar modo automático da irrigação se recebido
+    if (typeof irrigation_auto !== 'undefined') {
+        devicesState.irrigation.modo = irrigation_auto ? 'automatico' : 'manual';
+    }
+
     saveState(devicesState);
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status(device, clientIP);
@@ -314,7 +323,7 @@ app.post('/api/data', (req, res) => {
 // 🚨 CORREÇÃO: ESP32 busca comandos - SEM AUTENTICAÇÃO
 app.get('/api/commands', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
-    updateESP32Status('ESP32-AUTOMACAO-V3', clientIP);
+    updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
     
     console.log('📥 ESP32 solicitando comandos');
     
@@ -324,7 +333,7 @@ app.get('/api/commands', (req, res) => {
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
-            duracao: 5
+            duracao: devicesState.irrigation.duracao || 5
         }
     });
 });
@@ -342,6 +351,7 @@ app.post('/api/confirm', (req, res) => {
     }
     if (req.body.irrigation) {
         devicesState.irrigation.bomba_irrigacao = req.body.irrigation.bomba_irrigacao || false;
+        devicesState.irrigation.modo = req.body.irrigation.modo_automatico ? 'automatico' : 'manual';
     }
     
     saveState(devicesState);
@@ -356,7 +366,7 @@ app.post('/api/confirm', (req, res) => {
 // 🚨 CORREÇÃO: ESP32 busca dispositivos - SEM AUTENTICAÇÃO
 app.get('/api/devices', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
-    updateESP32Status('ESP32-AUTOMACAO-V3', clientIP);
+    updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
     
     console.log('📡 ESP32 solicitando estados dos dispositivos');
     
@@ -366,7 +376,8 @@ app.get('/api/devices', (req, res) => {
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo: devicesState.irrigation.modo,
-            evitar_chuva: devicesState.irrigation.evitar_chuva
+            evitar_chuva: devicesState.irrigation.evitar_chuva,
+            duracao: devicesState.irrigation.duracao || 5
         }
     });
 });
@@ -453,12 +464,13 @@ app.get('/api/irrigation', (req, res) => {
 });
 
 app.post('/api/irrigation/save', (req, res) => {
-    const { modo, programacoes, evitar_chuva } = req.body;
+    const { modo, programacoes, evitar_chuva, duracao } = req.body;
     devicesState.irrigation.modo = modo;
     devicesState.irrigation.programacoes = programacoes || [];
     devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
+    devicesState.irrigation.duracao = duracao || 5;
     saveState(devicesState);
-    console.log('💧 Configurações salvas');
+    console.log('💧 Configurações salvas:', { modo, programacoes, evitar_chuva, duracao });
     res.json({ status: 'OK', message: 'Configurações salvas' });
 });
 
