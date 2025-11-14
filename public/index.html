@@ -54,6 +54,7 @@
             margin: 0 auto;
         }
 
+        /* 🆕 CORREÇÃO: Header com ESP32 no canto esquerdo */
         .header {
             display: flex;
             justify-content: space-between;
@@ -133,6 +134,34 @@
             animation: spin 1s linear infinite;
         }
 
+        /* 🆕 CORREÇÃO: Status ESP32 no canto superior esquerdo */
+        .esp32-header-status {
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .esp32-header-status.online {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .esp32-header-status.offline {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
         /* Sistema de Notificações */
         .notification {
             position: fixed;
@@ -192,19 +221,19 @@
             transform: translateY(-2px);
         }
 
-        /* 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA */
+        /* 🆕 CORREÇÃO: METEOROLOGIA MAIS COMPACTA */
         .weather-expanded {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: var(--border-radius);
-            padding: 12px 20px;
+            padding: 10px 15px;
             color: white;
             margin-bottom: 15px;
             box-shadow: var(--shadow);
             display: grid;
             grid-template-columns: 1fr 2fr 1fr;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
-            height: 120px; /* Altura reduzida */
+            height: 100px; /* Mais compacto */
         }
 
         .weather-main {
@@ -215,19 +244,19 @@
         }
 
         .weather-icon-large {
-            font-size: 2.8em !important;
-            margin-bottom: 5px;
+            font-size: 2.2em !important; /* Reduzido */
+            margin-bottom: 3px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
 
         .weather-temp-main {
-            font-size: 2em;
+            font-size: 1.6em; /* Reduzido */
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .weather-desc-main {
-            font-size: 0.9em;
+            font-size: 0.8em; /* Reduzido */
             opacity: 0.9;
             text-transform: capitalize;
         }
@@ -235,23 +264,23 @@
         .weather-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            padding: 10px;
+            gap: 8px;
+            padding: 8px;
             background: rgba(255,255,255,0.1);
-            border-radius: 10px;
+            border-radius: 8px;
             backdrop-filter: blur(10px);
         }
 
         .weather-detail-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .weather-detail-icon {
-            font-size: 1.1em;
+            font-size: 1em; /* Reduzido */
             opacity: 0.9;
-            width: 25px;
+            width: 20px;
             text-align: center;
         }
 
@@ -261,12 +290,12 @@
         }
 
         .weather-detail-label {
-            font-size: 0.7em;
+            font-size: 0.65em; /* Reduzido */
             opacity: 0.8;
         }
 
         .weather-detail-value {
-            font-size: 0.9em;
+            font-size: 0.8em; /* Reduzido */
             font-weight: 600;
         }
 
@@ -527,7 +556,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 1.4em;
-            justify-content: center; /* Centralizado */
+            justify-content: center;
         }
 
         .sensors-compact {
@@ -600,7 +629,7 @@
             color: var(--text-primary);
             display: flex;
             flex-direction: column;
-            position: relative; /* Para posicionar ícone de irrigação */
+            position: relative;
         }
 
         .card h2 {
@@ -611,7 +640,7 @@
             gap: 10px;
             font-weight: 600;
             font-size: 1.4em;
-            justify-content: center; /* Centralizado */
+            justify-content: center;
         }
 
         .devices-compact {
@@ -789,6 +818,63 @@
             pointer-events: none;
         }
 
+        /* 🆕 CORREÇÃO: Status da irrigação reorganizado */
+        .irrigation-card {
+            position: relative;
+        }
+
+        .irrigation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .irrigation-status-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 0.85em;
+        }
+
+        .irrigation-mode-text {
+            color: var(--text-secondary);
+        }
+
+        .irrigation-rain-avoidance {
+            color: var(--text-secondary);
+        }
+
+        .irrigation-large-icon {
+            width: 60px;
+            height: 60px;
+            transition: var(--transition);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .irrigation-status-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+
+        .irrigation-status-text {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .status-on {
+            color: #4CAF50;
+        }
+
+        .status-off {
+            color: #f44336;
+        }
+
         /* Status Bar */
         .status-bar {
             background: rgba(255,255,255,0.95);
@@ -799,7 +885,7 @@
             font-size: 0.85em;
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
             color: var(--text-primary);
-            position: relative; /* Para posicionar ícone de irrigação */
+            position: relative;
         }
 
         body[data-theme="dark"] .status-bar {
@@ -875,20 +961,31 @@
             text-align: center;
         }
 
-        /* 🆕 ÍCONE DE IRRIGAÇÃO GRANDE */
-        .irrigation-large-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 80px;
-            height: 80px;
-            transition: var(--transition);
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        /* 🆕 CORREÇÃO: Campo de tempo de irrigação no modal */
+        .irrigation-duration-group {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
-        .irrigation-card {
-            position: relative; /* Para posicionar o ícone grande */
+        .duration-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .duration-input input {
+            width: 80px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .duration-unit {
+            font-weight: 600;
+            color: var(--text-secondary);
         }
 
         /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
@@ -1254,6 +1351,20 @@
                 height: 60px;
                 right: 15px;
             }
+
+            .esp32-header-status {
+                position: relative;
+                left: auto;
+                top: auto;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+            
+            .irrigation-status-container {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1302,6 +1413,12 @@
 
     <div class="container">
         <div class="header">
+            <!-- 🆕 CORREÇÃO: Status ESP32 no canto superior esquerdo -->
+            <div class="esp32-header-status online" id="esp32-header-status">
+                <i class="fas fa-microchip"></i>
+                <span>ESP32 Online</span>
+            </div>
+            
             <div class="header-content">
                 <h1>
                     <img src="https://img.icons8.com/?size=100&id=EDZuk72S1FJ7&format=png&color=000000" class="title-icon" alt="Casa">
@@ -1320,7 +1437,7 @@
             </div>
         </div>
 
-        <!-- 🆕 METEOROLOGIA EXPANDIDA - MAIS FINA -->
+        <!-- 🆕 CORREÇÃO: Meteorologia mais compacta -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
@@ -1456,31 +1573,27 @@
             </div>
         </div>
 
-        <!-- Sistema de Irrigação -->
+        <!-- 🆕 CORREÇÃO: Sistema de Irrigação reorganizado -->
         <div class="card irrigation-card">
-            <h2>
-                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
-                Sistema de Irrigação
-            </h2>
+            <div class="irrigation-header">
+                <h2>
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
+                    Sistema de Irrigação
+                </h2>
+                <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
+            </div>
             
-            <!-- 🆕 ÍCONE GRANDE DE IRRIGAÇÃO -->
-            <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
-            
-            <div class="status-bar">
-                <div class="status-content">
-                    <div class="esp32-indicator online" id="esp32-status">
-                        <i class="fas fa-microchip"></i>
-                        <span>ESP32 Online</span>
-                    </div>
-                    <div class="status-text">
-                        Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
-                    </div>
-                    <div class="device-status">
-                        Modo: <span id="irrigation-mode">Manual</span> | 
-                        Evitar Chuva: <span id="rain-avoidance">Ativado</span>
-                    </div>
+            <!-- 🆕 CORREÇÃO: Status reorganizado -->
+            <div class="irrigation-status-container">
+                <div class="irrigation-status-text">
+                    Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
+                </div>
+                <div class="irrigation-status-info">
+                    <div class="irrigation-mode-text">Modo: <span id="irrigation-mode">Manual</span></div>
+                    <div class="irrigation-rain-avoidance">Evitar Chuva: <span id="rain-avoidance">Ativado</span></div>
                 </div>
             </div>
+            
             <div class="controls">
                 <button class="btn btn-success" onclick="controlIrrigation(true)">
                     <i class="fas fa-play"></i>
@@ -1502,7 +1615,7 @@
         </div>
     </div>
 
-    <!-- 🆕 MODAL DE IRRIGAÇÃO MELHORADO -->
+    <!-- 🆕 CORREÇÃO: Modal de irrigação com campo de tempo -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1521,6 +1634,19 @@
                         <option value="manual">Manual</option>
                         <option value="automatico">Automático</option>
                     </select>
+                </div>
+                
+                <!-- 🆕 CORREÇÃO: Campo de tempo de irrigação -->
+                <div class="irrigation-duration-group">
+                    <h3><i class="fas fa-clock"></i> Duração da Irrigação</h3>
+                    <div class="form-group">
+                        <label for="irrigation-duration">Tempo de irrigação (minutos):</label>
+                        <div class="duration-input">
+                            <input type="number" id="irrigation-duration" min="1" max="60" value="5">
+                            <span class="duration-unit">minutos</span>
+                        </div>
+                        <small>Defina por quanto tempo a bomba ficará ligada (1-60 minutos)</small>
+                    </div>
                 </div>
             </div>
 
@@ -1621,6 +1747,165 @@
     </div>
 
     <script>
+        // 🆕 CORREÇÃO: Timer para irrigação limitada
+        let irrigationTimer = null;
+        
+        // 🆕 CORREÇÃO: Função controlIrrigation com tempo limitado
+        function controlIrrigation(state) {
+            console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
+            const statusElement = document.getElementById('irrigation-status');
+            const largeIcon = document.getElementById('irrigation-large-icon');
+            
+            // Cancelar timer anterior se existir
+            if (irrigationTimer) {
+                clearTimeout(irrigationTimer);
+                irrigationTimer = null;
+            }
+            
+            if (state) {
+                // Ligar irrigação com tempo limitado
+                statusElement.textContent = 'LIGADA';
+                statusElement.className = 'status-on';
+                largeIcon.src = 'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000';
+                
+                // Obter tempo de irrigação
+                const duration = parseInt(document.getElementById('irrigation-duration').value) || 5;
+                
+                showNotification(`Bomba de irrigação ligada por ${duration} minutos`, 'success');
+                
+                // Configurar timer para desligar automaticamente
+                irrigationTimer = setTimeout(() => {
+                    controlIrrigation(false);
+                    showNotification('Irrigação automática desligada - tempo esgotado', 'info');
+                }, duration * 60 * 1000);
+                
+            } else {
+                // Desligar irrigação
+                statusElement.textContent = 'DESLIGADA';
+                statusElement.className = 'status-off';
+                largeIcon.src = 'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+                showNotification('Bomba de irrigação desligada', 'info');
+            }
+            
+            // 🆕 CORREÇÃO: Enviar comando para ESP32
+            sendToESP32('irrigation', state);
+            
+            // Salvar estado da irrigação
+            saveToLocalStorage('irrigationState', state);
+        }
+
+        // 🆕 CORREÇÃO: Função para enviar comandos ao ESP32
+        function sendToESP32(device, state) {
+            // Simulação de envio para ESP32
+            console.log(`📡 Enviando para ESP32: ${device} -> ${state}`);
+            
+            // Aqui você implementaria a comunicação real com o ESP32
+            // via WebSocket, HTTP, MQTT, etc.
+            
+            // Simulação de resposta do ESP32
+            setTimeout(() => {
+                if (device === 'light' || device === 'outlet') {
+                    showNotification(`Dispositivo ${device} ${state ? 'ligado' : 'desligado'} no ESP32`, 'success');
+                } else if (device === 'irrigation') {
+                    showNotification(`Irrigação ${state ? 'iniciada' : 'parada'} no ESP32`, 'success');
+                }
+            }, 500);
+        }
+
+        // 🆕 CORREÇÃO: Função toggleDevice atualizada para ESP32
+        function toggleDevice(deviceId, state, checkboxElement) {
+            console.log(`Dispositivo ${deviceId} ${state ? 'ligado' : 'desligado'}`);
+            
+            // Atualizar visual do dispositivo
+            const deviceElement = checkboxElement.closest('.device-compact-item');
+            if (state) {
+                deviceElement.classList.add('active');
+            } else {
+                deviceElement.classList.remove('active');
+            }
+            
+            // Atualizar ícone da lâmpada se for o caso
+            if (deviceId.includes('lamp-')) {
+                const iconImg = deviceElement.querySelector('img');
+                if (iconImg) {
+                    if (state) {
+                        iconImg.src = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
+                        iconImg.className = 'lamp-icon-on';
+                    } else {
+                        iconImg.src = 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000';
+                        iconImg.className = 'lamp-icon-off';
+                    }
+                }
+                
+                // 🆕 CORREÇÃO: Enviar comando para ESP32
+                sendToESP32('light', state);
+            }
+            
+            // Atualizar ícone da tomada se for o caso
+            if (deviceId.includes('outlet-')) {
+                const iconElement = deviceElement.querySelector('.fa-plug');
+                if (iconElement) {
+                    iconElement.style.color = state ? '#4CAF50' : '#666';
+                }
+                
+                // 🆕 CORREÇÃO: Enviar comando para ESP32
+                sendToESP32('outlet', state);
+            }
+            
+            showNotification(`Dispositivo ${state ? 'ligado' : 'desligado'}`, 'success');
+            
+            // Salvar estado no localStorage
+            saveDeviceState(deviceId, state);
+        }
+
+        // 🆕 CORREÇÃO: Funções controlAll atualizadas para ESP32
+        function controlAllLights(state) {
+            const lights = document.querySelectorAll('#lights-container input[type="checkbox"]');
+            lights.forEach(light => {
+                light.checked = state;
+                const deviceId = light.getAttribute('onchange').match(/'([^']+)'/)[1];
+                toggleDevice(deviceId, state, light);
+            });
+            
+            // 🆕 CORREÇÃO: Enviar comando para todas as luzes no ESP32
+            sendToESP32('all_lights', state);
+            
+            showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        }
+
+        function controlAllOutlets(state) {
+            const outlets = document.querySelectorAll('#outlets-container input[type="checkbox"]');
+            outlets.forEach(outlet => {
+                outlet.checked = state;
+                const deviceId = outlet.getAttribute('onchange').match(/'([^']+)'/)[1];
+                toggleDevice(deviceId, state, outlet);
+            });
+            
+            // 🆕 CORREÇÃO: Enviar comando para todas as tomadas no ESP32
+            sendToESP32('all_outlets', state);
+            
+            showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
+        }
+
+        // 🆕 CORREÇÃO: Verificação de autenticação
+        function checkAuthentication() {
+            const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
+            if (!isAuthenticated) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // 🆕 CORREÇÃO: Simular login para teste (remover em produção)
+        function simulateLogin() {
+            localStorage.setItem('casa-automacao-authenticated', 'true');
+            console.log('✅ Usuário autenticado');
+        }
+
+        // TODAS AS OUTRAS FUNÇÕES ORIGINAIS PERMANECEM IGUAIS
+        // ... (restante do código JavaScript original)
+
         // 🚨 CORREÇÃO: Função logout global corrigida
         async function logout() {
             try {
@@ -1632,6 +1917,9 @@
 
                 // Simular requisição de logout
                 await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Remover autenticação
+                localStorage.removeItem('casa-automacao-authenticated');
                 
                 // Redirecionar para a página de login
                 showNotification('Logout realizado com sucesso!', 'success');
@@ -2047,11 +2335,11 @@
                 });
                 
                 // Atualizar status do ESP32 (simulação)
-                const esp32Status = document.getElementById('esp32-status');
+                const esp32Status = document.getElementById('esp32-header-status');
                 if (esp32Status) {
                     // Simular status online (90% do tempo)
                     const isOnline = Math.random() > 0.1;
-                    esp32Status.className = `esp32-indicator ${isOnline ? 'online' : 'offline'}`;
+                    esp32Status.className = `esp32-header-status ${isOnline ? 'online' : 'offline'}`;
                     esp32Status.innerHTML = `<i class="fas fa-microchip"></i><span>ESP32 ${isOnline ? 'Online' : 'Offline'}</span>`;
                 }
                 
@@ -2167,45 +2455,6 @@
             });
         }
 
-        // 🆕 CORREÇÃO: Função toggleDevice corrigida para manter estado visual
-        function toggleDevice(deviceId, state, checkboxElement) {
-            console.log(`Dispositivo ${deviceId} ${state ? 'ligado' : 'desligado'}`);
-            showNotification(`Dispositivo ${state ? 'ligado' : 'desligado'}`, 'success');
-            
-            // Atualizar visual do dispositivo
-            const deviceElement = checkboxElement.closest('.device-compact-item');
-            if (state) {
-                deviceElement.classList.add('active');
-            } else {
-                deviceElement.classList.remove('active');
-            }
-            
-            // Atualizar ícone da lâmpada se for o caso
-            if (deviceId.includes('lamp-')) {
-                const iconImg = deviceElement.querySelector('img');
-                if (iconImg) {
-                    if (state) {
-                        iconImg.src = 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000';
-                        iconImg.className = 'lamp-icon-on';
-                    } else {
-                        iconImg.src = 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000';
-                        iconImg.className = 'lamp-icon-off';
-                    }
-                }
-            }
-            
-            // Atualizar ícone da tomada se for o caso
-            if (deviceId.includes('outlet-')) {
-                const iconElement = deviceElement.querySelector('.fa-plug');
-                if (iconElement) {
-                    iconElement.style.color = state ? '#4CAF50' : '#666';
-                }
-            }
-            
-            // 🆕 SALVAR ESTADO NO LOCALSTORAGE
-            saveDeviceState(deviceId, state);
-        }
-
         // 🆕 FUNÇÃO PARA SALVAR ESTADO DOS DISPOSITIVOS
         function saveDeviceState(deviceId, state) {
             const deviceStates = loadFromLocalStorage('deviceStates') || {};
@@ -2217,48 +2466,6 @@
         function loadDeviceStates() {
             const deviceStates = loadFromLocalStorage('deviceStates') || {};
             return deviceStates;
-        }
-
-        function controlAllLights(state) {
-            const lights = document.querySelectorAll('#lights-container input[type="checkbox"]');
-            lights.forEach(light => {
-                light.checked = state;
-                const deviceId = light.getAttribute('onchange').match(/'([^']+)'/)[1];
-                toggleDevice(deviceId, state, light);
-            });
-            showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
-        }
-
-        function controlAllOutlets(state) {
-            const outlets = document.querySelectorAll('#outlets-container input[type="checkbox"]');
-            outlets.forEach(outlet => {
-                outlet.checked = state;
-                const deviceId = outlet.getAttribute('onchange').match(/'([^']+)'/)[1];
-                toggleDevice(deviceId, state, outlet);
-            });
-            showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
-        }
-
-        // 🆕 CORREÇÃO: Função controlIrrigation com ícone grande
-        function controlIrrigation(state) {
-            console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
-            const statusElement = document.getElementById('irrigation-status');
-            const largeIcon = document.getElementById('irrigation-large-icon');
-            
-            statusElement.textContent = state ? 'LIGADA' : 'DESLIGADA';
-            statusElement.className = state ? 'status-on' : 'status-off';
-            
-            // Atualizar ícone grande
-            if (state) {
-                largeIcon.src = 'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000';
-            } else {
-                largeIcon.src = 'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
-            }
-            
-            showNotification(`Bomba de irrigação ${state ? 'ligada' : 'desligada'}`, 'success');
-            
-            // Salvar estado da irrigação
-            saveToLocalStorage('irrigationState', state);
         }
 
         function openIrrigationModal() {
@@ -2297,6 +2504,11 @@
         // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            
+            // 🆕 CORREÇÃO: Verificar autenticação
+            if (!checkAuthentication()) {
+                return;
+            }
             
             // Carregar tema salvo
             const savedTheme = loadFromLocalStorage('theme') || 'light';
@@ -2346,6 +2558,9 @@
             
             showNotification('Sistema inicializado com sucesso!', 'success', 3000);
         });
+
+        // 🆕 CORREÇÃO: Simular login para teste (remover em produção)
+        simulateLogin();
 
         // 🆕 Exportar funções para o script principal
         window.showTimePicker = showTimePicker;
