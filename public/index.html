@@ -54,7 +54,7 @@
             margin: 0 auto;
         }
 
-        /* 🆕 CORREÇÃO: Header com ESP32 no canto esquerdo */
+        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
@@ -134,7 +134,7 @@
             animation: spin 1s linear infinite;
         }
 
-        /* 🆕 CORREÇÃO: Status ESP32 no canto superior esquerdo */
+        /* Status ESP32 */
         .esp32-header-status {
             position: absolute;
             left: 20px;
@@ -221,66 +221,61 @@
             transform: translateY(-2px);
         }
 
-        /* 🆕 CORREÇÃO: METEOROLOGIA MAIS COMPACTA */
+        /* CORREÇÃO: METEOROLOGIA UMA LINHA SÓ */
         .weather-expanded {
             background: linear-gradient(135deg, rgba(116, 185, 255, 0.95) 0%, rgba(9, 132, 227, 0.95) 100%);
             border-radius: var(--border-radius);
-            padding: 10px 15px;
+            padding: 12px 20px;
             color: white;
             margin-bottom: 15px;
             box-shadow: var(--shadow);
-            display: grid;
-            grid-template-columns: 1fr 2fr 1fr;
-            gap: 10px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            height: 100px; /* Mais compacto */
+            height: 80px; /* Mais compacto */
+            gap: 15px;
         }
 
         .weather-main {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            text-align: center;
+            gap: 15px;
+            flex: 1;
         }
 
         .weather-icon-large {
-            font-size: 2.2em !important; /* Reduzido */
-            margin-bottom: 3px;
+            font-size: 2.5em !important;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
 
         .weather-temp-main {
-            font-size: 1.6em; /* Reduzido */
+            font-size: 1.8em;
             font-weight: 700;
-            margin-bottom: 3px;
         }
 
         .weather-desc-main {
-            font-size: 0.8em; /* Reduzido */
+            font-size: 0.9em;
             opacity: 0.9;
             text-transform: capitalize;
         }
 
         .weather-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
+            display: flex;
+            gap: 20px;
+            flex: 2;
+            justify-content: space-around;
         }
 
         .weather-detail-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .weather-detail-icon {
-            font-size: 1em; /* Reduzido */
+            font-size: 1.2em;
             opacity: 0.9;
-            width: 20px;
+            width: 25px;
             text-align: center;
         }
 
@@ -290,25 +285,24 @@
         }
 
         .weather-detail-label {
-            font-size: 0.65em; /* Reduzido */
+            font-size: 0.7em;
             opacity: 0.8;
         }
 
         .weather-detail-value {
-            font-size: 0.8em; /* Reduzido */
+            font-size: 0.9em;
             font-weight: 600;
         }
 
         .weather-location {
-            text-align: center;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-end;
+            flex: 1;
         }
 
         .weather-city {
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: 600;
             margin-bottom: 5px;
             display: flex;
@@ -317,7 +311,7 @@
         }
 
         .weather-time {
-            font-size: 0.8em;
+            font-size: 0.75em;
             opacity: 0.8;
             display: flex;
             align-items: center;
@@ -336,7 +330,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 0.75em;
+            font-size: 0.7em;
         }
 
         .weather-update-btn:hover {
@@ -818,7 +812,7 @@
             pointer-events: none;
         }
 
-        /* 🆕 CORREÇÃO: Status da irrigação reorganizado */
+        /* Status da irrigação reorganizado */
         .irrigation-card {
             position: relative;
         }
@@ -961,7 +955,7 @@
             text-align: center;
         }
 
-        /* 🆕 CORREÇÃO: Campo de tempo de irrigação no modal */
+        /* Campo de tempo de irrigação no modal */
         .irrigation-duration-group {
             margin-top: 15px;
             padding-top: 15px;
@@ -988,7 +982,7 @@
             color: var(--text-secondary);
         }
 
-        /* 🆕 MODAL DE IRRIGAÇÃO MELHORADO */
+        /* MODAL DE IRRIGAÇÃO MELHORADO */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -1107,7 +1101,7 @@
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
 
-        /* 🆕 SELEÇÃO DE DIAS DA SEMANA */
+        /* SELEÇÃO DE DIAS DA SEMANA */
         .days-selection {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -1160,7 +1154,7 @@
             margin-top: 2px;
         }
 
-        /* 🆕 SELEÇÃO DE HORA COM RELÓGIO */
+        /* SELEÇÃO DE HORA COM RELÓGIO */
         .time-selection {
             display: flex;
             align-items: center;
@@ -1188,7 +1182,7 @@
             background: #5a6fd8;
         }
 
-        /* 🆕 LISTA DE PROGRAMAÇÕES MELHORADA */
+        /* LISTA DE PROGRAMAÇÕES MELHORADA */
         .programming-list {
             max-height: 200px;
             overflow-y: auto;
@@ -1323,14 +1317,19 @@
             }
             
             .weather-expanded {
-                grid-template-columns: 1fr;
-                gap: 15px;
-                text-align: center;
+                flex-direction: column;
                 height: auto;
+                gap: 10px;
+                text-align: center;
             }
             
             .weather-details {
-                grid-template-columns: 1fr;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .weather-location {
+                align-items: center;
             }
             
             .header h1 {
@@ -1399,6 +1398,11 @@
                 height: 50px;
                 right: 10px;
             }
+            
+            .weather-details {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -1413,7 +1417,7 @@
 
     <div class="container">
         <div class="header">
-            <!-- 🆕 CORREÇÃO: Status ESP32 no canto superior esquerdo -->
+            <!-- Status ESP32 no canto superior esquerdo -->
             <div class="esp32-header-status online" id="esp32-header-status">
                 <i class="fas fa-microchip"></i>
                 <span>ESP32 Online</span>
@@ -1437,7 +1441,7 @@
             </div>
         </div>
 
-        <!-- 🆕 CORREÇÃO: Meteorologia mais compacta -->
+        <!-- CORREÇÃO: Meteorologia em uma linha só -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
@@ -1573,7 +1577,7 @@
             </div>
         </div>
 
-        <!-- 🆕 CORREÇÃO: Sistema de Irrigação reorganizado -->
+        <!-- Sistema de Irrigação reorganizado -->
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
@@ -1583,7 +1587,7 @@
                 <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
             </div>
             
-            <!-- 🆕 CORREÇÃO: Status reorganizado -->
+            <!-- Status reorganizado -->
             <div class="irrigation-status-container">
                 <div class="irrigation-status-text">
                     Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
@@ -1615,7 +1619,7 @@
         </div>
     </div>
 
-    <!-- 🆕 CORREÇÃO: Modal de irrigação com campo de tempo -->
+    <!-- Modal de irrigação com campo de tempo -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1636,7 +1640,7 @@
                     </select>
                 </div>
                 
-                <!-- 🆕 CORREÇÃO: Campo de tempo de irrigação -->
+                <!-- Campo de tempo de irrigação -->
                 <div class="irrigation-duration-group">
                     <h3><i class="fas fa-clock"></i> Duração da Irrigação</h3>
                     <div class="form-group">
@@ -1747,10 +1751,12 @@
     </div>
 
     <script>
-        // 🆕 CORREÇÃO: Timer para irrigação limitada
+        // CORREÇÃO: Timer para irrigação funcionando corretamente
         let irrigationTimer = null;
+        let irrigationProgrammings = [];
+        let automaticIrrigationActive = false;
         
-        // 🆕 CORREÇÃO: Função controlIrrigation com tempo limitado
+        // CORREÇÃO: Função controlIrrigation com tempo funcionando
         function controlIrrigation(state) {
             console.log(`Controle de irrigação: ${state ? 'Ligar' : 'Desligar'}`);
             const statusElement = document.getElementById('irrigation-status');
@@ -1787,17 +1793,17 @@
                 showNotification('Bomba de irrigação desligada', 'info');
             }
             
-            // 🆕 CORREÇÃO: Enviar comando para ESP32
-            sendToESP32('irrigation', state);
+            // CORREÇÃO: Enviar comando para ESP32
+            sendToESP32('irrigation', state, duration);
             
             // Salvar estado da irrigação
             saveToLocalStorage('irrigationState', state);
         }
 
-        // 🆕 CORREÇÃO: Função para enviar comandos ao ESP32
-        function sendToESP32(device, state) {
+        // CORREÇÃO: Função para enviar comandos ao ESP32 - MELHORADA
+        function sendToESP32(device, state, duration = null) {
             // Simulação de envio para ESP32
-            console.log(`📡 Enviando para ESP32: ${device} -> ${state}`);
+            console.log(`📡 Enviando para ESP32: ${device} -> ${state}${duration ? ` por ${duration}min` : ''}`);
             
             // Aqui você implementaria a comunicação real com o ESP32
             // via WebSocket, HTTP, MQTT, etc.
@@ -1812,7 +1818,7 @@
             }, 500);
         }
 
-        // 🆕 CORREÇÃO: Função toggleDevice atualizada para ESP32
+        // CORREÇÃO: Função toggleDevice atualizada para ESP32 - MELHORADA
         function toggleDevice(deviceId, state, checkboxElement) {
             console.log(`Dispositivo ${deviceId} ${state ? 'ligado' : 'desligado'}`);
             
@@ -1837,8 +1843,9 @@
                     }
                 }
                 
-                // 🆕 CORREÇÃO: Enviar comando para ESP32
-                sendToESP32('light', state);
+                // CORREÇÃO: Enviar comando específico para ESP32
+                const deviceName = deviceId.split('-')[1]; // sala, quarto, etc.
+                sendToESP32(`light_${deviceName}`, state);
             }
             
             // Atualizar ícone da tomada se for o caso
@@ -1848,8 +1855,9 @@
                     iconElement.style.color = state ? '#4CAF50' : '#666';
                 }
                 
-                // 🆕 CORREÇÃO: Enviar comando para ESP32
-                sendToESP32('outlet', state);
+                // CORREÇÃO: Enviar comando específico para ESP32
+                const deviceName = deviceId.split('-')[1]; // sala, cozinha, etc.
+                sendToESP32(`outlet_${deviceName}`, state);
             }
             
             showNotification(`Dispositivo ${state ? 'ligado' : 'desligado'}`, 'success');
@@ -1858,7 +1866,7 @@
             saveDeviceState(deviceId, state);
         }
 
-        // 🆕 CORREÇÃO: Funções controlAll atualizadas para ESP32
+        // CORREÇÃO: Funções controlAll atualizadas para ESP32
         function controlAllLights(state) {
             const lights = document.querySelectorAll('#lights-container input[type="checkbox"]');
             lights.forEach(light => {
@@ -1867,7 +1875,7 @@
                 toggleDevice(deviceId, state, light);
             });
             
-            // 🆕 CORREÇÃO: Enviar comando para todas as luzes no ESP32
+            // CORREÇÃO: Enviar comando para todas as luzes no ESP32
             sendToESP32('all_lights', state);
             
             showNotification(`Todas as lâmpadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
@@ -1881,32 +1889,25 @@
                 toggleDevice(deviceId, state, outlet);
             });
             
-            // 🆕 CORREÇÃO: Enviar comando para todas as tomadas no ESP32
+            // CORREÇÃO: Enviar comando para todas as tomadas no ESP32
             sendToESP32('all_outlets', state);
             
             showNotification(`Todas as tomadas ${state ? 'ligadas' : 'desligadas'}`, 'success');
         }
 
-        // 🆕 CORREÇÃO: Verificação de autenticação
+        // CORREÇÃO: Verificação de autenticação melhorada
         function checkAuthentication() {
             const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
-            if (!isAuthenticated) {
+            const userData = localStorage.getItem('casa-automacao-user');
+            
+            if (!isAuthenticated || !userData) {
                 window.location.href = '/login.html';
                 return false;
             }
             return true;
         }
 
-        // 🆕 CORREÇÃO: Simular login para teste (remover em produção)
-        function simulateLogin() {
-            localStorage.setItem('casa-automacao-authenticated', 'true');
-            console.log('✅ Usuário autenticado');
-        }
-
-        // TODAS AS OUTRAS FUNÇÕES ORIGINAIS PERMANECEM IGUAIS
-        // ... (restante do código JavaScript original)
-
-        // 🚨 CORREÇÃO: Função logout global corrigida
+        // CORREÇÃO: Logout melhorado - não apaga configurações
         async function logout() {
             try {
                 // Mostrar loading
@@ -1915,11 +1916,21 @@
                 logoutBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Saindo...';
                 logoutBtn.classList.add('loading');
 
-                // Simular requisição de logout
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // CORREÇÃO: Não apagar configurações, apenas dados de sessão
+                const userData = localStorage.getItem('casa-automacao-user');
+                const deviceStates = localStorage.getItem('casa-automacao-deviceStates');
+                const theme = localStorage.getItem('casa-automacao-theme');
                 
-                // Remover autenticação
+                // Limpar apenas dados de autenticação
                 localStorage.removeItem('casa-automacao-authenticated');
+                localStorage.removeItem('casa-automacao-user');
+                
+                // Restaurar configurações após logout
+                setTimeout(() => {
+                    if (userData) localStorage.setItem('casa-automacao-user', userData);
+                    if (deviceStates) localStorage.setItem('casa-automacao-deviceStates', deviceStates);
+                    if (theme) localStorage.setItem('casa-automacao-theme', theme);
+                }, 100);
                 
                 // Redirecionar para a página de login
                 showNotification('Logout realizado com sucesso!', 'success');
@@ -1945,7 +1956,45 @@
             }
         }
 
-        // 🆕 SISTEMA DE NOTIFICAÇÕES
+        // CORREÇÃO: Sistema de irrigação automática funcionando
+        function checkAutomaticIrrigation() {
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            const currentDay = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][now.getDay()];
+            
+            // Verificar se há programação para agora
+            irrigationProgrammings.forEach(programming => {
+                if (programming.hora === currentTime && 
+                    programming.dias.includes(currentDay) &&
+                    !automaticIrrigationActive) {
+                    
+                    // Verificar se deve evitar chuva
+                    const avoidRain = document.getElementById('avoid-rain-checkbox').checked;
+                    if (avoidRain) {
+                        // Simular verificação de chuva
+                        const isRaining = Math.random() < 0.2; // 20% de chance de chuva
+                        if (isRaining) {
+                            showNotification('Irrigação automática cancelada - Está chovendo!', 'warning');
+                            return;
+                        }
+                    }
+                    
+                    // Executar irrigação automática
+                    automaticIrrigationActive = true;
+                    showNotification(`Irrigação automática iniciada - Programada para ${currentTime}`, 'success');
+                    controlIrrigation(true);
+                    
+                    // Resetar após 1 minuto do término
+                    const duration = parseInt(document.getElementById('irrigation-duration').value) || 5;
+                    setTimeout(() => {
+                        automaticIrrigationActive = false;
+                    }, (duration + 1) * 60 * 1000);
+                }
+            });
+        }
+
+        // SISTEMA DE NOTIFICAÇÕES
         function showNotification(message, type = 'info', duration = 5000) {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -1976,13 +2025,13 @@
             return icons[type] || 'info-circle';
         }
 
-        // 🆕 TRATAMENTO DE ERRO ROBUSTO
+        // TRATAMENTO DE ERRO ROBUSTO
         function handleApiError(error, context) {
             console.error(`❌ Erro em ${context}:`, error);
             showNotification(`Erro em ${context}. Tente novamente.`, 'error');
         }
 
-        // 🆕 SISTEMA DE TEMA
+        // SISTEMA DE TEMA
         function toggleTheme() {
             const currentTheme = document.body.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -1996,7 +2045,7 @@
             showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
         }
 
-        // 🆕 PERSISTÊNCIA LOCAL
+        // PERSISTÊNCIA LOCAL MELHORADA
         function saveToLocalStorage(key, data) {
             try {
                 localStorage.setItem(`casa-automacao-${key}`, JSON.stringify(data));
@@ -2015,7 +2064,7 @@
             }
         }
 
-        // 🆕 VERIFICAÇÃO DE CONEXÃO
+        // VERIFICAÇÃO DE CONEXÃO
         function checkConnection() {
             const offlineIndicator = document.getElementById('offline-indicator');
             if (!navigator.onLine) {
@@ -2026,21 +2075,30 @@
             }
         }
 
-        // 🆕 ATUALIZAÇÃO AUTOMÁTICA
+        // ATUALIZAÇÃO AUTOMÁTICA MELHORADA
         function startAutoRefresh() {
-            // Atualizar a cada 30 segundos
+            // Verificar irrigação automática a cada minuto
             setInterval(() => {
-                updateWeather();
-                updateSensorData();
-            }, 30000);
+                checkAutomaticIrrigation();
+            }, 60000);
             
-            // Atualizar a cada 5 segundos (dados críticos)
+            // Atualizar dados dos sensores a cada 10 segundos
+            setInterval(() => {
+                updateSensorData();
+            }, 10000);
+            
+            // Atualizar status dos dispositivos a cada 5 segundos
             setInterval(() => {
                 updateDeviceStatus();
             }, 5000);
+            
+            // Atualizar clima a cada 15 minutos
+            setInterval(() => {
+                updateWeather();
+            }, 15 * 60 * 1000);
         }
 
-        // 🆕 VALIDAÇÃO DE CONFIGURAÇÕES DE IRRIGAÇÃO
+        // VALIDAÇÃO DE CONFIGURAÇÕES DE IRRIGAÇÃO
         function validateIrrigationSettings() {
             const mode = document.getElementById('irrigation-mode-select').value;
             const programmings = getSelectedProgrammings();
@@ -2053,10 +2111,10 @@
             return true;
         }
 
-        // 🆕 FUNÇÕES PARA O MODAL DE IRRIGAÇÃO MELHORADO
+        // FUNÇÕES PARA O MODAL DE IRRIGAÇÃO
         function showTimePicker() {
             const timeInput = document.getElementById('irrigation-time');
-            timeInput.showPicker(); // Abre o seletor nativo de hora
+            timeInput.showPicker();
         }
 
         function addProgramming() {
@@ -2087,12 +2145,18 @@
                 dias: selectedDays
             };
 
+            // Adicionar à lista global
+            irrigationProgrammings.push(newProgramming);
+            
             // Adicionar à lista visual
             addProgrammingToList(newProgramming);
             
             // Limpar seleção
             timeInput.value = '08:00';
             document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            
+            // Salvar programações
+            saveToLocalStorage('irrigationProgrammings', irrigationProgrammings);
         }
 
         function addProgrammingToList(programming) {
@@ -2133,6 +2197,13 @@
 
         function removeProgramming(button) {
             const programmingItem = button.closest('.programming-item');
+            const time = programmingItem.querySelector('.programming-time').textContent;
+            
+            // Remover da lista global
+            irrigationProgrammings = irrigationProgrammings.filter(p => p.hora !== time);
+            saveToLocalStorage('irrigationProgrammings', irrigationProgrammings);
+            
+            // Remover visualmente
             programmingItem.remove();
             
             const programmingList = document.getElementById('programming-list');
@@ -2148,144 +2219,10 @@
         }
 
         function getSelectedProgrammings() {
-            const programmingList = document.getElementById('programming-list');
-            const programmings = [];
-            
-            programmingList.querySelectorAll('.programming-item').forEach(item => {
-                const time = item.querySelector('.programming-time').textContent;
-                const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
-                    const dayText = badge.textContent.toLowerCase();
-                    const dayMap = {'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 'sex': 'sex', 'sab': 'sab', 'dom': 'dom'};
-                    return dayMap[dayText];
-                }).filter(day => day);
-                
-                programmings.push({
-                    hora: time,
-                    dias: days
-                });
-            });
-            
-            return programmings;
+            return irrigationProgrammings;
         }
 
-        // 🆕 FUNÇÕES PARA METEOROLOGIA EXPANDIDA - CORRIGIDAS
-        async function updateWeather() {
-            try {
-                // Simular dados de clima (substitua por chamada real à API)
-                const mockWeatherData = {
-                    main: {
-                        temp: 28,
-                        feels_like: 30,
-                        humidity: 65,
-                        pressure: 1013
-                    },
-                    weather: [{
-                        main: 'Clouds',
-                        description: 'nublado'
-                    }],
-                    wind: {
-                        speed: 3.5
-                    },
-                    name: 'Rio de Janeiro'
-                };
-                
-                const data = mockWeatherData;
-                
-                // Temperatura principal
-                const mainTempElement = document.getElementById('weather-main-temp');
-                if (mainTempElement) {
-                    mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
-                }
-                
-                // Descrição principal
-                const mainDescElement = document.getElementById('weather-main-desc');
-                if (mainDescElement && data.weather && data.weather[0]) {
-                    mainDescElement.textContent = data.weather[0].description;
-                }
-                
-                // Ícone principal
-                const mainIconElement = document.getElementById('weather-main-icon');
-                if (mainIconElement && data.weather && data.weather[0]) {
-                    const weatherMain = data.weather[0].main.toLowerCase();
-                    mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
-                }
-                
-                // Sensação térmica
-                const feelsLikeElement = document.getElementById('weather-feels-like');
-                if (feelsLikeElement) {
-                    feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
-                }
-                
-                // Umidade
-                const humidityElement = document.getElementById('weather-humidity');
-                if (humidityElement) {
-                    humidityElement.textContent = `${data.main.humidity}%`;
-                }
-                
-                // Vento
-                const windElement = document.getElementById('weather-wind');
-                if (windElement && data.wind) {
-                    windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
-                }
-                
-                // Pressão
-                const pressureElement = document.getElementById('weather-pressure');
-                if (pressureElement) {
-                    pressureElement.textContent = `${data.main.pressure} hPa`;
-                }
-                
-                // Cidade
-                const cityElement = document.getElementById('weather-city');
-                if (cityElement && data.name) {
-                    cityElement.textContent = `${data.name}, BR`;
-                }
-                
-                // Horário de atualização
-                const timeElement = document.getElementById('weather-update-time');
-                if (timeElement) {
-                    const now = new Date();
-                    timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                }
-                
-                // 🆕 REMOVIDO: Notificação de atualização meteorológica
-                
-            } catch (error) {
-                console.error('❌ Erro ao atualizar clima:', error);
-                showNotification('Erro ao carregar dados meteorológicos', 'error');
-            }
-        }
-
-        function getWeatherMainIcon(weatherMain) {
-            const icons = {
-                'clear': 'fa-sun',
-                'clouds': 'fa-cloud',
-                'rain': 'fa-cloud-rain',
-                'drizzle': 'fa-cloud-drizzle',
-                'thunderstorm': 'fa-bolt',
-                'snow': 'fa-snowflake',
-                'mist': 'fa-smog',
-                'fog': 'fa-smog'
-            };
-            
-            return icons[weatherMain] || 'fa-cloud';
-        }
-
-        function getWeatherAnimationClass(weatherMain) {
-            const animations = {
-                'clear': 'weather-icon-sun',
-                'clouds': 'weather-icon-cloud',
-                'rain': 'weather-icon-rain',
-                'drizzle': 'weather-icon-rain',
-                'thunderstorm': 'weather-icon-storm',
-                'snow': 'weather-icon-snow',
-                'mist': 'weather-icon-mist',
-                'fog': 'weather-icon-mist'
-            };
-            
-            return animations[weatherMain] || 'weather-icon-cloud';
-        }
-
-        // 🆕 FUNÇÃO FALTANTE: Atualização de dados do sistema
+        // FUNÇÃO FALTANTE: Atualização de dados do sistema
         function startDataUpdates() {
             console.log('📊 Iniciando atualizações automáticas de dados');
             
@@ -2305,7 +2242,7 @@
             }, 15 * 60 * 1000);
         }
 
-        // 🆕 MELHORIA: Função para atualizar status dos dispositivos
+        // MELHORIA: Função para atualizar status dos dispositivos
         function updateDeviceStatus() {
             try {
                 // Simular verificação de status dos dispositivos
@@ -2348,7 +2285,7 @@
             }
         }
 
-        // 🆕 MELHORIA: Função para simular dados de sensores mais realistas
+        // MELHORIA: Função para simular dados de sensores mais realistas
         function updateSensorData() {
             try {
                 // Simular dados realistas dos sensores
@@ -2398,7 +2335,7 @@
             }
         }
 
-        // 🆕 CORREÇÃO: Função para dispositivos - corrigida para manter estado
+        // CORREÇÃO: Função para dispositivos - corrigida para manter estado
         function loadDevices() {
             // Carregar lâmpadas
             const lightsContainer = document.getElementById('lights-container');
@@ -2455,17 +2392,94 @@
             });
         }
 
-        // 🆕 FUNÇÃO PARA SALVAR ESTADO DOS DISPOSITIVOS
+        // FUNÇÃO PARA SALVAR ESTADO DOS DISPOSITIVOS
         function saveDeviceState(deviceId, state) {
             const deviceStates = loadFromLocalStorage('deviceStates') || {};
             deviceStates[deviceId] = state;
             saveToLocalStorage('deviceStates', deviceStates);
         }
 
-        // 🆕 FUNÇÃO PARA CARREGAR ESTADO DOS DISPOSITIVOS
+        // FUNÇÃO PARA CARREGAR ESTADO DOS DISPOSITIVOS
         function loadDeviceStates() {
             const deviceStates = loadFromLocalStorage('deviceStates') || {};
             return deviceStates;
+        }
+
+        // FUNÇÕES DE METEOROLOGIA
+        async function updateWeather() {
+            try {
+                // Simular dados de clima
+                const mockWeatherData = {
+                    main: {
+                        temp: 28,
+                        feels_like: 30,
+                        humidity: 65,
+                        pressure: 1013
+                    },
+                    weather: [{
+                        main: 'Clouds',
+                        description: 'nublado'
+                    }],
+                    wind: {
+                        speed: 3.5
+                    },
+                    name: 'Rio de Janeiro'
+                };
+                
+                const data = mockWeatherData;
+                
+                // Atualizar interface
+                document.getElementById('weather-main-temp').textContent = `${Math.round(data.main.temp)}°C`;
+                document.getElementById('weather-main-desc').textContent = data.weather[0].description;
+                document.getElementById('weather-feels-like').textContent = `${Math.round(data.main.feels_like)}°C`;
+                document.getElementById('weather-humidity').textContent = `${data.main.humidity}%`;
+                document.getElementById('weather-wind').textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+                document.getElementById('weather-pressure').textContent = `${data.main.pressure} hPa`;
+                document.getElementById('weather-city').textContent = `${data.name}, BR`;
+                
+                // Atualizar ícone
+                const mainIconElement = document.getElementById('weather-main-icon');
+                const weatherMain = data.weather[0].main.toLowerCase();
+                mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+                
+                // Horário de atualização
+                const now = new Date();
+                document.getElementById('weather-update-time').textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar clima:', error);
+                showNotification('Erro ao carregar dados meteorológicos', 'error');
+            }
+        }
+
+        function getWeatherMainIcon(weatherMain) {
+            const icons = {
+                'clear': 'fa-sun',
+                'clouds': 'fa-cloud',
+                'rain': 'fa-cloud-rain',
+                'drizzle': 'fa-cloud-drizzle',
+                'thunderstorm': 'fa-bolt',
+                'snow': 'fa-snowflake',
+                'mist': 'fa-smog',
+                'fog': 'fa-smog'
+            };
+            
+            return icons[weatherMain] || 'fa-cloud';
+        }
+
+        function getWeatherAnimationClass(weatherMain) {
+            const animations = {
+                'clear': 'weather-icon-sun',
+                'clouds': 'weather-icon-cloud',
+                'rain': 'weather-icon-rain',
+                'drizzle': 'weather-icon-rain',
+                'thunderstorm': 'weather-icon-storm',
+                'snow': 'weather-icon-snow',
+                'mist': 'weather-icon-mist',
+                'fog': 'weather-icon-mist'
+            };
+            
+            return animations[weatherMain] || 'weather-icon-cloud';
         }
 
         function openIrrigationModal() {
@@ -2488,10 +2502,13 @@
             console.log('Configurações de irrigação salvas');
             const mode = document.getElementById('irrigation-mode-select').value;
             const avoidRain = document.getElementById('avoid-rain-checkbox').checked;
-            const programmings = getSelectedProgrammings();
             
             document.getElementById('irrigation-mode').textContent = mode === 'automatico' ? 'Automático' : 'Manual';
             document.getElementById('rain-avoidance').textContent = avoidRain ? 'Ativado' : 'Desativado';
+            
+            // Salvar configurações
+            saveToLocalStorage('irrigationMode', mode);
+            saveToLocalStorage('avoidRain', avoidRain);
             
             showNotification('Configurações de irrigação salvas com sucesso!', 'success');
             closeIrrigationModal();
@@ -2501,11 +2518,21 @@
             console.log('Sistema autenticado');
         }
 
+        // CORREÇÃO: Simular login para teste
+        function simulateLogin() {
+            localStorage.setItem('casa-automacao-authenticated', 'true');
+            localStorage.setItem('casa-automacao-user', JSON.stringify({
+                username: 'usuario',
+                email: 'usuario@exemplo.com'
+            }));
+            console.log('✅ Usuário autenticado');
+        }
+
         // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Sistema Casa Automação V3.0 inicializado');
             
-            // 🆕 CORREÇÃO: Verificar autenticação
+            // Verificar autenticação
             if (!checkAuthentication()) {
                 return;
             }
@@ -2515,6 +2542,25 @@
             document.body.setAttribute('data-theme', savedTheme);
             const themeIcon = document.querySelector('.theme-toggle i');
             themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Carregar programações de irrigação
+            irrigationProgrammings = loadFromLocalStorage('irrigationProgrammings') || [];
+            if (irrigationProgrammings.length > 0) {
+                const programmingList = document.getElementById('programming-list');
+                programmingList.innerHTML = '';
+                irrigationProgrammings.forEach(programming => {
+                    addProgrammingToList(programming);
+                });
+            }
+            
+            // Carregar configurações de irrigação
+            const irrigationMode = loadFromLocalStorage('irrigationMode') || 'manual';
+            const avoidRain = loadFromLocalStorage('avoidRain') !== false;
+            
+            document.getElementById('irrigation-mode-select').value = irrigationMode;
+            document.getElementById('avoid-rain-checkbox').checked = avoidRain;
+            document.getElementById('irrigation-mode').textContent = irrigationMode === 'automatico' ? 'Automático' : 'Manual';
+            document.getElementById('rain-avoidance').textContent = avoidRain ? 'Ativado' : 'Desativado';
             
             // Configurar eventos
             window.addEventListener('online', checkConnection);
@@ -2534,7 +2580,7 @@
             // Inicializar sistemas
             loadDevices();
             
-            // 🆕 CARREGAR ESTADOS SALVOS DOS DISPOSITIVOS
+            // CARREGAR ESTADOS SALVOS DOS DISPOSITIVOS
             const deviceStates = loadDeviceStates();
             Object.keys(deviceStates).forEach(deviceId => {
                 const checkbox = document.querySelector(`[onchange*="${deviceId}"]`);
@@ -2544,7 +2590,7 @@
                 }
             });
             
-            // 🆕 CARREGAR ESTADO DA IRRIGAÇÃO
+            // CARREGAR ESTADO DA IRRIGAÇÃO
             const irrigationState = loadFromLocalStorage('irrigationState') || false;
             if (irrigationState) {
                 controlIrrigation(irrigationState);
@@ -2553,16 +2599,16 @@
             startDataUpdates();
             startAutoRefresh();
             checkSystemAuth();
-            updateWeather(); // 🆕 Carregar clima inicial
-            updateSensorData(); // Carregar dados dos sensores
+            updateWeather();
+            updateSensorData();
             
             showNotification('Sistema inicializado com sucesso!', 'success', 3000);
         });
 
-        // 🆕 CORREÇÃO: Simular login para teste (remover em produção)
+        // CORREÇÃO: Simular login para teste
         simulateLogin();
 
-        // 🆕 Exportar funções para o script principal
+        // Exportar funções para o script principal
         window.showTimePicker = showTimePicker;
         window.addProgramming = addProgramming;
         window.removeProgramming = removeProgramming;
