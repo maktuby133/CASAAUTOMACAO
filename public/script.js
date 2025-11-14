@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function handleLoginPage() {
     const loginForm = document.getElementById('loginForm');
-    const errorMessage = document.getElementById('errorMessage');
     
     if (loginForm) {
         loginForm.addEventListener('submit', async function(e) {
@@ -32,19 +31,20 @@ function handleLoginPage() {
                 const data = await response.json();
                 
                 if (data.success) {
+                    // 🚨 CORREÇÃO: Salva autenticação no localStorage
+                    localStorage.setItem('casa-automacao-authenticated', 'true');
+                    localStorage.setItem('casa-automacao-user', JSON.stringify({
+                        username: username,
+                        loginTime: new Date().toISOString()
+                    }));
+                    
                     window.location.href = data.redirect;
                 } else {
-                    if (errorMessage) {
-                        errorMessage.textContent = data.message;
-                        errorMessage.style.display = 'block';
-                    }
+                    showNotification(data.message, 'error');
                 }
             } catch (error) {
                 console.error('❌ Erro no login:', error);
-                if (errorMessage) {
-                    errorMessage.textContent = 'Erro de conexão com o servidor';
-                    errorMessage.style.display = 'block';
-                }
+                showNotification('Erro de conexão com o servidor', 'error');
             }
         });
     }
@@ -72,11 +72,30 @@ async function checkSystemAuth() {
         if (!data.authenticated) {
             console.log('❌ Não autenticado, redirecionando...');
             window.location.href = '/login.html';
+        } else {
+            // 🚨 CORREÇÃO: Inicializa o sistema se estiver autenticado
+            initializeSystem();
         }
     } catch (error) {
         console.error('❌ Erro ao verificar auth:', error);
         window.location.href = '/login.html';
     }
+}
+
+// 🚨 CORREÇÃO: Função para inicializar o sistema
+function initializeSystem() {
+    console.log('✅ Sistema autenticado, inicializando...');
+    startDataUpdates();
+    
+    // Carregar tema
+    const savedTheme = loadFromLocalStorage('theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    const themeIcon = document.querySelector('.theme-toggle i');
+    if (themeIcon) {
+        themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    
+    showNotification('Sistema inicializado com sucesso!', 'success', 3000);
 }
 
 // Logout function
@@ -89,6 +108,8 @@ async function logout() {
         const data = await response.json();
         
         if (data.success) {
+            localStorage.removeItem('casa-automacao-authenticated');
+            localStorage.removeItem('casa-automacao-user');
             window.location.href = data.redirect;
         }
     } catch (error) {
@@ -753,7 +774,7 @@ async function saveIrrigationSettings() {
 }
 
 // 🆕 SISTEMA DE NOTIFICAÇÕES
-function showNotification(message, type = 'info') {
+function showNotification(message, type = 'info', duration = 5000) {
     // Remove notificações existentes para evitar acumulação
     const existingNotifications = document.querySelectorAll('.custom-notification');
     existingNotifications.forEach(notif => {
@@ -830,13 +851,73 @@ if (!document.querySelector('#notification-styles')) {
     document.head.appendChild(style);
 }
 
+// ==================== PERSISTÊNCIA LOCAL ====================
+function saveToLocalStorage(key, data) {
+    try {
+        localStorage.setItem(`casa-automacao-${key}`, JSON.stringify(data));
+    } catch (error) {
+        console.error('Erro ao salvar no localStorage:', error);
+    }
+}
+
+function loadFromLocalStorage(key) {
+    try {
+        const data = localStorage.getItem(`casa-automacao-${key}`);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error('Erro ao carregar do localStorage:', error);
+        return null;
+    }
+}
+
+// ==================== TEMA ====================
+function toggleTheme() {
+    const currentTheme = document.body.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    document.body.setAttribute('data-theme', newTheme);
+    saveToLocalStorage('theme', newTheme);
+    
+    const themeIcon = document.querySelector('.theme-toggle i');
+    if (themeIcon) {
+        themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    
+    showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
+}
+
+// ==================== VERIFICAÇÃO DE CONEXÃO ====================
+function checkConnection() {
+    const offlineIndicator = document.getElementById('offline-indicator');
+    if (!navigator.onLine) {
+        if (offlineIndicator) offlineIndicator.classList.add('show');
+        showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
+    } else {
+        if (offlineIndicator) offlineIndicator.classList.remove('show');
+    }
+}
+
 // Prevenir fechamento acidental
 window.addEventListener('beforeunload', function (e) {
     // Opcional: Confirmar saída se houver operações pendentes
-    // const confirmationMessage = 'Tem certeza que deseja saír?';
+    // const confirmationMessage = 'Tem certeza que deseja sair?';
     // e.returnValue = confirmationMessage;
     // return confirmationMessage;
 });
+
+// Configurar eventos
+window.addEventListener('online', checkConnection);
+window.addEventListener('offline', checkConnection);
+
+// Fechar modal clicando fora
+const modal = document.getElementById('irrigation-modal');
+if (modal) {
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeIrrigationModal();
+        }
+    });
+}
 
 // 🚨 CORREÇÃO: Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
@@ -853,5 +934,6 @@ window.showTimePicker = showTimePicker;
 window.updateWeather = updateWeather;
 window.showNotification = showNotification;
 window.logout = logout;
+window.toggleTheme = toggleTheme;
 
 console.log('🔧 Script.js carregado com todas as funcionalidades!');
