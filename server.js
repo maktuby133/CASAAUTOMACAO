@@ -140,10 +140,12 @@ function requireAuth(req, res, next) {
         '/favicon.ico'
     ];
 
-    // Rotas do ESP32
+    // 🚨 CORREÇÃO: Rotas do ESP32 - SEM AUTENTICAÇÃO
     const esp32Routes = [
         '/api/data',
-        '/api/devices'
+        '/api/devices',
+        '/api/commands',
+        '/api/confirm'
     ];
 
     // 🚨 CORREÇÃO: Verifica se é rota pública PRIMEIRO
@@ -151,8 +153,9 @@ function requireAuth(req, res, next) {
         return next();
     }
 
-    // 🚨 CORREÇÃO: Verifica se é rota do ESP32
+    // 🚨 CORREÇÃO: Verifica se é rota do ESP32 - PERMITE ACESSO
     if (esp32Routes.includes(req.path)) {
+        console.log(`📡 Rota ESP32 permitida: ${req.path}`);
         return next();
     }
 
@@ -270,9 +273,13 @@ app.get('/api/weather/raining', async (req, res) => {
     }
 });
 
-// ESP32 envia dados
+// 🚨 CORREÇÃO: ESP32 envia dados - SEM AUTENTICAÇÃO
 app.post('/api/data', (req, res) => {
     const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi } = req.body;
+
+    console.log('📨 Dados recebidos do ESP32:', {
+        temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi
+    });
 
     if (typeof temperature === 'undefined' || typeof gas_level === 'undefined') {
         return res.status(400).json({ error: 'Dados inválidos' });
@@ -295,7 +302,7 @@ app.post('/api/data', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status(device, clientIP);
 
-    console.log(heartbeat ? '💓 Heartbeat' : '📨 Dados recebidos');
+    console.log(heartbeat ? '💓 Heartbeat recebido' : '📊 Dados dos sensores recebidos');
     
     res.json({ 
         status: 'OK', 
@@ -304,16 +311,71 @@ app.post('/api/data', (req, res) => {
     });
 });
 
-// ESP32 busca dispositivos
+// 🚨 CORREÇÃO: ESP32 busca comandos - SEM AUTENTICAÇÃO
+app.get('/api/commands', (req, res) => {
+    const clientIP = req.ip || req.connection.remoteAddress;
+    updateESP32Status('ESP32-AUTOMACAO-V3', clientIP);
+    
+    console.log('📥 ESP32 solicitando comandos');
+    
+    res.json({
+        lights: devicesState.lights,
+        outlets: devicesState.outlets,
+        irrigation: {
+            bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
+            modo_automatico: devicesState.irrigation.modo === 'automatico',
+            duracao: 5
+        }
+    });
+});
+
+// 🚨 CORREÇÃO: ESP32 confirma comandos - SEM AUTENTICAÇÃO
+app.post('/api/confirm', (req, res) => {
+    console.log('✅ Confirmação recebida do ESP32:', req.body);
+    
+    // Atualizar estados baseado na confirmação do ESP32
+    if (req.body.lights) {
+        devicesState.lights = { ...devicesState.lights, ...req.body.lights };
+    }
+    if (req.body.outlets) {
+        devicesState.outlets = { ...devicesState.outlets, ...req.body.outlets };
+    }
+    if (req.body.irrigation) {
+        devicesState.irrigation.bomba_irrigacao = req.body.irrigation.bomba_irrigacao || false;
+    }
+    
+    saveState(devicesState);
+    
+    res.json({ 
+        status: 'OK', 
+        message: 'Confirmação recebida',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 🚨 CORREÇÃO: ESP32 busca dispositivos - SEM AUTENTICAÇÃO
 app.get('/api/devices', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status('ESP32-AUTOMACAO-V3', clientIP);
-    res.json(devicesState);
+    
+    console.log('📡 ESP32 solicitando estados dos dispositivos');
+    
+    res.json({
+        lights: devicesState.lights,
+        outlets: devicesState.outlets,
+        irrigation: {
+            bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
+            modo: devicesState.irrigation.modo,
+            evitar_chuva: devicesState.irrigation.evitar_chuva
+        }
+    });
 });
 
-// Controlar dispositivos
+// Controlar dispositivos (Frontend)
 app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
+    
+    console.log('🎛️ Comando do frontend:', { type, device, state });
     
     if (!type || !device || typeof state === 'undefined') {
         return res.status(400).json({ error: 'Dados incompletos' });
@@ -356,7 +418,7 @@ app.post('/api/control', async (req, res) => {
 });
 
 // Dados dos sensores
-app.get('/api/data', (req, res) => {
+app.get('/api/sensor-data', (req, res) => {
     const espConnected = checkESP32Connection();
     res.json({ 
         data: devicesState.sensorData || [],
@@ -437,5 +499,6 @@ app.listen(PORT, () => {
     console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
-    console.log('🔐 Sistema de Login: CORRIGIDO - Sem loops\n');
+    console.log('🔐 Sistema de Login: CORRIGIDO - Sem loops');
+    console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO - Erro 401 RESOLVIDO\n');
 });
