@@ -49,7 +49,7 @@ function handleLoginPage() {
     }
 }
 
-// ✅ CORREÇÃO: Função assíncrona adicionada
+// ✅ CORREÇÃO: Função assíncrona
 async function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
     
@@ -560,6 +560,35 @@ async function checkWeather() {
     }
 }
 
+// ✅ CORREÇÃO: Função para testar irrigação automática
+async function testIrrigationSchedule() {
+    try {
+        const response = await fetch('/api/irrigation/test-schedule');
+        const data = await response.json();
+        
+        if (data.status === 'OK') {
+            showNotification('✅ Verificação de programações executada!', 'success');
+            console.log('⏰ Programações:', data.programacoes);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao testar programações:', error);
+        showNotification('Erro ao testar programações', 'error');
+    }
+}
+
+// ✅ CORREÇÃO: Função para ver status das programações
+async function checkScheduleStatus() {
+    try {
+        const response = await fetch('/api/irrigation/schedule-status');
+        const data = await response.json();
+        
+        console.log('⏰ Status das programações:', data);
+        showNotification(`Programações: ${data.programacoes.length} ativas | Modo: ${data.modo}`, 'info', 5000);
+    } catch (error) {
+        console.error('❌ Erro ao verificar status:', error);
+    }
+}
+
 // MODAL DE IRRIGAÇÃO MELHORADO
 function openIrrigationModal() {
     const modal = document.getElementById('irrigation-modal');
@@ -927,6 +956,34 @@ if (modal) {
     });
 }
 
+// ✅ CORREÇÃO: Adicionar botões de teste no modal de irrigação
+function addTestButtonsToModal() {
+    const modalSection = document.querySelector('.modal-section:last-child');
+    if (modalSection) {
+        const testButtons = `
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <h4><i class="fas fa-vial"></i> Testes</h4>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-primary" onclick="testIrrigationSchedule()" style="flex: 1;">
+                        <i class="fas fa-play"></i> Testar Agora
+                    </button>
+                    <button class="btn btn-info" onclick="checkScheduleStatus()" style="flex: 1;">
+                        <i class="fas fa-info-circle"></i> Ver Status
+                    </button>
+                </div>
+            </div>
+        `;
+        modalSection.insertAdjacentHTML('beforeend', testButtons);
+    }
+}
+
+// Inicializar botões de teste quando o modal abrir
+const originalOpenIrrigationModal = window.openIrrigationModal;
+window.openIrrigationModal = function() {
+    originalOpenIrrigationModal();
+    setTimeout(addTestButtonsToModal, 100);
+};
+
 // Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
@@ -943,5 +1000,7 @@ window.updateWeather = updateWeather;
 window.showNotification = showNotification;
 window.logout = logout;
 window.toggleTheme = toggleTheme;
+window.testIrrigationSchedule = testIrrigationSchedule;
+window.checkScheduleStatus = checkScheduleStatus;
 
 console.log('🔧 Script.js carregado com todas as funcionalidades!');
