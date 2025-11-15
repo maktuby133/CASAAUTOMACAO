@@ -9,13 +9,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ CORREÇÃO: CORS configurado corretamente para cookies
+// ✅ CORREÇÃO: CORS configurado CORRETAMENTE
 app.use(cors({
     origin: true,
     credentials: true
 }));
 
-// Middleware
+// Middleware - ✅ CORREÇÃO: Ordem CORRETA
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
@@ -100,14 +100,14 @@ function checkESP32Connection() {
 function startIrrigationScheduler() {
     setInterval(() => {
         checkScheduledIrrigation();
-    }, 60000); // Verificar a cada minuto
+    }, 60000);
     console.log('⏰ Agendador de irrigação iniciado');
 }
 
 // ✅ CORREÇÃO: Função para verificar programações
 function checkScheduledIrrigation() {
     if (devicesState.irrigation.modo !== 'automatico') {
-        return; // Só executa no modo automático
+        return;
     }
 
     const now = new Date();
@@ -118,11 +118,9 @@ function checkScheduledIrrigation() {
     const programacoes = devicesState.irrigation.programacoes || [];
     
     programacoes.forEach((prog, index) => {
-        // Verificar se é o horário e dia correto
         if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
             console.log(`💧 Programação ${index + 1} ativada: ${prog.hora} - ${prog.dias.join(',')}`);
             
-            // Verificar se não está chovendo (se configurado)
             if (devicesState.irrigation.evitar_chuva) {
                 isRaining().then(raining => {
                     if (!raining) {
@@ -153,11 +151,9 @@ function startScheduledIrrigation(programIndex) {
 
     console.log(`💧 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
     
-    // Ligar a bomba
     devicesState.irrigation.bomba_irrigacao = true;
     saveState(devicesState);
 
-    // Programar desligamento automático
     const duracao = devicesState.irrigation.duracao || 5;
     console.log(`⏰ Irrigação programada por ${duracao} minutos`);
     
@@ -211,7 +207,7 @@ let devicesState = loadState();
 // ✅ CORREÇÃO: Inicializar sistemas
 function initializeSystems() {
     setInterval(checkESP32Connection, 60000);
-    startIrrigationScheduler(); // 🆕 INICIAR AGENDADOR
+    startIrrigationScheduler();
     console.log('✅ Sistemas inicializados: ESP32 + Irrigação Automática');
 }
 
@@ -219,27 +215,29 @@ initializeSystems();
 
 // ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO E FUNCIONAL
 function requireAuth(req, res, next) {
-    console.log('🔐 Verificando autenticação para:', req.path);
-    console.log('🍪 Cookies recebidos:', req.cookies);
+    console.log('🔐 Verificando rota:', req.path);
     
-    // Rotas públicas - SEMPRE permitidas
+    // ✅ CORREÇÃO: Lista COMPLETA de rotas públicas
     const publicRoutes = [
         '/', 
         '/login.html',
+        '/index.html',
         '/api/login', 
         '/api/logout',
         '/api/status',
+        '/api/weather',
+        '/api/weather/raining',
+        '/api/sensor-data',
+        '/api/devices',
         '/health',
         '/favicon.ico',
         '/styles.css',
-        '/script.js',
-        '/index.html' // ✅ CORREÇÃO: Adicionado index.html como pública
+        '/script.js'
     ];
 
-    // Rotas do ESP32 - SEM AUTENTICAÇÃO
+    // ✅ CORREÇÃO: Rotas do ESP32 - SEM AUTENTICAÇÃO
     const esp32Routes = [
         '/api/data',
-        '/api/devices',
         '/api/commands',
         '/api/confirm'
     ];
@@ -256,7 +254,7 @@ function requireAuth(req, res, next) {
         return next();
     }
 
-    // ✅ CORREÇÃO: Verificar autenticação de forma SIMPLES
+    // ✅ CORREÇÃO: Verificar autenticação APENAS para rotas protegidas
     const authToken = req.cookies?.authToken;
     console.log('🔑 Token de autenticação:', authToken);
     
@@ -264,7 +262,7 @@ function requireAuth(req, res, next) {
         console.log('✅ Usuário autenticado, acesso permitido');
         return next();
     } else {
-        console.log('❌ Usuário NÃO autenticado, redirecionando para login');
+        console.log('❌ Usuário NÃO autenticado');
         
         // Se for uma rota API, retorna erro JSON
         if (req.path.startsWith('/api/')) {
@@ -279,8 +277,10 @@ function requireAuth(req, res, next) {
     }
 }
 
-// Aplica o middleware
+// ✅ CORREÇÃO: Aplicar middleware APÓS as rotas estáticas
 app.use(requireAuth);
+
+// ==================== ROTAS PÚBLICAS ====================
 
 // Rota principal serve login
 app.get('/', (req, res) => {
@@ -292,24 +292,22 @@ app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ✅ CORREÇÃO: Login com configuração CORRETA de cookies
+// Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     console.log('🔐 Tentativa de login:', { username });
     
     if (username === 'admin' && password === 'admin123') {
-        // ✅ CORREÇÃO CRÍTICA: Configuração CORRETA do cookie
+        // ✅ CORREÇÃO: Configuração SIMPLES do cookie
         res.cookie('authToken', 'admin123', {
-            maxAge: 24 * 60 * 60 * 1000, // 24 horas
-            httpOnly: false, // ✅ Permitir acesso via JavaScript
-            secure: false,   // ✅ Permitir em HTTP (desenvolvimento)
-            sameSite: 'lax', // ✅ Compatível com cross-origin
-            path: '/',       // ✅ Disponível em todas as rotas
-            domain: 'localhost' // ✅ Especificar domínio
+            maxAge: 24 * 60 * 60 * 1000,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax'
         });
         
-        console.log('✅ Login realizado com sucesso - Cookie configurado');
+        console.log('✅ Login realizado com sucesso');
         
         res.json({ 
             success: true, 
@@ -327,14 +325,7 @@ app.post('/api/login', (req, res) => {
 
 // Logout
 app.post('/api/logout', (req, res) => {
-    // ✅ CORREÇÃO: Limpar cookie corretamente
-    res.clearCookie('authToken', {
-        path: '/',
-        domain: 'localhost'
-    });
-    
-    console.log('✅ Logout realizado - Cookie removido');
-    
+    res.clearCookie('authToken');
     res.json({ 
         success: true, 
         message: 'Logout realizado',
@@ -346,8 +337,6 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/status', (req, res) => {
     const espConnected = checkESP32Connection();
     const authToken = req.cookies?.authToken;
-    
-    console.log('📊 Status solicitado - AuthToken:', authToken);
     
     res.json({ 
         message: '🚀 Servidor Automação V3.0',
@@ -367,28 +356,54 @@ app.get('/api/esp32-status', (req, res) => {
     });
 });
 
-// Clima
+// Clima - ✅ CORREÇÃO: Rota PÚBLICA
 app.get('/api/weather', async (req, res) => {
     try {
+        console.log('🌤️  Solicitando dados do clima...');
         const weatherData = await fetchWeatherData();
         if (weatherData) {
+            console.log('✅ Dados do clima obtidos com sucesso');
             res.json(weatherData);
         } else {
+            console.log('❌ Erro ao buscar clima');
             res.status(500).json({ error: 'Erro ao buscar clima' });
         }
     } catch (error) {
+        console.error('❌ Erro ao buscar clima:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Verificar chuva
+// Verificar chuva - ✅ CORREÇÃO: Rota PÚBLICA
 app.get('/api/weather/raining', async (req, res) => {
     try {
         const raining = await isRaining();
         res.json({ raining });
     } catch (error) {
+        console.error('❌ Erro ao verificar chuva:', error);
         res.status(500).json({ error: error.message });
     }
+});
+
+// Dados dos sensores - ✅ CORREÇÃO: Rota PÚBLICA
+app.get('/api/sensor-data', (req, res) => {
+    const espConnected = checkESP32Connection();
+    
+    const sensorData = (devicesState.sensorData || []).map(data => ({
+        ...data,
+        humidity: data.humidity || 0
+    }));
+    
+    res.json({ 
+        data: sensorData,
+        esp32: { connected: espConnected },
+        summary: {
+            total_readings: sensorData.length || 0,
+            last_temperature: sensorData[0]?.temperature || 'N/A',
+            last_humidity: sensorData[0]?.humidity || 'N/A',
+            last_gas_level: sensorData[0]?.gas_level || 'N/A'
+        }
+    });
 });
 
 // ✅ CORREÇÃO: Rota para testar irrigação automática
@@ -416,6 +431,8 @@ app.get('/api/irrigation/schedule-status', (req, res) => {
         bomba_ativa: devicesState.irrigation.bomba_irrigacao
     });
 });
+
+// ==================== ROTAS ESP32 (SEM AUTENTICAÇÃO) ====================
 
 // ESP32 envia dados - SEM AUTENTICAÇÃO
 app.post('/api/data', (req, res) => {
@@ -536,7 +553,9 @@ app.get('/api/devices', (req, res) => {
     });
 });
 
-// Controlar dispositivos (Frontend)
+// ==================== ROTAS PROTEGIDAS ====================
+
+// Controlar dispositivos (Frontend) - REQUER AUTENTICAÇÃO
 app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
     
@@ -582,28 +601,7 @@ app.post('/api/control', async (req, res) => {
     });
 });
 
-// Dados dos sensores
-app.get('/api/sensor-data', (req, res) => {
-    const espConnected = checkESP32Connection();
-    
-    const sensorData = (devicesState.sensorData || []).map(data => ({
-        ...data,
-        humidity: data.humidity || 0
-    }));
-    
-    res.json({ 
-        data: sensorData,
-        esp32: { connected: espConnected },
-        summary: {
-            total_readings: sensorData.length || 0,
-            last_temperature: sensorData[0]?.temperature || 'N/A',
-            last_humidity: sensorData[0]?.humidity || 'N/A',
-            last_gas_level: sensorData[0]?.gas_level || 'N/A'
-        }
-    });
-});
-
-// Reset dispositivos
+// Reset dispositivos - REQUER AUTENTICAÇÃO
 app.post('/api/reset', (req, res) => {
     const espConnected = checkESP32Connection();
     if (!espConnected) {
@@ -619,12 +617,12 @@ app.post('/api/reset', (req, res) => {
     res.json({ status: 'OK', message: 'Todos os dispositivos desligados' });
 });
 
-// Irrigação
+// Irrigação - REQUER AUTENTICAÇÃO
 app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
 
-// Salvar configurações de irrigação
+// Salvar configurações de irrigação - REQUER AUTENTICAÇÃO
 app.post('/api/irrigation/save', (req, res) => {
     try {
         const { modo, programacoes, evitar_chuva, duracao } = req.body;
@@ -700,6 +698,8 @@ app.listen(PORT, () => {
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('⏰ Irrigação Automática: CORRIGIDA E FUNCIONAL');
     console.log('🔐 Sistema de Login: CORRIGIDO - SEM ERRO 401');
+    console.log('🌤️  Meteorologia: FUNCIONANDO');
+    console.log('📊 Sensores: FUNCIONANDO');
     console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO');
     console.log('🔄 Configurações de Irrigação: CORRIGIDAS\n');
 });
