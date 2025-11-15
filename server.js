@@ -96,6 +96,80 @@ function checkESP32Connection() {
     return esp32Status.connected;
 }
 
+// ✅ CORREÇÃO: Sistema de irrigação automática
+function startIrrigationScheduler() {
+    setInterval(() => {
+        checkScheduledIrrigation();
+    }, 60000); // Verificar a cada minuto
+    console.log('⏰ Agendador de irrigação iniciado');
+}
+
+// ✅ CORREÇÃO: Função para verificar programações
+function checkScheduledIrrigation() {
+    if (devicesState.irrigation.modo !== 'automatico') {
+        return; // Só executa no modo automático
+    }
+
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    const currentDay = getCurrentDayOfWeek();
+
+    const programacoes = devicesState.irrigation.programacoes || [];
+    
+    programacoes.forEach((prog, index) => {
+        // Verificar se é o horário e dia correto
+        if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
+            console.log(`💧 Programação ${index + 1} ativada: ${prog.hora} - ${prog.dias.join(',')}`);
+            
+            // Verificar se não está chovendo (se configurado)
+            if (devicesState.irrigation.evitar_chuva) {
+                isRaining().then(raining => {
+                    if (!raining) {
+                        startScheduledIrrigation(index);
+                    } else {
+                        console.log('💧 Irrigação programada cancelada - Está chovendo');
+                    }
+                });
+            } else {
+                startScheduledIrrigation(index);
+            }
+        }
+    });
+}
+
+// ✅ CORREÇÃO: Função para obter dia da semana atual
+function getCurrentDayOfWeek() {
+    const days = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+    return days[new Date().getDay()];
+}
+
+// ✅ CORREÇÃO: Função para iniciar irrigação programada
+function startScheduledIrrigation(programIndex) {
+    if (devicesState.irrigation.bomba_irrigacao) {
+        console.log('💧 Bomba já está ligada, ignorando programação');
+        return;
+    }
+
+    console.log(`💧 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
+    
+    // Ligar a bomba
+    devicesState.irrigation.bomba_irrigacao = true;
+    saveState(devicesState);
+
+    // Programar desligamento automático
+    const duracao = devicesState.irrigation.duracao || 5;
+    console.log(`⏰ Irrigação programada por ${duracao} minutos`);
+    
+    setTimeout(() => {
+        if (devicesState.irrigation.bomba_irrigacao) {
+            console.log(`💧 DESLIGANDO IRRIGAÇÃO PROGRAMADA após ${duracao} minutos`);
+            devicesState.irrigation.bomba_irrigacao = false;
+            saveState(devicesState);
+        }
+    }, duracao * 60 * 1000);
+}
+
 // Função para buscar dados do clima
 async function fetchWeatherData() {
     try {
@@ -133,7 +207,15 @@ async function isRaining() {
 
 // Inicializar dados
 let devicesState = loadState();
-setInterval(checkESP32Connection, 60000);
+
+// ✅ CORREÇÃO: Inicializar sistemas
+function initializeSystems() {
+    setInterval(checkESP32Connection, 60000);
+    startIrrigationScheduler(); // 🆕 INICIAR AGENDADOR
+    console.log('✅ Sistemas inicializados: ESP32 + Irrigação Automática');
+}
+
+initializeSystems();
 
 // Middleware de autenticação CORRIGIDO
 function requireAuth(req, res, next) {
@@ -298,6 +380,32 @@ app.get('/api/weather/raining', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// ✅ CORREÇÃO: Rota para testar irrigação automática
+app.get('/api/irrigation/test-schedule', (req, res) => {
+    checkScheduledIrrigation();
+    res.json({ 
+        status: 'OK', 
+        message: 'Verificação de programações executada',
+        programacoes: devicesState.irrigation.programacoes
+    });
+});
+
+// ✅ CORREÇÃO: Rota para ver status das programações
+app.get('/api/irrigation/schedule-status', (req, res) => {
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    const currentDay = getCurrentDayOfWeek();
+    
+    res.json({
+        currentTime,
+        currentDay,
+        programacoes: devicesState.irrigation.programacoes,
+        modo: devicesState.irrigation.modo,
+        bomba_ativa: devicesState.irrigation.bomba_irrigacao
+    });
 });
 
 // ESP32 envia dados - SEM AUTENTICAÇÃO
@@ -581,6 +689,7 @@ app.listen(PORT, () => {
     console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
+    console.log('⏰ Irrigação Automática: CORRIGIDA E FUNCIONAL');
     console.log('🔐 Sistema de Login: CORRIGIDO');
     console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO');
     console.log('🔄 Configurações de Irrigação: CORRIGIDAS\n');
