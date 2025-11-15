@@ -214,12 +214,11 @@ function initializeSystems() {
 
 initializeSystems();
 
-// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação TOTALMENTE REFEITO
+// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO
 const requireAuth = (req, res, next) => {
     const publicRoutes = [
         '/', 
         '/login.html',
-        '/index.html',
         '/api/login', 
         '/api/logout',
         '/api/status',
@@ -395,32 +394,6 @@ app.get('/api/sensor-data', (req, res) => {
     });
 });
 
-// Teste irrigação automática
-app.get('/api/irrigation/test-schedule', (req, res) => {
-    checkScheduledIrrigation();
-    res.json({ 
-        status: 'OK', 
-        message: 'Verificação de programações executada',
-        programacoes: devicesState.irrigation.programacoes
-    });
-});
-
-// Status programações
-app.get('/api/irrigation/schedule-status', (req, res) => {
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
-                       now.getMinutes().toString().padStart(2, '0');
-    const currentDay = getCurrentDayOfWeek();
-    
-    res.json({
-        currentTime,
-        currentDay,
-        programacoes: devicesState.irrigation.programacoes,
-        modo: devicesState.irrigation.modo,
-        bomba_ativa: devicesState.irrigation.bomba_irrigacao
-    });
-});
-
 // ESP32 envia dados
 app.post('/api/data', (req, res) => {
     const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
@@ -429,7 +402,7 @@ app.post('/api/data', (req, res) => {
         temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto
     });
 
-    // ✅ CORREÇÃO CRÍTICA: Processar umidade CORRETAMENTE
+    // ✅✅✅ CORREÇÃO CRÍTICA: Processar umidade CORRETAMENTE
     let processedHumidity = humidity;
     if (typeof humidity === 'string') {
         processedHumidity = parseFloat(humidity);
