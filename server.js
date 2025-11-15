@@ -9,7 +9,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS
+// ✅ CORREÇÃO: CORS configurado corretamente para cookies
 app.use(cors({
     origin: true,
     credentials: true
@@ -217,8 +217,12 @@ function initializeSystems() {
 
 initializeSystems();
 
-// Middleware de autenticação CORRIGIDO
+// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO E FUNCIONAL
 function requireAuth(req, res, next) {
+    console.log('🔐 Verificando autenticação para:', req.path);
+    console.log('🍪 Cookies recebidos:', req.cookies);
+    
+    // Rotas públicas - SEMPRE permitidas
     const publicRoutes = [
         '/', 
         '/login.html',
@@ -228,7 +232,8 @@ function requireAuth(req, res, next) {
         '/health',
         '/favicon.ico',
         '/styles.css',
-        '/script.js'
+        '/script.js',
+        '/index.html' // ✅ CORREÇÃO: Adicionado index.html como pública
     ];
 
     // Rotas do ESP32 - SEM AUTENTICAÇÃO
@@ -239,48 +244,39 @@ function requireAuth(req, res, next) {
         '/api/confirm'
     ];
 
-    // Verifica se é rota pública PRIMEIRO
+    // ✅ CORREÇÃO: Verificar rotas públicas PRIMEIRO
     if (publicRoutes.includes(req.path)) {
+        console.log('✅ Rota pública, acesso permitido');
         return next();
     }
 
-    // Verifica se é rota do ESP32 - PERMITE ACESSO
+    // ✅ CORREÇÃO: Verificar rotas ESP32
     if (esp32Routes.includes(req.path)) {
-        console.log(`📡 Rota ESP32 permitida: ${req.path}`);
+        console.log('📡 Rota ESP32, acesso permitido');
         return next();
     }
 
-    // Para rotas API de controle, requer autenticação
-    if (req.path.startsWith('/api/control') || req.path.startsWith('/api/irrigation')) {
-        const authToken = req.cookies?.authToken;
+    // ✅ CORREÇÃO: Verificar autenticação de forma SIMPLES
+    const authToken = req.cookies?.authToken;
+    console.log('🔑 Token de autenticação:', authToken);
+    
+    if (authToken === 'admin123') {
+        console.log('✅ Usuário autenticado, acesso permitido');
+        return next();
+    } else {
+        console.log('❌ Usuário NÃO autenticado, redirecionando para login');
         
-        if (authToken === 'admin123') {
-            return next();
+        // Se for uma rota API, retorna erro JSON
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({ 
+                error: 'Não autorizado',
+                redirect: '/login.html'
+            });
         } else {
-            console.log('🔐 Acesso negado - Token inválido');
-            return res.status(401).json({ error: 'Não autorizado' });
-        }
-    }
-
-    // Para páginas HTML, verifica se está autenticado
-    if (req.path.endsWith('.html') || req.path === '/index.html') {
-        const authToken = req.cookies?.authToken;
-        
-        if (authToken === 'admin123') {
-            return next();
-        } else {
-            console.log('🔐 Redirecionando para login - Token inválido');
+            // Se for uma página HTML, redireciona
             return res.redirect('/login.html');
         }
     }
-
-    // Para outras rotas API, permite acesso
-    if (req.path.startsWith('/api/')) {
-        return next();
-    }
-
-    // Para outras rotas, permite acesso
-    return next();
 }
 
 // Aplica o middleware
@@ -296,22 +292,24 @@ app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Login
+// ✅ CORREÇÃO: Login com configuração CORRETA de cookies
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     console.log('🔐 Tentativa de login:', { username });
     
     if (username === 'admin' && password === 'admin123') {
+        // ✅ CORREÇÃO CRÍTICA: Configuração CORRETA do cookie
         res.cookie('authToken', 'admin123', {
-            maxAge: 24 * 60 * 60 * 1000,
-            httpOnly: false,
-            secure: false,
-            sameSite: 'lax',
-            path: '/'
+            maxAge: 24 * 60 * 60 * 1000, // 24 horas
+            httpOnly: false, // ✅ Permitir acesso via JavaScript
+            secure: false,   // ✅ Permitir em HTTP (desenvolvimento)
+            sameSite: 'lax', // ✅ Compatível com cross-origin
+            path: '/',       // ✅ Disponível em todas as rotas
+            domain: 'localhost' // ✅ Especificar domínio
         });
         
-        console.log('✅ Login realizado com sucesso');
+        console.log('✅ Login realizado com sucesso - Cookie configurado');
         
         res.json({ 
             success: true, 
@@ -329,7 +327,14 @@ app.post('/api/login', (req, res) => {
 
 // Logout
 app.post('/api/logout', (req, res) => {
-    res.clearCookie('authToken');
+    // ✅ CORREÇÃO: Limpar cookie corretamente
+    res.clearCookie('authToken', {
+        path: '/',
+        domain: 'localhost'
+    });
+    
+    console.log('✅ Logout realizado - Cookie removido');
+    
     res.json({ 
         success: true, 
         message: 'Logout realizado',
@@ -340,10 +345,14 @@ app.post('/api/logout', (req, res) => {
 // Status do servidor
 app.get('/api/status', (req, res) => {
     const espConnected = checkESP32Connection();
+    const authToken = req.cookies?.authToken;
+    
+    console.log('📊 Status solicitado - AuthToken:', authToken);
+    
     res.json({ 
         message: '🚀 Servidor Automação V3.0',
         status: 'online',
-        authenticated: !!req.cookies?.authToken,
+        authenticated: authToken === 'admin123',
         esp32: { connected: espConnected }
     });
 });
@@ -690,7 +699,7 @@ app.listen(PORT, () => {
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('⏰ Irrigação Automática: CORRIGIDA E FUNCIONAL');
-    console.log('🔐 Sistema de Login: CORRIGIDO');
+    console.log('🔐 Sistema de Login: CORRIGIDO - SEM ERRO 401');
     console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO');
     console.log('🔄 Configurações de Irrigação: CORRIGIDAS\n');
 });
