@@ -216,7 +216,7 @@ function initializeSystems() {
 
 initializeSystems();
 
-// ✅✅✅ CORREÇÃO DEFINITIVA: Middleware de autenticação
+// ✅✅✅ CORREÇÃO DEFINITIVA: Middleware de autenticação SEM LOOP
 const requireAuth = (req, res, next) => {
     const publicRoutes = [
         '/', 
@@ -232,6 +232,13 @@ const requireAuth = (req, res, next) => {
         '/api/data',
         '/api/commands',
         '/api/confirm',
+        '/api/calibration',
+        '/api/calibration/save',
+        '/api/irrigation',
+        '/api/irrigation/save',
+        '/api/irrigation/control',
+        '/api/control',
+        '/api/reset',
         '/health',
         '/favicon.ico',
         '/styles.css',
@@ -239,12 +246,12 @@ const requireAuth = (req, res, next) => {
     ];
 
     // ✅ Se for rota pública, permite acesso SEM verificação
-    if (publicRoutes.some(route => req.path === route)) {
+    if (publicRoutes.includes(req.path)) {
         return next();
     }
 
     // ✅ Se for arquivo estático, permite
-    if (req.path.startsWith('/css/') || req.path.startsWith('/js/') || req.path.startsWith('/images/')) {
+    if (req.path.includes('.css') || req.path.includes('.js') || req.path.includes('.ico') || req.path.includes('.png')) {
         return next();
     }
 
@@ -254,9 +261,15 @@ const requireAuth = (req, res, next) => {
     console.log('🔐 Verificando autenticação para:', req.path, 'Token:', !!authToken);
     
     if (authToken === 'admin123') {
+        console.log('✅ Acesso autorizado para:', req.path);
         return next();
     } else {
         console.log('❌ Acesso negado - Redirecionando para login');
+        
+        // ✅ CORREÇÃO: Não redireciona se já está na página de login
+        if (req.path === '/login.html' || req.path === '/') {
+            return next();
+        }
         
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ 
@@ -734,7 +747,7 @@ app.listen(PORT, () => {
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('⏰ Irrigação Automática: CORRIGIDA');
-    console.log('🔐 Sistema de Login: CORRIGIDO - Cookies funcionando');
+    console.log('🔐 Sistema de Login: CORRIGIDO - Sem loop de autenticação');
     console.log('💧 Umidade: CORRIGIDA - Valores precisos');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
     console.log('🔧 Sistema de Calibração: PRONTO');
