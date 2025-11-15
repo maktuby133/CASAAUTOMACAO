@@ -3,13 +3,13 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
-const fetch = require('node-fetch'); // ✅ CORREÇÃO: Adicionado
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ CORREÇÃO: CORS configurado corretamente
+// CORS
 app.use(cors({
     origin: true,
     credentials: true
@@ -135,7 +135,7 @@ async function isRaining() {
 let devicesState = loadState();
 setInterval(checkESP32Connection, 60000);
 
-// ✅ CORREÇÃO: Middleware de autenticação CORRIGIDO
+// Middleware de autenticação CORRIGIDO
 function requireAuth(req, res, next) {
     const publicRoutes = [
         '/', 
@@ -168,7 +168,7 @@ function requireAuth(req, res, next) {
         return next();
     }
 
-    // ✅ CORREÇÃO: Para rotas API de controle, requer autenticação
+    // Para rotas API de controle, requer autenticação
     if (req.path.startsWith('/api/control') || req.path.startsWith('/api/irrigation')) {
         const authToken = req.cookies?.authToken;
         
@@ -209,7 +209,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// ✅ CORREÇÃO: Rota do sistema correta
+// Rota do sistema
 app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -231,7 +231,6 @@ app.post('/api/login', (req, res) => {
         
         console.log('✅ Login realizado com sucesso');
         
-        // ✅ CORREÇÃO: Redirecionamento correto
         res.json({ 
             success: true, 
             message: 'Login realizado',
@@ -420,7 +419,7 @@ app.get('/api/devices', (req, res) => {
     });
 });
 
-// Controlar dispositivos (Frontend) - ✅ CORREÇÃO: Requer autenticação
+// Controlar dispositivos (Frontend)
 app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
     
