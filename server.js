@@ -64,7 +64,9 @@ function loadState() {
             duracao: 5,
             modo_automatico: false
         },
-        sensorData: []
+        sensorData: [],
+        calib_temp: 0.0,
+        calib_umid: 0.0
     };
 }
 
@@ -214,11 +216,12 @@ function initializeSystems() {
 
 initializeSystems();
 
-// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO
+// ✅✅✅ CORREÇÃO DEFINITIVA: Middleware de autenticação
 const requireAuth = (req, res, next) => {
     const publicRoutes = [
         '/', 
         '/login.html',
+        '/index.html',
         '/api/login', 
         '/api/logout',
         '/api/status',
@@ -235,21 +238,29 @@ const requireAuth = (req, res, next) => {
         '/script.js'
     ];
 
-    // ✅ Se for rota pública, permite acesso
-    if (publicRoutes.includes(req.path)) {
+    // ✅ Se for rota pública, permite acesso SEM verificação
+    if (publicRoutes.some(route => req.path === route)) {
+        return next();
+    }
+
+    // ✅ Se for arquivo estático, permite
+    if (req.path.startsWith('/css/') || req.path.startsWith('/js/') || req.path.startsWith('/images/')) {
         return next();
     }
 
     // ✅ Verifica autenticação apenas para rotas protegidas
     const authToken = req.cookies?.authToken;
     
+    console.log('🔐 Verificando autenticação para:', req.path, 'Token:', !!authToken);
+    
     if (authToken === 'admin123') {
         return next();
     } else {
-        console.log('🔐 Acesso negado para:', req.path);
+        console.log('❌ Acesso negado - Redirecionando para login');
         
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ 
+                success: false,
                 error: 'Não autorizado - Faça login novamente',
                 redirect: '/login.html'
             });
@@ -391,6 +402,32 @@ app.get('/api/sensor-data', (req, res) => {
             last_humidity: sensorData[0]?.humidity || 'N/A',
             last_gas_level: sensorData[0]?.gas_level || 'N/A'
         }
+    });
+});
+
+// Teste irrigação automática
+app.get('/api/irrigation/test-schedule', (req, res) => {
+    checkScheduledIrrigation();
+    res.json({ 
+        status: 'OK', 
+        message: 'Verificação de programações executada',
+        programacoes: devicesState.irrigation.programacoes
+    });
+});
+
+// Status programações
+app.get('/api/irrigation/schedule-status', (req, res) => {
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    const currentDay = getCurrentDayOfWeek();
+    
+    res.json({
+        currentTime,
+        currentDay,
+        programacoes: devicesState.irrigation.programacoes,
+        modo: devicesState.irrigation.modo,
+        bomba_ativa: devicesState.irrigation.bomba_irrigacao
     });
 });
 
@@ -635,6 +672,46 @@ app.post('/api/irrigation/control', async (req, res) => {
     res.json({ status: 'OK', message: `Bomba ${state ? 'ligada' : 'desligada'}` });
 });
 
+// ==================== ROTAS DE CALIBRAÇÃO ====================
+
+// Obter configurações de calibração
+app.get('/api/calibration', (req, res) => {
+    res.json({
+        calib_temp: devicesState.calib_temp || 0.0,
+        calib_umid: devicesState.calib_umid || 0.0,
+        temperature_raw: devicesState.sensorData?.[0]?.temperature || 0,
+        humidity_raw: devicesState.sensorData?.[0]?.humidity || 0
+    });
+});
+
+// Salvar configurações de calibração
+app.post('/api/calibration/save', (req, res) => {
+    try {
+        const { calib_temp, calib_umid } = req.body;
+        
+        console.log('🔧 Salvando calibração:', { calib_temp, calib_umid });
+        
+        // Salvar no estado
+        devicesState.calib_temp = parseFloat(calib_temp) || 0.0;
+        devicesState.calib_umid = parseFloat(calib_umid) || 0.0;
+        
+        saveState(devicesState);
+        
+        res.json({ 
+            status: 'OK', 
+            message: 'Calibração salva com sucesso!',
+            calibration: {
+                calib_temp: devicesState.calib_temp,
+                calib_umid: devicesState.calib_umid
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar calibração:', error);
+        res.status(500).json({ error: 'Erro ao salvar calibração' });
+    }
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ 
@@ -660,5 +737,6 @@ app.listen(PORT, () => {
     console.log('🔐 Sistema de Login: CORRIGIDO - Cookies funcionando');
     console.log('💧 Umidade: CORRIGIDA - Valores precisos');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
+    console.log('🔧 Sistema de Calibração: PRONTO');
     console.log('📊 Sensores: FUNCIONANDO\n');
 });
