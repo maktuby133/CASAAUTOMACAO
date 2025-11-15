@@ -1,8 +1,8 @@
-// public/script.js - Cliente CORRIGIDO
+// public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
-    if (window.location.pathname === '/' || window.location.pathname === '/login.html') {
+    if (window.location.pathname === '/' || window.location.pathname.includes('login.html')) {
         handleLoginPage();
     } else {
         handleSystemPage();
@@ -31,6 +31,7 @@ function handleLoginPage() {
                 const data = await response.json();
                 
                 if (data.success) {
+                    // ✅ CORREÇÃO: Salva autenticação no localStorage
                     localStorage.setItem('casa-automacao-authenticated', 'true');
                     localStorage.setItem('casa-automacao-user', JSON.stringify({
                         username: username,
@@ -49,12 +50,11 @@ function handleLoginPage() {
     }
 }
 
-// ✅ CORREÇÃO: Função assíncrona
-async function handleSystemPage() {
+function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
     
-    // ✅ CORREÇÃO: Aguardar verificação de autenticação
-    await checkSystemAuth();
+    // ✅ CORREÇÃO: Verificação de auth apenas para sistema
+    checkSystemAuth();
     
     // Configurar botão de logout se existir
     const logoutBtn = document.querySelector('.logout-btn');
@@ -63,7 +63,7 @@ async function handleSystemPage() {
     }
 }
 
-// Verificação apenas para páginas do sistema
+// ✅ CORREÇÃO: Verificação apenas para páginas do sistema
 async function checkSystemAuth() {
     try {
         const response = await fetch('/api/status');
@@ -73,6 +73,7 @@ async function checkSystemAuth() {
             console.log('❌ Não autenticado, redirecionando...');
             window.location.href = '/login.html';
         } else {
+            // ✅ CORREÇÃO: Inicializa o sistema se estiver autenticado
             initializeSystem();
         }
     } catch (error) {
@@ -81,7 +82,7 @@ async function checkSystemAuth() {
     }
 }
 
-// Função para inicializar o sistema
+// ✅ CORREÇÃO: Função para inicializar o sistema
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     startDataUpdates();
@@ -117,7 +118,7 @@ async function logout() {
     }
 }
 
-// Adicionar função global para logout
+// ✅ CORREÇÃO: Adicionar função global para logout
 window.logout = logout;
 
 // Sistema de Automação - Funções principais
@@ -352,7 +353,7 @@ function startDataUpdates() {
     updateSensorData();
 }
 
-// Atualização de dados dos sensores com umidade correta
+// ✅ CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
         const response = await fetch('/api/sensor-data');
@@ -376,10 +377,11 @@ async function updateSensorData() {
                 }
             }
             
-            // Atualizar umidade REAL do ESP32
+            // ✅ CORREÇÃO: Atualizar umidade REAL do ESP32
             const humidityElement = document.getElementById('sensor-humidity');
             if (humidityElement && latest.humidity !== undefined) {
-                humidityElement.textContent = `${Math.round(latest.humidity)}%`;
+                // ✅ CORREÇÃO: Usar o valor exato enviado pelo ESP32
+                humidityElement.textContent = `${latest.humidity}%`;
                 
                 // Mudar cor baseada na umidade
                 if (latest.humidity > 80) {
@@ -557,35 +559,6 @@ async function checkWeather() {
     } catch (error) {
         console.error('❌ Erro ao verificar clima:', error);
         showNotification('Erro ao verificar condições climáticas', 'error');
-    }
-}
-
-// ✅ CORREÇÃO: Função para testar irrigação automática
-async function testIrrigationSchedule() {
-    try {
-        const response = await fetch('/api/irrigation/test-schedule');
-        const data = await response.json();
-        
-        if (data.status === 'OK') {
-            showNotification('✅ Verificação de programações executada!', 'success');
-            console.log('⏰ Programações:', data.programacoes);
-        }
-    } catch (error) {
-        console.error('❌ Erro ao testar programações:', error);
-        showNotification('Erro ao testar programações', 'error');
-    }
-}
-
-// ✅ CORREÇÃO: Função para ver status das programações
-async function checkScheduleStatus() {
-    try {
-        const response = await fetch('/api/irrigation/schedule-status');
-        const data = await response.json();
-        
-        console.log('⏰ Status das programações:', data);
-        showNotification(`Programações: ${data.programacoes.length} ativas | Modo: ${data.modo}`, 'info', 5000);
-    } catch (error) {
-        console.error('❌ Erro ao verificar status:', error);
     }
 }
 
@@ -771,7 +744,7 @@ function getSelectedProgrammings() {
     return programmings;
 }
 
-// Salvar configurações de irrigação de forma robusta
+// ✅ CORREÇÃO: Salvar configurações de irrigação de forma robusta
 async function saveIrrigationSettings() {
     try {
         const modeSelect = document.getElementById('irrigation-mode-select');
@@ -940,6 +913,9 @@ function checkConnection() {
 // Prevenir fechamento acidental
 window.addEventListener('beforeunload', function (e) {
     // Opcional: Confirmar saída se houver operações pendentes
+    // const confirmationMessage = 'Tem certeza que deseja sair?';
+    // e.returnValue = confirmationMessage;
+    // return confirmationMessage;
 });
 
 // Configurar eventos
@@ -956,35 +932,7 @@ if (modal) {
     });
 }
 
-// ✅ CORREÇÃO: Adicionar botões de teste no modal de irrigação
-function addTestButtonsToModal() {
-    const modalSection = document.querySelector('.modal-section:last-child');
-    if (modalSection) {
-        const testButtons = `
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
-                <h4><i class="fas fa-vial"></i> Testes</h4>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-primary" onclick="testIrrigationSchedule()" style="flex: 1;">
-                        <i class="fas fa-play"></i> Testar Agora
-                    </button>
-                    <button class="btn btn-info" onclick="checkScheduleStatus()" style="flex: 1;">
-                        <i class="fas fa-info-circle"></i> Ver Status
-                    </button>
-                </div>
-            </div>
-        `;
-        modalSection.insertAdjacentHTML('beforeend', testButtons);
-    }
-}
-
-// Inicializar botões de teste quando o modal abrir
-const originalOpenIrrigationModal = window.openIrrigationModal;
-window.openIrrigationModal = function() {
-    originalOpenIrrigationModal();
-    setTimeout(addTestButtonsToModal, 100);
-};
-
-// Exportar todas as funções globais
+// ✅ CORREÇÃO: Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
@@ -1000,7 +948,5 @@ window.updateWeather = updateWeather;
 window.showNotification = showNotification;
 window.logout = logout;
 window.toggleTheme = toggleTheme;
-window.testIrrigationSchedule = testIrrigationSchedule;
-window.checkScheduleStatus = checkScheduleStatus;
 
 console.log('🔧 Script.js carregado com todas as funcionalidades!');
