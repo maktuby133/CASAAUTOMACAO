@@ -1,4 +1,4 @@
-// public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
+// public/script.js - Cliente CORRIGIDO
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -31,7 +31,6 @@ function handleLoginPage() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    // 🚨 CORREÇÃO: Salva autenticação no localStorage
                     localStorage.setItem('casa-automacao-authenticated', 'true');
                     localStorage.setItem('casa-automacao-user', JSON.stringify({
                         username: username,
@@ -50,11 +49,12 @@ function handleLoginPage() {
     }
 }
 
-function handleSystemPage() {
+// ✅ CORREÇÃO: Função assíncrona adicionada
+async function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
     
-    // 🚨 CORREÇÃO: Verificação de auth apenas para sistema
-    checkSystemAuth();
+    // ✅ CORREÇÃO: Aguardar verificação de autenticação
+    await checkSystemAuth();
     
     // Configurar botão de logout se existir
     const logoutBtn = document.querySelector('.logout-btn');
@@ -63,7 +63,7 @@ function handleSystemPage() {
     }
 }
 
-// 🚨 CORREÇÃO: Verificação apenas para páginas do sistema
+// Verificação apenas para páginas do sistema
 async function checkSystemAuth() {
     try {
         const response = await fetch('/api/status');
@@ -73,7 +73,6 @@ async function checkSystemAuth() {
             console.log('❌ Não autenticado, redirecionando...');
             window.location.href = '/login.html';
         } else {
-            // 🚨 CORREÇÃO: Inicializa o sistema se estiver autenticado
             initializeSystem();
         }
     } catch (error) {
@@ -82,7 +81,7 @@ async function checkSystemAuth() {
     }
 }
 
-// 🚨 CORREÇÃO: Função para inicializar o sistema
+// Função para inicializar o sistema
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     startDataUpdates();
@@ -118,7 +117,7 @@ async function logout() {
     }
 }
 
-// 🚨 CORREÇÃO: Adicionar função global para logout
+// Adicionar função global para logout
 window.logout = logout;
 
 // Sistema de Automação - Funções principais
@@ -353,7 +352,7 @@ function startDataUpdates() {
     updateSensorData();
 }
 
-// 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
+// Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
         const response = await fetch('/api/sensor-data');
@@ -377,7 +376,7 @@ async function updateSensorData() {
                 }
             }
             
-            // 🆕 CORREÇÃO: Atualizar umidade REAL do ESP32
+            // Atualizar umidade REAL do ESP32
             const humidityElement = document.getElementById('sensor-humidity');
             if (humidityElement && latest.humidity !== undefined) {
                 humidityElement.textContent = `${Math.round(latest.humidity)}%`;
@@ -439,7 +438,7 @@ async function updateSensorData() {
     }
 }
 
-// 🆕 METEOROLOGIA EXPANDIDA
+// METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
         const response = await fetch('/api/weather');
@@ -561,7 +560,7 @@ async function checkWeather() {
     }
 }
 
-// 🆕 MODAL DE IRRIGAÇÃO MELHORADO
+// MODAL DE IRRIGAÇÃO MELHORADO
 function openIrrigationModal() {
     const modal = document.getElementById('irrigation-modal');
     if (modal) {
@@ -598,7 +597,7 @@ function loadIrrigationSettings() {
         durationInput.value = irrigation.duracao || 5;
     }
     
-    // 🆕 Limpar e carregar programações
+    // Limpar e carregar programações
     const programmingList = document.getElementById('programming-list');
     programmingList.innerHTML = '';
     
@@ -617,7 +616,7 @@ function loadIrrigationSettings() {
         });
     }
     
-    // 🆕 Limpar seleções atuais
+    // Limpar seleções atuais
     document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
     document.getElementById('irrigation-time').value = '08:00';
 }
@@ -743,7 +742,7 @@ function getSelectedProgrammings() {
     return programmings;
 }
 
-// 🆕 CORREÇÃO: Salvar configurações de irrigação de forma robusta
+// Salvar configurações de irrigação de forma robusta
 async function saveIrrigationSettings() {
     try {
         const modeSelect = document.getElementById('irrigation-mode-select');
@@ -785,7 +784,7 @@ async function saveIrrigationSettings() {
     }
 }
 
-// 🆕 SISTEMA DE NOTIFICAÇÕES
+// SISTEMA DE NOTIFICAÇÕES
 function showNotification(message, type = 'info', duration = 5000) {
     // Remove notificações existentes para evitar acumulação
     const existingNotifications = document.querySelectorAll('.custom-notification');
@@ -846,7 +845,7 @@ function showNotification(message, type = 'info', duration = 5000) {
     }, 4000);
 }
 
-// 🆕 ADICIONAR ANIMAÇÕES CSS PARA NOTIFICAÇÕES
+// ADICIONAR ANIMAÇÕES CSS PARA NOTIFICAÇÕES
 if (!document.querySelector('#notification-styles')) {
     const style = document.createElement('style');
     style.id = 'notification-styles';
@@ -912,9 +911,6 @@ function checkConnection() {
 // Prevenir fechamento acidental
 window.addEventListener('beforeunload', function (e) {
     // Opcional: Confirmar saída se houver operações pendentes
-    // const confirmationMessage = 'Tem certeza que deseja sair?';
-    // e.returnValue = confirmationMessage;
-    // return confirmationMessage;
 });
 
 // Configurar eventos
@@ -931,7 +927,7 @@ if (modal) {
     });
 }
 
-// 🚨 CORREÇÃO: Exportar todas as funções globais
+// Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
