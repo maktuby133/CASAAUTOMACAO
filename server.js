@@ -56,7 +56,8 @@ function loadState() {
             modo: 'manual', 
             programacoes: [], 
             evitar_chuva: true,
-            duracao: 5
+            duracao: 5,
+            modo_automatico: false // 🆕 CORREÇÃO: Campo adicional para ESP32
         },
         sensorData: []
     };
@@ -66,6 +67,7 @@ function loadState() {
 function saveState(state) {
     try {
         fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+        console.log('💾 Estado salvo com sucesso');
     } catch (error) {
         console.error('❌ Erro ao salvar estado:', error);
     }
@@ -292,10 +294,10 @@ app.get('/api/weather/raining', async (req, res) => {
 
 // 🚨 CORREÇÃO: ESP32 envia dados - SEM AUTENTICAÇÃO
 app.post('/api/data', (req, res) => {
-    const { temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
+    const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
 
     console.log('📨 Dados recebidos do ESP32:', {
-        temperature, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto
+        temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto
     });
 
     if (typeof temperature === 'undefined' || typeof gas_level === 'undefined') {
@@ -303,9 +305,14 @@ app.post('/api/data', (req, res) => {
     }
 
     const newData = {
-        temperature, gas_level, gas_alert: gas_alert || false,
-        device: device || 'ESP32', heartbeat: heartbeat || false,
-        wifi_rssi: wifi_rssi || 0, timestamp: new Date().toLocaleString('pt-BR'),
+        temperature, 
+        humidity: humidity || 0, // 🆕 CORREÇÃO: Incluir umidade
+        gas_level, 
+        gas_alert: gas_alert || false,
+        device: device || 'ESP32', 
+        heartbeat: heartbeat || false,
+        wifi_rssi: wifi_rssi || 0, 
+        timestamp: new Date().toLocaleString('pt-BR'),
         receivedAt: new Date()
     };
 
@@ -318,9 +325,10 @@ app.post('/api/data', (req, res) => {
     // Atualizar modo automático da irrigação se recebido
     if (typeof irrigation_auto !== 'undefined') {
         devicesState.irrigation.modo = irrigation_auto ? 'automatico' : 'manual';
+        devicesState.irrigation.modo_automatico = irrigation_auto; // 🆕 CORREÇÃO: Campo para ESP32
+        saveState(devicesState);
     }
 
-    saveState(devicesState);
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status(device, clientIP);
 
@@ -340,13 +348,20 @@ app.get('/api/commands', (req, res) => {
     
     console.log('📥 ESP32 solicitando comandos');
     
+    // 🆕 CORREÇÃO: Incluir programações no retorno para ESP32
+    const programacoesParaESP32 = devicesState.irrigation.programacoes.map(prog => ({
+        hora: prog.hora,
+        dias: prog.dias
+    }));
+    
     res.json({
         lights: devicesState.lights,
         outlets: devicesState.outlets,
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
-            duracao: devicesState.irrigation.duracao || 5
+            duracao: devicesState.irrigation.duracao || 5,
+            programacoes: programacoesParaESP32 // 🆕 CORREÇÃO: Enviar programações para ESP32
         }
     });
 });
@@ -365,6 +380,7 @@ app.post('/api/confirm', (req, res) => {
     if (req.body.irrigation) {
         devicesState.irrigation.bomba_irrigacao = req.body.irrigation.bomba_irrigacao || false;
         devicesState.irrigation.modo = req.body.irrigation.modo_automatico ? 'automatico' : 'manual';
+        devicesState.irrigation.modo_automatico = req.body.irrigation.modo_automatico || false;
     }
     
     saveState(devicesState);
@@ -390,7 +406,8 @@ app.get('/api/devices', (req, res) => {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo: devicesState.irrigation.modo,
             evitar_chuva: devicesState.irrigation.evitar_chuva,
-            duracao: devicesState.irrigation.duracao || 5
+            duracao: devicesState.irrigation.duracao || 5,
+            programacoes: devicesState.irrigation.programacoes || [] // 🆕 CORREÇÃO: Incluir programações
         }
     });
 });
@@ -444,13 +461,21 @@ app.post('/api/control', async (req, res) => {
 // Dados dos sensores
 app.get('/api/sensor-data', (req, res) => {
     const espConnected = checkESP32Connection();
+    
+    // 🆕 CORREÇÃO: Garantir que os dados de umidade sejam passados corretamente
+    const sensorData = (devicesState.sensorData || []).map(data => ({
+        ...data,
+        humidity: data.humidity || 0 // Garantir que umidade sempre tenha valor
+    }));
+    
     res.json({ 
-        data: devicesState.sensorData || [],
+        data: sensorData,
         esp32: { connected: espConnected },
         summary: {
-            total_readings: devicesState.sensorData?.length || 0,
-            last_temperature: devicesState.sensorData?.[0]?.temperature || 'N/A',
-            last_gas_level: devicesState.sensorData?.[0]?.gas_level || 'N/A'
+            total_readings: sensorData.length || 0,
+            last_temperature: sensorData[0]?.temperature || 'N/A',
+            last_humidity: sensorData[0]?.humidity || 'N/A', // 🆕 CORREÇÃO: Incluir umidade
+            last_gas_level: sensorData[0]?.gas_level || 'N/A'
         }
     });
 });
@@ -476,15 +501,42 @@ app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
 
+// 🆕 CORREÇÃO: Salvar configurações de irrigação de forma robusta
 app.post('/api/irrigation/save', (req, res) => {
-    const { modo, programacoes, evitar_chuva, duracao } = req.body;
-    devicesState.irrigation.modo = modo;
-    devicesState.irrigation.programacoes = programacoes || [];
-    devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
-    devicesState.irrigation.duracao = duracao || 5;
-    saveState(devicesState);
-    console.log('💧 Configurações salvas:', { modo, programacoes, evitar_chuva, duracao });
-    res.json({ status: 'OK', message: 'Configurações salvas' });
+    try {
+        const { modo, programacoes, evitar_chuva, duracao } = req.body;
+        
+        console.log('💧 Salvando configurações de irrigação:', { 
+            modo, 
+            programacoes: programacoes?.length || 0, 
+            evitar_chuva, 
+            duracao 
+        });
+        
+        // 🆕 CORREÇÃO: Validação robusta dos dados
+        devicesState.irrigation.modo = modo || 'manual';
+        devicesState.irrigation.programacoes = Array.isArray(programacoes) ? programacoes : [];
+        devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
+        devicesState.irrigation.duracao = parseInt(duracao) || 5;
+        devicesState.irrigation.modo_automatico = modo === 'automatico'; // 🆕 Campo para ESP32
+        
+        saveState(devicesState);
+        
+        console.log('✅ Configurações de irrigação salvas com sucesso');
+        console.log('📋 Programações salvas:', devicesState.irrigation.programacoes);
+        
+        res.json({ 
+            status: 'OK', 
+            message: 'Configurações salvas',
+            savedData: devicesState.irrigation
+        });
+    } catch (error) {
+        console.error('❌ Erro ao salvar configurações de irrigação:', error);
+        res.status(500).json({ 
+            status: 'ERROR', 
+            error: 'Erro interno ao salvar configurações' 
+        });
+    }
 });
 
 app.post('/api/irrigation/control', async (req, res) => {
@@ -525,5 +577,6 @@ app.listen(PORT, () => {
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('🔐 Sistema de Login: CORRIGIDO - Sem loops');
-    console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO - Erro 401 RESOLVIDO\n');
+    console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO - Erro 401 RESOLVIDO');
+    console.log('🔄 Configurações de Irrigação: CORRIGIDAS - Persistência garantida\n');
 });
