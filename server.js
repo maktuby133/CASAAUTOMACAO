@@ -3,12 +3,13 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
+const fetch = require('node-fetch'); // ✅ CORREÇÃO: Adicionado
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🚨 CORREÇÃO: CORS simplificado
+// ✅ CORREÇÃO: CORS configurado corretamente
 app.use(cors({
     origin: true,
     credentials: true
@@ -57,7 +58,7 @@ function loadState() {
             programacoes: [], 
             evitar_chuva: true,
             duracao: 5,
-            modo_automatico: false // 🆕 CORREÇÃO: Campo adicional para ESP32
+            modo_automatico: false
         },
         sensorData: []
     };
@@ -134,7 +135,7 @@ async function isRaining() {
 let devicesState = loadState();
 setInterval(checkESP32Connection, 60000);
 
-// 🚨 CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO
+// ✅ CORREÇÃO: Middleware de autenticação CORRIGIDO
 function requireAuth(req, res, next) {
     const publicRoutes = [
         '/', 
@@ -148,7 +149,7 @@ function requireAuth(req, res, next) {
         '/script.js'
     ];
 
-    // 🚨 CORREÇÃO: Rotas do ESP32 - SEM AUTENTICAÇÃO
+    // Rotas do ESP32 - SEM AUTENTICAÇÃO
     const esp32Routes = [
         '/api/data',
         '/api/devices',
@@ -156,20 +157,31 @@ function requireAuth(req, res, next) {
         '/api/confirm'
     ];
 
-    // 🚨 CORREÇÃO: Verifica se é rota pública PRIMEIRO
+    // Verifica se é rota pública PRIMEIRO
     if (publicRoutes.includes(req.path)) {
         return next();
     }
 
-    // 🚨 CORREÇÃO: Verifica se é rota do ESP32 - PERMITE ACESSO
+    // Verifica se é rota do ESP32 - PERMITE ACESSO
     if (esp32Routes.includes(req.path)) {
         console.log(`📡 Rota ESP32 permitida: ${req.path}`);
         return next();
     }
 
-    // 🚨 CORREÇÃO: Verificação de autenticação SIMPLIFICADA
+    // ✅ CORREÇÃO: Para rotas API de controle, requer autenticação
+    if (req.path.startsWith('/api/control') || req.path.startsWith('/api/irrigation')) {
+        const authToken = req.cookies?.authToken;
+        
+        if (authToken === 'admin123') {
+            return next();
+        } else {
+            console.log('🔐 Acesso negado - Token inválido');
+            return res.status(401).json({ error: 'Não autorizado' });
+        }
+    }
+
     // Para páginas HTML, verifica se está autenticado
-    if (req.path.endsWith('.html') || req.path === '/sistema') {
+    if (req.path.endsWith('.html') || req.path === '/index.html') {
         const authToken = req.cookies?.authToken;
         
         if (authToken === 'admin123') {
@@ -180,7 +192,7 @@ function requireAuth(req, res, next) {
         }
     }
 
-    // 🚨 CORREÇÃO: Para rotas API, permite acesso sem autenticação para facilitar
+    // Para outras rotas API, permite acesso
     if (req.path.startsWith('/api/')) {
         return next();
     }
@@ -192,16 +204,12 @@ function requireAuth(req, res, next) {
 // Aplica o middleware
 app.use(requireAuth);
 
-// 🚨 CORREÇÃO: Rota principal serve login
+// Rota principal serve login
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// 🚨 CORREÇÃO: Rota do sistema explícita
-app.get('/sistema', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
+// ✅ CORREÇÃO: Rota do sistema correta
 app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -223,10 +231,11 @@ app.post('/api/login', (req, res) => {
         
         console.log('✅ Login realizado com sucesso');
         
+        // ✅ CORREÇÃO: Redirecionamento correto
         res.json({ 
             success: true, 
             message: 'Login realizado',
-            redirect: '/sistema'
+            redirect: '/index.html'
         });
     } else {
         console.log('❌ Login falhou - Credenciais inválidas');
@@ -247,7 +256,7 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// Status do servidor - 🚨 CORREÇÃO: Sem verificação de auth
+// Status do servidor
 app.get('/api/status', (req, res) => {
     const espConnected = checkESP32Connection();
     res.json({ 
@@ -292,7 +301,7 @@ app.get('/api/weather/raining', async (req, res) => {
     }
 });
 
-// 🚨 CORREÇÃO: ESP32 envia dados - SEM AUTENTICAÇÃO
+// ESP32 envia dados - SEM AUTENTICAÇÃO
 app.post('/api/data', (req, res) => {
     const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
 
@@ -306,7 +315,7 @@ app.post('/api/data', (req, res) => {
 
     const newData = {
         temperature, 
-        humidity: humidity || 0, // 🆕 CORREÇÃO: Incluir umidade
+        humidity: humidity || 0,
         gas_level, 
         gas_alert: gas_alert || false,
         device: device || 'ESP32', 
@@ -325,7 +334,7 @@ app.post('/api/data', (req, res) => {
     // Atualizar modo automático da irrigação se recebido
     if (typeof irrigation_auto !== 'undefined') {
         devicesState.irrigation.modo = irrigation_auto ? 'automatico' : 'manual';
-        devicesState.irrigation.modo_automatico = irrigation_auto; // 🆕 CORREÇÃO: Campo para ESP32
+        devicesState.irrigation.modo_automatico = irrigation_auto;
         saveState(devicesState);
     }
 
@@ -341,14 +350,13 @@ app.post('/api/data', (req, res) => {
     });
 });
 
-// 🚨 CORREÇÃO: ESP32 busca comandos - SEM AUTENTICAÇÃO
+// ESP32 busca comandos - SEM AUTENTICAÇÃO
 app.get('/api/commands', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
     
     console.log('📥 ESP32 solicitando comandos');
     
-    // 🆕 CORREÇÃO: Incluir programações no retorno para ESP32
     const programacoesParaESP32 = devicesState.irrigation.programacoes.map(prog => ({
         hora: prog.hora,
         dias: prog.dias
@@ -361,12 +369,12 @@ app.get('/api/commands', (req, res) => {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
             duracao: devicesState.irrigation.duracao || 5,
-            programacoes: programacoesParaESP32 // 🆕 CORREÇÃO: Enviar programações para ESP32
+            programacoes: programacoesParaESP32
         }
     });
 });
 
-// 🚨 CORREÇÃO: ESP32 confirma comandos - SEM AUTENTICAÇÃO
+// ESP32 confirma comandos - SEM AUTENTICAÇÃO
 app.post('/api/confirm', (req, res) => {
     console.log('✅ Confirmação recebida do ESP32:', req.body);
     
@@ -392,7 +400,7 @@ app.post('/api/confirm', (req, res) => {
     });
 });
 
-// 🚨 CORREÇÃO: ESP32 busca dispositivos - SEM AUTENTICAÇÃO
+// ESP32 busca dispositivos - SEM AUTENTICAÇÃO
 app.get('/api/devices', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
@@ -407,12 +415,12 @@ app.get('/api/devices', (req, res) => {
             modo: devicesState.irrigation.modo,
             evitar_chuva: devicesState.irrigation.evitar_chuva,
             duracao: devicesState.irrigation.duracao || 5,
-            programacoes: devicesState.irrigation.programacoes || [] // 🆕 CORREÇÃO: Incluir programações
+            programacoes: devicesState.irrigation.programacoes || []
         }
     });
 });
 
-// Controlar dispositivos (Frontend)
+// Controlar dispositivos (Frontend) - ✅ CORREÇÃO: Requer autenticação
 app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
     
@@ -462,10 +470,9 @@ app.post('/api/control', async (req, res) => {
 app.get('/api/sensor-data', (req, res) => {
     const espConnected = checkESP32Connection();
     
-    // 🆕 CORREÇÃO: Garantir que os dados de umidade sejam passados corretamente
     const sensorData = (devicesState.sensorData || []).map(data => ({
         ...data,
-        humidity: data.humidity || 0 // Garantir que umidade sempre tenha valor
+        humidity: data.humidity || 0
     }));
     
     res.json({ 
@@ -474,7 +481,7 @@ app.get('/api/sensor-data', (req, res) => {
         summary: {
             total_readings: sensorData.length || 0,
             last_temperature: sensorData[0]?.temperature || 'N/A',
-            last_humidity: sensorData[0]?.humidity || 'N/A', // 🆕 CORREÇÃO: Incluir umidade
+            last_humidity: sensorData[0]?.humidity || 'N/A',
             last_gas_level: sensorData[0]?.gas_level || 'N/A'
         }
     });
@@ -501,7 +508,7 @@ app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
 
-// 🆕 CORREÇÃO: Salvar configurações de irrigação de forma robusta
+// Salvar configurações de irrigação
 app.post('/api/irrigation/save', (req, res) => {
     try {
         const { modo, programacoes, evitar_chuva, duracao } = req.body;
@@ -513,12 +520,11 @@ app.post('/api/irrigation/save', (req, res) => {
             duracao 
         });
         
-        // 🆕 CORREÇÃO: Validação robusta dos dados
         devicesState.irrigation.modo = modo || 'manual';
         devicesState.irrigation.programacoes = Array.isArray(programacoes) ? programacoes : [];
         devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
         devicesState.irrigation.duracao = parseInt(duracao) || 5;
-        devicesState.irrigation.modo_automatico = modo === 'automatico'; // 🆕 Campo para ESP32
+        devicesState.irrigation.modo_automatico = modo === 'automatico';
         
         saveState(devicesState);
         
@@ -576,7 +582,7 @@ app.listen(PORT, () => {
     console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
-    console.log('🔐 Sistema de Login: CORRIGIDO - Sem loops');
-    console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO - Erro 401 RESOLVIDO');
-    console.log('🔄 Configurações de Irrigação: CORRIGIDAS - Persistência garantida\n');
+    console.log('🔐 Sistema de Login: CORRIGIDO');
+    console.log('🚨 Rotas ESP32: SEM AUTENTICAÇÃO');
+    console.log('🔄 Configurações de Irrigação: CORRIGIDAS\n');
 });
