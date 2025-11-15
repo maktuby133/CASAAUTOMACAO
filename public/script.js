@@ -353,6 +353,7 @@ function startDataUpdates() {
     updateSensorData();
 }
 
+// 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
         const response = await fetch('/api/sensor-data');
@@ -376,12 +377,19 @@ async function updateSensorData() {
                 }
             }
             
-            // Atualizar umidade (simulada)
+            // 🆕 CORREÇÃO: Atualizar umidade REAL do ESP32
             const humidityElement = document.getElementById('sensor-humidity');
-            if (humidityElement) {
-                // Simular umidade baseada na temperatura
-                const simulatedHumidity = Math.max(30, Math.min(80, 60 - (latest.temperature - 22) * 2));
-                humidityElement.textContent = `${Math.round(simulatedHumidity)}%`;
+            if (humidityElement && latest.humidity !== undefined) {
+                humidityElement.textContent = `${Math.round(latest.humidity)}%`;
+                
+                // Mudar cor baseada na umidade
+                if (latest.humidity > 80) {
+                    humidityElement.style.color = '#4444ff';
+                } else if (latest.humidity < 30) {
+                    humidityElement.style.color = '#ffaa00';
+                } else {
+                    humidityElement.style.color = 'white';
+                }
             }
             
             // Atualizar gás
@@ -735,6 +743,7 @@ function getSelectedProgrammings() {
     return programmings;
 }
 
+// 🆕 CORREÇÃO: Salvar configurações de irrigação de forma robusta
 async function saveIrrigationSettings() {
     try {
         const modeSelect = document.getElementById('irrigation-mode-select');
@@ -748,6 +757,8 @@ async function saveIrrigationSettings() {
             programacoes: getSelectedProgrammings()
         };
         
+        console.log('💧 Enviando configurações para servidor:', settings);
+        
         const response = await fetch('/api/irrigation/save', {
             method: 'POST',
             headers: {
@@ -759,7 +770,8 @@ async function saveIrrigationSettings() {
         const data = await response.json();
         
         if (data.status === 'OK') {
-            console.log('✅ Configurações de irrigação salvas');
+            console.log('✅ Configurações de irrigação salvas com sucesso');
+            console.log('📋 Dados salvos:', data.savedData);
             showNotification('Configurações salvas com sucesso!', 'success');
             closeIrrigationModal();
             loadDevices(); // Recarregar dados
