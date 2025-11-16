@@ -9,12 +9,15 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ CORREÇÃO CRÍTICA: CORS configurado para permitir cookies
+// ✅✅✅ CORREÇÃO CRÍTICA: CORS configurado CORRETAMENTE para cookies
 app.use(cors({
-    origin: true,
-    credentials: true,
+    origin: function(origin, callback) {
+        // Permite todas as origens em desenvolvimento
+        callback(null, true);
+    },
+    credentials: true, // ✅ CRÍTICO: Permite envio de cookies
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID', 'X-Device-Type']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID', 'X-Device-Type', 'Cookie', 'Set-Cookie']
 }));
 
 // Middleware
@@ -286,8 +289,20 @@ app.post('/api/login', (req, res) => {
     
     console.log('🔐 Tentativa de login:', { username });
     
-    if (username === 'admin' && password === 'admin123') {
-        // ✅ CORREÇÃO: Cookie configurado para funcionar em localhost
+    // Todas as credenciais válidas
+    const validCredentials = [
+        { username: 'admin', password: 'admin123' },
+        { username: 'usuario', password: 'user123' },
+        { username: 'charles', password: '061084Cc@' },
+        { username: 'casa', password: 'automacao2024' }
+    ];
+    
+    const isValid = validCredentials.some(cred => 
+        cred.username === username && cred.password === password
+    );
+    
+    if (isValid) {
+        // ✅ CORREÇÃO: Cookie configurado para funcionar em todas as condições
         res.cookie('authToken', 'admin123', {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
             httpOnly: false,    // ✅ Permite acesso via JavaScript
