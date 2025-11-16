@@ -562,11 +562,6 @@
             console.log('   - charles / 061084Cc@');
             console.log('   - casa / automacao2024');
         });
-
-        // Prevenir acesso direto sem login
-        if (window.location.pathname.endsWith('index.html') && !localStorage.getItem('casa-automacao-authenticated')) {
-            window.location.href = 'login.html';
-        }
     </script>
 </body>
 </html>
