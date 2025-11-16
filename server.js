@@ -214,7 +214,7 @@ function initializeSystems() {
 
 initializeSystems();
 
-// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação TOTALMENTE REFEITO
+// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação SIMPLIFICADO E FUNCIONAL
 const requireAuth = (req, res, next) => {
     const publicRoutes = [
         '/', 
@@ -226,7 +226,6 @@ const requireAuth = (req, res, next) => {
         '/api/weather',
         '/api/weather/raining',
         '/api/sensor-data',
-        '/api/devices',
         '/api/data',
         '/api/commands',
         '/api/confirm',
@@ -241,23 +240,25 @@ const requireAuth = (req, res, next) => {
         return next();
     }
 
-    // ✅ Verifica autenticação apenas para rotas protegidas
-    const authToken = req.cookies?.authToken;
-    
-    if (authToken === 'admin123') {
-        return next();
-    } else {
-        console.log('🔐 Acesso negado para:', req.path);
+    // ✅ Para rotas de API protegidas, verifica autenticação
+    if (req.path.startsWith('/api/')) {
+        const authToken = req.cookies?.authToken;
         
-        if (req.path.startsWith('/api/')) {
+        console.log('🔐 Verificando autenticação para:', req.path, 'Token:', authToken);
+        
+        if (authToken === 'admin123') {
+            return next();
+        } else {
+            console.log('🔐 Acesso negado para API:', req.path);
             return res.status(401).json({ 
                 error: 'Não autorizado - Faça login novamente',
                 redirect: '/login.html'
             });
-        } else {
-            return res.redirect('/login.html');
         }
     }
+
+    // ✅ Para outras rotas (HTML), permite acesso
+    next();
 };
 
 // Aplica o middleware
@@ -281,7 +282,7 @@ app.post('/api/login', (req, res) => {
     console.log('🔐 Tentativa de login:', { username });
     
     if (username === 'admin' && password === 'admin123') {
-        // ✅ CORREÇÃO: Cookie configurado para funcionar em localhost
+        // ✅ CORREÇÃO: Cookie configurado para funcionar em todas as situações
         res.cookie('authToken', 'admin123', {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
             httpOnly: false,    // ✅ Permite acesso via JavaScript
