@@ -216,7 +216,15 @@ initializeSystems();
 
 // ✅ Middleware para permitir acesso do ESP32 sem autenticação
 const allowESP32 = (req, res, next) => {
-    const esp32Routes = ['/api/data', '/api/commands', '/api/confirm', '/api/control', '/api/devices'];
+    const esp32Routes = [
+        '/api/data', 
+        '/api/commands', 
+        '/api/confirm', 
+        '/api/control', 
+        '/api/devices',
+        '/api/irrigation',
+        '/api/irrigation/control'  // ✅ CORREÇÃO: Adicionada rota de controle de irrigação
+    ];
     
     // Verifica se é uma rota do ESP32
     if (esp32Routes.includes(req.path)) {
@@ -252,7 +260,10 @@ const requireAuth = (req, res, next) => {
         '/api/data',
         '/api/commands',
         '/api/confirm',
-        '/api/control', // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
+        '/api/control',
+        '/api/irrigation',           // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
+        '/api/irrigation/control',   // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
+        '/api/irrigation/save',      // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
         '/health',
         '/favicon.ico',
         '/styles.css',
@@ -413,7 +424,7 @@ app.get('/api/sensor-data', (req, res) => {
             total_readings: sensorData.length || 0,
             last_temperature: sensorData[0]?.temperature || 'N/A',
             last_humidity: sensorData[0]?.humidity || 'N/A',
-            last_gas_level: sensorData[0]?.gas_level || 'N/A'
+            last_gas_level: sensorState[0]?.gas_level || 'N/A'
         }
     });
 });
@@ -631,7 +642,7 @@ app.post('/api/reset', (req, res) => {
     res.json({ status: 'OK', message: 'Todos os dispositivos desligados' });
 });
 
-// Irrigação
+// Irrigação - Rota pública para ESP32
 app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
@@ -672,10 +683,16 @@ app.post('/api/irrigation/save', (req, res) => {
     }
 });
 
+// Controle de irrigação - Rota pública para ESP32
 app.post('/api/irrigation/control', async (req, res) => {
     const { state } = req.body;
     
-    if (state === true && devicesState.irrigation.evitar_chuva) {
+    console.log('💧 Controle de irrigação recebido:', { state, from: req.get('User-Agent') || 'Unknown' });
+    
+    // ✅ CORREÇÃO: Verificar se é do ESP32 (não aplicar verificação de chuva para ESP32)
+    const isFromESP32 = req.get('User-Agent')?.includes('ESP32') || false;
+    
+    if (state === true && devicesState.irrigation.evitar_chuva && !isFromESP32) {
         const raining = await isRaining();
         if (raining) {
             return res.status(400).json({ error: 'Irrigação bloqueada - Está chovendo' });
@@ -684,7 +701,7 @@ app.post('/api/irrigation/control', async (req, res) => {
     
     devicesState.irrigation.bomba_irrigacao = state;
     saveState(devicesState);
-    console.log(`💧 Bomba: ${state ? 'LIGADA' : 'DESLIGADA'}`);
+    console.log(`💧 Bomba: ${state ? 'LIGADA' : 'DESLIGADA'} ${isFromESP32 ? '(pelo ESP32)' : '(pelo frontend)'}`);
     res.json({ status: 'OK', message: `Bomba ${state ? 'ligada' : 'desligada'}` });
 });
 
@@ -714,5 +731,5 @@ app.listen(PORT, () => {
     console.log('💧 Umidade: CORRIGIDA - Valores precisos');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO');
-    console.log('🔧 ESP32: ACESSO LIBERADO SEM AUTENTICAÇÃO\n');
+    console.log('🔧 ESP32: ACESSO LIBERADO PARA TODAS AS ROTAS DE IRRIGAÇÃO\n');
 });
