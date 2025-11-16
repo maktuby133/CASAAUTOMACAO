@@ -1,5 +1,18 @@
 // public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
 
+// ✅ CORREÇÃO: Configurar fetch para enviar cookies em TODAS as requisições
+function authFetch(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'include', // ✅ CRÍTICO: Inclui cookies em todas as requisições
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+    
+    return fetch(url, { ...defaultOptions, ...options });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
     if (window.location.pathname === '/' || window.location.pathname === '/login.html') {
@@ -20,11 +33,8 @@ function handleLoginPage() {
             const password = document.getElementById('password').value;
             
             try {
-                const response = await fetch('/api/login', {
+                const response = await authFetch('/api/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
                     body: JSON.stringify({ username, password })
                 });
                 
@@ -65,7 +75,7 @@ function handleSystemPage() {
 // ✅ CORREÇÃO: Verificação de autenticação melhorada
 async function checkSystemAuth() {
     try {
-        const response = await fetch('/api/status');
+        const response = await authFetch('/api/status');
         const data = await response.json();
         
         console.log('🔐 Status de autenticação:', data.authenticated);
@@ -114,7 +124,7 @@ async function logout() {
             logoutBtn.disabled = true;
         }
 
-        const response = await fetch('/api/logout', {
+        const response = await authFetch('/api/logout', {
             method: 'POST'
         });
         
@@ -146,7 +156,7 @@ let currentDevices = {};
 
 async function loadDevices() {
     try {
-        const response = await fetch('/api/devices');
+        const response = await authFetch('/api/devices');
         if (!response.ok) {
             throw new Error('Erro ao carregar dispositivos');
         }
@@ -264,11 +274,8 @@ function getDeviceDisplayName(deviceKey) {
 
 async function toggleDevice(type, device, state) {
     try {
-        const response = await fetch('/api/control', {
+        const response = await authFetch('/api/control', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ type, device, state })
         });
         
@@ -326,11 +333,8 @@ async function controlAllOutlets(state) {
 
 async function controlIrrigation(state) {
     try {
-        const response = await fetch('/api/irrigation/control', {
+        const response = await authFetch('/api/irrigation/control', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ state })
         });
         
@@ -380,7 +384,7 @@ function startDataUpdates() {
 // 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
-        const response = await fetch('/api/sensor-data');
+        const response = await authFetch('/api/sensor-data');
         const data = await response.json();
         
         if (data.data && data.data.length > 0) {
@@ -466,7 +470,7 @@ async function updateSensorData() {
 // 🆕 METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
-        const response = await fetch('/api/weather');
+        const response = await authFetch('/api/weather');
         const data = await response.json();
         
         if (data && data.main) {
@@ -571,7 +575,7 @@ function getWeatherAnimationClass(weatherMain) {
 
 async function checkWeather() {
     try {
-        const response = await fetch('/api/weather/raining');
+        const response = await authFetch('/api/weather/raining');
         const data = await response.json();
         
         if (data.raining) {
@@ -783,11 +787,8 @@ async function saveIrrigationSettings() {
         
         console.log('💧 Enviando configurações para servidor:', settings);
         
-        const response = await fetch('/api/irrigation/save', {
+        const response = await authFetch('/api/irrigation/save', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify(settings)
         });
         
