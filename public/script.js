@@ -1,4 +1,27 @@
-// public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
+// public/script.js - Cliente CORRIGIDO com autenticação funcionando
+
+// 🚨 CORREÇÃO: Verificar autenticação antes de fazer requisições
+async function checkAuthAndRequest(url, options = {}) {
+    try {
+        const response = await fetch(url, {
+            ...options,
+            credentials: 'include' // ✅ Inclui cookies em todas as requisições
+        });
+        
+        if (response.status === 401) {
+            console.log('🔐 Sessão expirada, redirecionando para login...');
+            localStorage.removeItem('casa-automacao-authenticated');
+            localStorage.removeItem('casa-automacao-user');
+            window.location.href = '/login.html';
+            return null;
+        }
+        
+        return response;
+    } catch (error) {
+        console.error('❌ Erro na requisição:', error);
+        throw error;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -25,7 +48,8 @@ function handleLoginPage() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include' // ✅ Inclui cookies
                 });
                 
                 const data = await response.json();
@@ -66,7 +90,9 @@ function handleSystemPage() {
 // 🚨 CORREÇÃO: Verificação apenas para páginas do sistema
 async function checkSystemAuth() {
     try {
-        const response = await fetch('/api/status');
+        const response = await checkAuthAndRequest('/api/status');
+        if (!response) return;
+        
         const data = await response.json();
         
         if (!data.authenticated) {
@@ -101,9 +127,11 @@ function initializeSystem() {
 // Logout function
 async function logout() {
     try {
-        const response = await fetch('/api/logout', {
+        const response = await checkAuthAndRequest('/api/logout', {
             method: 'POST'
         });
+        
+        if (!response) return;
         
         const data = await response.json();
         
@@ -126,7 +154,9 @@ let currentDevices = {};
 
 async function loadDevices() {
     try {
-        const response = await fetch('/api/devices');
+        const response = await checkAuthAndRequest('/api/devices');
+        if (!response) return;
+        
         const data = await response.json();
         currentDevices = data;
         updateDeviceDisplays();
@@ -240,13 +270,15 @@ function getDeviceDisplayName(deviceKey) {
 
 async function toggleDevice(type, device, state) {
     try {
-        const response = await fetch('/api/control', {
+        const response = await checkAuthAndRequest('/api/control', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ type, device, state })
         });
+        
+        if (!response) return;
         
         const data = await response.json();
         
@@ -302,13 +334,15 @@ async function controlAllOutlets(state) {
 
 async function controlIrrigation(state) {
     try {
-        const response = await fetch('/api/irrigation/control', {
+        const response = await checkAuthAndRequest('/api/irrigation/control', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ state })
         });
+        
+        if (!response) return;
         
         const data = await response.json();
         
@@ -356,7 +390,9 @@ function startDataUpdates() {
 // 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
-        const response = await fetch('/api/sensor-data');
+        const response = await checkAuthAndRequest('/api/sensor-data');
+        if (!response) return;
+        
         const data = await response.json();
         
         if (data.data && data.data.length > 0) {
@@ -442,7 +478,9 @@ async function updateSensorData() {
 // 🆕 METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
-        const response = await fetch('/api/weather');
+        const response = await checkAuthAndRequest('/api/weather');
+        if (!response) return;
+        
         const data = await response.json();
         
         if (data && data.main) {
@@ -547,7 +585,9 @@ function getWeatherAnimationClass(weatherMain) {
 
 async function checkWeather() {
     try {
-        const response = await fetch('/api/weather/raining');
+        const response = await checkAuthAndRequest('/api/weather/raining');
+        if (!response) return;
+        
         const data = await response.json();
         
         if (data.raining) {
@@ -759,13 +799,15 @@ async function saveIrrigationSettings() {
         
         console.log('💧 Enviando configurações para servidor:', settings);
         
-        const response = await fetch('/api/irrigation/save', {
+        const response = await checkAuthAndRequest('/api/irrigation/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(settings)
         });
+        
+        if (!response) return;
         
         const data = await response.json();
         
