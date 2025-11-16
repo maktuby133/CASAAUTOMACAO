@@ -100,16 +100,19 @@ function checkESP32Connection() {
     return esp32Status.connected;
 }
 
-// Sistema de irrigação automática
+// 🚨 CORREÇÃO CRÍTICA: Sistema de irrigação automática DEBUGADO
 function startIrrigationScheduler() {
     setInterval(() => {
         checkScheduledIrrigation();
-    }, 60000);
-    console.log('⏰ Agendador de irrigação iniciado');
+    }, 60000); // Verifica a cada minuto
+    console.log('⏰ Agendador de irrigação iniciado - DEBUG ATIVADO');
 }
 
 function checkScheduledIrrigation() {
+    console.log('💧 Verificando programações de irrigação...');
+    
     if (devicesState.irrigation.modo !== 'automatico') {
+        console.log('💧 Modo não é automático, ignorando verificações');
         return;
     }
 
@@ -118,21 +121,41 @@ function checkScheduledIrrigation() {
                        now.getMinutes().toString().padStart(2, '0');
     const currentDay = getCurrentDayOfWeek();
 
+    console.log(`💧 Hora atual: ${currentTime}, Dia: ${currentDay}`);
+
     const programacoes = devicesState.irrigation.programacoes || [];
     
+    if (programacoes.length === 0) {
+        console.log('💧 Nenhuma programação configurada');
+        return;
+    }
+
     programacoes.forEach((prog, index) => {
+        console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias.join(',')}`);
+        
         if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
-            console.log(`💧 Programação ${index + 1} ativada: ${prog.hora} - ${prog.dias.join(',')}`);
+            console.log(`🎯🎯🎯 Programação ${index + 1} ATIVADA: ${prog.hora} - ${prog.dias.join(',')}`);
+            
+            // 🚨 CORREÇÃO: Ativar a bomba IMEDIATAMENTE no estado
+            devicesState.irrigation.bomba_irrigacao = true;
+            saveState(devicesState);
+            
+            console.log('💧💧💧 BOMBA LIGADA NO ESTADO DO SERVIDOR');
             
             if (devicesState.irrigation.evitar_chuva) {
                 isRaining().then(raining => {
                     if (!raining) {
+                        console.log('💧 Clima seco - Iniciando irrigação programada');
                         startScheduledIrrigation(index);
                     } else {
                         console.log('💧 Irrigação programada cancelada - Está chovendo');
+                        // Desligar bomba se estiver chovendo
+                        devicesState.irrigation.bomba_irrigacao = false;
+                        saveState(devicesState);
                     }
                 });
             } else {
+                console.log('💧 Evitar chuva desativado - Iniciando irrigação');
                 startScheduledIrrigation(index);
             }
         }
@@ -144,20 +167,14 @@ function getCurrentDayOfWeek() {
     return days[new Date().getDay()];
 }
 
+// 🚨 CORREÇÃO CRÍTICA: Função de irrigação programada DEBUGADA
 function startScheduledIrrigation(programIndex) {
-    if (devicesState.irrigation.bomba_irrigacao) {
-        console.log('💧 Bomba já está ligada, ignorando programação');
-        return;
-    }
-
     console.log(`💧 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
     
-    devicesState.irrigation.bomba_irrigacao = true;
-    saveState(devicesState);
-
     const duracao = devicesState.irrigation.duracao || 5;
     console.log(`⏰ Irrigação programada por ${duracao} minutos`);
     
+    // 🚨 CORREÇÃO: Timer para desligar a bomba após a duração
     setTimeout(() => {
         if (devicesState.irrigation.bomba_irrigacao) {
             console.log(`💧 DESLIGANDO IRRIGAÇÃO PROGRAMADA após ${duracao} minutos`);
@@ -486,11 +503,12 @@ app.get('/api/commands', (req, res) => {
         dias: prog.dias
     }));
     
+    // 🚨 CORREÇÃO: Enviar estado ATUAL da bomba para ESP32
     res.json({
         lights: devicesState.lights,
         outlets: devicesState.outlets,
         irrigation: {
-            bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
+            bomba_irrigacao: devicesState.irrigation.bomba_irrigacao, // 🚨 ESTADO ATUAL
             modo_automatico: devicesState.irrigation.modo === 'automatico',
             duracao: devicesState.irrigation.duracao || 5,
             programacoes: programacoesParaESP32
@@ -683,9 +701,9 @@ app.listen(PORT, () => {
     console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
-    console.log('⏰ Irrigação Automática: CORRIGIDA');
+    console.log('⏰ Irrigação Automática: DEBUG ATIVADO');
     console.log('🔐 Sistema de Login: CORRIGIDO - Cookies funcionando');
-    console.log('💧 Umidade: CORRIGIDA - Valores precisos');
+    console.log('💧 Bomba: DEBUG FÍSICO ATIVADO');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO\n');
 });
