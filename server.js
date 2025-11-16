@@ -64,9 +64,7 @@ function loadState() {
             duracao: 5,
             modo_automatico: false
         },
-        sensorData: [],
-        calib_temp: 0.0,
-        calib_umid: 0.0
+        sensorData: []
     };
 }
 
@@ -216,7 +214,7 @@ function initializeSystems() {
 
 initializeSystems();
 
-// ✅✅✅ CORREÇÃO DEFINITIVA: Middleware de autenticação SEM LOOP
+// ✅✅✅ CORREÇÃO CRÍTICA: Middleware de autenticação TOTALMENTE REFEITO
 const requireAuth = (req, res, next) => {
     const publicRoutes = [
         '/', 
@@ -232,48 +230,27 @@ const requireAuth = (req, res, next) => {
         '/api/data',
         '/api/commands',
         '/api/confirm',
-        '/api/calibration',
-        '/api/calibration/save',
-        '/api/irrigation',
-        '/api/irrigation/save',
-        '/api/irrigation/control',
-        '/api/control',
-        '/api/reset',
         '/health',
         '/favicon.ico',
         '/styles.css',
         '/script.js'
     ];
 
-    // ✅ Se for rota pública, permite acesso SEM verificação
+    // ✅ Se for rota pública, permite acesso
     if (publicRoutes.includes(req.path)) {
-        return next();
-    }
-
-    // ✅ Se for arquivo estático, permite
-    if (req.path.includes('.css') || req.path.includes('.js') || req.path.includes('.ico') || req.path.includes('.png')) {
         return next();
     }
 
     // ✅ Verifica autenticação apenas para rotas protegidas
     const authToken = req.cookies?.authToken;
     
-    console.log('🔐 Verificando autenticação para:', req.path, 'Token:', !!authToken);
-    
     if (authToken === 'admin123') {
-        console.log('✅ Acesso autorizado para:', req.path);
         return next();
     } else {
-        console.log('❌ Acesso negado - Redirecionando para login');
-        
-        // ✅ CORREÇÃO: Não redireciona se já está na página de login
-        if (req.path === '/login.html' || req.path === '/') {
-            return next();
-        }
+        console.log('🔐 Acesso negado para:', req.path);
         
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ 
-                success: false,
                 error: 'Não autorizado - Faça login novamente',
                 redirect: '/login.html'
             });
@@ -452,7 +429,7 @@ app.post('/api/data', (req, res) => {
         temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto
     });
 
-    // ✅✅✅ CORREÇÃO CRÍTICA: Processar umidade CORRETAMENTE
+    // ✅ CORREÇÃO CRÍTICA: Processar umidade CORRETAMENTE
     let processedHumidity = humidity;
     if (typeof humidity === 'string') {
         processedHumidity = parseFloat(humidity);
@@ -685,46 +662,6 @@ app.post('/api/irrigation/control', async (req, res) => {
     res.json({ status: 'OK', message: `Bomba ${state ? 'ligada' : 'desligada'}` });
 });
 
-// ==================== ROTAS DE CALIBRAÇÃO ====================
-
-// Obter configurações de calibração
-app.get('/api/calibration', (req, res) => {
-    res.json({
-        calib_temp: devicesState.calib_temp || 0.0,
-        calib_umid: devicesState.calib_umid || 0.0,
-        temperature_raw: devicesState.sensorData?.[0]?.temperature || 0,
-        humidity_raw: devicesState.sensorData?.[0]?.humidity || 0
-    });
-});
-
-// Salvar configurações de calibração
-app.post('/api/calibration/save', (req, res) => {
-    try {
-        const { calib_temp, calib_umid } = req.body;
-        
-        console.log('🔧 Salvando calibração:', { calib_temp, calib_umid });
-        
-        // Salvar no estado
-        devicesState.calib_temp = parseFloat(calib_temp) || 0.0;
-        devicesState.calib_umid = parseFloat(calib_umid) || 0.0;
-        
-        saveState(devicesState);
-        
-        res.json({ 
-            status: 'OK', 
-            message: 'Calibração salva com sucesso!',
-            calibration: {
-                calib_temp: devicesState.calib_temp,
-                calib_umid: devicesState.calib_umid
-            }
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar calibração:', error);
-        res.status(500).json({ error: 'Erro ao salvar calibração' });
-    }
-});
-
 // Health check
 app.get('/health', (req, res) => {
     res.json({ 
@@ -747,9 +684,8 @@ app.listen(PORT, () => {
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('⏰ Irrigação Automática: CORRIGIDA');
-    console.log('🔐 Sistema de Login: CORRIGIDO - Sem loop de autenticação');
+    console.log('🔐 Sistema de Login: CORRIGIDO - Cookies funcionando');
     console.log('💧 Umidade: CORRIGIDA - Valores precisos');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
-    console.log('🔧 Sistema de Calibração: PRONTO');
     console.log('📊 Sensores: FUNCIONANDO\n');
 });
