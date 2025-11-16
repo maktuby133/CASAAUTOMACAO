@@ -387,20 +387,36 @@
             }
         }
 
-        .irrigation-icon {
-            width: 22px;
-            height: 22px;
-            animation: waterDrop 2s ease-in-out infinite;
+        /* 🚨 NOVO: GIF ANIMADO DA IRRIGAÇÃO */
+        .irrigation-gif {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            object-fit: cover;
+            box-shadow: 0 8px 25px rgba(0, 150, 255, 0.4);
+            transition: all 0.5s ease;
+            border: 3px solid transparent;
         }
 
-        @keyframes waterDrop {
+        .irrigation-gif.active {
+            border: 3px solid #00b894;
+            box-shadow: 0 8px 35px rgba(0, 184, 148, 0.6);
+            animation: waterPulse 2s ease-in-out infinite;
+        }
+
+        .irrigation-gif.inactive {
+            filter: grayscale(0.8) brightness(0.7);
+            opacity: 0.8;
+        }
+
+        @keyframes waterPulse {
             0%, 100% { 
-                transform: scale(1) translateY(0px);
-                filter: brightness(1) drop-shadow(0 0 5px rgba(0,150,255,0.5));
+                transform: scale(1);
+                box-shadow: 0 8px 25px rgba(0, 150, 255, 0.4);
             }
             50% { 
-                transform: scale(1.1) translateY(-2px);
-                filter: brightness(1.2) drop-shadow(0 0 10px rgba(0,150,255,0.8));
+                transform: scale(1.05);
+                box-shadow: 0 12px 35px rgba(0, 184, 148, 0.8);
             }
         }
 
@@ -839,11 +855,13 @@
             color: var(--text-secondary);
         }
 
+        /* 🚨 CORREÇÃO: Substituir ícone estático por GIF animado */
         .irrigation-large-icon {
-            width: 60px;
-            height: 60px;
+            width: 120px;
+            height: 120px;
             transition: var(--transition);
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            border-radius: 20px;
+            object-fit: cover;
         }
 
         .irrigation-status-container {
@@ -1345,12 +1363,11 @@
                 gap: 5px;
             }
             
-            .irrigation-large-icon {
-                width: 60px;
-                height: 60px;
-                right: 15px;
+            .irrigation-gif {
+                width: 100px;
+                height: 100px;
             }
-
+            
             .esp32-header-status {
                 position: relative;
                 left: auto;
@@ -1393,10 +1410,9 @@
                 justify-content: center;
             }
             
-            .irrigation-large-icon {
-                width: 50px;
-                height: 50px;
-                right: 10px;
+            .irrigation-gif {
+                width: 80px;
+                height: 80px;
             }
             
             .weather-details {
@@ -1584,7 +1600,11 @@
                     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
                     Sistema de Irrigação
                 </h2>
-                <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
+                <!-- 🚨 CORREÇÃO: Substituir ícone estático por GIF animado -->
+                <img src="https://ik.imagekit.io/o7q7lmyva/organic-skincare_15585728.gif" 
+                     class="irrigation-gif inactive" 
+                     id="irrigation-gif" 
+                     alt="Bomba de Irrigação">
             </div>
             
             <!-- Status reorganizado -->
@@ -1902,7 +1922,7 @@
             const statusElement = document.getElementById('irrigation-status');
             const modeElement = document.getElementById('irrigation-mode');
             const rainElement = document.getElementById('rain-avoidance');
-            const largeIcon = document.getElementById('irrigation-large-icon');
+            const gifElement = document.getElementById('irrigation-gif');
             
             if (statusElement) {
                 statusElement.textContent = irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA';
@@ -1917,10 +1937,15 @@
                 rainElement.textContent = irrigation.evitar_chuva ? 'Ativado' : 'Desativado';
             }
 
-            if (largeIcon) {
-                largeIcon.src = irrigation.bomba_irrigacao ? 
-                    'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000' : 
-                    'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+            // 🚨 CORREÇÃO: Atualizar GIF animado
+            if (gifElement) {
+                if (irrigation.bomba_irrigacao) {
+                    gifElement.classList.remove('inactive');
+                    gifElement.classList.add('active');
+                } else {
+                    gifElement.classList.remove('active');
+                    gifElement.classList.add('inactive');
+                }
             }
         }
 
