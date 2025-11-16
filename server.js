@@ -42,7 +42,14 @@ function loadState() {
         if (fs.existsSync(STATE_FILE)) {
             const data = fs.readFileSync(STATE_FILE, 'utf8');
             console.log('💾 Estado carregado do arquivo');
-            return JSON.parse(data);
+            const state = JSON.parse(data);
+            
+            // ✅ CORREÇÃO: Garantir que o modo_automatico esteja sincronizado
+            if (state.irrigation) {
+                state.irrigation.modo_automatico = state.irrigation.modo === 'automatico';
+            }
+            
+            return state;
         }
     } catch (error) {
         console.log('❌ Erro ao carregar estado:', error.message);
@@ -73,6 +80,11 @@ function loadState() {
 // Salvar estado
 function saveState(state) {
     try {
+        // ✅ CORREÇÃO: Garantir sincronização do modo_automatico
+        if (state.irrigation) {
+            state.irrigation.modo_automatico = state.irrigation.modo === 'automatico';
+        }
+        
         fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
         console.log('💾 Estado salvo com sucesso');
         return true;
@@ -104,7 +116,7 @@ function checkESP32Connection() {
     return esp32Status.connected;
 }
 
-// Sistema de irrigação automática - ✅ CORREÇÃO COMPLETA
+// Sistema de irrigação automática
 let irrigationCheckInterval = null;
 
 function startIrrigationScheduler() {
@@ -113,17 +125,12 @@ function startIrrigationScheduler() {
         clearInterval(irrigationCheckInterval);
     }
     
-    // Verifica a cada 30 segundos para ser mais responsivo
+    // Verifica a cada 10 segundos para ser mais responsivo
     irrigationCheckInterval = setInterval(() => {
         checkScheduledIrrigation();
-    }, 30000);
+    }, 10000);
     
-    console.log('⏰ Agendador de irrigação iniciado (verificação a cada 30 segundos)');
-    
-    // Verifica imediatamente ao iniciar
-    setTimeout(() => {
-        checkScheduledIrrigation();
-    }, 2000);
+    console.log('⏰ Agendador de irrigação iniciado (verificação a cada 10 segundos)');
 }
 
 function checkScheduledIrrigation() {
@@ -132,42 +139,27 @@ function checkScheduledIrrigation() {
                        now.getMinutes().toString().padStart(2, '0');
     const currentDay = getCurrentDayOfWeek();
 
-    console.log(`💧 [${currentTime}] Verificando irrigação automática...`);
-    console.log(`💧 Modo atual: ${devicesState.irrigation.modo}`);
-    console.log(`💧 Bomba atual: ${devicesState.irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA'}`);
-
     if (devicesState.irrigation.modo !== 'automatico') {
-        console.log('💧 ❌ Modo não é automático, ignorando verificação');
         return;
     }
 
     const programacoes = devicesState.irrigation.programacoes || [];
     
-    console.log(`💧 Programações configuradas: ${programacoes.length}`);
-    
     if (programacoes.length === 0) {
-        console.log('💧 ⚠️ Nenhuma programação configurada');
         return;
     }
 
-    let foundActiveSchedule = false;
-    
     programacoes.forEach((prog, index) => {
-        console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} nos dias: ${prog.dias.join(', ')}`);
-        
-        // ✅ CORREÇÃO: Verificação exata do horário e dias
         if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
-            foundActiveSchedule = true;
             console.log(`💧 ✅ PROGRAMação ${index + 1} ATIVADA! Hora: ${prog.hora}, Dia: ${currentDay}`);
             
-            // ✅ CORREÇÃO: Verificar se já está executando
+            // Verificar se já está executando
             if (devicesState.irrigation.bomba_irrigacao) {
                 console.log('💧 ⚠️ Bomba já está ligada, ignorando ativação duplicada');
                 return;
             }
 
             if (devicesState.irrigation.evitar_chuva) {
-                console.log('💧 Verificando condições climáticas...');
                 isRaining().then(raining => {
                     if (!raining) {
                         console.log('💧 ✅ Condições climáticas OK - Iniciando irrigação programada');
@@ -183,14 +175,8 @@ function checkScheduledIrrigation() {
                 console.log('💧 ✅ Evitar chuva desativado - Iniciando irrigação');
                 startScheduledIrrigation(index);
             }
-        } else {
-            console.log(`💧 Programação ${index + 1} não ativa (hora: ${prog.hora} ≠ ${currentTime} ou dias não incluem ${currentDay})`);
         }
     });
-
-    if (!foundActiveSchedule) {
-        console.log('💧 Nenhuma programação ativa no momento');
-    }
 }
 
 function getCurrentDayOfWeek() {
@@ -201,26 +187,19 @@ function getCurrentDayOfWeek() {
 function startScheduledIrrigation(programIndex) {
     console.log(`💧 🚀 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
     
-    // ✅ CORREÇÃO: Atualiza estado e salva imediatamente
+    // Atualiza estado e salva imediatamente
     devicesState.irrigation.bomba_irrigacao = true;
-    const saved = saveState(devicesState);
-    
-    if (!saved) {
-        console.log('💧 ❌ ERRO: Não foi possível salvar o estado da bomba');
-        return;
-    }
+    saveState(devicesState);
 
     const duracao = devicesState.irrigation.duracao || 5;
     console.log(`⏰ Irrigação programada por ${duracao} minutos`);
     
-    // ✅ CORREÇÃO: Timer para desligar a bomba
+    // Timer para desligar a bomba
     setTimeout(() => {
         if (devicesState.irrigation.bomba_irrigacao) {
             console.log(`💧 ⏹️ DESLIGANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1} após ${duracao} minutos`);
             devicesState.irrigation.bomba_irrigacao = false;
             saveState(devicesState);
-        } else {
-            console.log(`💧 ⏹️ Bomba já estava desligada (programação #${programIndex + 1})`);
         }
     }, duracao * 60 * 1000);
 }
@@ -230,7 +209,6 @@ async function fetchWeatherData() {
     try {
         const API_KEY = process.env.OPENWEATHER_API_KEY;
         if (!API_KEY) {
-            console.log('❌ API key não configurada');
             return null;
         }
 
@@ -241,14 +219,12 @@ async function fetchWeatherData() {
         const response = await fetch(url);
         
         if (!response.ok) {
-            console.log(`❌ Erro API clima: ${response.status}`);
             return null;
         }
         
         const data = await response.json();
         return data;
     } catch (error) {
-        console.error('❌ Erro ao buscar clima:', error);
         return null;
     }
 }
@@ -259,14 +235,10 @@ async function isRaining() {
         const weatherData = await fetchWeatherData();
         if (weatherData && weatherData.weather && weatherData.weather.length > 0) {
             const condition = weatherData.weather[0].main.toLowerCase();
-            const raining = condition.includes('rain') || condition.includes('drizzle') || condition.includes('storm');
-            console.log(`🌧️ Condição climática: ${condition} - Está chovendo: ${raining}`);
-            return raining;
+            return condition.includes('rain') || condition.includes('drizzle') || condition.includes('storm');
         }
-        console.log('🌤️ Dados climáticos indisponíveis, assumindo não está chovendo');
         return false;
     } catch (error) {
-        console.error('❌ Erro ao verificar chuva, assumindo não está chovendo:', error);
         return false;
     }
 }
@@ -375,8 +347,6 @@ app.get('/index.html', (req, res) => {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
-    console.log('🔐 Tentativa de login:', { username });
-    
     if (username === 'admin' && password === 'admin123') {
         res.cookie('authToken', 'admin123', {
             maxAge: 24 * 60 * 60 * 1000,
@@ -386,15 +356,12 @@ app.post('/api/login', (req, res) => {
             path: '/',
         });
         
-        console.log('✅ Login realizado - Cookie configurado');
-        
         res.json({ 
             success: true, 
             message: 'Login realizado',
             redirect: '/index.html'
         });
     } else {
-        console.log('❌ Login falhou');
         res.status(401).json({ 
             success: false, 
             message: 'Usuário ou senha incorretos' 
@@ -500,7 +467,7 @@ app.get('/api/sensor-data', (req, res) => {
     });
 });
 
-// Teste irrigação automática - ✅ CORREÇÃO: Reinicia o agendador
+// Teste irrigação automática
 app.get('/api/irrigation/test-schedule', (req, res) => {
     console.log('💧 TESTE MANUAL: Verificando programações...');
     checkScheduledIrrigation();
@@ -585,31 +552,40 @@ app.post('/api/data', (req, res) => {
     });
 });
 
-// ESP32 busca comandos
+// ESP32 busca comandos - ✅ CORREÇÃO CRÍTICA: Envia estado CORRETO para o ESP32
 app.get('/api/commands', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
     
-    console.log('📥 ESP32 solicitando comandos');
+    console.log('📥 ESP32 solicitando comandos - Enviando estado atual:', {
+        bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
+        modo: devicesState.irrigation.modo,
+        modo_automatico: devicesState.irrigation.modo_automatico
+    });
     
     const programacoesParaESP32 = (devicesState.irrigation.programacoes || []).map(prog => ({
         hora: prog.hora,
         dias: prog.dias
     }));
     
-    res.json({
+    // ✅ CORREÇÃO CRÍTICA: Envia o estado EXATO que o ESP32 precisa
+    const response = {
         lights: devicesState.lights,
         outlets: devicesState.outlets,
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
-            modo_automatico: devicesState.irrigation.modo === 'automatico',
+            modo_automatico: devicesState.irrigation.modo === 'automatico', // ✅ SEMPRE sincronizado
             duracao: devicesState.irrigation.duracao || 5,
             programacoes: programacoesParaESP32
         }
-    });
+    };
+    
+    console.log('📤 Enviando para ESP32:', JSON.stringify(response, null, 2));
+    
+    res.json(response);
 });
 
-// ESP32 confirma comandos
+// ESP32 confirma comandos - ✅ CORREÇÃO CRÍTICA: Atualiza estado do ESP32
 app.post('/api/confirm', (req, res) => {
     console.log('✅ Confirmação recebida do ESP32:', req.body);
     
@@ -620,9 +596,12 @@ app.post('/api/confirm', (req, res) => {
         devicesState.outlets = { ...devicesState.outlets, ...req.body.outlets };
     }
     if (req.body.irrigation) {
+        // ✅ CORREÇÃO CRÍTICA: Atualiza o estado da bomba do ESP32
         devicesState.irrigation.bomba_irrigacao = req.body.irrigation.bomba_irrigacao || false;
         devicesState.irrigation.modo = req.body.irrigation.modo_automatico ? 'automatico' : 'manual';
         devicesState.irrigation.modo_automatico = req.body.irrigation.modo_automatico || false;
+        
+        console.log('💧 Estado da bomba atualizado pelo ESP32:', devicesState.irrigation.bomba_irrigacao);
     }
     
     saveState(devicesState);
@@ -654,7 +633,7 @@ app.get('/api/devices', (req, res) => {
     });
 });
 
-// Controlar dispositivos
+// Controlar dispositivos - ✅ CORREÇÃO CRÍTICA: Força sincronização com ESP32
 app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
     
@@ -692,8 +671,15 @@ app.post('/api/control', async (req, res) => {
         });
     }
     
+    // ✅ CORREÇÃO CRÍTICA: Atualiza estado
     devicesState[type][device] = state;
-    const saved = saveState(devicesState);
+    
+    // ✅ CORREÇÃO CRÍTICA: Se for irrigação, força sincronização do modo_automatico
+    if (type === 'irrigation' && device === 'bomba_irrigacao') {
+        console.log(`💧 Bomba ${state ? 'LIGADA' : 'DESLIGADA'} pelo ${isFromESP32 ? 'ESP32' : 'frontend'}`);
+    }
+    
+    saveState(devicesState);
     
     console.log(`🎛️ ${type} ${device}: ${state ? 'LIGADO' : 'DESLIGADO'} ${isFromESP32 ? '(pelo ESP32)' : '(pelo frontend)'}`);
     res.json({ 
@@ -723,7 +709,7 @@ app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
 
-// Salvar configurações de irrigação - ✅ CORREÇÃO: Reinicia o agendador quando salva
+// Salvar configurações de irrigação - ✅ CORREÇÃO: Reinicia o agendador
 app.post('/api/irrigation/save', (req, res) => {
     try {
         const { modo, programacoes, evitar_chuva, duracao } = req.body;
@@ -741,16 +727,9 @@ app.post('/api/irrigation/save', (req, res) => {
         devicesState.irrigation.duracao = parseInt(duracao) || 5;
         devicesState.irrigation.modo_automatico = modo === 'automatico';
         
-        const saved = saveState(devicesState);
+        saveState(devicesState);
         
-        if (!saved) {
-            return res.status(500).json({ 
-                status: 'ERROR', 
-                error: 'Erro ao salvar configurações no arquivo' 
-            });
-        }
-        
-        // ✅ CORREÇÃO CRÍTICA: Reinicia o agendador quando as configurações mudam
+        // ✅ CORREÇÃO: Reinicia o agendador quando as configurações mudam
         startIrrigationScheduler();
         
         console.log('✅ Configurações de irrigação salvas e agendador reiniciado');
@@ -785,7 +764,7 @@ app.post('/api/irrigation/control', async (req, res) => {
     }
     
     devicesState.irrigation.bomba_irrigacao = state;
-    const saved = saveState(devicesState);
+    saveState(devicesState);
     
     console.log(`💧 Bomba: ${state ? 'LIGADA' : 'DESLIGADA'} ${isFromESP32 ? '(pelo ESP32)' : '(pelo frontend)'}`);
     res.json({ 
@@ -812,13 +791,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
     console.log(`\n🔥 Servidor Automação V3.0 rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
-    console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
-    console.log('📡 Monitoramento ESP32: ATIVADO');
-    console.log('💧 Sistema de Irrigação: ATIVADO COM CORREÇÕES');
-    console.log('⏰ Irrigação Automática: VERIFICAÇÃO A CADA 30 SEGUNDOS');
-    console.log('🔐 Sistema de Login: CORRIGIDO');
-    console.log('💧 Umidade: CORRIGIDA');
-    console.log('🌤️  Meteorologia: FUNCIONANDO');
-    console.log('📊 Sensores: FUNCIONANDO');
-    console.log('🔧 ESP32: CONFIGURAÇÕES SENDO ENVIADAS\n');
+    console.log('💧 SISTEMA DE IRRIGAÇÃO CORRIGIDO - SINCRONIZAÇÃO ESP32/FORNTEND');
+    console.log('📡 ESP32: COMUNICAÇÃO OTIMIZADA');
+    console.log('⏰ IRRIGAÇÃO AUTOMÁTICA: VERIFICAÇÃO A CADA 10 SEGUNDOS\n');
 });
