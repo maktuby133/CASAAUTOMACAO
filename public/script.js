@@ -1,18 +1,5 @@
 // public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
 
-// ✅ CORREÇÃO: Configurar fetch para enviar cookies em TODAS as requisições
-function authFetch(url, options = {}) {
-    const defaultOptions = {
-        credentials: 'include', // ✅ CRÍTICO: Inclui cookies em todas as requisições
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    };
-    
-    return fetch(url, { ...defaultOptions, ...options });
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
     if (window.location.pathname === '/' || window.location.pathname === '/login.html') {
@@ -33,21 +20,25 @@ function handleLoginPage() {
             const password = document.getElementById('password').value;
             
             try {
-                const response = await authFetch('/api/login', {
+                const response = await fetch('/api/login', {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({ username, password })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log('✅ Login realizado com sucesso');
-                    showNotification('Login realizado com sucesso!', 'success');
+                    // 🚨 CORREÇÃO: Salva autenticação no localStorage
+                    localStorage.setItem('casa-automacao-authenticated', 'true');
+                    localStorage.setItem('casa-automacao-user', JSON.stringify({
+                        username: username,
+                        loginTime: new Date().toISOString()
+                    }));
                     
-                    // Redirecionar após breve delay
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1000);
+                    window.location.href = data.redirect;
                 } else {
                     showNotification(data.message, 'error');
                 }
@@ -62,7 +53,7 @@ function handleLoginPage() {
 function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
     
-    // Verificar autenticação e inicializar sistema
+    // 🚨 CORREÇÃO: Verificação de auth apenas para sistema
     checkSystemAuth();
     
     // Configurar botão de logout se existir
@@ -72,34 +63,26 @@ function handleSystemPage() {
     }
 }
 
-// ✅ CORREÇÃO: Verificação de autenticação melhorada
+// 🚨 CORREÇÃO: Verificação apenas para páginas do sistema
 async function checkSystemAuth() {
     try {
-        const response = await authFetch('/api/status');
+        const response = await fetch('/api/status');
         const data = await response.json();
         
-        console.log('🔐 Status de autenticação:', data.authenticated);
-        
         if (!data.authenticated) {
-            console.log('❌ Não autenticado, redirecionando para login...');
-            showNotification('Sessão expirada. Faça login novamente.', 'warning');
-            setTimeout(() => {
-                window.location.href = '/login.html';
-            }, 1500);
+            console.log('❌ Não autenticado, redirecionando...');
+            window.location.href = '/login.html';
         } else {
-            console.log('✅ Usuário autenticado, inicializando sistema...');
+            // 🚨 CORREÇÃO: Inicializa o sistema se estiver autenticado
             initializeSystem();
         }
     } catch (error) {
-        console.error('❌ Erro ao verificar autenticação:', error);
-        showNotification('Erro de conexão. Verificando autenticação...', 'error');
-        setTimeout(() => {
-            window.location.href = '/login.html';
-        }, 2000);
+        console.error('❌ Erro ao verificar auth:', error);
+        window.location.href = '/login.html';
     }
 }
 
-// ✅ CORREÇÃO: Função para inicializar o sistema
+// 🚨 CORREÇÃO: Função para inicializar o sistema
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     startDataUpdates();
@@ -118,55 +101,38 @@ function initializeSystem() {
 // Logout function
 async function logout() {
     try {
-        const logoutBtn = document.querySelector('.logout-btn');
-        if (logoutBtn) {
-            logoutBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Saindo...';
-            logoutBtn.disabled = true;
-        }
-
-        const response = await authFetch('/api/logout', {
+        const response = await fetch('/api/logout', {
             method: 'POST'
         });
         
         const data = await response.json();
         
         if (data.success) {
-            console.log('✅ Logout realizado com sucesso');
-            showNotification('Logout realizado com sucesso!', 'success');
-            
-            // Limpar localStorage
             localStorage.removeItem('casa-automacao-authenticated');
             localStorage.removeItem('casa-automacao-user');
-            
-            setTimeout(() => {
-                window.location.href = data.redirect;
-            }, 1000);
+            window.location.href = data.redirect;
         }
     } catch (error) {
         console.error('❌ Erro no logout:', error);
-        showNotification('Erro ao fazer logout', 'error');
-        setTimeout(() => {
-            window.location.href = '/login.html';
-        }, 2000);
+        window.location.href = '/login.html';
     }
 }
+
+// 🚨 CORREÇÃO: Adicionar função global para logout
+window.logout = logout;
 
 // Sistema de Automação - Funções principais
 let currentDevices = {};
 
 async function loadDevices() {
     try {
-        const response = await authFetch('/api/devices');
-        if (!response.ok) {
-            throw new Error('Erro ao carregar dispositivos');
-        }
+        const response = await fetch('/api/devices');
         const data = await response.json();
         currentDevices = data;
         updateDeviceDisplays();
         updateSensorData();
     } catch (error) {
         console.error('❌ Erro ao carregar dispositivos:', error);
-        showNotification('Erro ao carregar dispositivos', 'error');
     }
 }
 
@@ -274,8 +240,11 @@ function getDeviceDisplayName(deviceKey) {
 
 async function toggleDevice(type, device, state) {
     try {
-        const response = await authFetch('/api/control', {
+        const response = await fetch('/api/control', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ type, device, state })
         });
         
@@ -333,8 +302,11 @@ async function controlAllOutlets(state) {
 
 async function controlIrrigation(state) {
     try {
-        const response = await authFetch('/api/irrigation/control', {
+        const response = await fetch('/api/irrigation/control', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ state })
         });
         
@@ -384,7 +356,7 @@ function startDataUpdates() {
 // 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
-        const response = await authFetch('/api/sensor-data');
+        const response = await fetch('/api/sensor-data');
         const data = await response.json();
         
         if (data.data && data.data.length > 0) {
@@ -470,7 +442,7 @@ async function updateSensorData() {
 // 🆕 METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
-        const response = await authFetch('/api/weather');
+        const response = await fetch('/api/weather');
         const data = await response.json();
         
         if (data && data.main) {
@@ -575,7 +547,7 @@ function getWeatherAnimationClass(weatherMain) {
 
 async function checkWeather() {
     try {
-        const response = await authFetch('/api/weather/raining');
+        const response = await fetch('/api/weather/raining');
         const data = await response.json();
         
         if (data.raining) {
@@ -787,8 +759,11 @@ async function saveIrrigationSettings() {
         
         console.log('💧 Enviando configurações para servidor:', settings);
         
-        const response = await authFetch('/api/irrigation/save', {
+        const response = await fetch('/api/irrigation/save', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify(settings)
         });
         
@@ -933,6 +908,14 @@ function checkConnection() {
         if (offlineIndicator) offlineIndicator.classList.remove('show');
     }
 }
+
+// Prevenir fechamento acidental
+window.addEventListener('beforeunload', function (e) {
+    // Opcional: Confirmar saída se houver operações pendentes
+    // const confirmationMessage = 'Tem certeza que deseja sair?';
+    // e.returnValue = confirmationMessage;
+    // return confirmationMessage;
+});
 
 // Configurar eventos
 window.addEventListener('online', checkConnection);
