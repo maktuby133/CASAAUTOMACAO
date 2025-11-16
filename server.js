@@ -104,12 +104,13 @@ function checkESP32Connection() {
 function startIrrigationScheduler() {
     setInterval(() => {
         checkScheduledIrrigation();
-    }, 60000);
+    }, 60000); // Verifica a cada 1 minuto
     console.log('⏰ Agendador de irrigação iniciado');
 }
 
 function checkScheduledIrrigation() {
     if (devicesState.irrigation.modo !== 'automatico') {
+        console.log('💧 Modo não é automático, ignorando verificação');
         return;
     }
 
@@ -120,19 +121,30 @@ function checkScheduledIrrigation() {
 
     const programacoes = devicesState.irrigation.programacoes || [];
     
+    console.log(`💧 Verificando programações - Hora: ${currentTime}, Dia: ${currentDay}`);
+    console.log(`💧 Programações configuradas:`, programacoes);
+    
     programacoes.forEach((prog, index) => {
+        console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias.join(',')}`);
+        
         if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
-            console.log(`💧 Programação ${index + 1} ativada: ${prog.hora} - ${prog.dias.join(',')}`);
+            console.log(`💧 ✅ Programação ${index + 1} ativada: ${prog.hora} - ${prog.dias.join(',')}`);
             
             if (devicesState.irrigation.evitar_chuva) {
+                console.log('💧 Verificando se está chovendo...');
                 isRaining().then(raining => {
                     if (!raining) {
+                        console.log('💧 ✅ Não está chovendo - Iniciando irrigação');
                         startScheduledIrrigation(index);
                     } else {
-                        console.log('💧 Irrigação programada cancelada - Está chovendo');
+                        console.log('💧 ❌ Irrigação programada cancelada - Está chovendo');
                     }
+                }).catch(error => {
+                    console.log('💧 ❌ Erro ao verificar chuva, iniciando irrigação:', error);
+                    startScheduledIrrigation(index);
                 });
             } else {
+                console.log('💧 Evitar chuva desativado - Iniciando irrigação');
                 startScheduledIrrigation(index);
             }
         }
@@ -146,11 +158,11 @@ function getCurrentDayOfWeek() {
 
 function startScheduledIrrigation(programIndex) {
     if (devicesState.irrigation.bomba_irrigacao) {
-        console.log('💧 Bomba já está ligada, ignorando programação');
+        console.log('💧 ❌ Bomba já está ligada, ignorando programação');
         return;
     }
 
-    console.log(`💧 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
+    console.log(`💧 🚀 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
     
     devicesState.irrigation.bomba_irrigacao = true;
     saveState(devicesState);
@@ -160,7 +172,7 @@ function startScheduledIrrigation(programIndex) {
     
     setTimeout(() => {
         if (devicesState.irrigation.bomba_irrigacao) {
-            console.log(`💧 DESLIGANDO IRRIGAÇÃO PROGRAMADA após ${duracao} minutos`);
+            console.log(`💧 ⏹️ DESLIGANDO IRRIGAÇÃO PROGRAMADA após ${duracao} minutos`);
             devicesState.irrigation.bomba_irrigacao = false;
             saveState(devicesState);
         }
@@ -171,16 +183,26 @@ function startScheduledIrrigation(programIndex) {
 async function fetchWeatherData() {
     try {
         const API_KEY = process.env.OPENWEATHER_API_KEY;
-        if (!API_KEY) throw new Error('API key não configurada');
+        if (!API_KEY) {
+            console.log('❌ API key não configurada');
+            return null;
+        }
 
         const lat = -22.9068;
         const lon = -43.1729;
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=pt_br`;
         
+        console.log('🌤️ Buscando dados do clima...');
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Erro API: ${response.status}`);
         
-        return await response.json();
+        if (!response.ok) {
+            console.log(`❌ Erro API clima: ${response.status}`);
+            return null;
+        }
+        
+        const data = await response.json();
+        console.log('🌤️ Dados do clima recebidos com sucesso');
+        return data;
     } catch (error) {
         console.error('❌ Erro ao buscar clima:', error);
         return null;
@@ -193,8 +215,11 @@ async function isRaining() {
         const weatherData = await fetchWeatherData();
         if (weatherData && weatherData.weather && weatherData.weather.length > 0) {
             const condition = weatherData.weather[0].main.toLowerCase();
-            return condition.includes('rain') || condition.includes('drizzle') || condition.includes('storm');
+            const isRaining = condition.includes('rain') || condition.includes('drizzle') || condition.includes('storm');
+            console.log(`🌧️ Condição climática: ${condition} - Está chovendo: ${isRaining}`);
+            return isRaining;
         }
+        console.log('🌤️ Dados climáticos indisponíveis');
         return false;
     } catch (error) {
         console.error('❌ Erro ao verificar chuva:', error);
@@ -223,7 +248,8 @@ const allowESP32 = (req, res, next) => {
         '/api/control', 
         '/api/devices',
         '/api/irrigation',
-        '/api/irrigation/control'  // ✅ CORREÇÃO: Adicionada rota de controle de irrigação
+        '/api/irrigation/control',
+        '/api/sensor-data'  // ✅ CORREÇÃO: Adicionada rota de sensores
     ];
     
     // Verifica se é uma rota do ESP32
@@ -255,15 +281,17 @@ const requireAuth = (req, res, next) => {
         '/api/status',
         '/api/weather',
         '/api/weather/raining',
-        '/api/sensor-data',
+        '/api/sensor-data',      // ✅ CORREÇÃO: Adicionada para permitir acesso público
         '/api/devices',
         '/api/data',
         '/api/commands',
         '/api/confirm',
         '/api/control',
-        '/api/irrigation',           // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
-        '/api/irrigation/control',   // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
-        '/api/irrigation/save',      // ✅ CORREÇÃO: Adicionada para permitir acesso do ESP32
+        '/api/irrigation',       
+        '/api/irrigation/control',
+        '/api/irrigation/save',
+        '/api/irrigation/test-schedule',  // ✅ CORREÇÃO: Adicionada
+        '/api/irrigation/schedule-status', // ✅ CORREÇÃO: Adicionada
         '/health',
         '/favicon.ico',
         '/styles.css',
@@ -397,9 +425,11 @@ app.get('/api/weather/raining', async (req, res) => {
     }
 });
 
-// Dados dos sensores
+// Dados dos sensores - ✅ CORREÇÃO: Rota pública e com dados corretos
 app.get('/api/sensor-data', (req, res) => {
     const espConnected = checkESP32Connection();
+    
+    console.log('📊 Solicitando dados dos sensores. Total de leituras:', devicesState.sensorData?.length || 0);
     
     // ✅ CORREÇÃO: Processar dados dos sensores CORRETAMENTE
     const sensorData = (devicesState.sensorData || []).map(data => {
@@ -408,13 +438,44 @@ app.get('/api/sensor-data', (req, res) => {
         if (typeof humidity === 'string') {
             humidity = parseFloat(humidity);
         }
+        if (isNaN(humidity)) {
+            humidity = 0;
+        }
         
+        // ✅ CORREÇÃO: Garantir que temperatura seja numérica
+        let temperature = data.temperature;
+        if (typeof temperature === 'string') {
+            temperature = parseFloat(temperature);
+        }
+        if (isNaN(temperature)) {
+            temperature = 0;
+        }
+        
+        // ✅ CORREÇÃO: Garantir que gas_level seja numérico
+        let gas_level = data.gas_level;
+        if (typeof gas_level === 'string') {
+            gas_level = parseFloat(gas_level);
+        }
+        if (isNaN(gas_level)) {
+            gas_level = 0;
+        }
+
         return {
             ...data,
-            humidity: humidity || 0,
-            temperature: data.temperature || 0,
-            gas_level: data.gas_level || 0
+            humidity: humidity,
+            temperature: temperature,
+            gas_level: gas_level,
+            gas_alert: data.gas_alert || gas_level > 300
         };
+    });
+    
+    const latestData = sensorData[0] || {};
+    
+    console.log('📊 Últimos dados:', {
+        temperature: latestData.temperature,
+        humidity: latestData.humidity,
+        gas_level: latestData.gas_level,
+        gas_alert: latestData.gas_alert
     });
     
     res.json({ 
@@ -422,15 +483,17 @@ app.get('/api/sensor-data', (req, res) => {
         esp32: { connected: espConnected },
         summary: {
             total_readings: sensorData.length || 0,
-            last_temperature: sensorData[0]?.temperature || 'N/A',
-            last_humidity: sensorData[0]?.humidity || 'N/A',
-            last_gas_level: sensorState[0]?.gas_level || 'N/A'
+            last_temperature: latestData.temperature || 'N/A',
+            last_humidity: latestData.humidity || 'N/A',
+            last_gas_level: latestData.gas_level || 'N/A',
+            last_gas_alert: latestData.gas_alert || false
         }
     });
 });
 
-// Teste irrigação automática
+// Teste irrigação automática - ✅ CORREÇÃO: Rota pública
 app.get('/api/irrigation/test-schedule', (req, res) => {
+    console.log('💧 Teste manual de programações acionado');
     checkScheduledIrrigation();
     res.json({ 
         status: 'OK', 
@@ -439,19 +502,28 @@ app.get('/api/irrigation/test-schedule', (req, res) => {
     });
 });
 
-// Status programações
+// Status programações - ✅ CORREÇÃO: Rota pública
 app.get('/api/irrigation/schedule-status', (req, res) => {
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
                        now.getMinutes().toString().padStart(2, '0');
     const currentDay = getCurrentDayOfWeek();
     
+    console.log('💧 Status das programações:', {
+        currentTime,
+        currentDay,
+        modo: devicesState.irrigation.modo,
+        programacoes: devicesState.irrigation.programacoes?.length || 0
+    });
+    
     res.json({
         currentTime,
         currentDay,
         programacoes: devicesState.irrigation.programacoes,
         modo: devicesState.irrigation.modo,
-        bomba_ativa: devicesState.irrigation.bomba_irrigacao
+        bomba_ativa: devicesState.irrigation.bomba_irrigacao,
+        evitar_chuva: devicesState.irrigation.evitar_chuva,
+        duracao: devicesState.irrigation.duracao
     });
 });
 
@@ -472,11 +544,29 @@ app.post('/api/data', (req, res) => {
         processedHumidity = 0;
     }
 
+    // ✅ CORREÇÃO: Processar temperatura
+    let processedTemperature = temperature;
+    if (typeof temperature === 'string') {
+        processedTemperature = parseFloat(temperature);
+    }
+    if (isNaN(processedTemperature)) {
+        processedTemperature = 0;
+    }
+
+    // ✅ CORREÇÃO: Processar gas_level
+    let processedGasLevel = gas_level;
+    if (typeof gas_level === 'string') {
+        processedGasLevel = parseFloat(gas_level);
+    }
+    if (isNaN(processedGasLevel)) {
+        processedGasLevel = 0;
+    }
+
     const newData = {
-        temperature: temperature || 0, 
-        humidity: processedHumidity, // ✅ CORREÇÃO: Umidade processada
-        gas_level: gas_level || 0, 
-        gas_alert: gas_alert || false,
+        temperature: processedTemperature, 
+        humidity: processedHumidity,
+        gas_level: processedGasLevel, 
+        gas_alert: gas_alert || processedGasLevel > 300,
         device: device || 'ESP32', 
         heartbeat: heartbeat || false,
         wifi_rssi: wifi_rssi || 0, 
@@ -499,7 +589,7 @@ app.post('/api/data', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status(device, clientIP);
 
-    console.log(`📊 Dados salvos - Temp: ${temperature}°C, Umidade: ${processedHumidity}%`);
+    console.log(`📊 Dados salvos - Temp: ${processedTemperature}°C, Umidade: ${processedHumidity}%, Gás: ${processedGasLevel}`);
     
     res.json({ 
         status: 'OK', 
@@ -726,10 +816,10 @@ app.listen(PORT, () => {
     console.log(`🔧 Modo: ${process.env.NODE_ENV || 'development'}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
-    console.log('⏰ Irrigação Automática: CORRIGIDA');
+    console.log('⏰ Irrigação Automática: CORRIGIDA COM LOGS DETALHADOS');
     console.log('🔐 Sistema de Login: CORRIGIDO - Cookies funcionando');
     console.log('💧 Umidade: CORRIGIDA - Valores precisos');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
-    console.log('📊 Sensores: FUNCIONANDO');
-    console.log('🔧 ESP32: ACESSO LIBERADO PARA TODAS AS ROTAS DE IRRIGAÇÃO\n');
+    console.log('📊 Sensores: CORRIGIDO - Dados processados corretamente');
+    console.log('🔧 ESP32: ACESSO LIBERADO PARA TODAS AS ROTAS\n');
 });
