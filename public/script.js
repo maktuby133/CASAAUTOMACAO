@@ -1,29 +1,8 @@
-// public/script.js - Cliente CORRIGIDO com autenticação funcionando
-
-// 🚨 CORREÇÃO: Verificar autenticação antes de fazer requisições
-async function checkAuthAndRequest(url, options = {}) {
-    try {
-        const response = await fetch(url, {
-            ...options,
-            credentials: 'include' // ✅ Inclui cookies em todas as requisições
-        });
-        
-        if (response.status === 401) {
-            console.log('🔐 Sessão expirada, redirecionando para login...');
-            localStorage.removeItem('casa-automacao-authenticated');
-            localStorage.removeItem('casa-automacao-user');
-            window.location.href = '/login.html';
-            return null;
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('❌ Erro na requisição:', error);
-        throw error;
-    }
-}
+// public/script.js - Cliente CORRIGIDO - Dispositivos aparecendo
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 DOM Carregado - Iniciando sistema...');
+    
     // Verificar se estamos na página de login
     if (window.location.pathname === '/' || window.location.pathname === '/login.html') {
         handleLoginPage();
@@ -49,13 +28,12 @@ function handleLoginPage() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ username, password }),
-                    credentials: 'include' // ✅ Inclui cookies
+                    credentials: 'include'
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    // 🚨 CORREÇÃO: Salva autenticação no localStorage
                     localStorage.setItem('casa-automacao-authenticated', 'true');
                     localStorage.setItem('casa-automacao-user', JSON.stringify({
                         username: username,
@@ -76,22 +54,19 @@ function handleLoginPage() {
 
 function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
-    
-    // 🚨 CORREÇÃO: Verificação de auth apenas para sistema
     checkSystemAuth();
-    
-    // Configurar botão de logout se existir
-    const logoutBtn = document.querySelector('.logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
 }
 
-// 🚨 CORREÇÃO: Verificação apenas para páginas do sistema
+// ✅ CORREÇÃO: Verificação simplificada de autenticação
 async function checkSystemAuth() {
     try {
-        const response = await checkAuthAndRequest('/api/status');
-        if (!response) return;
+        const response = await fetch('/api/status', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erro na resposta do servidor');
+        }
         
         const data = await response.json();
         
@@ -99,7 +74,7 @@ async function checkSystemAuth() {
             console.log('❌ Não autenticado, redirecionando...');
             window.location.href = '/login.html';
         } else {
-            // 🚨 CORREÇÃO: Inicializa o sistema se estiver autenticado
+            console.log('✅ Autenticado, inicializando sistema...');
             initializeSystem();
         }
     } catch (error) {
@@ -108,10 +83,9 @@ async function checkSystemAuth() {
     }
 }
 
-// 🚨 CORREÇÃO: Função para inicializar o sistema
+// ✅ CORREÇÃO: Sistema de inicialização
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
-    startDataUpdates();
     
     // Carregar tema
     const savedTheme = loadFromLocalStorage('theme') || 'light';
@@ -121,48 +95,38 @@ function initializeSystem() {
         themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     }
     
+    // Iniciar atualizações
+    startDataUpdates();
+    
     showNotification('Sistema inicializado com sucesso!', 'success', 3000);
 }
-
-// Logout function
-async function logout() {
-    try {
-        const response = await checkAuthAndRequest('/api/logout', {
-            method: 'POST'
-        });
-        
-        if (!response) return;
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            localStorage.removeItem('casa-automacao-authenticated');
-            localStorage.removeItem('casa-automacao-user');
-            window.location.href = data.redirect;
-        }
-    } catch (error) {
-        console.error('❌ Erro no logout:', error);
-        window.location.href = '/login.html';
-    }
-}
-
-// 🚨 CORREÇÃO: Adicionar função global para logout
-window.logout = logout;
 
 // Sistema de Automação - Funções principais
 let currentDevices = {};
 
+// ✅ CORREÇÃO: Função loadDevices simplificada e funcional
 async function loadDevices() {
     try {
-        const response = await checkAuthAndRequest('/api/devices');
-        if (!response) return;
+        console.log('📡 Carregando dispositivos...');
+        
+        const response = await fetch('/api/devices', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erro ao carregar dispositivos');
+        }
         
         const data = await response.json();
+        console.log('📦 Dados recebidos:', data);
+        
         currentDevices = data;
         updateDeviceDisplays();
         updateSensorData();
+        
     } catch (error) {
         console.error('❌ Erro ao carregar dispositivos:', error);
+        showNotification('Erro ao carregar dispositivos', 'error');
     }
 }
 
@@ -172,13 +136,25 @@ function updateDeviceDisplays() {
     updateIrrigationDisplay();
 }
 
+// ✅ CORREÇÃO: Display de lâmpadas funcionando
 function updateLightsDisplay() {
     const container = document.getElementById('lights-container');
-    if (!container) return;
+    if (!container) {
+        console.log('❌ Container de lâmpadas não encontrado');
+        return;
+    }
 
+    console.log('💡 Atualizando display de lâmpadas:', currentDevices.lights);
+    
     container.innerHTML = '';
     
-    Object.entries(currentDevices.lights || {}).forEach(([device, state]) => {
+    if (!currentDevices.lights) {
+        console.log('❌ Nenhum dado de lâmpadas disponível');
+        container.innerHTML = '<div class="no-devices">Nenhuma lâmpada configurada</div>';
+        return;
+    }
+    
+    Object.entries(currentDevices.lights).forEach(([device, state]) => {
         const deviceElement = document.createElement('div');
         deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
         deviceElement.innerHTML = `
@@ -194,15 +170,29 @@ function updateLightsDisplay() {
         `;
         container.appendChild(deviceElement);
     });
+    
+    console.log(`✅ ${Object.keys(currentDevices.lights).length} lâmpadas carregadas`);
 }
 
+// ✅ CORREÇÃO: Display de tomadas funcionando
 function updateOutletsDisplay() {
     const container = document.getElementById('outlets-container');
-    if (!container) return;
+    if (!container) {
+        console.log('❌ Container de tomadas não encontrado');
+        return;
+    }
 
+    console.log('🔌 Atualizando display de tomadas:', currentDevices.outlets);
+    
     container.innerHTML = '';
     
-    Object.entries(currentDevices.outlets || {}).forEach(([device, state]) => {
+    if (!currentDevices.outlets) {
+        console.log('❌ Nenhum dado de tomadas disponível');
+        container.innerHTML = '<div class="no-devices">Nenhuma tomada configurada</div>';
+        return;
+    }
+    
+    Object.entries(currentDevices.outlets).forEach(([device, state]) => {
         const deviceElement = document.createElement('div');
         deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
         deviceElement.innerHTML = `
@@ -217,6 +207,8 @@ function updateOutletsDisplay() {
         `;
         container.appendChild(deviceElement);
     });
+    
+    console.log(`✅ ${Object.keys(currentDevices.outlets).length} tomadas carregadas`);
 }
 
 function updateIrrigationDisplay() {
@@ -268,17 +260,24 @@ function getDeviceDisplayName(deviceKey) {
     return names[deviceKey] || deviceKey;
 }
 
+// ✅ CORREÇÃO: Função toggleDevice simplificada
 async function toggleDevice(type, device, state) {
     try {
-        const response = await checkAuthAndRequest('/api/control', {
+        console.log(`🎛️ Tentando ${state ? 'ligar' : 'desligar'} ${type} ${device}`);
+        
+        const response = await fetch('/api/control', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ type, device, state })
+            body: JSON.stringify({ type, device, state }),
+            credentials: 'include'
         });
         
-        if (!response) return;
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro no servidor');
+        }
         
         const data = await response.json();
         
@@ -292,14 +291,12 @@ async function toggleDevice(type, device, state) {
             }
             updateDeviceDisplays();
         } else {
-            console.error('❌ Erro ao controlar dispositivo:', data.error);
-            showNotification(`Erro: ${data.error}`, 'error');
-            // Reverter visualmente em caso de erro
-            loadDevices();
+            throw new Error(data.error || 'Erro desconhecido');
         }
     } catch (error) {
-        console.error('❌ Erro na comunicação:', error);
-        showNotification('Erro de conexão com o servidor', 'error');
+        console.error('❌ Erro ao controlar dispositivo:', error);
+        showNotification(`Erro: ${error.message}`, 'error');
+        // Recarregar dispositivos para sincronizar estado
         loadDevices();
     }
 }
@@ -334,15 +331,19 @@ async function controlAllOutlets(state) {
 
 async function controlIrrigation(state) {
     try {
-        const response = await checkAuthAndRequest('/api/irrigation/control', {
+        const response = await fetch('/api/irrigation/control', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ state })
+            body: JSON.stringify({ state }),
+            credentials: 'include'
         });
         
-        if (!response) return;
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro no servidor');
+        }
         
         const data = await response.json();
         
@@ -357,19 +358,24 @@ async function controlIrrigation(state) {
             }
             updateIrrigationDisplay();
         } else {
-            console.error('❌ Erro ao controlar irrigação:', data.error);
-            showNotification(`Erro: ${data.error}`, 'error');
-            loadDevices();
+            throw new Error(data.error || 'Erro desconhecido');
         }
     } catch (error) {
-        console.error('❌ Erro na comunicação:', error);
-        showNotification('Erro de conexão com o servidor', 'error');
+        console.error('❌ Erro ao controlar irrigação:', error);
+        showNotification(`Erro: ${error.message}`, 'error');
         loadDevices();
     }
 }
 
-// Atualização de dados em tempo real
+// ✅ CORREÇÃO: Sistema de atualização de dados
 function startDataUpdates() {
+    console.log('🔄 Iniciando atualizações automáticas...');
+    
+    // Carregar inicialmente
+    loadDevices();
+    updateWeather();
+    updateSensorData();
+    
     // Atualizar dados a cada 5 segundos
     setInterval(async () => {
         await loadDevices();
@@ -380,18 +386,15 @@ function startDataUpdates() {
     setInterval(() => {
         updateWeather();
     }, 15 * 60 * 1000);
-    
-    // Carregar inicialmente
-    loadDevices();
-    updateWeather();
-    updateSensorData();
 }
 
-// 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
-        const response = await checkAuthAndRequest('/api/sensor-data');
-        if (!response) return;
+        const response = await fetch('/api/sensor-data', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) return;
         
         const data = await response.json();
         
@@ -403,7 +406,6 @@ async function updateSensorData() {
             if (tempElement && latest.temperature !== undefined) {
                 tempElement.textContent = `${latest.temperature}°C`;
                 
-                // Mudar cor baseada na temperatura
                 if (latest.temperature > 30) {
                     tempElement.style.color = '#ff4444';
                 } else if (latest.temperature < 15) {
@@ -413,12 +415,11 @@ async function updateSensorData() {
                 }
             }
             
-            // 🆕 CORREÇÃO: Atualizar umidade REAL do ESP32
+            // Atualizar umidade
             const humidityElement = document.getElementById('sensor-humidity');
             if (humidityElement && latest.humidity !== undefined) {
                 humidityElement.textContent = `${Math.round(latest.humidity)}%`;
                 
-                // Mudar cor baseada na umidade
                 if (latest.humidity > 80) {
                     humidityElement.style.color = '#4444ff';
                 } else if (latest.humidity < 30) {
@@ -433,7 +434,6 @@ async function updateSensorData() {
             if (gasElement && latest.gas_level !== undefined) {
                 gasElement.textContent = latest.gas_level;
                 
-                // Mudar cor baseada no nível de gás
                 if (latest.gas_level > 500) {
                     gasElement.style.color = '#ff4444';
                 } else if (latest.gas_level > 300) {
@@ -450,12 +450,6 @@ async function updateSensorData() {
                 alertElement.textContent = isAlert ? 'ALERTA!' : 'NORMAL';
                 alertElement.style.color = isAlert ? '#ff4444' : '#4CAF50';
                 alertElement.style.fontWeight = isAlert ? 'bold' : 'normal';
-                
-                if (isAlert && latest.gas_level > 500) {
-                    showNotification('⚠️ ALERTA CRÍTICO: Nível de gás muito alto!', 'error');
-                } else if (isAlert) {
-                    showNotification('⚠️ Alerta: Nível de gás elevado', 'warning');
-                }
             }
         }
 
@@ -475,11 +469,13 @@ async function updateSensorData() {
     }
 }
 
-// 🆕 METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
-        const response = await checkAuthAndRequest('/api/weather');
-        if (!response) return;
+        const response = await fetch('/api/weather', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) return;
         
         const data = await response.json();
         
@@ -494,13 +490,6 @@ async function updateWeather() {
             const mainDescElement = document.getElementById('weather-main-desc');
             if (mainDescElement && data.weather && data.weather[0]) {
                 mainDescElement.textContent = data.weather[0].description;
-            }
-            
-            // Ícone principal
-            const mainIconElement = document.getElementById('weather-main-icon');
-            if (mainIconElement && data.weather && data.weather[0]) {
-                const weatherMain = data.weather[0].main.toLowerCase();
-                mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
             }
             
             // Sensação térmica
@@ -542,51 +531,16 @@ async function updateWeather() {
         }
     } catch (error) {
         console.error('❌ Erro ao atualizar clima:', error);
-        // Mostrar dados padrão em caso de erro
-        const mainTempElement = document.getElementById('weather-main-temp');
-        if (mainTempElement) mainTempElement.textContent = '--°C';
-        
-        const mainDescElement = document.getElementById('weather-main-desc');
-        if (mainDescElement) mainDescElement.textContent = 'Dados indisponíveis';
     }
-}
-
-function getWeatherMainIcon(weatherMain) {
-    const icons = {
-        'clear': 'fa-sun',
-        'clouds': 'fa-cloud',
-        'rain': 'fa-cloud-rain',
-        'drizzle': 'fa-cloud-drizzle',
-        'thunderstorm': 'fa-bolt',
-        'snow': 'fa-snowflake',
-        'mist': 'fa-smog',
-        'fog': 'fa-smog',
-        'haze': 'fa-smog'
-    };
-    
-    return icons[weatherMain] || 'fa-cloud';
-}
-
-function getWeatherAnimationClass(weatherMain) {
-    const animations = {
-        'clear': 'weather-icon-sun',
-        'clouds': 'weather-icon-cloud',
-        'rain': 'weather-icon-rain',
-        'drizzle': 'weather-icon-rain',
-        'thunderstorm': 'weather-icon-storm',
-        'snow': 'weather-icon-snow',
-        'mist': 'weather-icon-mist',
-        'fog': 'weather-icon-mist',
-        'haze': 'weather-icon-mist'
-    };
-    
-    return animations[weatherMain] || 'weather-icon-cloud';
 }
 
 async function checkWeather() {
     try {
-        const response = await checkAuthAndRequest('/api/weather/raining');
-        if (!response) return;
+        const response = await fetch('/api/weather/raining', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) return;
         
         const data = await response.json();
         
@@ -601,7 +555,7 @@ async function checkWeather() {
     }
 }
 
-// 🆕 MODAL DE IRRIGAÇÃO MELHORADO
+// Modal de irrigação
 function openIrrigationModal() {
     const modal = document.getElementById('irrigation-modal');
     if (modal) {
@@ -638,7 +592,7 @@ function loadIrrigationSettings() {
         durationInput.value = irrigation.duracao || 5;
     }
     
-    // 🆕 Limpar e carregar programações
+    // Programações
     const programmingList = document.getElementById('programming-list');
     programmingList.innerHTML = '';
     
@@ -657,14 +611,14 @@ function loadIrrigationSettings() {
         });
     }
     
-    // 🆕 Limpar seleções atuais
+    // Limpar seleções atuais
     document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
     document.getElementById('irrigation-time').value = '08:00';
 }
 
 function showTimePicker() {
     const timeInput = document.getElementById('irrigation-time');
-    timeInput.showPicker(); // Abre o seletor nativo de hora
+    timeInput.showPicker();
 }
 
 function addProgramming() {
@@ -783,7 +737,6 @@ function getSelectedProgrammings() {
     return programmings;
 }
 
-// 🆕 CORREÇÃO: Salvar configurações de irrigação de forma robusta
 async function saveIrrigationSettings() {
     try {
         const modeSelect = document.getElementById('irrigation-mode-select');
@@ -797,49 +750,39 @@ async function saveIrrigationSettings() {
             programacoes: getSelectedProgrammings()
         };
         
-        console.log('💧 Enviando configurações para servidor:', settings);
-        
-        const response = await checkAuthAndRequest('/api/irrigation/save', {
+        const response = await fetch('/api/irrigation/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(settings)
+            body: JSON.stringify(settings),
+            credentials: 'include'
         });
         
-        if (!response) return;
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro no servidor');
+        }
         
         const data = await response.json();
         
         if (data.status === 'OK') {
-            console.log('✅ Configurações de irrigação salvas com sucesso');
-            console.log('📋 Dados salvos:', data.savedData);
             showNotification('Configurações salvas com sucesso!', 'success');
             closeIrrigationModal();
-            loadDevices(); // Recarregar dados
+            loadDevices();
         } else {
-            console.error('❌ Erro ao salvar configurações:', data.error);
-            showNotification('Erro ao salvar configurações: ' + data.error, 'error');
+            throw new Error(data.error || 'Erro desconhecido');
         }
     } catch (error) {
         console.error('❌ Erro ao salvar configurações:', error);
-        showNotification('Erro de conexão ao salvar configurações', 'error');
+        showNotification(`Erro: ${error.message}`, 'error');
     }
 }
 
-// 🆕 SISTEMA DE NOTIFICAÇÕES
+// Sistema de notificações
 function showNotification(message, type = 'info', duration = 5000) {
-    // Remove notificações existentes para evitar acumulação
-    const existingNotifications = document.querySelectorAll('.custom-notification');
-    existingNotifications.forEach(notif => {
-        if (notif.parentNode) {
-            notif.parentNode.removeChild(notif);
-        }
-    });
-
-    // Cria uma notificação
     const notification = document.createElement('div');
-    notification.className = 'custom-notification';
+    notification.className = `custom-notification`;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -863,9 +806,7 @@ function showNotification(message, type = 'info', duration = 5000) {
     };
     
     notification.style.background = colors[type] || colors.info;
-    notification.textContent = message;
     
-    // Adicionar ícone baseado no tipo
     const icons = {
         success: '✅',
         error: '❌',
@@ -877,7 +818,6 @@ function showNotification(message, type = 'info', duration = 5000) {
     
     document.body.appendChild(notification);
     
-    // Remove após 4 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => {
@@ -885,10 +825,10 @@ function showNotification(message, type = 'info', duration = 5000) {
                 notification.parentNode.removeChild(notification);
             }
         }, 300);
-    }, 4000);
+    }, duration);
 }
 
-// 🆕 ADICIONAR ANIMAÇÕES CSS PARA NOTIFICAÇÕES
+// Adicionar animações CSS para notificações
 if (!document.querySelector('#notification-styles')) {
     const style = document.createElement('style');
     style.id = 'notification-styles';
@@ -905,7 +845,7 @@ if (!document.querySelector('#notification-styles')) {
     document.head.appendChild(style);
 }
 
-// ==================== PERSISTÊNCIA LOCAL ====================
+// Persistência local
 function saveToLocalStorage(key, data) {
     try {
         localStorage.setItem(`casa-automacao-${key}`, JSON.stringify(data));
@@ -924,7 +864,7 @@ function loadFromLocalStorage(key) {
     }
 }
 
-// ==================== TEMA ====================
+// Tema
 function toggleTheme() {
     const currentTheme = document.body.getAttribute('data-theme') || 'light';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -940,7 +880,28 @@ function toggleTheme() {
     showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
 }
 
-// ==================== VERIFICAÇÃO DE CONEXÃO ====================
+// Logout
+async function logout() {
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            localStorage.removeItem('casa-automacao-authenticated');
+            localStorage.removeItem('casa-automacao-user');
+            window.location.href = data.redirect;
+        }
+    } catch (error) {
+        console.error('❌ Erro no logout:', error);
+        window.location.href = '/login.html';
+    }
+}
+
+// Verificação de conexão
 function checkConnection() {
     const offlineIndicator = document.getElementById('offline-indicator');
     if (!navigator.onLine) {
@@ -950,14 +911,6 @@ function checkConnection() {
         if (offlineIndicator) offlineIndicator.classList.remove('show');
     }
 }
-
-// Prevenir fechamento acidental
-window.addEventListener('beforeunload', function (e) {
-    // Opcional: Confirmar saída se houver operações pendentes
-    // const confirmationMessage = 'Tem certeza que deseja sair?';
-    // e.returnValue = confirmationMessage;
-    // return confirmationMessage;
-});
 
 // Configurar eventos
 window.addEventListener('online', checkConnection);
@@ -973,7 +926,7 @@ if (modal) {
     });
 }
 
-// 🚨 CORREÇÃO: Exportar todas as funções globais
+// Exportar funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
