@@ -9,7 +9,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ CORS configurado para permitir cookies
+// Credenciais de Login (Puxando de .env para segurança)
+const VALID_USERNAME = process.env.DEFAULT_USERNAME || 'admin';
+const VALID_PASSWORD = process.env.DEFAULT_PASSWORD || 'admin123';
+const ESP32_API_KEY = process.env.ESP32_API_KEY || 'casa-automacao-2024-secret-key';
+
+
+// ✅ CORREÇÃO CRÍTICA: CORS configurado para permitir cookies
 app.use(cors({
     origin: true,
     credentials: true,
@@ -21,7 +27,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Servir arquivos estáticos ANTES da autenticação
+// ✅ CORREÇÃO: Servir arquivos estáticos ANTES da autenticação
 app.use(express.static('public'));
 
 // Arquivo para persistência
@@ -36,9 +42,6 @@ let esp32Status = {
     lastHeartbeat: null
 };
 
-// Dados de Sensores (SIMULADO)
-let sensorData = []; // Armazena dados históricos
-
 // Carregar estado salvo
 function loadState() {
     try {
@@ -46,275 +49,328 @@ function loadState() {
             const data = fs.readFileSync(STATE_FILE, 'utf8');
             return JSON.parse(data);
         }
-    } catch (e) {
-        console.error('Erro ao carregar estado:', e);
+    } catch (error) {
+        console.log('❌ Erro ao carregar estado:', error.message);
     }
-    // Estado inicial padrão
+    
     return {
         lights: {
-            sala: false,
-            quarto1: false,
-            quarto2: false,
-            quarto3: false,
-            corredor: false,
-            cozinha: false,
-            banheiro: false
+            sala: false, quarto1: false, quarto2: false, quarto3: false,
+            corredor: false, cozinha: false, banheiro: false
         },
         outlets: {
-            tomada_sala: false,
-            tomada_cozinha: false,
-            tomada_quarto1: false,
-            tomada_quarto2: false,
-            tomada_quarto3: false
+            tomada_sala: false, tomada_cozinha: false, tomada_quarto1: false,
+            tomada_quarto2: false, tomada_quarto3: false
         },
         irrigation: {
-            bomba_irrigacao: false,
-            modo: 'manual', // manual | automatico
+            bomba_irrigacao: false, 
+            modo: 'manual', 
+            programacoes: [], 
             evitar_chuva: true,
-            duracao: 5, // minutos
-            programacoes: [
-                { hora: '08:00', dias: ['SEG', 'QUA', 'SEX'] },
-                { hora: '18:30', dias: ['SAB', 'DOM'] }
-            ]
-        }
+            duracao: 5,
+            modo_automatico: false
+        },
+        sensorData: []
     };
+}
+
+// Salvar estado
+function saveState(state) {
+    try {
+        fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+        console.log('💾 Estado salvo com sucesso');
+    } catch (error) {
+        console.error('❌ Erro ao salvar estado:', error);
+    }
 }
 
 let devicesState = loadState();
 
-function saveState(state) {
+// Atualizar status do ESP32
+function updateESP32Status(device, ip) {
+    esp32Status = {
+        connected: true,
+        lastSeen: new Date(),
+        lastHeartbeat: new Date(),
+        deviceId: device || 'ESP32-CASA-AUTOMACAO-V3',
+        ipAddress: ip || 'Desconhecido'
+    };
+}
+
+// Verificar se ESP32 está conectado (120 segundos de timeout)
+function checkESP32Connection() {
+    if (esp32Status.lastHeartbeat) {
+        const timeSinceLastHeartbeat = new Date() - esp32Status.lastHeartbeat;
+        if (timeSinceLastHeartbeat > 120000) {
+            esp32Status.connected = false;
+        }
+    }
+    return esp32Status.connected;
+}
+
+// ==================== AGENDAMENTO IRRIGAÇÃO ====================
+
+function startIrrigationScheduler() {
+    // 1 minuto de intervalo
+    setInterval(() => {
+        checkScheduledIrrigation();
+    }, 60000); 
+    console.log('⏰ Agendador de irrigação iniciado');
+}
+
+function getCurrentDayOfWeek() {
+    // Retorna o dia em português (ex: seg, ter, etc.)
+    const days = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+    return days[new Date().getDay()];
+}
+
+async function isRaining() {
     try {
-        fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
-        devicesState = state; // Atualiza o estado em memória
-    } catch (e) {
-        console.error('Erro ao salvar estado:', e);
+        const weatherData = await fetchWeatherData();
+        if (weatherData && weatherData.weather && weatherData.weather.length > 0) {
+            // Verifica se a descrição do clima inclui "rain" ou "chuva"
+            const mainWeather = weatherData.weather[0].main.toLowerCase();
+            const description = weatherData.weather[0].description.toLowerCase();
+            return mainWeather.includes('rain') || description.includes('chuva');
+        }
+        return false;
+    } catch (error) {
+        console.error('❌ Falha ao verificar se está chovendo:', error);
+        return false; // Em caso de erro, assume que não está chovendo para evitar bloqueio
     }
 }
 
-// Simulação de autenticação (simplificada)
-const VALID_AUTH_TOKEN = 'admin123';
-const VALID_USERS = {
-    'admin': 'admin123',
-    'usuario': 'user123',
-    'charles': '061084Cc@',
-    'casa': 'automacao2024'
-};
 
-function authenticate(req, res, next) {
-    const authToken = req.cookies.authToken;
-    const isAuthenticated = authToken === VALID_AUTH_TOKEN;
+function checkScheduledIrrigation() {
+    if (devicesState.irrigation.modo !== 'automatico') {
+        return;
+    }
+
+    const now = new Date();
+    // Formato HH:MM
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    const currentDay = getCurrentDayOfWeek();
+
+    const programacoes = devicesState.irrigation.programacoes || [];
+    programacoes.forEach((prog, index) => {
+        if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
+            console.log(`💧 Programação ${index + 1} ativada: ${prog.hora} - ${prog.dias.join(',')}`);
+            
+            if (devicesState.irrigation.evitar_chuva) {
+                isRaining().then(raining => {
+                    if (!raining) {
+                        startScheduledIrrigation(index);
+                    } else {
+                        console.log('💧 Irrigação programada cancelada - Está chovendo');
+                    }
+                });
+            } else {
+                startScheduledIrrigation(index);
+            }
+        }
+    });
+}
+
+function startScheduledIrrigation(programIndex) {
+    if (devicesState.irrigation.bomba_irrigacao) {
+        console.log('💧 Bomba já está ligada, ignorando programação');
+        return;
+    }
+
+    console.log(`💧 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
     
-    if (isAuthenticated) {
-        req.user = { id: 'admin', role: 'admin' };
+    devicesState.irrigation.bomba_irrigacao = true;
+    saveState(devicesState);
+    const duracao = devicesState.irrigation.duracao || 5;
+    console.log(`⏰ Irrigação programada por ${duracao} minutos`);
+    
+    // Desliga a bomba após o tempo de duração
+    setTimeout(() => {
+        // Verifica se a bomba não foi desligada manualmente
+        if (devicesState.irrigation.bomba_irrigacao) {
+            console.log(`💧 DESLIGANDO IRRIGAÇÃO PROGRAMADA após ${duracao} minutos`);
+            devicesState.irrigation.bomba_irrigacao = false;
+            saveState(devicesState);
+        }
+    }, duracao * 60 * 1000);
+}
+
+
+// Função para buscar dados do clima (OpenWeatherMap)
+async function fetchWeatherData() {
+    try {
+        const API_KEY = process.env.OPENWEATHER_API_KEY;
+        if (!API_KEY) throw new Error('API key não configurada');
+
+        const lat = -22.9068; // Rio de Janeiro
+        const lon = -43.1729;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=pt_br`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Erro API: ${response.status}`);
+        
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Erro ao buscar clima:', error);
+        return null;
+    }
+}
+
+// ==================== MIDDLEWARE DE AUTENTICAÇÃO ====================
+
+// ✅ CORREÇÃO CRÍTICA: Middleware para verificar o cookie
+function authenticateToken(req, res, next) {
+    const token = req.cookies.authToken;
+    
+    if (!token) {
+        console.log('❌ Acesso não autorizado: Cookie ausente');
+        return res.status(401).json({ authenticated: false, message: 'Não autorizado: Token ausente' });
+    }
+    
+    // Simplificação: apenas verifica se o token corresponde à senha padrão
+    if (token === VALID_PASSWORD) { 
+        req.user = { username: VALID_USERNAME };
         next();
     } else {
-        console.log('❌ Tentativa de acesso não autorizado.');
-        // Para requisições da API, retorna 401
-        if (req.path.startsWith('/api/')) {
-            res.status(401).json({ error: 'Não autorizado. Faça login novamente.' });
-        } else {
-            // Para acesso a páginas (deve ser tratado pelo script.js)
-            next();
-        }
+        console.log('❌ Acesso negado: Token inválido');
+        // Limpa o cookie inválido
+        res.clearCookie('authToken', { path: '/' }); 
+        return res.status(403).json({ authenticated: false, message: 'Acesso negado: Token inválido' });
     }
 }
 
-// ==================== ROTAS DE AUTENTICAÇÃO ====================
+// ==================== ROTAS PÚBLICAS (Sem Autenticação) ====================
 
+// Redireciona a raiz para o login
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Arquivos da interface (para que o frontend possa carregar sem auth)
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+
+// Rota de login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
+    console.log('🔐 Tentativa de login:', { username });
     
-    if (VALID_USERS[username] === password) {
-        console.log(`✅ Login bem-sucedido: ${username}`);
-        
-        // Seta o cookie de autenticação
-        res.cookie('authToken', VALID_AUTH_TOKEN, { 
+    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+        // ✅ CORREÇÃO: Cookie configurado para funcionar em localhost e ser acessível
+        res.cookie('authToken', VALID_PASSWORD, {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
-            httpOnly: false, // Necessário para que o frontend possa enviar (o fetch precisa)
-            secure: false, // Permite uso em HTTP (desenvolvimento)
-            sameSite: 'lax', 
-            path: '/', 
+            httpOnly: false, // ✅ Permite acesso via JavaScript
+            secure: false,   // ✅ HTTP (desenvolvimento)
+            sameSite: 'lax', // ✅ Compatível com cross-origin
+            path: '/',       // ✅ Disponível em todas as rotas
         });
-        
-        return res.json({ 
-            success: true, 
-            message: 'Login bem-sucedido', 
-            redirect: '/index.html' 
-        });
+        console.log('✅ Login realizado - Cookie configurado');
+        res.json({ success: true, message: 'Login realizado', redirect: '/index.html' });
     } else {
-        console.log(`❌ Tentativa de login falhou para: ${username}`);
-        return res.status(401).json({ 
-            success: false, 
-            message: 'Usuário ou senha inválidos' 
-        });
+        console.log('❌ Login falhou');
+        res.status(401).json({ success: false, message: 'Usuário ou senha incorretos' });
     }
 });
 
+// Logout
 app.post('/api/logout', (req, res) => {
+    // ✅ CORREÇÃO: Limpa o cookie corretamente
     res.clearCookie('authToken', { path: '/' });
-    res.json({ success: true, message: 'Logout bem-sucedido', redirect: '/login.html' });
+    res.json({ success: true, message: 'Logout realizado', redirect: '/login.html' });
 });
 
-// Verifica o status de autenticação (usado pelo script.js)
+// Rota de status de autenticação (Para o frontend verificar a sessão)
 app.get('/api/status', (req, res) => {
-    const isAuthenticated = req.cookies.authToken === VALID_AUTH_TOKEN;
+    const authenticated = req.cookies.authToken === VALID_PASSWORD;
+    res.json({ authenticated });
+});
+
+// Rota para buscar dados do clima (PÚBLICA)
+app.get('/api/weather', async (req, res) => {
+    const weatherData = await fetchWeatherData();
+    if (weatherData) {
+        res.json({ status: 'OK', weather: weatherData });
+    } else {
+        res.status(500).json({ status: 'ERROR', message: 'Falha ao buscar dados do clima' });
+    }
+});
+
+
+// ==================== ROTAS PROTEGIDAS (APÓS AUTH) ====================
+
+// Aplica o middleware de autenticação em todas as rotas abaixo
+app.use(authenticateToken); 
+
+// Rota para o frontend buscar estado dos dispositivos
+app.get('/api/devices', (req, res) => {
+    // Adicionar um status de conexão do ESP32 para o frontend
+    const espConnected = checkESP32Connection();
+    
     res.json({ 
-        authenticated: isAuthenticated, 
-        esp32Status: esp32Status.connected ? 'ONLINE' : 'OFFLINE' 
+        lights: devicesState.lights, 
+        outlets: devicesState.outlets,
+        irrigation: devicesState.irrigation,
+        esp32Status: {
+            connected: espConnected,
+            lastSeen: esp32Status.lastSeen
+        }
     });
 });
 
-// ==================== ROTAS PROTEGIDAS (APÓS AUTENTICAÇÃO) ====================
+// Rota para o frontend buscar dados do sensor
+app.get('/api/sensor-data', (req, res) => {
+    const espConnected = checkESP32Connection();
+    const esp32Info = {
+        esp32Status: espConnected ? 'ONLINE' : 'OFFLINE',
+        lastSeen: esp32Status.lastSeen,
+    };
+    
+    // Retorna apenas a leitura mais recente + status do ESP32
+    const latestSensorData = devicesState.sensorData.length > 0 ? 
+                             [devicesState.sensorData[devicesState.sensorData.length - 1]] : 
+                             [];
 
-app.use('/api', authenticate); // Aplica o middleware de autenticação a todas as rotas /api/*
-
-// Busca o estado atual dos dispositivos
-app.get('/api/devices', (req, res) => {
-    // Retorna o estado atual com o status do ESP32
-    res.json(devicesState);
+    res.json({ 
+        sensorData: latestSensorData.map(d => ({ 
+            temperatura: d.temperature, 
+            umidade: d.humidity, 
+            nivelGas: d.gas_alert,
+            lastSeen: d.timestamp,
+            esp32Status: esp32Info.esp32Status
+        })) 
+    });
 });
 
-// Rota de controle de dispositivos
-app.post('/api/control', (req, res) => {
+// Rota de controle (Luzes/Tomadas)
+app.post('/api/control', async (req, res) => {
     const { type, device, state } = req.body;
     
-    if (!type || !device || typeof state !== 'boolean') {
-        return res.status(400).json({ error: 'Dados inválidos' });
-    }
-
-    if (devicesState[type] && devicesState[type].hasOwnProperty(device)) {
+    if (devicesState[type] && devicesState[type][device] !== undefined) {
         devicesState[type][device] = state;
         saveState(devicesState);
-        console.log(`⚙️  CONTROLE: ${type}/${device} => ${state ? 'LIGADO' : 'DESLIGADO'}`);
-        // Aqui você enviaria o comando real para o ESP32...
-        // ...
-        return res.json({ status: 'OK', message: 'Comando enviado' });
+        console.log(`✅ ${type} - ${device}: ${state ? 'Ligado' : 'Desligado'}`);
+        res.json({ status: 'OK', message: 'Comando enviado' });
     } else {
-        return res.status(404).json({ error: 'Dispositivo não encontrado' });
+        res.status(400).json({ status: 'ERROR', error: 'Dispositivo ou tipo inválido' });
     }
 });
 
-// ==================== ROTAS DE DADOS (ESP32) ====================
-
-// Recebe dados de sensores do ESP32
-app.post('/api/data', (req, res) => {
-    const { deviceId, temperature, humidity, gasLevel, apiKey } = req.body;
-
-    // 🚨 SEGURANÇA BÁSICA: Verifica a API Key
-    if (apiKey !== process.env.ESP32_API_KEY) {
-        console.log('❌ ESP32: Tentativa de envio de dados com API Key inválida');
-        return res.status(401).json({ status: 'ERROR', error: 'API Key inválida' });
-    }
-    
-    const now = new Date();
-    
-    // Atualiza o estado do ESP32
-    esp32Status.connected = true;
-    esp32Status.lastSeen = now.toISOString();
-    esp32Status.deviceId = deviceId;
-    esp32Status.ipAddress = req.ip;
-
-    const newSensorData = {
-        timestamp: now.toISOString(),
-        temperatura: parseFloat(temperature),
-        umidade: parseFloat(humidity),
-        nivelGas: parseInt(gasLevel),
-        esp32Status: 'ONLINE'
-    };
-
-    // Adiciona o novo dado e limita o histórico a 100 itens
-    sensorData.push(newSensorData);
-    if (sensorData.length > 100) {
-        sensorData.shift();
-    }
-    
-    console.log(`📊 DADO RECEBIDO de ${deviceId}: Temp=${newSensorData.temperatura}°C, Gás=${newSensorData.nivelGas}`);
-    
-    // Responde com o estado atual dos dispositivos para o ESP32
-    res.json({ 
-        status: 'OK', 
-        message: 'Dados recebidos', 
-        deviceStates: {
-            lights: devicesState.lights,
-            outlets: devicesState.outlets,
-            irrigation: devicesState.irrigation.bomba_irrigacao 
-        }
-    });
-});
-
-// Envia dados de sensores para o Frontend
-app.get('/api/sensor-data', (req, res) => {
-    // Adiciona o status do ESP32 ao último dado enviado para o frontend
-    if (sensorData.length > 0) {
-        sensorData[sensorData.length - 1].esp32Status = esp32Status.connected ? 'ONLINE' : 'OFFLINE';
-    }
-
-    res.json({ 
-        status: 'OK',
-        sensorData: sensorData
-    });
-});
-
-// Simulação de Heartbeat (apenas para atualizar o status de conexão)
-app.post('/api/heartbeat', (req, res) => {
-    const { deviceId, apiKey } = req.body;
-    
-    if (apiKey !== process.env.ESP32_API_KEY) {
-        return res.status(401).json({ status: 'ERROR', error: 'API Key inválida' });
-    }
-
-    esp32Status.connected = true;
-    esp32Status.lastHeartbeat = new Date().toISOString();
-    esp32Status.deviceId = deviceId;
-    esp32Status.ipAddress = req.ip;
-
-    res.json({ status: 'OK', message: 'Heartbeat recebido' });
-});
-
-// Monitoramento de conexão (limpa o status após 30 segundos sem heartbeat/dados)
-setInterval(() => {
-    if (esp32Status.lastSeen) {
-        const lastSeenTime = new Date(esp32Status.lastSeen).getTime();
-        const now = Date.now();
-        const timeout = 30000; // 30 segundos
-
-        if (now - lastSeenTime > timeout && esp32Status.connected) {
-            esp32Status.connected = false;
-            console.log('🔴 ESP32 DESCONECTADO (Timeout)');
-            // Adiciona um registro de offline
-            sensorData.push({
-                timestamp: new Date().toISOString(),
-                temperatura: -1, // Valor sentinela
-                umidade: -1,
-                nivelGas: -1,
-                esp32Status: 'OFFLINE'
-            });
-            if (sensorData.length > 100) sensorData.shift();
-        }
-    }
-}, 5000); // Roda a cada 5 segundos
-
-// ==================== ROTAS DE IRRIGACAO ====================
-
+// Rotas de Irrigação
 app.post('/api/irrigation/save', async (req, res) => {
-    const settings = req.body;
-    
-    if (!settings || !settings.modo) {
-        return res.status(400).json({ error: 'Dados de configuração inválidos' });
-    }
+    const { modo, evitar_chuva, duracao, programacoes } = req.body;
 
-    // 🚨 Regra de segurança: Se está no modo automático, não permite ligar a bomba manualmente
-    if (settings.modo === 'automatico') {
-        devicesState.irrigation.bomba_irrigacao = false;
-    }
-    
-    devicesState.irrigation = {
-        ...devicesState.irrigation,
-        ...settings,
-    };
-    
+    devicesState.irrigation.modo = modo;
+    devicesState.irrigation.evitar_chuva = evitar_chuva;
+    devicesState.irrigation.duracao = duracao;
+    devicesState.irrigation.programacoes = programacoes;
+
     saveState(devicesState);
-    console.log('💧 Configurações de irrigação salvas:', devicesState.irrigation);
     res.json({ status: 'OK', message: 'Configurações salvas', savedData: devicesState.irrigation });
 });
 
@@ -334,73 +390,75 @@ app.post('/api/irrigation/control', async (req, res) => {
     res.json({ status: 'OK', message: `Bomba ${state ? 'ligada' : 'desligada'}` });
 });
 
-// ==================== ROTAS DE CLIMA ====================
 
-// Cache de clima
-let weatherCache = {
-    data: null,
-    timestamp: 0,
-    city: 'Curitiba, BR', // Cidade padrão
-    url: 'http://api.openweathermap.org/data/2.5/weather'
-};
-const WEATHER_CACHE_DURATION = 600000; // 10 minutos
+// ==================== ROTAS ESP32 (API Key) ====================
 
-// Função auxiliar para verificar chuva no OpenWeather
-async function isRaining() {
-    await updateWeatherCache();
-    if (weatherCache.data && weatherCache.data.weather) {
-        // Verifica se há alguma condição de clima que contenha 'rain' (chuva)
-        return weatherCache.data.weather.some(w => w.main.toLowerCase().includes('rain'));
-    }
-    return false; // Retorna falso se não houver dados
-}
-
-async function updateWeatherCache() {
-    const now = Date.now();
-    if (now - weatherCache.timestamp < WEATHER_CACHE_DURATION && weatherCache.data) {
-        return; // Retorna se o cache for recente
-    }
-
-    try {
-        const apiKey = process.env.OPENWEATHER_API_KEY;
-        const city = weatherCache.city;
-        const lang = 'pt_br';
-        const units = 'metric';
-
-        const apiUrl = `${weatherCache.url}?q=${city}&appid=${apiKey}&lang=${lang}&units=${units}`;
-        
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        
-        if (data.cod === 200) {
-            weatherCache.data = data;
-            weatherCache.timestamp = now;
-            console.log('☁️  Clima atualizado:', data.weather[0].description, `${data.main.temp}°C`);
-        } else {
-            console.error('❌ Erro ao buscar clima:', data.message);
-        }
-    } catch (error) {
-        console.error('❌ Erro na requisição do clima:', error.message);
-    }
-}
-
-app.get('/api/weather', async (req, res) => {
-    await updateWeatherCache();
-    if (weatherCache.data) {
-        res.json({ status: 'OK', weather: weatherCache.data });
+// Middleware simples para autenticação ESP32
+function authenticateESP32(req, res, next) {
+    const key = req.headers['x-device-id'];
+    if (key === ESP32_API_KEY) {
+        next();
     } else {
-        res.status(500).json({ status: 'ERROR', message: 'Não foi possível carregar dados do clima' });
+        console.log('❌ Acesso ESP32 negado: API Key inválida');
+        res.status(403).json({ error: 'Chave de API do dispositivo inválida' });
     }
+}
+
+// ESP32 envia dados
+app.post('/api/data', authenticateESP32, (req, res) => {
+    const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
+    console.log('📨 Dados recebidos do ESP32:', { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto });
+    
+    // ✅ CORREÇÃO CRÍTICA: Processar umidade CORRETAMENTE
+    let processedHumidity = humidity; 
+    if (typeof humidity === 'string' && humidity.endsWith('%')) {
+        processedHumidity = parseFloat(humidity.replace('%', ''));
+    }
+    
+    const newReading = {
+        timestamp: new Date().toISOString(),
+        temperature: parseFloat(temperature),
+        humidity: parseFloat(processedHumidity),
+        gas_level: parseInt(gas_level),
+        gas_alert: parseInt(gas_alert),
+        wifi_rssi: parseInt(wifi_rssi)
+    };
+
+    // Adiciona a nova leitura (mantendo apenas as 100 mais recentes para evitar inchaço do arquivo)
+    devicesState.sensorData.push(newReading);
+    if (devicesState.sensorData.length > 100) {
+        devicesState.sensorData.shift();
+    }
+    
+    saveState(devicesState);
+    
+    updateESP32Status(device, req.ip || req.connection.remoteAddress);
+    
+    res.json({ status: 'OK', message: 'Dados recebidos', timestamp: newReading.timestamp });
 });
 
-// Health check
-app.get('/health', (req, res) => {
+// ESP32 busca dispositivos
+app.get('/api/devices-esp32', authenticateESP32, (req, res) => {
+    const clientIP = req.ip || req.connection.remoteAddress;
+    updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
+    console.log('📡 ESP32 solicitando estados dos dispositivos');
+    
+    // O ESP32 pode querer um formato mais simples
     res.json({ 
-        status: 'OK', 
-        timestamp: new Date().toISOString(),
-        esp32: { connected: esp32Status.connected }
+        lights: devicesState.lights, 
+        outlets: devicesState.outlets, 
+        irrigation: {
+            bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
+            modo: devicesState.irrigation.modo,
+            evitar_chuva: devicesState.irrigation.evitar_chuva,
+            duracao: devicesState.irrigation.duracao || 5,
+            programacoes: devicesState.irrigation.programacoes || []
+        }
     });
 });
+
+
+// ==================== INICIALIZAÇÃO ====================
 
 // 404 handler
 app.use((req, res) => {
@@ -412,4 +470,5 @@ app.listen(PORT, () => {
     console.log(`\n🔥 Servidor Automação V3.0 rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log(`🔧 Modo: ${process.env.NODE_ENV}`);
+    startIrrigationScheduler();
 });
