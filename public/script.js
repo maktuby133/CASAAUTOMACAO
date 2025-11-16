@@ -1,4 +1,4 @@
-// public/script.js - Cliente CORRIGIDO (Versão Final)
+// public/script.js - Cliente CORRIGIDO (Versão Final com Funções de Atualização)
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -82,7 +82,9 @@ async function checkSystemAuth() {
 
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
-    startDataUpdates();
+    
+    // 💡 A correção está em garantir que startDataUpdates() está definida
+    startDataUpdates(); 
     
     // Carregar tema
     const savedTheme = loadFromLocalStorage('theme') || 'light';
@@ -127,6 +129,22 @@ let lastWeatherUpdate = 0;
 const WEATHER_UPDATE_INTERVAL = 600000; // 10 minutos
 let systemStatus = 'ONLINE'; // ONLINE, OFFLINE, CONECTANDO
 
+// 🚨 CORREÇÃO CRÍTICA: Definição da função de atualização de dados
+function startDataUpdates() {
+    // Carregamento inicial de todos os dados
+    loadDevices();
+    fetchSensorData();
+    updateWeather();
+    
+    // Configura os intervalos de atualização
+    setInterval(loadDevices, 5000);
+    setInterval(fetchSensorData, 5000);
+    setInterval(updateWeather, WEATHER_UPDATE_INTERVAL); // 10 minutos
+    
+    console.log('🔄 Atualizações de dados iniciadas');
+}
+
+
 // ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
 async function loadDevices() {
     try {
@@ -135,11 +153,19 @@ async function loadDevices() {
         const data = await response.json();
         currentDevices = data;
         updateDeviceDisplays();
-        updateSensorData();
+        // REMOVIDO: updateSensorData() daqui, pois é chamado por fetchSensorData
     } catch (error) {
         console.error('❌ Erro ao carregar dispositivos:', error);
     }
 }
+
+function updateDeviceDisplays() {
+    updateLightsDisplay();
+    updateOutletsDisplay();
+    updateIrrigationDisplay();
+    checkConnection(); // Chama a verificação de conexão (online/offline)
+}
+
 
 function updateLightsDisplay() {
     const lightsDiv = document.getElementById('lights-control');
@@ -589,18 +615,22 @@ async function fetchSensorData() {
 
 async function updateWeather() {
     const now = Date.now();
+    // Use the global constant for interval check
     if (weatherData && (now - lastWeatherUpdate < WEATHER_UPDATE_INTERVAL)) {
         renderWeather();
         return;
     }
 
+    // Não precisa de credentials, pois esta rota é pública (no server.js)
     try {
-        const response = await fetch('/api/weather');
+        const response = await fetch('/api/weather'); 
         const data = await response.json();
         if (data.status === 'OK') {
             weatherData = data.weather;
             lastWeatherUpdate = now;
             renderWeather();
+        } else {
+            console.error('❌ Erro ao buscar dados do clima:', data.message);
         }
     } catch (error) {
         console.error('❌ Erro ao carregar clima:', error);
