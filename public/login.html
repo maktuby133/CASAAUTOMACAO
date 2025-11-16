@@ -341,7 +341,7 @@
                 <label for="username"><i class="fas fa-user"></i> Usuário</label>
                 <div class="input-with-icon">
                     <i class="fas fa-user"></i>
-                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required value="admin">
+                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required>
                 </div>
             </div>
 
@@ -349,7 +349,7 @@
                 <label for="password"><i class="fas fa-lock"></i> Senha</label>
                 <div class="input-with-icon">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required value="admin123">
+                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
                     <button type="button" class="toggle-password" id="togglePassword">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -358,7 +358,7 @@
 
             <div class="remember-forgot">
                 <label class="remember-me">
-                    <input type="checkbox" id="rememberMe" checked>
+                    <input type="checkbox" id="rememberMe">
                     Lembrar-me
                 </label>
                 <a href="#" class="forgot-password">Esqueceu a senha?</a>
@@ -383,137 +383,165 @@
     </div>
 
     <script>
-        // ✅✅✅ CÓDIGO CORRIGIDO - Login funcional
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔐 Sistema de login inicializado');
+        // Elementos do DOM
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+        const loginBtn = document.getElementById('loginBtn');
+
+        // Credenciais válidas (em produção, isso viria de um servidor)
+        const validCredentials = [
+            { username: 'admin', password: 'admin123' },
+            { username: 'usuario', password: 'user123' },
+            { username: 'charles', password: '061084Cc@' },
+            { username: 'casa', password: 'automacao2024' }
+        ];
+
+        // Mostrar/ocultar senha
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+
+        // Carregar credenciais salvas
+        function loadSavedCredentials() {
+            const savedUsername = localStorage.getItem('casa-automacao-username');
+            const savedPassword = localStorage.getItem('casa-automacao-password');
+            const rememberMe = localStorage.getItem('casa-automacao-remember') === 'true';
+
+            if (rememberMe && savedUsername && savedPassword) {
+                usernameInput.value = savedUsername;
+                passwordInput.value = savedPassword;
+                rememberMeCheckbox.checked = true;
+            }
+        }
+
+        // Salvar credenciais
+        function saveCredentials(username, password, remember) {
+            if (remember) {
+                localStorage.setItem('casa-automacao-username', username);
+                localStorage.setItem('casa-automacao-password', password);
+                localStorage.setItem('casa-automacao-remember', 'true');
+            } else {
+                localStorage.removeItem('casa-automacao-username');
+                localStorage.removeItem('casa-automacao-password');
+                localStorage.removeItem('casa-automacao-remember');
+            }
+        }
+
+        // Sistema de notificações
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${getNotificationIcon(type)}"></i>
+                ${message}
+            `;
             
-            const loginForm = document.getElementById('loginForm');
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const togglePasswordBtn = document.getElementById('togglePassword');
-            const loginBtn = document.getElementById('loginBtn');
+            document.getElementById('notification-container').appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
 
-            // Mostrar/ocultar senha
-            togglePasswordBtn.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
-            });
+        function getNotificationIcon(type) {
+            const icons = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
 
-            // Sistema de notificações
-            function showNotification(message, type = 'info', duration = 5000) {
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                notification.innerHTML = `
-                    <i class="fas fa-${getNotificationIcon(type)}"></i>
-                    ${message}
-                `;
-                
-                document.getElementById('notification-container').appendChild(notification);
-                
-                setTimeout(() => notification.classList.add('show'), 100);
-                
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => notification.remove(), 300);
-                }, duration);
+        // Validação de login
+        function validateLogin(username, password) {
+            return validCredentials.some(cred => 
+                cred.username === username && cred.password === password
+            );
+        }
+
+        // Processar login
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const rememberMe = rememberMeCheckbox.checked;
+
+            // Validações básicas
+            if (!username) {
+                showNotification('Por favor, digite o usuário', 'warning');
+                usernameInput.focus();
+                return;
             }
 
-            function getNotificationIcon(type) {
-                const icons = {
-                    'success': 'check-circle',
-                    'error': 'exclamation-circle',
-                    'warning': 'exclamation-triangle',
-                    'info': 'info-circle'
-                };
-                return icons[type] || 'info-circle';
+            if (!password) {
+                showNotification('Por favor, digite a senha', 'warning');
+                passwordInput.focus();
+                return;
             }
 
-            // Processar login
-            async function handleLogin(event) {
-                event.preventDefault();
-                
-                const username = usernameInput.value.trim();
-                const password = passwordInput.value;
+            // Mostrar loading
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Autenticando...';
+            loginBtn.classList.add('loading');
 
-                // Validações básicas
-                if (!username) {
-                    showNotification('Por favor, digite o usuário', 'warning');
-                    usernameInput.focus();
-                    return;
-                }
-
-                if (!password) {
-                    showNotification('Por favor, digite a senha', 'warning');
-                    passwordInput.focus();
-                    return;
-                }
-
-                // Mostrar loading
-                const originalText = loginBtn.innerHTML;
-                loginBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Autenticando...';
-                loginBtn.classList.add('loading');
-
-                try {
-                    console.log('🔐 Tentando login...');
+            // Simular autenticação (em produção seria uma requisição AJAX)
+            setTimeout(() => {
+                if (validateLogin(username, password)) {
+                    // Salvar credenciais se solicitado
+                    saveCredentials(username, password, rememberMe);
                     
-                    const response = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        credentials: 'include', // ✅ IMPORTANTE: Inclui cookies
-                        body: JSON.stringify({ username, password })
-                    });
+                    // Salvar sessão
+                    localStorage.setItem('casa-automacao-authenticated', 'true');
+                    localStorage.setItem('casa-automacao-user', JSON.stringify({
+                        username: username,
+                        loginTime: new Date().toISOString()
+                    }));
 
-                    const data = await response.json();
+                    showNotification('Login realizado com sucesso!', 'success');
                     
-                    if (data.success) {
-                        console.log('✅ Login realizado com sucesso');
-                        showNotification('Login realizado com sucesso!', 'success');
-                        
-                        // ✅ CORREÇÃO: Redirecionamento correto
-                        setTimeout(() => {
-                            window.location.href = '/index.html';
-                        }, 1000);
-                        
-                    } else {
-                        console.error('❌ Login falhou:', data.message);
-                        showNotification(data.message || 'Usuário ou senha incorretos', 'error');
-                        loginBtn.innerHTML = originalText;
-                        loginBtn.classList.remove('loading');
-                    }
-                } catch (error) {
-                    console.error('❌ Erro no login:', error);
-                    showNotification('Erro de conexão com o servidor', 'error');
+                    // Redirecionar para o dashboard
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                    
+                } else {
+                    showNotification('Usuário ou senha incorretos', 'error');
                     loginBtn.innerHTML = originalText;
                     loginBtn.classList.remove('loading');
-                }
-            }
-
-            // Event listener
-            loginForm.addEventListener('submit', handleLogin);
-
-            // Verificar se já está autenticado
-            checkAuthenticationStatus();
-
-            async function checkAuthenticationStatus() {
-                try {
-                    const response = await fetch('/api/status', {
-                        credentials: 'include' // ✅ Inclui cookies
-                    });
-                    const data = await response.json();
                     
-                    if (data.authenticated) {
-                        console.log('✅ Já autenticado, redirecionando...');
-                        showNotification('Redirecionando para o painel...', 'info');
-                        setTimeout(() => {
-                            window.location.href = '/index.html';
-                        }, 1000);
-                    }
-                } catch (error) {
-                    console.log('🔐 Não autenticado ou erro de verificação');
+                    // Efeito de shake no formulário
+                    loginForm.style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        loginForm.style.animation = '';
+                    }, 500);
                 }
+            }, 2000);
+        }
+
+        // Event Listeners
+        loginForm.addEventListener('submit', handleLogin);
+
+        // Carregar credenciais salvas ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedCredentials();
+            
+            // Verificar se já está autenticado
+            const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
+            if (isAuthenticated) {
+                showNotification('Você já está autenticado. Redirecionando...', 'info');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
             }
 
             // Adicionar estilo de shake
@@ -527,10 +555,18 @@
             `;
             document.head.appendChild(style);
 
-            // Credenciais pré-preenchidas para teste
-            console.log('💡 Credenciais para teste:');
+            console.log('🔐 Sistema de login inicializado');
+            console.log('💡 Dicas de login:');
             console.log('   - admin / admin123');
+            console.log('   - usuario / user123');
+            console.log('   - charles / 061084Cc@');
+            console.log('   - casa / automacao2024');
         });
+
+        // Prevenir acesso direto sem login
+        if (window.location.pathname.endsWith('index.html') && !localStorage.getItem('casa-automacao-authenticated')) {
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 </html>
