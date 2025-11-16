@@ -226,28 +226,34 @@ const requireAuth = (req, res, next) => {
         '/api/weather',
         '/api/weather/raining',
         '/api/sensor-data',
-        '/api/devices',
+        '/api/esp32-status',
+        '/api/irrigation/test-schedule',
+        '/api/irrigation/schedule-status',
         '/api/data',
         '/api/commands',
         '/api/confirm',
+        '/api/devices',
         '/health',
         '/favicon.ico',
         '/styles.css',
         '/script.js'
     ];
 
-    // ✅ Se for rota pública, permite acesso
-    if (publicRoutes.includes(req.path)) {
+    // ✅ Se for rota pública, permite acesso SEM verificação
+    if (publicRoutes.includes(req.path) || req.path.startsWith('/public/')) {
         return next();
     }
 
     // ✅ Verifica autenticação apenas para rotas protegidas
     const authToken = req.cookies?.authToken;
     
+    console.log('🔐 Verificando autenticação para:', req.path, 'Token:', authToken ? 'Presente' : 'Ausente');
+    
     if (authToken === 'admin123') {
+        console.log('✅ Usuário autenticado');
         return next();
     } else {
-        console.log('🔐 Acesso negado para:', req.path);
+        console.log('❌ Acesso negado para:', req.path);
         
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ 
@@ -308,7 +314,12 @@ app.post('/api/login', (req, res) => {
 
 // Logout
 app.post('/api/logout', (req, res) => {
-    res.clearCookie('authToken', { path: '/' });
+    res.clearCookie('authToken', { 
+        path: '/',
+        httpOnly: false,
+        secure: false,
+        sameSite: 'lax'
+    });
     res.json({ 
         success: true, 
         message: 'Logout realizado',
