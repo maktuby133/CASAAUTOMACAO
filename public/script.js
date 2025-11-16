@@ -1,4 +1,4 @@
-// public/script.js - Cliente CORRIGIDO (Versão Final com Funções de Atualização)
+// public/script.js - Cliente CORRIGIDO (Versão Final com Funções de Atualização e Auth Fixa)
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -61,7 +61,7 @@ function handleSystemPage() {
     }
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' } para verificar o cookie
 async function checkSystemAuth() {
     try {
         // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
@@ -83,7 +83,7 @@ async function checkSystemAuth() {
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     
-    // 💡 A correção está em garantir que startDataUpdates() está definida
+    // 💡 CORREÇÃO CRÍTICA: Chama e garante que a função de atualização está definida
     startDataUpdates(); 
     
     // Carregar tema
@@ -98,7 +98,7 @@ function initializeSystem() {
     showNotification('Sistema inicializado com sucesso!', 'success', 3000);
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' } para limpar o cookie
 async function logout() {
     try {
         // [CORRIGIDO] Adicionar { credentials: 'include' } para garantir o envio e a limpeza correta
@@ -120,8 +120,7 @@ async function logout() {
     }
 }
 
-window.logout = logout;
-// Sistema de Automação - Funções principais
+// ==================== SISTEMA DE AUTOMAÇÃO - FUNÇÕES PRINCIPAIS ====================
 let currentDevices = {};
 let sensorData = [];
 let weatherData = null;
@@ -129,7 +128,7 @@ let lastWeatherUpdate = 0;
 const WEATHER_UPDATE_INTERVAL = 600000; // 10 minutos
 let systemStatus = 'ONLINE'; // ONLINE, OFFLINE, CONECTANDO
 
-// 🚨 CORREÇÃO CRÍTICA: Definição da função de atualização de dados
+// 🚨 CORREÇÃO CRÍTICA: Definição da função de atualização de dados (evita erro de "função não definida")
 function startDataUpdates() {
     // Carregamento inicial de todos os dados
     loadDevices();
@@ -153,7 +152,8 @@ async function loadDevices() {
         const data = await response.json();
         currentDevices = data;
         updateDeviceDisplays();
-        // REMOVIDO: updateSensorData() daqui, pois é chamado por fetchSensorData
+        // Inclui status do ESP32 na checagem de dispositivos
+        updateESP32Status(data.esp32Status?.connected ? 'ONLINE' : 'OFFLINE', data.esp32Status?.lastSeen);
     } catch (error) {
         console.error('❌ Erro ao carregar dispositivos:', error);
     }
@@ -563,9 +563,6 @@ function updateSensorData() {
         }
         if (gasElement) gasElement.textContent = gasStatus;
 
-        // Atualizar status do ESP32
-        updateESP32Status(latest.esp32Status || 'ONLINE', latest.lastSeen);
-
         // Se o nível de gás for perigoso, mostre um alerta
         if (latest.nivelGas === 2) {
             showNotification('🚨 ALERTA DE GÁS! Perigo de Vazamento!', 'danger', 0);
@@ -574,7 +571,6 @@ function updateSensorData() {
         if (tempElement) tempElement.textContent = '--';
         if (humidityElement) humidityElement.textContent = '--';
         if (gasElement) gasElement.textContent = 'N/A';
-        updateESP32Status('OFFLINE');
     }
 }
 
