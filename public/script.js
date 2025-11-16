@@ -1,4 +1,4 @@
-// public/script.js - Cliente CORRIGIDO (Versão Final com Funções de Atualização e Auth Fixa)
+// public/script.js - Cliente CORRIGIDO (Versão Final com Tratamento de Erro Robusto)
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -52,7 +52,7 @@ function handleLoginPage() {
 
 function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
-    // 🚨 CORREÇÃO CRÍTICA: Chama a verificação de autenticação
+    // Chama a verificação de autenticação
     checkSystemAuth();
     // Configurar botão de logout se existir
     const logoutBtn = document.querySelector('.logout-btn');
@@ -61,10 +61,9 @@ function handleSystemPage() {
     }
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' } para verificar o cookie
+// Verifica se o cookie de autenticação está presente
 async function checkSystemAuth() {
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
         const response = await fetch('/api/status', { credentials: 'include' });
         const data = await response.json();
         
@@ -83,7 +82,7 @@ async function checkSystemAuth() {
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     
-    // 💡 CORREÇÃO CRÍTICA: Chama e garante que a função de atualização está definida
+    // Chama a função de atualização de dados
     startDataUpdates(); 
     
     // Carregar tema
@@ -98,10 +97,9 @@ function initializeSystem() {
     showNotification('Sistema inicializado com sucesso!', 'success', 3000);
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' } para limpar o cookie
+// Faz o logout e limpa o cookie
 async function logout() {
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para garantir o envio e a limpeza correta
         const response = await fetch('/api/logout', {
             method: 'POST',
             credentials: 'include'
@@ -126,9 +124,9 @@ let sensorData = [];
 let weatherData = null;
 let lastWeatherUpdate = 0;
 const WEATHER_UPDATE_INTERVAL = 600000; // 10 minutos
-let systemStatus = 'ONLINE'; // ONLINE, OFFLINE, CONECTANDO
+let systemStatus = 'ONLINE'; 
 
-// 🚨 CORREÇÃO CRÍTICA: Definição da função de atualização de dados (evita erro de "função não definida")
+// Definição da função de atualização de dados (evita erro de "função não definida")
 function startDataUpdates() {
     // Carregamento inicial de todos os dados
     loadDevices();
@@ -144,11 +142,22 @@ function startDataUpdates() {
 }
 
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// 🚨 CORREÇÃO CRÍTICA: Tratamento de erro 401/403 adicionado
 async function loadDevices() {
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
         const response = await fetch('/api/devices', { credentials: 'include' });
+        
+        if (response.status === 401 || response.status === 403) {
+            showNotification('Sessão expirada. Redirecionando para login.', 'danger', 3000);
+            // Redireciona após o aviso
+            setTimeout(() => window.location.href = '/login.html', 1500);
+            return;
+        }
+
+        if (!response.ok) {
+             throw new Error(`Erro de rede ao carregar dispositivos: ${response.status} ${response.statusText}`);
+        }
+        
         const data = await response.json();
         currentDevices = data;
         updateDeviceDisplays();
@@ -156,6 +165,7 @@ async function loadDevices() {
         updateESP32Status(data.esp32Status?.connected ? 'ONLINE' : 'OFFLINE', data.esp32Status?.lastSeen);
     } catch (error) {
         console.error('❌ Erro ao carregar dispositivos:', error);
+        showNotification('Erro ao carregar dados dos dispositivos. Verifique o console.', 'error', 7000);
     }
 }
 
@@ -309,10 +319,9 @@ function getDeviceDisplayName(deviceKey) {
     return names[deviceKey] || deviceKey;
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// Ligar/Desligar Dispositivo
 async function toggleDevice(type, device, state) {
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
         const response = await fetch('/api/control', {
             method: 'POST',
             headers: {
@@ -322,6 +331,12 @@ async function toggleDevice(type, device, state) {
             credentials: 'include' 
         });
         
+        if (response.status === 401 || response.status === 403) {
+            showNotification('Sessão expirada. Redirecionando para login.', 'danger', 3000);
+            setTimeout(() => window.location.href = '/login.html', 1500);
+            return;
+        }
+
         const data = await response.json();
         if (data.status === 'OK') {
             console.log(`✅ ${device}: ${state ? 'Ligado' : 'Desligado'}`);
@@ -372,11 +387,10 @@ async function controlAllOutlets(state) {
     }
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// Controle de Irrigação
 async function controlIrrigation(state) {
     const action = state ? 'ligar' : 'desligar';
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
         const response = await fetch('/api/irrigation/control', {
             method: 'POST',
             headers: {
@@ -386,6 +400,12 @@ async function controlIrrigation(state) {
             credentials: 'include'
         });
         
+        if (response.status === 401 || response.status === 403) {
+            showNotification('Sessão expirada. Redirecionando para login.', 'danger', 3000);
+            setTimeout(() => window.location.href = '/login.html', 1500);
+            return;
+        }
+
         const data = await response.json();
         if (data.status === 'OK') {
             showNotification(`💧 Irrigação ${state ? 'ativada' : 'desativada'}`, 'success');
@@ -399,7 +419,7 @@ async function controlIrrigation(state) {
     }
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// Salvar Configurações de Irrigação
 async function saveIrrigationSettings() {
     const mode = document.getElementById('irrigation-mode-select')?.value;
     const rainAvoidance = document.getElementById('rain-avoidance-checkbox')?.checked;
@@ -420,7 +440,6 @@ async function saveIrrigationSettings() {
     console.log('💧 Enviando configurações para servidor:', settings);
 
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
         const response = await fetch('/api/irrigation/save', {
             method: 'POST',
             headers: {
@@ -430,6 +449,12 @@ async function saveIrrigationSettings() {
             credentials: 'include'
         });
         
+        if (response.status === 401 || response.status === 403) {
+            showNotification('Sessão expirada. Redirecionando para login.', 'danger', 3000);
+            setTimeout(() => window.location.href = '/login.html', 1500);
+            return;
+        }
+
         const data = await response.json();
         if (data.status === 'OK') {
             console.log('✅ Configurações de irrigação salvas com sucesso');
@@ -596,16 +621,27 @@ function updateESP32Status(status, lastSeen) {
     }
 }
 
-// ✅ FUNÇÃO CORRIGIDA: Adicionado { credentials: 'include' }
+// 🚨 CORREÇÃO CRÍTICA: Tratamento de erro 401/403 adicionado
 async function fetchSensorData() {
     try {
-        // [CORRIGIDO] Adicionar { credentials: 'include' } para enviar o cookie
         const response = await fetch('/api/sensor-data', { credentials: 'include' });
+        
+        if (response.status === 401 || response.status === 403) {
+            showNotification('Sessão expirada. Redirecionando para login.', 'danger', 3000);
+            setTimeout(() => window.location.href = '/login.html', 1500);
+            return;
+        }
+
+        if (!response.ok) {
+             throw new Error(`Erro de rede ao carregar sensores: ${response.status} ${response.statusText}`);
+        }
+
         const data = await response.json();
         sensorData = data.sensorData || [];
         updateSensorData();
     } catch (error) {
         console.error('❌ Erro ao buscar dados do sensor:', error);
+        showNotification('Erro ao carregar dados dos sensores. Verifique o console.', 'error', 7000);
     }
 }
 
@@ -760,7 +796,7 @@ if (modal) {
     });
 }
 
-// 🚨 CORREÇÃO: Exportar todas as funções globais
+// Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
