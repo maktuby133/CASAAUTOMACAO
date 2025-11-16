@@ -1,8 +1,8 @@
-// public/script.js - CORRIGIDO sem loop de autenticação
+// public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
-    if (window.location.pathname === '/' || window.location.pathname.includes('login.html')) {
+    if (window.location.pathname === '/' || window.location.pathname === '/login.html') {
         handleLoginPage();
     } else {
         handleSystemPage();
@@ -25,19 +25,20 @@ function handleLoginPage() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    credentials: 'include',
                     body: JSON.stringify({ username, password })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    showNotification('Login realizado com sucesso!', 'success');
+                    // 🚨 CORREÇÃO: Salva autenticação no localStorage
+                    localStorage.setItem('casa-automacao-authenticated', 'true');
+                    localStorage.setItem('casa-automacao-user', JSON.stringify({
+                        username: username,
+                        loginTime: new Date().toISOString()
+                    }));
                     
-                    // ✅ CORREÇÃO: Redirecionamento simples
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1000);
+                    window.location.href = data.redirect;
                 } else {
                     showNotification(data.message, 'error');
                 }
@@ -52,7 +53,7 @@ function handleLoginPage() {
 function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
     
-    // ✅ CORREÇÃO: Verificação de auth sem loop
+    // 🚨 CORREÇÃO: Verificação de auth apenas para sistema
     checkSystemAuth();
     
     // Configurar botão de logout se existir
@@ -62,36 +63,26 @@ function handleSystemPage() {
     }
 }
 
-// ✅ CORREÇÃO: Verificação de auth sem loop
+// 🚨 CORREÇÃO: Verificação apenas para páginas do sistema
 async function checkSystemAuth() {
     try {
-        console.log('🔐 Verificando autenticação...');
-        
-        const response = await fetch('/api/status', {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Erro na resposta do servidor');
-        }
-        
+        const response = await fetch('/api/status');
         const data = await response.json();
         
-        if (data.authenticated) {
-            console.log('✅ Usuário autenticado, inicializando sistema...');
-            initializeSystem();
-        } else {
-            console.log('❌ Usuário não autenticado, redirecionando...');
+        if (!data.authenticated) {
+            console.log('❌ Não autenticado, redirecionando...');
             window.location.href = '/login.html';
+        } else {
+            // 🚨 CORREÇÃO: Inicializa o sistema se estiver autenticado
+            initializeSystem();
         }
     } catch (error) {
         console.error('❌ Erro ao verificar auth:', error);
-        // Em caso de erro, vai para login para ser seguro
         window.location.href = '/login.html';
     }
 }
 
-// ✅ CORREÇÃO: Função para inicializar o sistema
+// 🚨 CORREÇÃO: Função para inicializar o sistema
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     startDataUpdates();
@@ -111,13 +102,14 @@ function initializeSystem() {
 async function logout() {
     try {
         const response = await fetch('/api/logout', {
-            method: 'POST',
-            credentials: 'include'
+            method: 'POST'
         });
         
         const data = await response.json();
         
         if (data.success) {
+            localStorage.removeItem('casa-automacao-authenticated');
+            localStorage.removeItem('casa-automacao-user');
             window.location.href = data.redirect;
         }
     } catch (error) {
@@ -126,11 +118,8 @@ async function logout() {
     }
 }
 
-// ✅ CORREÇÃO: Adicionar função global para logout
+// 🚨 CORREÇÃO: Adicionar função global para logout
 window.logout = logout;
-
-// Resto do código do sistema (controle de dispositivos, sensores, etc.)
-// ... [mantenha todo o resto do código original do script.js] ...
 
 // Sistema de Automação - Funções principais
 let currentDevices = {};
@@ -364,7 +353,7 @@ function startDataUpdates() {
     updateSensorData();
 }
 
-// ✅ CORREÇÃO: Atualização de dados dos sensores com umidade correta
+// 🆕 CORREÇÃO: Atualização de dados dos sensores com umidade correta
 async function updateSensorData() {
     try {
         const response = await fetch('/api/sensor-data');
@@ -388,11 +377,10 @@ async function updateSensorData() {
                 }
             }
             
-            // ✅ CORREÇÃO: Atualizar umidade REAL do ESP32
+            // 🆕 CORREÇÃO: Atualizar umidade REAL do ESP32
             const humidityElement = document.getElementById('sensor-humidity');
             if (humidityElement && latest.humidity !== undefined) {
-                // ✅ CORREÇÃO: Usar o valor exato enviado pelo ESP32
-                humidityElement.textContent = `${latest.humidity}%`;
+                humidityElement.textContent = `${Math.round(latest.humidity)}%`;
                 
                 // Mudar cor baseada na umidade
                 if (latest.humidity > 80) {
@@ -451,7 +439,7 @@ async function updateSensorData() {
     }
 }
 
-// METEOROLOGIA
+// 🆕 METEOROLOGIA EXPANDIDA
 async function updateWeather() {
     try {
         const response = await fetch('/api/weather');
@@ -557,7 +545,247 @@ function getWeatherAnimationClass(weatherMain) {
     return animations[weatherMain] || 'weather-icon-cloud';
 }
 
-// SISTEMA DE NOTIFICAÇÕES
+async function checkWeather() {
+    try {
+        const response = await fetch('/api/weather/raining');
+        const data = await response.json();
+        
+        if (data.raining) {
+            showNotification('⚠️ Está chovendo! A irrigação automática está bloqueada.', 'warning');
+        } else {
+            showNotification('☀️ Tempo seco - Irrigação automática permitida.', 'success');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao verificar clima:', error);
+        showNotification('Erro ao verificar condições climáticas', 'error');
+    }
+}
+
+// 🆕 MODAL DE IRRIGAÇÃO MELHORADO
+function openIrrigationModal() {
+    const modal = document.getElementById('irrigation-modal');
+    if (modal) {
+        loadIrrigationSettings();
+        modal.style.display = 'flex';
+    }
+}
+
+function closeIrrigationModal() {
+    const modal = document.getElementById('irrigation-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function loadIrrigationSettings() {
+    const irrigation = currentDevices.irrigation || {};
+    
+    // Modo
+    const modeSelect = document.getElementById('irrigation-mode-select');
+    if (modeSelect) {
+        modeSelect.value = irrigation.modo || 'manual';
+    }
+    
+    // Evitar chuva
+    const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+    if (rainCheckbox) {
+        rainCheckbox.checked = irrigation.evitar_chuva !== false;
+    }
+    
+    // Duração
+    const durationInput = document.getElementById('irrigation-duration');
+    if (durationInput) {
+        durationInput.value = irrigation.duracao || 5;
+    }
+    
+    // 🆕 Limpar e carregar programações
+    const programmingList = document.getElementById('programming-list');
+    programmingList.innerHTML = '';
+    
+    const programacoes = irrigation.programacoes || [];
+    if (programacoes.length === 0) {
+        programmingList.innerHTML = `
+            <div class="no-programming">
+                <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                <br>
+                Nenhuma programação configurada
+            </div>
+        `;
+    } else {
+        programacoes.forEach(prog => {
+            addProgrammingToList(prog);
+        });
+    }
+    
+    // 🆕 Limpar seleções atuais
+    document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('irrigation-time').value = '08:00';
+}
+
+function showTimePicker() {
+    const timeInput = document.getElementById('irrigation-time');
+    timeInput.showPicker(); // Abre o seletor nativo de hora
+}
+
+function addProgramming() {
+    const timeInput = document.getElementById('irrigation-time');
+    const selectedTime = timeInput.value;
+    
+    if (!selectedTime) {
+        showNotification('Por favor, selecione um horário.', 'warning');
+        return;
+    }
+
+    // Coletar dias selecionados
+    const selectedDays = [];
+    const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
+    
+    if (dayCheckboxes.length === 0) {
+        showNotification('Por favor, selecione pelo menos um dia da semana.', 'warning');
+        return;
+    }
+
+    dayCheckboxes.forEach(checkbox => {
+        selectedDays.push(checkbox.value);
+    });
+
+    // Criar nova programação
+    const newProgramming = {
+        hora: selectedTime,
+        dias: selectedDays
+    };
+
+    // Adicionar à lista visual
+    addProgrammingToList(newProgramming);
+    
+    // Limpar seleção
+    timeInput.value = '08:00';
+    document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+    
+    showNotification('Programação adicionada com sucesso!', 'success');
+}
+
+function addProgrammingToList(programming) {
+    const programmingList = document.getElementById('programming-list');
+    
+    // Remover mensagem "nenhuma programação" se for a primeira
+    if (programmingList.querySelector('.no-programming')) {
+        programmingList.innerHTML = '';
+    }
+
+    const programmingElement = document.createElement('div');
+    programmingElement.className = 'programming-item';
+    programmingElement.innerHTML = `
+        <div class="programming-header">
+            <span class="programming-time">${programming.hora}</span>
+            <button class="delete-programming" onclick="removeProgramming(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="programming-days">
+            ${getDaysBadges(programming.dias)}
+        </div>
+    `;
+    
+    programmingList.appendChild(programmingElement);
+}
+
+function getDaysBadges(days) {
+    const dayNames = {
+        'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+        'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
+    };
+    
+    return days.map(day => 
+        `<span class="day-badge active">${dayNames[day]}</span>`
+    ).join('');
+}
+
+function removeProgramming(button) {
+    const programmingItem = button.closest('.programming-item');
+    programmingItem.remove();
+    
+    const programmingList = document.getElementById('programming-list');
+    if (programmingList.children.length === 0) {
+        programmingList.innerHTML = `
+            <div class="no-programming">
+                <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                <br>
+                Nenhuma programação configurada
+            </div>
+        `;
+    }
+    
+    showNotification('Programação removida', 'info');
+}
+
+function getSelectedProgrammings() {
+    const programmingList = document.getElementById('programming-list');
+    const programmings = [];
+    
+    programmingList.querySelectorAll('.programming-item').forEach(item => {
+        const time = item.querySelector('.programming-time').textContent;
+        const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
+            const dayText = badge.textContent.toLowerCase();
+            const dayMap = {
+                'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 
+                'sex': 'sex', 'sab': 'sab', 'dom': 'dom'
+            };
+            return dayMap[dayText];
+        }).filter(day => day);
+        
+        programmings.push({
+            hora: time,
+            dias: days
+        });
+    });
+    
+    return programmings;
+}
+
+// 🆕 CORREÇÃO: Salvar configurações de irrigação de forma robusta
+async function saveIrrigationSettings() {
+    try {
+        const modeSelect = document.getElementById('irrigation-mode-select');
+        const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+        const durationInput = document.getElementById('irrigation-duration');
+        
+        const settings = {
+            modo: modeSelect?.value || 'manual',
+            evitar_chuva: rainCheckbox?.checked !== false,
+            duracao: parseInt(durationInput?.value) || 5,
+            programacoes: getSelectedProgrammings()
+        };
+        
+        console.log('💧 Enviando configurações para servidor:', settings);
+        
+        const response = await fetch('/api/irrigation/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(settings)
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'OK') {
+            console.log('✅ Configurações de irrigação salvas com sucesso');
+            console.log('📋 Dados salvos:', data.savedData);
+            showNotification('Configurações salvas com sucesso!', 'success');
+            closeIrrigationModal();
+            loadDevices(); // Recarregar dados
+        } else {
+            console.error('❌ Erro ao salvar configurações:', data.error);
+            showNotification('Erro ao salvar configurações: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao salvar configurações:', error);
+        showNotification('Erro de conexão ao salvar configurações', 'error');
+    }
+}
+
+// 🆕 SISTEMA DE NOTIFICAÇÕES
 function showNotification(message, type = 'info', duration = 5000) {
     // Remove notificações existentes para evitar acumulação
     const existingNotifications = document.querySelectorAll('.custom-notification');
@@ -618,7 +846,7 @@ function showNotification(message, type = 'info', duration = 5000) {
     }, 4000);
 }
 
-// ADICIONAR ANIMAÇÕES CSS PARA NOTIFICAÇÕES
+// 🆕 ADICIONAR ANIMAÇÕES CSS PARA NOTIFICAÇÕES
 if (!document.querySelector('#notification-styles')) {
     const style = document.createElement('style');
     style.id = 'notification-styles';
@@ -670,13 +898,54 @@ function toggleTheme() {
     showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
 }
 
-// Exportar funções globais
+// ==================== VERIFICAÇÃO DE CONEXÃO ====================
+function checkConnection() {
+    const offlineIndicator = document.getElementById('offline-indicator');
+    if (!navigator.onLine) {
+        if (offlineIndicator) offlineIndicator.classList.add('show');
+        showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
+    } else {
+        if (offlineIndicator) offlineIndicator.classList.remove('show');
+    }
+}
+
+// Prevenir fechamento acidental
+window.addEventListener('beforeunload', function (e) {
+    // Opcional: Confirmar saída se houver operações pendentes
+    // const confirmationMessage = 'Tem certeza que deseja sair?';
+    // e.returnValue = confirmationMessage;
+    // return confirmationMessage;
+});
+
+// Configurar eventos
+window.addEventListener('online', checkConnection);
+window.addEventListener('offline', checkConnection);
+
+// Fechar modal clicando fora
+const modal = document.getElementById('irrigation-modal');
+if (modal) {
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeIrrigationModal();
+        }
+    });
+}
+
+// 🚨 CORREÇÃO: Exportar todas as funções globais
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
+window.openIrrigationModal = openIrrigationModal;
+window.closeIrrigationModal = closeIrrigationModal;
+window.saveIrrigationSettings = saveIrrigationSettings;
+window.checkWeather = checkWeather;
 window.toggleDevice = toggleDevice;
+window.addProgramming = addProgramming;
+window.removeProgramming = removeProgramming;
+window.showTimePicker = showTimePicker;
+window.updateWeather = updateWeather;
 window.showNotification = showNotification;
 window.logout = logout;
 window.toggleTheme = toggleTheme;
 
-console.log('🔧 Script.js carregado - Sistema de autenticação corrigido!');
+console.log('🔧 Script.js carregado com todas as funcionalidades!');
