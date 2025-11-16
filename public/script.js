@@ -31,14 +31,13 @@ function handleLoginPage() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    // 🚨 CORREÇÃO: Salva autenticação no localStorage
-                    localStorage.setItem('casa-automacao-authenticated', 'true');
-                    localStorage.setItem('casa-automacao-user', JSON.stringify({
-                        username: username,
-                        loginTime: new Date().toISOString()
-                    }));
+                    console.log('✅ Login realizado com sucesso');
+                    showNotification('Login realizado com sucesso!', 'success');
                     
-                    window.location.href = data.redirect;
+                    // Redirecionar após breve delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1000);
                 } else {
                     showNotification(data.message, 'error');
                 }
@@ -53,7 +52,7 @@ function handleLoginPage() {
 function handleSystemPage() {
     console.log('🔧 Página do sistema carregada');
     
-    // 🚨 CORREÇÃO: Verificação de auth apenas para sistema
+    // Verificar autenticação e inicializar sistema
     checkSystemAuth();
     
     // Configurar botão de logout se existir
@@ -63,26 +62,34 @@ function handleSystemPage() {
     }
 }
 
-// 🚨 CORREÇÃO: Verificação apenas para páginas do sistema
+// ✅ CORREÇÃO: Verificação de autenticação melhorada
 async function checkSystemAuth() {
     try {
         const response = await fetch('/api/status');
         const data = await response.json();
         
+        console.log('🔐 Status de autenticação:', data.authenticated);
+        
         if (!data.authenticated) {
-            console.log('❌ Não autenticado, redirecionando...');
-            window.location.href = '/login.html';
+            console.log('❌ Não autenticado, redirecionando para login...');
+            showNotification('Sessão expirada. Faça login novamente.', 'warning');
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 1500);
         } else {
-            // 🚨 CORREÇÃO: Inicializa o sistema se estiver autenticado
+            console.log('✅ Usuário autenticado, inicializando sistema...');
             initializeSystem();
         }
     } catch (error) {
-        console.error('❌ Erro ao verificar auth:', error);
-        window.location.href = '/login.html';
+        console.error('❌ Erro ao verificar autenticação:', error);
+        showNotification('Erro de conexão. Verificando autenticação...', 'error');
+        setTimeout(() => {
+            window.location.href = '/login.html';
+        }, 2000);
     }
 }
 
-// 🚨 CORREÇÃO: Função para inicializar o sistema
+// ✅ CORREÇÃO: Função para inicializar o sistema
 function initializeSystem() {
     console.log('✅ Sistema autenticado, inicializando...');
     startDataUpdates();
@@ -101,6 +108,12 @@ function initializeSystem() {
 // Logout function
 async function logout() {
     try {
+        const logoutBtn = document.querySelector('.logout-btn');
+        if (logoutBtn) {
+            logoutBtn.innerHTML = '<i class="fas fa-spinner loading-spinner"></i> Saindo...';
+            logoutBtn.disabled = true;
+        }
+
         const response = await fetch('/api/logout', {
             method: 'POST'
         });
@@ -108,18 +121,25 @@ async function logout() {
         const data = await response.json();
         
         if (data.success) {
+            console.log('✅ Logout realizado com sucesso');
+            showNotification('Logout realizado com sucesso!', 'success');
+            
+            // Limpar localStorage
             localStorage.removeItem('casa-automacao-authenticated');
             localStorage.removeItem('casa-automacao-user');
-            window.location.href = data.redirect;
+            
+            setTimeout(() => {
+                window.location.href = data.redirect;
+            }, 1000);
         }
     } catch (error) {
         console.error('❌ Erro no logout:', error);
-        window.location.href = '/login.html';
+        showNotification('Erro ao fazer logout', 'error');
+        setTimeout(() => {
+            window.location.href = '/login.html';
+        }, 2000);
     }
 }
-
-// 🚨 CORREÇÃO: Adicionar função global para logout
-window.logout = logout;
 
 // Sistema de Automação - Funções principais
 let currentDevices = {};
@@ -127,12 +147,16 @@ let currentDevices = {};
 async function loadDevices() {
     try {
         const response = await fetch('/api/devices');
+        if (!response.ok) {
+            throw new Error('Erro ao carregar dispositivos');
+        }
         const data = await response.json();
         currentDevices = data;
         updateDeviceDisplays();
         updateSensorData();
     } catch (error) {
         console.error('❌ Erro ao carregar dispositivos:', error);
+        showNotification('Erro ao carregar dispositivos', 'error');
     }
 }
 
@@ -908,14 +932,6 @@ function checkConnection() {
         if (offlineIndicator) offlineIndicator.classList.remove('show');
     }
 }
-
-// Prevenir fechamento acidental
-window.addEventListener('beforeunload', function (e) {
-    // Opcional: Confirmar saída se houver operações pendentes
-    // const confirmationMessage = 'Tem certeza que deseja sair?';
-    // e.returnValue = confirmationMessage;
-    // return confirmationMessage;
-});
 
 // Configurar eventos
 window.addEventListener('online', checkConnection);
