@@ -27,7 +27,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ CORREÇÃO: Servir arquivos estáticos ANTES da autenticação
+// Servir arquivos estáticos ANTES da autenticação
 app.use(express.static('public'));
 
 // Arquivo para persistência
@@ -219,7 +219,7 @@ async function fetchWeatherData() {
 
 // ==================== MIDDLEWARE DE AUTENTICAÇÃO ====================
 
-// ✅ CORREÇÃO CRÍTICA: Middleware para verificar o cookie
+// Middleware para verificar o cookie
 function authenticateToken(req, res, next) {
     const token = req.cookies.authToken;
     
@@ -262,13 +262,13 @@ app.post('/api/login', (req, res) => {
     console.log('🔐 Tentativa de login:', { username });
     
     if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-        // ✅ CORREÇÃO: Cookie configurado para funcionar em localhost e ser acessível
+        // Cookie configurado para funcionar em localhost e ser acessível
         res.cookie('authToken', VALID_PASSWORD, {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
-            httpOnly: false, // ✅ Permite acesso via JavaScript
-            secure: false,   // ✅ HTTP (desenvolvimento)
-            sameSite: 'lax', // ✅ Compatível com cross-origin
-            path: '/',       // ✅ Disponível em todas as rotas
+            httpOnly: false, // Permite acesso via JavaScript
+            secure: false,   // HTTP (desenvolvimento)
+            sameSite: 'lax', // Compatível com cross-origin
+            path: '/',       // Disponível em todas as rotas
         });
         console.log('✅ Login realizado - Cookie configurado');
         res.json({ success: true, message: 'Login realizado', redirect: '/index.html' });
@@ -280,7 +280,7 @@ app.post('/api/login', (req, res) => {
 
 // Logout
 app.post('/api/logout', (req, res) => {
-    // ✅ CORREÇÃO: Limpa o cookie corretamente
+    // Limpa o cookie corretamente
     res.clearCookie('authToken', { path: '/' });
     res.json({ success: true, message: 'Logout realizado', redirect: '/login.html' });
 });
@@ -409,7 +409,7 @@ app.post('/api/data', authenticateESP32, (req, res) => {
     const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto } = req.body;
     console.log('📨 Dados recebidos do ESP32:', { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto });
     
-    // ✅ CORREÇÃO CRÍTICA: Processar umidade CORRETAMENTE
+    // Processar umidade
     let processedHumidity = humidity; 
     if (typeof humidity === 'string' && humidity.endsWith('%')) {
         processedHumidity = parseFloat(humidity.replace('%', ''));
