@@ -274,13 +274,25 @@ app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ✅ CORREÇÃO CRÍTICA: Login com cookie configurado CORRETAMENTE
+// ✅✅✅ CORREÇÃO CRÍTICA: Login com TODAS as credenciais do frontend
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     console.log('🔐 Tentativa de login:', { username });
     
-    if (username === 'admin' && password === 'admin123') {
+    // ✅✅✅ CORREÇÃO: Aceitar TODAS as credenciais do frontend
+    const validCredentials = [
+        { username: 'admin', password: 'admin123' },
+        { username: 'usuario', password: 'user123' },
+        { username: 'charles', password: '061084Cc@' },
+        { username: 'casa', password: 'automacao2024' }
+    ];
+    
+    const isValid = validCredentials.some(cred => 
+        cred.username === username && cred.password === password
+    );
+    
+    if (isValid) {
         // ✅ CORREÇÃO: Cookie configurado para funcionar em localhost
         res.cookie('authToken', 'admin123', {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
@@ -290,15 +302,16 @@ app.post('/api/login', (req, res) => {
             path: '/',          // ✅ Disponível em todas as rotas
         });
         
-        console.log('✅ Login realizado - Cookie configurado');
+        console.log('✅ Login realizado - Cookie configurado para:', username);
         
         res.json({ 
             success: true, 
-            message: 'Login realizado',
-            redirect: '/index.html'
+            message: 'Login realizado com sucesso',
+            redirect: '/index.html',
+            user: username
         });
     } else {
-        console.log('❌ Login falhou');
+        console.log('❌ Login falhou para:', username);
         res.status(401).json({ 
             success: false, 
             message: 'Usuário ou senha incorretos' 
@@ -684,8 +697,9 @@ app.listen(PORT, () => {
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: ATIVADO');
     console.log('⏰ Irrigação Automática: CORRIGIDA');
-    console.log('🔐 Sistema de Login: CORRIGIDO - Cookies funcionando');
+    console.log('🔐 Sistema de Login: CORRIGIDO - TODAS as credenciais funcionando');
     console.log('💧 Umidade: CORRIGIDA - Valores precisos');
     console.log('🌤️  Meteorologia: FUNCIONANDO');
-    console.log('📊 Sensores: FUNCIONANDO\n');
+    console.log('📊 Sensores: FUNCIONANDO');
+    console.log('👤 Credenciais aceitas: admin/admin123, usuario/user123, charles/061084Cc@, casa/automacao2024\n');
 });
