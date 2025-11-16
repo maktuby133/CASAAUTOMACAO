@@ -9,15 +9,12 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅✅✅ CORREÇÃO CRÍTICA: CORS configurado CORRETAMENTE para cookies
+// ✅ CORREÇÃO CRÍTICA: CORS configurado para permitir cookies
 app.use(cors({
-    origin: function(origin, callback) {
-        // Permite todas as origens em desenvolvimento
-        callback(null, true);
-    },
-    credentials: true, // ✅ CRÍTICO: Permite envio de cookies
+    origin: true,
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID', 'X-Device-Type', 'Cookie', 'Set-Cookie']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID', 'X-Device-Type']
 }));
 
 // Middleware
@@ -229,34 +226,28 @@ const requireAuth = (req, res, next) => {
         '/api/weather',
         '/api/weather/raining',
         '/api/sensor-data',
-        '/api/esp32-status',
-        '/api/irrigation/test-schedule',
-        '/api/irrigation/schedule-status',
+        '/api/devices',
         '/api/data',
         '/api/commands',
         '/api/confirm',
-        '/api/devices',
         '/health',
         '/favicon.ico',
         '/styles.css',
         '/script.js'
     ];
 
-    // ✅ Se for rota pública, permite acesso SEM verificação
-    if (publicRoutes.includes(req.path) || req.path.startsWith('/public/')) {
+    // ✅ Se for rota pública, permite acesso
+    if (publicRoutes.includes(req.path)) {
         return next();
     }
 
     // ✅ Verifica autenticação apenas para rotas protegidas
     const authToken = req.cookies?.authToken;
     
-    console.log('🔐 Verificando autenticação para:', req.path, 'Token:', authToken ? 'Presente' : 'Ausente');
-    
     if (authToken === 'admin123') {
-        console.log('✅ Usuário autenticado');
         return next();
     } else {
-        console.log('❌ Acesso negado para:', req.path);
+        console.log('🔐 Acesso negado para:', req.path);
         
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ 
@@ -289,20 +280,8 @@ app.post('/api/login', (req, res) => {
     
     console.log('🔐 Tentativa de login:', { username });
     
-    // Todas as credenciais válidas
-    const validCredentials = [
-        { username: 'admin', password: 'admin123' },
-        { username: 'usuario', password: 'user123' },
-        { username: 'charles', password: '061084Cc@' },
-        { username: 'casa', password: 'automacao2024' }
-    ];
-    
-    const isValid = validCredentials.some(cred => 
-        cred.username === username && cred.password === password
-    );
-    
-    if (isValid) {
-        // ✅ CORREÇÃO: Cookie configurado para funcionar em todas as condições
+    if (username === 'admin' && password === 'admin123') {
+        // ✅ CORREÇÃO: Cookie configurado para funcionar em localhost
         res.cookie('authToken', 'admin123', {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
             httpOnly: false,    // ✅ Permite acesso via JavaScript
@@ -329,12 +308,7 @@ app.post('/api/login', (req, res) => {
 
 // Logout
 app.post('/api/logout', (req, res) => {
-    res.clearCookie('authToken', { 
-        path: '/',
-        httpOnly: false,
-        secure: false,
-        sameSite: 'lax'
-    });
+    res.clearCookie('authToken', { path: '/' });
     res.json({ 
         success: true, 
         message: 'Logout realizado',
