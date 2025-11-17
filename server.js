@@ -52,13 +52,19 @@ function loadState() {
                     programacoes: [],
                     evitar_chuva: true,
                     duracao: 5,
-                    modo_automatico: false
+                    modo_automatico: false,
+                    horario_irrigacao: "06:00" // 🚨 FORMATO CORRETO
                 };
             }
             
             // Garantir que modo_automatico existe e é booleano
             if (typeof state.irrigation.modo_automatico === 'undefined') {
                 state.irrigation.modo_automatico = state.irrigation.modo === 'automatico';
+            }
+            
+            // Garantir que horario_irrigacao existe no formato correto
+            if (!state.irrigation.horario_irrigacao || typeof state.irrigation.horario_irrigacao === 'number') {
+                state.irrigation.horario_irrigacao = "06:00"; // 🚨 FORMATO CORRETO
             }
             
             return state;
@@ -83,7 +89,8 @@ function loadState() {
             programacoes: [],
             evitar_chuva: true,
             duracao: 5,
-            modo_automatico: false
+            modo_automatico: false,
+            horario_irrigacao: "06:00" // 🚨 FORMATO CORRETO: HH:MM
         },
         sensorData: []
     };
@@ -619,7 +626,7 @@ app.get('/api/commands', (req, res) => {
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
-            horario_irrigacao: 6, // Valor padrão compatível
+            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "06:00", // 🚨 FORMATO CORRETO: HH:MM
             duracao: devicesState.irrigation.duracao || 5
         }
     };
@@ -750,13 +757,14 @@ app.get('/api/irrigation', (req, res) => {
 // 🚨 CORREÇÃO: Salvar configurações de irrigação - Sincronia com ESP32
 app.post('/api/irrigation/save', (req, res) => {
     try {
-        const { modo, programacoes, evitar_chuva, duracao } = req.body;
+        const { modo, programacoes, evitar_chuva, duracao, horario_irrigacao } = req.body;
         
         console.log('💧 Salvando configurações de irrigação:', { 
             modo, 
             programacoes: programacoes?.length || 0, 
             evitar_chuva, 
-            duracao 
+            duracao,
+            horario_irrigacao 
         });
         
         // 🚨 CORREÇÃO: Manter sincronia entre modo e modo_automatico
@@ -764,7 +772,16 @@ app.post('/api/irrigation/save', (req, res) => {
         devicesState.irrigation.programacoes = Array.isArray(programacoes) ? programacoes : [];
         devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
         devicesState.irrigation.duracao = parseInt(duracao) || 5;
-        devicesState.irrigation.modo_automatico = modo === 'automatico'; // 🚨 SINCRONIZADO
+        devicesState.irrigation.modo_automatico = modo === 'automatico';
+        
+        // 🚨 CORREÇÃO: Salvar horário se fornecido
+        if (horario_irrigacao) {
+            // Garantir que está no formato HH:MM
+            const [hora, minutos] = horario_irrigacao.split(':');
+            if (hora && minutos) {
+                devicesState.irrigation.horario_irrigacao = horario_irrigacao;
+            }
+        }
         
         saveState(devicesState);
         
@@ -772,6 +789,7 @@ app.post('/api/irrigation/save', (req, res) => {
         startIrrigationScheduler();
         
         console.log('✅ Configurações de irrigação salvas - modo_automatico:', devicesState.irrigation.modo_automatico);
+        console.log('🕒 Horário de irrigação:', devicesState.irrigation.horario_irrigacao);
         
         res.json({ 
             status: 'OK', 
