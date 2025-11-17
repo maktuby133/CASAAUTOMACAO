@@ -44,7 +44,7 @@ function loadState() {
             console.log('💾 Estado carregado do arquivo');
             const state = JSON.parse(data);
             
-            // Garantir que a estrutura esteja correta
+            // 🚨 CORREÇÃO: Garantir estrutura compatível com ESP32
             if (!state.irrigation) {
                 state.irrigation = {
                     bomba_irrigacao: false,
@@ -56,13 +56,18 @@ function loadState() {
                 };
             }
             
+            // Garantir que modo_automatico existe e é booleano
+            if (typeof state.irrigation.modo_automatico === 'undefined') {
+                state.irrigation.modo_automatico = state.irrigation.modo === 'automatico';
+            }
+            
             return state;
         }
     } catch (error) {
         console.log('❌ Erro ao carregar estado:', error.message);
     }
     
-    console.log('💾 Criando estado inicial');
+    console.log('💾 Criando estado inicial COMPATÍVEL');
     return {
         lights: {
             sala: false, quarto1: false, quarto2: false, quarto3: false,
@@ -600,35 +605,31 @@ app.post('/api/data', (req, res) => {
     });
 });
 
-// ESP32 busca comandos - ROTA CORRIGIDA
+// 🚨 CORREÇÃO CRÍTICA: ESP32 busca comandos - Estrutura compatível
 app.get('/api/commands', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
     
     console.log('📥 ESP32 solicitando comandos');
-    console.log('💧 Estado atual da bomba:', devicesState.irrigation.bomba_irrigacao);
-    console.log('💧 Modo automático:', devicesState.irrigation.modo_automatico);
     
-    // 🚨 CORREÇÃO: Garantir que modo_automatico seja booleano
-    const modoAutomatico = devicesState.irrigation.modo === 'automatico' || 
-                          devicesState.irrigation.modo_automatico === true;
-    
+    // 🚨 CORREÇÃO: Estrutura EXATA que o ESP32 espera
     const response = {
         lights: devicesState.lights,
         outlets: devicesState.outlets,
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
-            modo_automatico: modoAutomatico, // 🚨 CORREÇÃO CRÍTICA
+            modo_automatico: devicesState.irrigation.modo === 'automatico',
+            horario_irrigacao: 6, // Valor padrão compatível
             duracao: devicesState.irrigation.duracao || 5
         }
     };
     
-    console.log('📤 Enviando para ESP32:', JSON.stringify(response.irrigation, null, 2));
+    console.log('📤 Enviando para ESP32:', JSON.stringify(response, null, 2));
     
     res.json(response);
 });
 
-// ESP32 confirma comandos
+// 🚨 CORREÇÃO: ESP32 confirma comandos - Estrutura compatível
 app.post('/api/confirm', (req, res) => {
     console.log('✅ Confirmação recebida do ESP32:', req.body);
     
@@ -639,6 +640,7 @@ app.post('/api/confirm', (req, res) => {
         devicesState.outlets = { ...devicesState.outlets, ...req.body.outlets };
     }
     if (req.body.irrigation) {
+        // 🚨 CORREÇÃO: Atualizar baseado no modo_automatico do ESP32
         devicesState.irrigation.bomba_irrigacao = req.body.irrigation.bomba_irrigacao || false;
         devicesState.irrigation.modo = req.body.irrigation.modo_automatico ? 'automatico' : 'manual';
         devicesState.irrigation.modo_automatico = req.body.irrigation.modo_automatico || false;
@@ -745,7 +747,7 @@ app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
 
-// Salvar configurações de irrigação
+// 🚨 CORREÇÃO: Salvar configurações de irrigação - Sincronia com ESP32
 app.post('/api/irrigation/save', (req, res) => {
     try {
         const { modo, programacoes, evitar_chuva, duracao } = req.body;
@@ -757,18 +759,19 @@ app.post('/api/irrigation/save', (req, res) => {
             duracao 
         });
         
+        // 🚨 CORREÇÃO: Manter sincronia entre modo e modo_automatico
         devicesState.irrigation.modo = modo || 'manual';
         devicesState.irrigation.programacoes = Array.isArray(programacoes) ? programacoes : [];
         devicesState.irrigation.evitar_chuva = evitar_chuva !== false;
         devicesState.irrigation.duracao = parseInt(duracao) || 5;
-        devicesState.irrigation.modo_automatico = modo === 'automatico';
+        devicesState.irrigation.modo_automatico = modo === 'automatico'; // 🚨 SINCRONIZADO
         
         saveState(devicesState);
         
         // Reiniciar agendador
         startIrrigationScheduler();
         
-        console.log('✅ Configurações de irrigação salvas');
+        console.log('✅ Configurações de irrigação salvas - modo_automatico:', devicesState.irrigation.modo_automatico);
         
         res.json({ 
             status: 'OK', 
@@ -823,12 +826,12 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\n🔥 Servidor Automação V3.0 rodando na porta ${PORT}`);
+    console.log(`\n🔥 Servidor Automação V3.0 CORRIGIDO rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
-    console.log('💧 Sistema de Irrigação: CORRIGIDO E OTIMIZADO');
+    console.log('💧 Sistema de Irrigação: COMPATÍVEL COM ESP32');
     console.log('⏰ Irrigação Automática: VERIFICAÇÃO A CADA 30 SEGUNDOS');
     console.log('🔐 Sistema de Login: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO');
-    console.log('🔧 ESP32: COMUNICAÇÃO ESTÁVEL\n');
+    console.log('🔧 ESP32: COMUNICAÇÃO ESTÁVEL E COMPATÍVEL\n');
 });
