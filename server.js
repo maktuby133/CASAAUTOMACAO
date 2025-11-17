@@ -53,7 +53,7 @@ function loadState() {
                     evitar_chuva: true,
                     duracao: 5,
                     modo_automatico: false,
-                    horario_irrigacao: "06:00" // 🚨 FORMATO CORRETO
+                    horario_irrigacao: "19:20" // 🚨 HORÁRIO PADRÃO CORRETO
                 };
             }
             
@@ -63,8 +63,8 @@ function loadState() {
             }
             
             // Garantir que horario_irrigacao existe no formato correto
-            if (!state.irrigation.horario_irrigacao || typeof state.irrigation.horario_irrigacao === 'number') {
-                state.irrigation.horario_irrigacao = "06:00"; // 🚨 FORMATO CORRETO
+            if (!state.irrigation.horario_irrigacao || state.irrigation.horario_irrigacao === "0:00") {
+                state.irrigation.horario_irrigacao = "19:20"; // 🚨 CORREÇÃO DO HORÁRIO
             }
             
             return state;
@@ -90,7 +90,7 @@ function loadState() {
             evitar_chuva: true,
             duracao: 5,
             modo_automatico: false,
-            horario_irrigacao: "06:00" // 🚨 FORMATO CORRETO: HH:MM
+            horario_irrigacao: "19:20" // 🚨 FORMATO CORRETO: HH:MM
         },
         sensorData: []
     };
@@ -549,7 +549,8 @@ app.get('/api/irrigation/schedule-status', (req, res) => {
         modo: devicesState.irrigation.modo,
         bomba_ativa: devicesState.irrigation.bomba_irrigacao,
         evitar_chuva: devicesState.irrigation.evitar_chuva,
-        duracao: devicesState.irrigation.duracao
+        duracao: devicesState.irrigation.duracao,
+        horario_irrigacao: devicesState.irrigation.horario_irrigacao
     });
 });
 
@@ -626,12 +627,12 @@ app.get('/api/commands', (req, res) => {
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
-            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "06:00", // 🚨 FORMATO CORRETO: HH:MM
+            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "19:20", // 🚨 HORÁRIO CORRETO
             duracao: devicesState.irrigation.duracao || 5
         }
     };
     
-    console.log('📤 Enviando para ESP32:', JSON.stringify(response, null, 2));
+    console.log('📤 Enviando para ESP32 - Horário:', response.irrigation.horario_irrigacao);
     
     res.json(response);
 });
@@ -680,7 +681,8 @@ app.get('/api/devices', (req, res) => {
             modo: devicesState.irrigation.modo,
             evitar_chuva: devicesState.irrigation.evitar_chuva,
             duracao: devicesState.irrigation.duracao || 5,
-            programacoes: devicesState.irrigation.programacoes || []
+            programacoes: devicesState.irrigation.programacoes || [],
+            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "19:20"
         }
     });
 });
@@ -754,7 +756,7 @@ app.get('/api/irrigation', (req, res) => {
     res.json(devicesState.irrigation);
 });
 
-// 🚨 CORREÇÃO: Salvar configurações de irrigação - Sincronia com ESP32
+// 🚨 CORREÇÃO COMPLETA: Salvar configurações de irrigação
 app.post('/api/irrigation/save', (req, res) => {
     try {
         const { modo, programacoes, evitar_chuva, duracao, horario_irrigacao } = req.body;
@@ -774,12 +776,22 @@ app.post('/api/irrigation/save', (req, res) => {
         devicesState.irrigation.duracao = parseInt(duracao) || 5;
         devicesState.irrigation.modo_automatico = modo === 'automatico';
         
-        // 🚨 CORREÇÃO: Salvar horário se fornecido
+        // 🚨 CORREÇÃO CRÍTICA: Salvar horário CORRETAMENTE
         if (horario_irrigacao) {
+            console.log('💧 Horário recebido para salvar:', horario_irrigacao);
             // Garantir que está no formato HH:MM
-            const [hora, minutos] = horario_irrigacao.split(':');
-            if (hora && minutos) {
-                devicesState.irrigation.horario_irrigacao = horario_irrigacao;
+            if (typeof horario_irrigacao === 'string' && horario_irrigacao.includes(':')) {
+                const [hora, minutos] = horario_irrigacao.split(':');
+                if (hora && minutos) {
+                    devicesState.irrigation.horario_irrigacao = horario_irrigacao;
+                    console.log('💧 Horário salvo com sucesso:', devicesState.irrigation.horario_irrigacao);
+                }
+            }
+        } else {
+            // Se não recebeu horário, usar o primeiro horário das programações
+            if (programacoes && programacoes.length > 0 && programacoes[0].hora) {
+                devicesState.irrigation.horario_irrigacao = programacoes[0].hora;
+                console.log('💧 Usando horário da primeira programação:', devicesState.irrigation.horario_irrigacao);
             }
         }
         
@@ -789,7 +801,7 @@ app.post('/api/irrigation/save', (req, res) => {
         startIrrigationScheduler();
         
         console.log('✅ Configurações de irrigação salvas - modo_automatico:', devicesState.irrigation.modo_automatico);
-        console.log('🕒 Horário de irrigação:', devicesState.irrigation.horario_irrigacao);
+        console.log('🕒 Horário de irrigação SALVO:', devicesState.irrigation.horario_irrigacao);
         
         res.json({ 
             status: 'OK', 
@@ -848,7 +860,7 @@ app.listen(PORT, () => {
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: COMPATÍVEL COM ESP32');
-    console.log('⏰ Irrigação Automática: VERIFICAÇÃO A CADA 30 SEGUNDOS');
+    console.log('⏰ Irrigação Automática: HORÁRIO 19:20 CONFIGURADO');
     console.log('🔐 Sistema de Login: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO');
     console.log('🔧 ESP32: COMUNICAÇÃO ESTÁVEL E COMPATÍVEL\n');
