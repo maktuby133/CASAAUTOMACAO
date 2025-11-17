@@ -53,7 +53,7 @@ function loadState() {
                     evitar_chuva: true,
                     duracao: 5,
                     modo_automatico: false,
-                    horario_irrigacao: "19:20" // 🚨 HORÁRIO PADRÃO CORRETO
+                    horario_irrigacao: "19:28" // 🚨 HORÁRIO PADRÃO CORRETO
                 };
             }
             
@@ -62,9 +62,10 @@ function loadState() {
                 state.irrigation.modo_automatico = state.irrigation.modo === 'automatico';
             }
             
-            // Garantir que horario_irrigacao existe no formato correto
+            // 🚨 CORREÇÃO CRÍTICA: Garantir que horario_irrigacao existe no formato correto
             if (!state.irrigation.horario_irrigacao || state.irrigation.horario_irrigacao === "0:00") {
-                state.irrigation.horario_irrigacao = "19:20"; // 🚨 CORREÇÃO DO HORÁRIO
+                state.irrigation.horario_irrigacao = "19:28"; // 🚨 CORREÇÃO DO HORÁRIO
+                console.log('💧 Horário corrigido para:', state.irrigation.horario_irrigacao);
             }
             
             return state;
@@ -90,7 +91,7 @@ function loadState() {
             evitar_chuva: true,
             duracao: 5,
             modo_automatico: false,
-            horario_irrigacao: "19:20" // 🚨 FORMATO CORRETO: HH:MM
+            horario_irrigacao: "19:28" // 🚨 FORMATO CORRETO: HH:MM
         },
         sensorData: []
     };
@@ -621,18 +622,22 @@ app.get('/api/commands', (req, res) => {
     console.log('📥 ESP32 solicitando comandos');
     
     // 🚨 CORREÇÃO: Estrutura EXATA que o ESP32 espera
+    const horario = devicesState.irrigation.horario_irrigacao || "19:28";
+    console.log('💧 Horário que será enviado:', horario);
+    
     const response = {
         lights: devicesState.lights,
         outlets: devicesState.outlets,
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
-            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "19:20", // 🚨 HORÁRIO CORRETO
+            horario_irrigacao: horario, // 🚨 HORÁRIO CORRETO
             duracao: devicesState.irrigation.duracao || 5
         }
     };
     
-    console.log('📤 Enviando para ESP32 - Horário:', response.irrigation.horario_irrigacao);
+    console.log('📤 Enviando JSON COMPLETO para ESP32:');
+    console.log(JSON.stringify(response, null, 2));
     
     res.json(response);
 });
@@ -682,7 +687,7 @@ app.get('/api/devices', (req, res) => {
             evitar_chuva: devicesState.irrigation.evitar_chuva,
             duracao: devicesState.irrigation.duracao || 5,
             programacoes: devicesState.irrigation.programacoes || [],
-            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "19:20"
+            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "19:28"
         }
     });
 });
@@ -777,7 +782,7 @@ app.post('/api/irrigation/save', (req, res) => {
         devicesState.irrigation.modo_automatico = modo === 'automatico';
         
         // 🚨 CORREÇÃO CRÍTICA: Salvar horário CORRETAMENTE
-        if (horario_irrigacao) {
+        if (horario_irrigacao && horario_irrigacao !== "0:00") {
             console.log('💧 Horário recebido para salvar:', horario_irrigacao);
             // Garantir que está no formato HH:MM
             if (typeof horario_irrigacao === 'string' && horario_irrigacao.includes(':')) {
@@ -792,6 +797,9 @@ app.post('/api/irrigation/save', (req, res) => {
             if (programacoes && programacoes.length > 0 && programacoes[0].hora) {
                 devicesState.irrigation.horario_irrigacao = programacoes[0].hora;
                 console.log('💧 Usando horário da primeira programação:', devicesState.irrigation.horario_irrigacao);
+            } else {
+                // Manter o horário atual se não houver programações
+                console.log('💧 Mantendo horário atual:', devicesState.irrigation.horario_irrigacao);
             }
         }
         
@@ -860,7 +868,7 @@ app.listen(PORT, () => {
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: COMPATÍVEL COM ESP32');
-    console.log('⏰ Irrigação Automática: HORÁRIO 19:20 CONFIGURADO');
+    console.log('⏰ Irrigação Automática: HORÁRIO 19:28 CONFIGURADO');
     console.log('🔐 Sistema de Login: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO');
     console.log('🔧 ESP32: COMUNICAÇÃO ESTÁVEL E COMPATÍVEL\n');
