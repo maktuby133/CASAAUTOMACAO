@@ -118,123 +118,6 @@ function checkESP32Connection() {
     return esp32Status.connected;
 }
 
-// Sistema de irrigação automática
-let irrigationCheckInterval = null;
-let activeIrrigationTimer = null;
-
-function startIrrigationScheduler() {
-    // Para qualquer intervalo existente
-    if (irrigationCheckInterval) {
-        clearInterval(irrigationCheckInterval);
-    }
-    
-    // Verifica a cada 30 segundos
-    irrigationCheckInterval = setInterval(() => {
-        checkScheduledIrrigation();
-    }, 30000);
-    
-    console.log('⏰ Agendador de irrigação iniciado (verificação a cada 30 segundos)');
-    
-    // Verifica imediatamente ao iniciar
-    setTimeout(() => {
-        checkScheduledIrrigation();
-    }, 2000);
-}
-
-function checkScheduledIrrigation() {
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
-                       now.getMinutes().toString().padStart(2, '0');
-    const currentDay = getCurrentDayOfWeek();
-
-    console.log(`💧 [${currentTime}] Verificando programações...`);
-
-    // Verificar se está no modo automático
-    if (devicesState.irrigation.modo !== 'automatico') {
-        console.log('💧 Modo não é automático, ignorando verificação');
-        return;
-    }
-
-    const programacoes = devicesState.irrigation.programacoes || [];
-    
-    console.log(`💧 Programações configuradas: ${programacoes.length}`);
-    
-    if (programacoes.length === 0) {
-        console.log('💧 Nenhuma programação configurada');
-        return;
-    }
-
-    let foundActiveSchedule = false;
-    
-    programacoes.forEach((prog, index) => {
-        console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias.join(', ')}`);
-        
-        // Verificação exata do horário e dias
-        if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
-            foundActiveSchedule = true;
-            console.log(`💧 ✅ PROGRAMação ${index + 1} ATIVADA!`);
-            
-            // Verificar se já está executando
-            if (devicesState.irrigation.bomba_irrigacao) {
-                console.log('💧 Bomba já está ligada, ignorando ativação duplicada');
-                return;
-            }
-
-            // Verificar condições climáticas se necessário
-            if (devicesState.irrigation.evitar_chuva) {
-                console.log('💧 Verificando se está chovendo...');
-                isRaining().then(raining => {
-                    if (!raining) {
-                        console.log('💧 ✅ Não está chovendo - Iniciando irrigação programada');
-                        startScheduledIrrigation(index);
-                    } else {
-                        console.log('💧 ❌ Está chovendo - Irrigação cancelada');
-                    }
-                }).catch(error => {
-                    console.log('💧 Erro ao verificar chuva, iniciando irrigação:', error);
-                    startScheduledIrrigation(index);
-                });
-            } else {
-                console.log('💧 ✅ Evitar chuva desativado - Iniciando irrigação');
-                startScheduledIrrigation(index);
-            }
-        }
-    });
-
-    if (!foundActiveSchedule) {
-        console.log('💧 Nenhuma programação ativa no momento');
-    }
-}
-
-function getCurrentDayOfWeek() {
-    const days = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
-    return days[new Date().getDay()];
-}
-
-function startScheduledIrrigation(programIndex) {
-    console.log(`💧 🚀 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
-    
-    // Atualiza estado e salva
-    devicesState.irrigation.bomba_irrigacao = true;
-    saveState(devicesState);
-
-    const duracao = devicesState.irrigation.duracao || 5;
-    console.log(`⏰ Irrigação programada por ${duracao} minutos`);
-    
-    // Limpar timer anterior se existir
-    if (activeIrrigationTimer) {
-        clearTimeout(activeIrrigationTimer);
-    }
-    
-    // Timer para desligar a bomba
-    activeIrrigationTimer = setTimeout(() => {
-        console.log(`💧 ⏹️ DESLIGANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1} após ${duracao} minutos`);
-        devicesState.irrigation.bomba_irrigacao = false;
-        saveState(devicesState);
-        activeIrrigationTimer = null;
-    }, duracao * 60 * 1000);
-}
-
 // Função para buscar dados do clima
 async function fetchWeatherData() {
     try {
@@ -283,6 +166,133 @@ async function isRaining() {
     }
 }
 
+// Sistema de irrigação automática - CORRIGIDO
+let irrigationCheckInterval = null;
+let activeIrrigationTimer = null;
+
+function startIrrigationScheduler() {
+    // Para qualquer intervalo existente
+    if (irrigationCheckInterval) {
+        clearInterval(irrigationCheckInterval);
+    }
+    
+    // CORREÇÃO: Verificar a cada 10 segundos para maior precisão
+    irrigationCheckInterval = setInterval(() => {
+        checkScheduledIrrigation();
+    }, 10000); // 10 segundos
+    
+    console.log('⏰ Agendador de irrigação INICIADO (verificação a cada 10 segundos)');
+    
+    // Verifica imediatamente ao iniciar
+    setTimeout(() => {
+        checkScheduledIrrigation();
+    }, 2000);
+}
+
+function getCurrentDayOfWeek() {
+    const days = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+    return days[new Date().getDay()];
+}
+
+function startScheduledIrrigation(programIndex) {
+    console.log(`💧 🚀 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
+    
+    // Atualiza estado e salva
+    devicesState.irrigation.bomba_irrigacao = true;
+    saveState(devicesState);
+
+    const duracao = devicesState.irrigation.duracao || 5;
+    console.log(`⏰ Irrigação programada por ${duracao} minutos`);
+    
+    // Limpar timer anterior se existir
+    if (activeIrrigationTimer) {
+        clearTimeout(activeIrrigationTimer);
+    }
+    
+    // Timer para desligar a bomba
+    activeIrrigationTimer = setTimeout(() => {
+        console.log(`💧 ⏹️ DESLIGANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1} após ${duracao} minutos`);
+        devicesState.irrigation.bomba_irrigacao = false;
+        saveState(devicesState);
+        activeIrrigationTimer = null;
+    }, duracao * 60 * 1000);
+}
+
+// FUNÇÃO PRINCIPAL CORRIGIDA - checkScheduledIrrigation
+function checkScheduledIrrigation() {
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    const currentDay = getCurrentDayOfWeek();
+
+    console.log(`💧 [${currentTime}] Verificando programações (Dia: ${currentDay})...`);
+
+    // Verificar se está no modo automático
+    if (devicesState.irrigation.modo !== 'automatico') {
+        console.log('💧 ❌ Modo não é automático, ignorando verificação');
+        return;
+    }
+
+    const programacoes = devicesState.irrigation.programacoes || [];
+    
+    console.log(`💧 Programações configuradas: ${programacoes.length}`);
+    
+    if (programacoes.length === 0) {
+        console.log('💧 ❌ Nenhuma programação configurada');
+        return;
+    }
+
+    let foundActiveSchedule = false;
+    
+    programacoes.forEach((prog, index) => {
+        console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias.join(', ')}`);
+        
+        // CORREÇÃO: Verificação mais flexível com tolerância de 1 minuto
+        const programTime = new Date();
+        const [hours, minutes] = prog.hora.split(':');
+        programTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        
+        const timeDiff = Math.abs(now - programTime);
+        const isWithinOneMinute = timeDiff <= 60000; // 1 minuto de tolerância
+        
+        if (isWithinOneMinute && prog.dias.includes(currentDay)) {
+            foundActiveSchedule = true;
+            console.log(`💧 ✅ PROGRAMação ${index + 1} ATIVADA! (Dentro da tolerância)`);
+            
+            // Verificar se já está executando
+            if (devicesState.irrigation.bomba_irrigacao) {
+                console.log('💧 ⚠️ Bomba já está ligada, ignorando ativação duplicada');
+                return;
+            }
+
+            // Verificar condições climáticas se necessário
+            if (devicesState.irrigation.evitar_chuva) {
+                console.log('💧 Verificando se está chovendo...');
+                isRaining().then(raining => {
+                    if (!raining) {
+                        console.log('💧 ✅ Não está chovendo - Iniciando irrigação programada');
+                        startScheduledIrrigation(index);
+                    } else {
+                        console.log('💧 ❌ Está chovendo - Irrigação cancelada');
+                    }
+                }).catch(error => {
+                    console.log('💧 ⚠️ Erro ao verificar chuva, iniciando irrigação:', error);
+                    startScheduledIrrigation(index);
+                });
+            } else {
+                console.log('💧 ✅ Evitar chuva desativado - Iniciando irrigação');
+                startScheduledIrrigation(index);
+            }
+        } else {
+            console.log(`💧 ❌ Programação ${index + 1} não ativa (Diferença: ${Math.round(timeDiff/1000)}s)`);
+        }
+    });
+
+    if (!foundActiveSchedule) {
+        console.log('💧 Nenhuma programação ativa no momento');
+    }
+}
+
 // Inicializar dados
 let devicesState = loadState();
 
@@ -290,7 +300,17 @@ let devicesState = loadState();
 function initializeSystems() {
     setInterval(checkESP32Connection, 60000);
     startIrrigationScheduler();
-    console.log('✅ Sistemas inicializados: ESP32 + Irrigação Automática');
+    
+    console.log('✅ Sistemas inicializados:');
+    console.log('   - ESP32 Monitor: ATIVO');
+    console.log('   - Irrigação Automática: ATIVO');
+    console.log('   - Verificação: A CADA 10 SEGUNDOS');
+    console.log('   - Programações ativas:', devicesState.irrigation.programacoes.length);
+    
+    // Log das programações configuradas
+    devicesState.irrigation.programacoes.forEach((prog, index) => {
+        console.log(`   ${index + 1}. ${prog.hora} - Dias: ${prog.dias.join(', ')}`);
+    });
 }
 
 initializeSystems();
@@ -538,6 +558,26 @@ app.get('/api/irrigation/schedule-status', (req, res) => {
         bomba_ativa: devicesState.irrigation.bomba_irrigacao,
         evitar_chuva: devicesState.irrigation.evitar_chuva,
         duracao: devicesState.irrigation.duracao
+    });
+});
+
+// Rota para testar programações manualmente - NOVA ROTA
+app.post('/api/irrigation/test-now', (req, res) => {
+    const now = new Date();
+    const testTime = req.body.time || 
+        now.getHours().toString().padStart(2, '0') + ':' + 
+        now.getMinutes().toString().padStart(2, '0');
+    
+    console.log(`🧪 TESTE MANUAL: Simulando horário ${testTime}`);
+    
+    // Executar verificação
+    checkScheduledIrrigation();
+    
+    res.json({ 
+        status: 'OK', 
+        message: 'Teste executado',
+        testTime: testTime,
+        currentPrograms: devicesState.irrigation.programacoes
     });
 });
 
@@ -828,7 +868,7 @@ app.listen(PORT, () => {
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: CORRIGIDO E OTIMIZADO');
-    console.log('⏰ Irrigação Automática: VERIFICAÇÃO A CADA 30 SEGUNDOS');
+    console.log('⏰ Irrigação Automática: VERIFICAÇÃO A CADA 10 SEGUNDOS');
     console.log('🔐 Sistema de Login: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO');
     console.log('🔧 ESP32: COMUNICAÇÃO ESTÁVEL\n');
