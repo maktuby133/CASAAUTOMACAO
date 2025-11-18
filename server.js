@@ -695,7 +695,7 @@ app.get('/api/commands', (req, res) => {
 
 // 🚨 CORREÇÃO: ESP32 confirma comandos - Estrutura MULTI-PROGRAMAÇÕES
 app.post('/api/confirm', (req, res) => {
-    console.log('✅ Confirmação MULTI-PROGRAMAÇÕES recebida do ESP32:', req.body);
+    console.log('✅ Confirmação MULTI-PROGRAMAÇÕES recebida do ESP32');
     
     if (req.body.lights) {
         devicesState.lights = { ...devicesState.lights, ...req.body.lights };
