@@ -582,11 +582,11 @@
             background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
         }
 
-        .sensor-compact-item.water-level {
+        .sensor-compact-item.gas {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
 
-        .sensor-compact-item.water-status {
+        .sensor-compact-item.alert {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
@@ -607,7 +607,7 @@
             font-weight: 500;
         }
 
-        /* SISTEMA DE NÍVEL DA ÁGUA - NOVO */
+        /* SISTEMA DE NÍVEL DA ÁGUA DENTRO DO CARD DE GÁS */
         .water-level-container {
             display: flex;
             flex-direction: column;
@@ -616,10 +616,10 @@
         }
 
         .water-tank {
-            width: 120px;
-            height: 200px;
+            width: 100px;
+            height: 150px;
             border: 3px solid #1a2a6c;
-            border-radius: 10px;
+            border-radius: 8px;
             position: relative;
             overflow: hidden;
             margin: 10px auto;
@@ -632,29 +632,29 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            border-radius: 8px 8px 0 0;
+            border-radius: 6px 6px 0 0;
             transition: height 1.5s ease-in-out;
             background: linear-gradient(to top, rgba(0, 119, 255, 0.9), rgba(0, 200, 255, 0.95));
         }
 
         .water-percentage {
             position: absolute;
-            top: 10px;
+            top: 8px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #1a2a6c;
             z-index: 10;
             background: rgba(255, 255, 255, 0.9);
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 3px 8px;
+            border-radius: 4px;
         }
 
         .water-info {
             text-align: center;
-            margin: 10px 0;
-            font-size: 1.1rem;
+            margin: 8px 0;
+            font-size: 0.9rem;
             color: var(--text-primary);
         }
 
@@ -662,32 +662,32 @@
             background: var(--info-gradient);
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 10px;
-            font-size: 0.85em;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75em;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 5px;
-            margin-top: 10px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            margin-top: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
 
         .water-details-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .water-status-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-top: 8px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.7em;
             font-weight: 600;
         }
 
@@ -1765,7 +1765,7 @@
             </div>
         </div>
 
-        <!-- NOVO: Monitoramento de Sensores com Sistema de Nível da Água -->
+        <!-- Monitoramento de Sensores - AGORA COM NÍVEL DA ÁGUA NO CARD DE GÁS -->
         <div class="monitoring-card">
             <h2>
                 <i class="fas fa-chart-line"></i>
@@ -1786,14 +1786,15 @@
                     <div class="sensor-compact-value" id="sensor-humidity">--%</div>
                     <div class="sensor-compact-label">Umidade</div>
                 </div>
-                <div class="sensor-compact-item water-level">
+                <div class="sensor-compact-item gas">
+                    <!-- AQUI É ONDE SUBSTITUÍMOS O GÁS PELO NÍVEL DA ÁGUA -->
                     <div class="sensor-compact-icon">
                         <i class="fas fa-water"></i>
                     </div>
                     <div class="sensor-compact-value" id="water-percentage">0%</div>
                     <div class="sensor-compact-label">Nível da Água</div>
                 </div>
-                <div class="sensor-compact-item water-status">
+                <div class="sensor-compact-item alert">
                     <div class="sensor-compact-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
@@ -1802,7 +1803,7 @@
                 </div>
             </div>
             
-            <!-- Sistema de Nível da Água -->
+            <!-- Sistema de Nível da Água DENTRO do card de gás -->
             <div class="water-level-container">
                 <div class="water-tank">
                     <div class="water-fill" id="water-fill"></div>
