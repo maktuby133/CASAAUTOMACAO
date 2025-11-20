@@ -574,20 +574,20 @@
             transform: translateY(-2px);
         }
 
-        .sensor-compact-item.gas {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .sensor-compact-item.alert {
-            background: var(--danger-gradient);
-        }
-
         .sensor-compact-item.temperature {
             background: linear-gradient(135deg, #ff7676 0%, #f54ea2 100%);
         }
 
         .sensor-compact-item.humidity {
             background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
+        }
+
+        .sensor-compact-item.water-level {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .sensor-compact-item.water-status {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         .sensor-compact-icon {
@@ -605,6 +605,108 @@
             font-size: 0.75em;
             opacity: 0.95;
             font-weight: 500;
+        }
+
+        /* SISTEMA DE NÍVEL DA ÁGUA - NOVO */
+        .water-level-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .water-tank {
+            width: 120px;
+            height: 200px;
+            border: 3px solid #1a2a6c;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 10px auto;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .water-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+            transition: height 1.5s ease-in-out;
+            background: linear-gradient(to top, rgba(0, 119, 255, 0.9), rgba(0, 200, 255, 0.95));
+        }
+
+        .water-percentage {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1a2a6c;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .water-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .water-details-btn {
+            background: var(--info-gradient);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        .water-details-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+        }
+
+        .water-status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .water-status-normal {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .water-status-warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .water-status-critical {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
         }
 
         .main-grid {
@@ -980,6 +1082,125 @@
         .duration-unit {
             font-weight: 600;
             color: var(--text-secondary);
+        }
+
+        /* MODAL DE DETALHES DA ÁGUA */
+        .water-details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .water-modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: var(--text-primary);
+        }
+
+        body[data-theme="dark"] .water-modal-content {
+            background: var(--card-bg);
+        }
+
+        .water-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .water-modal-header h2 {
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-water-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+        }
+
+        .close-water-modal:hover {
+            color: #333;
+        }
+
+        .water-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .water-stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #4facfe;
+        }
+
+        body[data-theme="dark"] .water-stat-card {
+            background: #2d3748;
+        }
+
+        .water-stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 5px 0;
+            color: #1a2a6c;
+        }
+
+        .water-stat-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .water-consumption-chart {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        body[data-theme="dark"] .water-consumption-chart {
+            background: #2d3748;
+        }
+
+        .chart-placeholder {
+            height: 150px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a2a6c;
+            font-weight: 600;
+        }
+
+        body[data-theme="dark"] .chart-placeholder {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: #e2e8f0;
         }
 
         /* MODAL DE IRRIGAÇÃO MELHORADO */
@@ -1364,6 +1585,10 @@
                 gap: 10px;
                 text-align: center;
             }
+            
+            .water-stats {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1413,6 +1638,52 @@
     <!-- Indicador de Modo Offline -->
     <div class="offline-indicator" id="offline-indicator">
         <i class="fas fa-wifi"></i> Modo offline ativado. Algumas funções podem não estar disponíveis.
+    </div>
+
+    <!-- Modal de Detalhes da Água -->
+    <div class="water-details-modal" id="water-details-modal">
+        <div class="water-modal-content">
+            <div class="water-modal-header">
+                <h2>
+                    <i class="fas fa-tint"></i>
+                    Detalhes do Nível da Água
+                </h2>
+                <button class="close-water-modal" onclick="closeWaterDetails()">&times;</button>
+            </div>
+            
+            <div class="water-stats">
+                <div class="water-stat-card">
+                    <div class="water-stat-value" id="detail-percentage">0%</div>
+                    <div class="water-stat-label">Nível Atual</div>
+                </div>
+                <div class="water-stat-card">
+                    <div class="water-stat-value" id="detail-liters">0 L</div>
+                    <div class="water-stat-label">Volume Disponível</div>
+                </div>
+                <div class="water-stat-card">
+                    <div class="water-stat-value" id="detail-height">0 cm</div>
+                    <div class="water-stat-label">Altura da Água</div>
+                </div>
+                <div class="water-stat-card">
+                    <div class="water-stat-value" id="detail-capacity">1000 L</div>
+                    <div class="water-stat-label">Capacidade Total</div>
+                </div>
+            </div>
+            
+            <div class="water-consumption-chart">
+                <h3><i class="fas fa-chart-bar"></i> Consumo nas Últimas Horas</h3>
+                <div class="chart-placeholder">
+                    Gráfico de consumo em desenvolvimento
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="closeWaterDetails()">
+                    <i class="fas fa-times"></i>
+                    Fechar
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -1494,7 +1765,7 @@
             </div>
         </div>
 
-        <!-- Monitoramento de Sensores -->
+        <!-- NOVO: Monitoramento de Sensores com Sistema de Nível da Água -->
         <div class="monitoring-card">
             <h2>
                 <i class="fas fa-chart-line"></i>
@@ -1515,20 +1786,40 @@
                     <div class="sensor-compact-value" id="sensor-humidity">--%</div>
                     <div class="sensor-compact-label">Umidade</div>
                 </div>
-                <div class="sensor-compact-item gas">
+                <div class="sensor-compact-item water-level">
                     <div class="sensor-compact-icon">
-                        <i class="fas fa-wind"></i>
+                        <i class="fas fa-water"></i>
                     </div>
-                    <div class="sensor-compact-value" id="sensor-gas">--</div>
-                    <div class="sensor-compact-label">Nível de Gás</div>
+                    <div class="sensor-compact-value" id="water-percentage">0%</div>
+                    <div class="sensor-compact-label">Nível da Água</div>
                 </div>
-                <div class="sensor-compact-item alert">
+                <div class="sensor-compact-item water-status">
                     <div class="sensor-compact-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="sensor-compact-value" id="sensor-alert">NORMAL</div>
-                    <div class="sensor-compact-label">Status Gás</div>
+                    <div class="sensor-compact-value" id="water-status-text">NORMAL</div>
+                    <div class="sensor-compact-label">Status Água</div>
                 </div>
+            </div>
+            
+            <!-- Sistema de Nível da Água -->
+            <div class="water-level-container">
+                <div class="water-tank">
+                    <div class="water-fill" id="water-fill"></div>
+                    <div class="water-percentage" id="water-percentage-display">0%</div>
+                </div>
+                <div class="water-info">
+                    <div>Volume: <span id="water-liters">0</span> L / <span id="water-capacity">1000</span> L</div>
+                    <div>Altura: <span id="water-height">0</span> cm</div>
+                </div>
+                <div class="water-status-indicator water-status-normal" id="water-status-indicator">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Nível Normal</span>
+                </div>
+                <button class="water-details-btn" onclick="openWaterDetails()">
+                    <i class="fas fa-info-circle"></i>
+                    Ver Detalhes do Consumo
+                </button>
             </div>
         </div>
 
@@ -1751,6 +2042,115 @@
     </div>
 
     <script>
+        // ==================== SISTEMA DE NÍVEL DA ÁGUA ====================
+        let currentWaterLevel = {
+            percentage: 0,
+            liters: 0,
+            height: 0,
+            capacity: 1000,
+            status: 'normal'
+        };
+
+        // Função para atualizar o nível da água
+        function updateWaterLevel(data) {
+            if (data) {
+                currentWaterLevel = { ...currentWaterLevel, ...data };
+            }
+            
+            // Atualizar elementos visuais
+            document.getElementById('water-percentage').textContent = currentWaterLevel.percentage + '%';
+            document.getElementById('water-percentage-display').textContent = currentWaterLevel.percentage + '%';
+            document.getElementById('water-liters').textContent = currentWaterLevel.liters;
+            document.getElementById('water-height').textContent = currentWaterLevel.height;
+            document.getElementById('water-capacity').textContent = currentWaterLevel.capacity;
+            
+            // Atualizar barra de nível
+            const waterFill = document.getElementById('water-fill');
+            waterFill.style.height = currentWaterLevel.percentage + '%';
+            
+            // Atualizar cor baseada no nível
+            updateWaterColor(currentWaterLevel.percentage);
+            
+            // Atualizar status
+            updateWaterStatus(currentWaterLevel.percentage);
+            
+            // Atualizar detalhes no modal
+            updateWaterDetails();
+        }
+
+        // Função para atualizar a cor da água baseada no nível
+        function updateWaterColor(percentage) {
+            const waterFill = document.getElementById('water-fill');
+            let waterColor = 'linear-gradient(to top, rgba(0, 119, 255, 0.9), rgba(0, 200, 255, 0.95))';
+            
+            if (percentage < 10) {
+                waterColor = 'linear-gradient(to top, rgba(255, 50, 50, 0.9), rgba(255, 100, 100, 0.95))';
+            } else if (percentage < 30) {
+                waterColor = 'linear-gradient(to top, rgba(255, 165, 0, 0.9), rgba(255, 200, 0, 0.95))';
+            }
+            
+            waterFill.style.background = waterColor;
+        }
+
+        // Função para atualizar o status da água
+        function updateWaterStatus(percentage) {
+            const statusElement = document.getElementById('water-status-text');
+            const indicatorElement = document.getElementById('water-status-indicator');
+            
+            let statusText, statusClass, iconClass;
+            
+            if (percentage < 10) {
+                statusText = 'CRÍTICO';
+                statusClass = 'water-status-critical';
+                iconClass = 'fas fa-exclamation-triangle';
+            } else if (percentage < 30) {
+                statusText = 'BAIXO';
+                statusClass = 'water-status-warning';
+                iconClass = 'fas fa-exclamation-circle';
+            } else {
+                statusText = 'NORMAL';
+                statusClass = 'water-status-normal';
+                iconClass = 'fas fa-check-circle';
+            }
+            
+            statusElement.textContent = statusText;
+            indicatorElement.className = `water-status-indicator ${statusClass}`;
+            indicatorElement.innerHTML = `<i class="${iconClass}"></i><span>Nível ${statusText}</span>`;
+        }
+
+        // Função para abrir modal de detalhes
+        function openWaterDetails() {
+            document.getElementById('water-details-modal').style.display = 'flex';
+        }
+
+        // Função para fechar modal de detalhes
+        function closeWaterDetails() {
+            document.getElementById('water-details-modal').style.display = 'none';
+        }
+
+        // Função para atualizar detalhes no modal
+        function updateWaterDetails() {
+            document.getElementById('detail-percentage').textContent = currentWaterLevel.percentage + '%';
+            document.getElementById('detail-liters').textContent = currentWaterLevel.liters + ' L';
+            document.getElementById('detail-height').textContent = currentWaterLevel.height + ' cm';
+            document.getElementById('detail-capacity').textContent = currentWaterLevel.capacity + ' L';
+        }
+
+        // Simulação de dados de nível da água (substituir por dados reais do servidor)
+        function simulateWaterData() {
+            const randomPercentage = Math.floor(Math.random() * 100);
+            const randomLiters = Math.floor((randomPercentage / 100) * currentWaterLevel.capacity);
+            const randomHeight = Math.floor((randomPercentage / 100) * 100); // Supondo altura máxima de 100cm
+            
+            const waterData = {
+                percentage: randomPercentage,
+                liters: randomLiters,
+                height: randomHeight
+            };
+            
+            updateWaterLevel(waterData);
+        }
+
         // ==================== VERIFICAÇÃO DE AUTENTICAÇÃO ====================
         function checkAuthentication() {
             const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
@@ -2269,36 +2669,6 @@
                         const simulatedHumidity = Math.max(30, Math.min(80, 60 - (latest.temperature - 22) * 2));
                         humidityElement.textContent = `${Math.round(simulatedHumidity)}%`;
                     }
-                    
-                    // Atualizar gás
-                    const gasElement = document.getElementById('sensor-gas');
-                    if (gasElement && latest.gas_level !== undefined) {
-                        gasElement.textContent = latest.gas_level;
-                        
-                        // Mudar cor baseada no nível de gás
-                        if (latest.gas_level > 500) {
-                            gasElement.style.color = '#ff4444';
-                        } else if (latest.gas_level > 300) {
-                            gasElement.style.color = '#ffaa00';
-                        } else {
-                            gasElement.style.color = 'white';
-                        }
-                    }
-                    
-                    // Atualizar alerta
-                    const alertElement = document.getElementById('sensor-alert');
-                    if (alertElement) {
-                        const isAlert = latest.gas_alert || latest.gas_level > 300;
-                        alertElement.textContent = isAlert ? 'ALERTA!' : 'NORMAL';
-                        alertElement.style.color = isAlert ? '#ff4444' : '#4CAF50';
-                        alertElement.style.fontWeight = isAlert ? 'bold' : 'normal';
-                        
-                        if (isAlert && latest.gas_level > 500) {
-                            showNotification('⚠️ ALERTA CRÍTICO: Nível de gás muito alto!', 'error');
-                        } else if (isAlert) {
-                            showNotification('⚠️ Alerta: Nível de gás elevado', 'warning');
-                        }
-                    }
                 }
 
                 // Atualizar status ESP32
@@ -2552,6 +2922,8 @@
             setInterval(async () => {
                 await loadDevices();
                 await updateSensorData();
+                // Simular dados de nível da água (substituir por dados reais)
+                simulateWaterData();
             }, 5000);
             
             // Atualizar clima a cada 15 minutos
@@ -2563,6 +2935,7 @@
             loadDevices();
             updateWeather();
             updateSensorData();
+            simulateWaterData(); // Inicializar nível da água
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -2584,15 +2957,22 @@
             window.addEventListener('offline', checkConnection);
             checkConnection();
             
-            // Fechar modal clicando fora
-            const modal = document.getElementById('irrigation-modal');
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        closeIrrigationModal();
-                    }
-                });
-            }
+            // Fechar modais clicando fora
+            const modals = ['irrigation-modal', 'water-details-modal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal) {
+                            if (modalId === 'irrigation-modal') {
+                                closeIrrigationModal();
+                            } else if (modalId === 'water-details-modal') {
+                                closeWaterDetails();
+                            }
+                        }
+                    });
+                }
+            });
             
             startDataUpdates();
             
@@ -2616,6 +2996,8 @@
         window.logout = logout;
         window.checkAuthorization = checkAuthorization;
         window.toggleTheme = toggleTheme;
+        window.openWaterDetails = openWaterDetails;
+        window.closeWaterDetails = closeWaterDetails;
     </script>
 </body>
 </html>
