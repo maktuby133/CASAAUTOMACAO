@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* SEU CSS COMPLETO AQUI (mantido igual) */
         * {
             margin: 0;
             padding: 0;
@@ -1708,31 +1709,63 @@
             console.log('🔧 Carregando dispositivos da API...');
             
             try {
-                // Buscar dados dos dispositivos
-                const response = await fetch(`${API_BASE_URL}/dispositivos`);
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('📡 Dados recebidos da API:', data);
-                    
-                    // Atualizar estados dos dispositivos
-                    if (data.lights) {
-                        currentDevices.lights = data.lights;
-                    }
-                    if (data.outlets) {
-                        currentDevices.outlets = data.outlets;
-                    }
-                    if (data.irrigation) {
-                        currentDevices.irrigation = { ...currentDevices.irrigation, ...data.irrigation };
-                    }
-                    
-                    updateDeviceDisplays();
-                    showNotification('Dispositivos carregados com sucesso!', 'success');
-                } else {
-                    throw new Error('Erro ao carregar dispositivos');
+                // Primeiro, tentar carregar dados básicos da raiz da API
+                const testResponse = await fetch(API_BASE_URL);
+                if (testResponse.ok) {
+                    console.log('✅ API está respondendo');
                 }
+
+                // Tentar diferentes endpoints possíveis para dispositivos
+                const endpoints = [
+                    '/dispositivos',
+                    '/devices',
+                    '/status',
+                    '/api/dispositivos',
+                    '/api/devices'
+                ];
+
+                let devicesData = null;
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(API_BASE_URL + endpoint);
+                        if (response.ok) {
+                            devicesData = await response.json();
+                            console.log(`✅ Dados recebidos de ${endpoint}:`, devicesData);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`❌ Endpoint ${endpoint} falhou:`, error.message);
+                        continue;
+                    }
+                }
+
+                if (devicesData) {
+                    // Processar dados recebidos
+                    if (devicesData.lights || devicesData.lampadas) {
+                        currentDevices.lights = devicesData.lights || devicesData.lampadas || {};
+                    }
+                    
+                    if (devicesData.outlets || devicesData.tomadas) {
+                        currentDevices.outlets = devicesData.outlets || devicesData.tomadas || {};
+                    }
+                    
+                    if (devicesData.irrigation || devicesData.irrigacao) {
+                        currentDevices.irrigation = { 
+                            ...currentDevices.irrigation, 
+                            ...(devicesData.irrigation || devicesData.irrigacao) 
+                        };
+                    }
+
+                    updateDeviceDisplays();
+                    showNotification('Dispositivos carregados da API!', 'success');
+                } else {
+                    // Se nenhum endpoint funcionou, usar dados padrão
+                    throw new Error('Nenhum endpoint de dispositivos funcionou');
+                }
+
             } catch (error) {
                 console.error('❌ Erro ao carregar dispositivos:', error);
-                // Usar dados padrão como fallback
                 loadDefaultDevices();
                 showNotification('Usando dados locais - API indisponível', 'warning');
             }
@@ -1764,77 +1797,117 @@
             console.log('📊 Atualizando dados dos sensores da API...');
             
             try {
-                // Buscar dados do nível de água
-                const waterResponse = await fetch(`${API_BASE_URL}/nivel`);
-                if (waterResponse.ok) {
-                    const waterData = await waterResponse.json();
-                    console.log('💧 Dados do nível de água:', waterData);
-                    
-                    // Extrair o valor numérico do nível
-                    let waterLevel = 0;
-                    if (typeof waterData === 'object' && waterData !== null) {
-                        // Tentar diferentes propriedades possíveis
-                        waterLevel = waterData.nivel || waterData.level || waterData.value || waterData.valor || 0;
-                    } else if (typeof waterData === 'number') {
-                        waterLevel = waterData;
+                // Tentar diferentes endpoints para nível de água
+                const waterEndpoints = [
+                    '/nivel',
+                    '/level',
+                    '/water',
+                    '/agua',
+                    '/api/nivel',
+                    '/api/water'
+                ];
+
+                let waterData = null;
+                
+                for (const endpoint of waterEndpoints) {
+                    try {
+                        const response = await fetch(API_BASE_URL + endpoint);
+                        if (response.ok) {
+                            waterData = await response.json();
+                            console.log(`✅ Dados de água de ${endpoint}:`, waterData);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`❌ Endpoint de água ${endpoint} falhou:`, error.message);
+                        continue;
                     }
-                    
-                    // Garantir que é um número entre 0-100
-                    waterLevel = Math.max(0, Math.min(100, parseInt(waterLevel) || 0));
-                    
-                    document.getElementById('sensor-water').textContent = `${waterLevel}%`;
-                    
-                    // Buscar outros dados de sensores se disponíveis
-                    const sensorsResponse = await fetch(`${API_BASE_URL}/sensores`);
-                    if (sensorsResponse.ok) {
-                        const sensorsData = await sensorsResponse.json();
-                        console.log('📡 Dados dos sensores:', sensorsData);
-                        
-                        // Atualizar temperatura se disponível
-                        if (sensorsData.temperatura !== undefined) {
-                            const temp = parseInt(sensorsData.temperatura);
-                            document.getElementById('sensor-temperature').textContent = `${temp}°C`;
-                            
-                            // Atualizar cor baseada na temperatura
-                            const tempElement = document.getElementById('sensor-temperature');
-                            if (temp > 30) {
-                                tempElement.style.color = '#ff4444';
-                            } else if (temp < 18) {
-                                tempElement.style.color = '#4444ff';
-                            } else {
-                                tempElement.style.color = 'white';
-                            }
-                        }
-                        
-                        // Atualizar umidade se disponível
-                        if (sensorsData.umidade !== undefined) {
-                            document.getElementById('sensor-humidity').textContent = `${parseInt(sensorsData.umidade)}%`;
-                        }
-                        
-                        // Atualizar gás se disponível
-                        if (sensorsData.gas !== undefined) {
-                            const gasLevel = parseInt(sensorsData.gas);
-                            document.getElementById('sensor-gas').textContent = gasLevel;
-                            
-                            // Atualizar cor baseada no nível de gás
-                            const gasElement = document.getElementById('sensor-gas');
-                            if (gasLevel > 350) {
-                                gasElement.style.color = '#ff4444';
-                            } else if (gasLevel > 250) {
-                                gasElement.style.color = '#ffaa00';
-                            } else {
-                                gasElement.style.color = 'white';
-                            }
-                        }
-                    }
-                    
-                } else {
-                    throw new Error('Erro ao buscar dados dos sensores');
                 }
+
+                if (waterData) {
+                    // Extrair o valor numérico do nível de diferentes formatos
+                    let waterLevel = extractWaterLevel(waterData);
+                    document.getElementById('sensor-water').textContent = `${waterLevel}%`;
+                }
+
+                // Tentar buscar outros dados de sensores
+                const sensorEndpoints = [
+                    '/sensores',
+                    '/sensors',
+                    '/api/sensores',
+                    '/api/sensors',
+                    '/dados',
+                    '/data'
+                ];
+
+                for (const endpoint of sensorEndpoints) {
+                    try {
+                        const response = await fetch(API_BASE_URL + endpoint);
+                        if (response.ok) {
+                            const sensorsData = await response.json();
+                            console.log(`✅ Dados de sensores de ${endpoint}:`, sensorsData);
+                            updateSensorDisplays(sensorsData);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`❌ Endpoint de sensores ${endpoint} falhou:`, error.message);
+                        continue;
+                    }
+                }
+
             } catch (error) {
                 console.error('❌ Erro ao atualizar sensores:', error);
-                // Usar dados simulados como fallback
                 useSimulatedSensorData();
+            }
+        }
+
+        function extractWaterLevel(data) {
+            // Tentar extrair de diferentes formatos possíveis
+            if (typeof data === 'number') return Math.max(0, Math.min(100, data));
+            if (typeof data === 'string') return Math.max(0, Math.min(100, parseInt(data) || 0));
+            if (typeof data === 'object' && data !== null) {
+                return Math.max(0, Math.min(100, 
+                    data.nivel || data.level || data.waterLevel || data.valor || 
+                    data.value || data.agua || data.water || 0
+                ));
+            }
+            return 0;
+        }
+
+        function updateSensorDisplays(sensorsData) {
+            // Temperatura
+            if (sensorsData.temperatura !== undefined || sensorsData.temperature !== undefined) {
+                const temp = parseInt(sensorsData.temperatura || sensorsData.temperature);
+                document.getElementById('sensor-temperature').textContent = `${temp}°C`;
+                
+                const tempElement = document.getElementById('sensor-temperature');
+                if (temp > 30) {
+                    tempElement.style.color = '#ff4444';
+                } else if (temp < 18) {
+                    tempElement.style.color = '#4444ff';
+                } else {
+                    tempElement.style.color = 'white';
+                }
+            }
+            
+            // Umidade
+            if (sensorsData.umidade !== undefined || sensorsData.humidity !== undefined) {
+                document.getElementById('sensor-humidity').textContent = 
+                    `${parseInt(sensorsData.umidade || sensorsData.humidity)}%`;
+            }
+            
+            // Gás
+            if (sensorsData.gas !== undefined) {
+                const gasLevel = parseInt(sensorsData.gas);
+                document.getElementById('sensor-gas').textContent = gasLevel;
+                
+                const gasElement = document.getElementById('sensor-gas');
+                if (gasLevel > 350) {
+                    gasElement.style.color = '#ff4444';
+                } else if (gasLevel > 250) {
+                    gasElement.style.color = '#ffaa00';
+                } else {
+                    gasElement.style.color = 'white';
+                }
             }
         }
 
@@ -1855,43 +1928,74 @@
             console.log(`🔌 ${type} - ${device}: ${state ? 'LIGAR' : 'DESLIGAR'}`);
             
             try {
-                // Enviar comando para a API
-                const response = await fetch(`${API_BASE_URL}/control`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        type: type,
-                        device: device,
-                        state: state
-                    })
-                });
+                // Tentar diferentes endpoints de controle
+                const controlEndpoints = [
+                    '/control',
+                    '/controle',
+                    '/api/control',
+                    '/api/controle',
+                    '/command',
+                    '/comando'
+                ];
+
+                let success = false;
                 
-                if (response.ok) {
+                for (const endpoint of controlEndpoints) {
+                    try {
+                        const response = await fetch(API_BASE_URL + endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                type: type,
+                                device: device,
+                                state: state
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            success = true;
+                            console.log(`✅ Comando enviado para ${endpoint}`);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`❌ Endpoint de controle ${endpoint} falhou:`, error.message);
+                        continue;
+                    }
+                }
+
+                if (success) {
                     // Atualizar estado local
                     if (currentDevices[type]) {
                         currentDevices[type][device] = state;
                     }
                     
-                    // Atualizar display
                     updateDeviceDisplays();
                     
-                    // Mostrar notificação
                     const action = state ? 'ligado' : 'desligado';
                     const deviceName = getDeviceDisplayName(device);
                     showNotification(`${deviceName} ${action}`, 'success');
                 } else {
-                    throw new Error('Erro ao controlar dispositivo');
+                    throw new Error('Nenhum endpoint de controle funcionou');
                 }
             } catch (error) {
                 console.error('❌ Erro ao controlar dispositivo:', error);
-                showNotification('Erro ao controlar dispositivo', 'error');
+                showNotification('Erro ao controlar dispositivo - Modo offline', 'error');
                 
-                // Reverter visualmente em caso de erro
-                loadDevices();
+                // Em modo offline, atualizar apenas localmente
+                if (currentDevices[type]) {
+                    currentDevices[type][device] = state;
+                    updateDeviceDisplays();
+                    
+                    const action = state ? 'ligado' : 'desligado';
+                    const deviceName = getDeviceDisplayName(device);
+                    showNotification(`${deviceName} ${action} (offline)`, 'warning');
+                }
             }
         }
+
+        // ... (restante das funções de controle mantidas iguais)
 
         async function controlAllLights(state) {
             const action = state ? 'ligadas' : 'desligadas';
@@ -1928,20 +2032,41 @@
             console.log(`💧 Bomba de irrigação: ${action}`);
             
             try {
-                const response = await fetch(`${API_BASE_URL}/irrigation/control`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ state: state })
-                });
+                const irrigationEndpoints = [
+                    '/irrigation/control',
+                    '/irrigacao/controle',
+                    '/api/irrigation/control',
+                    '/bomba',
+                    '/pump'
+                ];
+
+                let success = false;
                 
-                if (response.ok) {
+                for (const endpoint of irrigationEndpoints) {
+                    try {
+                        const response = await fetch(API_BASE_URL + endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ state: state })
+                        });
+                        
+                        if (response.ok) {
+                            success = true;
+                            break;
+                        }
+                    } catch (error) {
+                        continue;
+                    }
+                }
+
+                if (success) {
                     currentDevices.irrigation.bomba_irrigacao = state;
                     updateIrrigationDisplay();
                     showNotification(`Bomba de irrigação ${action}`, 'success');
                 } else {
-                    throw new Error('Erro ao controlar irrigação');
+                    throw new Error('Nenhum endpoint de irrigação funcionou');
                 }
             } catch (error) {
                 console.error('❌ Erro ao controlar irrigação:', error);
@@ -2052,10 +2177,7 @@
             return names[deviceKey] || deviceKey;
         }
 
-        // ==================== FUNÇÕES EXISTENTES (mantidas) ====================
-        // ... (o restante das funções permanece igual - sistema de notificações, tema, logout, meteorologia, modal de irrigação, etc.)
-
-        // Sistema de Notificações
+        // ==================== SISTEMA DE NOTIFICAÇÕES ====================
         function showNotification(message, type = 'info', duration = 5000) {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -2084,7 +2206,7 @@
             return icons[type] || 'info-circle';
         }
 
-        // Tema
+        // ==================== TEMA ====================
         function toggleTheme() {
             const currentTheme = document.body.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -2098,7 +2220,7 @@
             showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
         }
 
-        // Logout
+        // ==================== LOGOUT ====================
         function logout() {
             showNotification('Saindo do sistema...', 'info');
             setTimeout(() => {
@@ -2106,16 +2228,42 @@
             }, 1000);
         }
 
-        // Meteorologia
+        // ==================== METEOROLOGIA ====================
         function updateWeather() {
-            // ... (código da meteorologia mantido igual)
+            // Simular dados de clima (mantido igual)
+            const temperatures = [22, 23, 24, 25, 26, 27, 28];
+            const humidities = [65, 70, 75, 68, 72, 69, 66];
+            const windSpeeds = [12, 15, 18, 14, 16, 13, 17];
+            const pressures = [1013, 1015, 1012, 1014, 1016, 1013, 1015];
+            
+            const randomIndex = Math.floor(Math.random() * temperatures.length);
+            
+            document.getElementById('weather-main-temp').textContent = `${temperatures[randomIndex]}°C`;
+            document.getElementById('weather-main-desc').textContent = 'Parcialmente nublado';
+            document.getElementById('weather-feels-like').textContent = `${temperatures[randomIndex] + 2}°C`;
+            document.getElementById('weather-humidity').textContent = `${humidities[randomIndex]}%`;
+            document.getElementById('weather-wind').textContent = `${windSpeeds[randomIndex]} km/h`;
+            document.getElementById('weather-pressure').textContent = `${pressures[randomIndex]} hPa`;
+            
+            const now = new Date();
+            document.getElementById('weather-update-time').textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            showNotification('Dados meteorológicos atualizados!', 'success');
         }
 
         function checkWeather() {
-            // ... (código do checkWeather mantido igual)
+            showNotification('Verificando condições climáticas...', 'info');
+            setTimeout(() => {
+                const isRaining = Math.random() > 0.7;
+                if (isRaining) {
+                    showNotification('⚠️ Está chovendo! A irrigação automática está bloqueada.', 'warning');
+                } else {
+                    showNotification('☀️ Tempo seco - Irrigação automática permitida.', 'success');
+                }
+            }, 1500);
         }
 
-        // Modal de Irrigação
+        // ==================== MODAL DE IRRIGAÇÃO ====================
         function openIrrigationModal() {
             document.getElementById('irrigation-modal').style.display = 'flex';
             loadIrrigationSettings();
@@ -2125,15 +2273,201 @@
             document.getElementById('irrigation-modal').style.display = 'none';
         }
 
-        // ... (demais funções do modal mantidas iguais)
+        function showTimePicker() {
+            const timeInput = document.getElementById('irrigation-time');
+            timeInput.showPicker();
+        }
+
+        function loadIrrigationSettings() {
+            const irrigation = currentDevices.irrigation;
+            
+            const modeSelect = document.getElementById('irrigation-mode-select');
+            if (modeSelect) {
+                modeSelect.value = irrigation.modo || 'manual';
+            }
+            
+            const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+            if (rainCheckbox) {
+                rainCheckbox.checked = irrigation.evitar_chuva !== false;
+            }
+            
+            const durationInput = document.getElementById('irrigation-duration');
+            if (durationInput) {
+                durationInput.value = irrigation.duracao || 5;
+            }
+            
+            const programmingList = document.getElementById('programming-list');
+            programmingList.innerHTML = '';
+            
+            const programacoes = irrigation.programacoes || [];
+            if (programacoes.length === 0) {
+                programmingList.innerHTML = `
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                `;
+            } else {
+                programacoes.forEach(prog => {
+                    addProgrammingToList(prog);
+                });
+            }
+            
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('irrigation-time').value = '08:00';
+        }
+
+        function addProgramming() {
+            const timeInput = document.getElementById('irrigation-time');
+            const selectedTime = timeInput.value;
+            
+            if (!selectedTime) {
+                showNotification('Por favor, selecione um horário.', 'warning');
+                return;
+            }
+
+            const selectedDays = [];
+            const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
+            
+            if (dayCheckboxes.length === 0) {
+                showNotification('Por favor, selecione pelo menos um dia da semana.', 'warning');
+                return;
+            }
+
+            dayCheckboxes.forEach(checkbox => {
+                selectedDays.push(checkbox.value);
+            });
+
+            const newProgramming = {
+                hora: selectedTime,
+                dias: selectedDays
+            };
+
+            addProgrammingToList(newProgramming);
+            
+            timeInput.value = '08:00';
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            
+            showNotification('Programação adicionada com sucesso!', 'success');
+        }
+
+        function addProgrammingToList(programming) {
+            const programmingList = document.getElementById('programming-list');
+            
+            if (programmingList.querySelector('.no-programming')) {
+                programmingList.innerHTML = '';
+            }
+
+            const programmingElement = document.createElement('div');
+            programmingElement.className = 'programming-item';
+            programmingElement.innerHTML = `
+                <div class="programming-header">
+                    <span class="programming-time">${programming.hora}</span>
+                    <button class="delete-programming" onclick="removeProgramming(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="programming-days">
+                    ${getDaysBadges(programming.dias)}
+                </div>
+            `;
+            
+            programmingList.appendChild(programmingElement);
+        }
+
+        function getDaysBadges(days) {
+            const dayNames = {
+                'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+                'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
+            };
+            
+            return days.map(day => 
+                `<span class="day-badge active">${dayNames[day]}</span>`
+            ).join('');
+        }
+
+        function removeProgramming(button) {
+            const programmingItem = button.closest('.programming-item');
+            programmingItem.remove();
+            
+            const programmingList = document.getElementById('programming-list');
+            if (programmingList.children.length === 0) {
+                programmingList.innerHTML = `
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                `;
+            }
+            
+            showNotification('Programação removida', 'info');
+        }
+
+        function getSelectedProgrammings() {
+            const programmingList = document.getElementById('programming-list');
+            const programmings = [];
+            
+            programmingList.querySelectorAll('.programming-item').forEach(item => {
+                const time = item.querySelector('.programming-time').textContent;
+                const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
+                    const dayText = badge.textContent.toLowerCase();
+                    const dayMap = {
+                        'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 
+                        'sex': 'sex', 'sab': 'sab', 'dom': 'dom'
+                    };
+                    return dayMap[dayText];
+                }).filter(day => day);
+                
+                programmings.push({
+                    hora: time,
+                    dias: days
+                });
+            });
+            
+            return programmings;
+        }
+
+        function saveIrrigationSettings() {
+            const modeSelect = document.getElementById('irrigation-mode-select');
+            const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+            const durationInput = document.getElementById('irrigation-duration');
+            
+            const settings = {
+                modo: modeSelect?.value || 'manual',
+                evitar_chuva: rainCheckbox?.checked !== false,
+                duracao: parseInt(durationInput?.value) || 5,
+                programacoes: getSelectedProgrammings()
+            };
+            
+            // Atualizar estado local
+            currentDevices.irrigation = { ...currentDevices.irrigation, ...settings };
+            
+            console.log('✅ Configurações de irrigação salvas:', settings);
+            showNotification('Configurações salvas com sucesso!', 'success');
+            closeIrrigationModal();
+            updateIrrigationDisplay();
+        }
+
+        // ==================== VERIFICAÇÃO DE CONEXÃO ====================
+        function checkConnection() {
+            const offlineIndicator = document.getElementById('offline-indicator');
+            if (!navigator.onLine) {
+                offlineIndicator.classList.add('show');
+                showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
+            } else {
+                offlineIndicator.classList.remove('show');
+            }
+        }
 
         // ==================== INICIALIZAÇÃO ====================
         function startDataUpdates() {
-            // Atualizar dados a cada 3 segundos
+            // Atualizar dados a cada 5 segundos
             setInterval(async () => {
                 await updateSensorData();
                 await loadDevices();
-            }, 3000);
+            }, 5000);
             
             // Carregar inicialmente
             loadDevices();
@@ -2169,18 +2503,8 @@
             
             startDataUpdates();
             
-            showNotification('Sistema conectado à API', 'success', 3000);
+            showNotification('Sistema inicializado! Tentando conectar com API...', 'info', 3000);
         });
-
-        function checkConnection() {
-            const offlineIndicator = document.getElementById('offline-indicator');
-            if (!navigator.onLine) {
-                offlineIndicator.classList.add('show');
-                showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
-            } else {
-                offlineIndicator.classList.remove('show');
-            }
-        }
 
         // Exportar funções para o escopo global
         window.toggleDevice = toggleDevice;
