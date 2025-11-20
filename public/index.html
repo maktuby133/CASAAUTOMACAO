@@ -405,31 +405,6 @@
             }
         }
 
-        .internet-icon {
-            width: 20px;
-            height: 20px;
-            animation: globeRotate 3s ease-in-out infinite;
-        }
-
-        @keyframes globeRotate {
-            0%, 100% { 
-                transform: rotate(0deg) scale(1);
-                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
-            }
-            25% { 
-                transform: rotate(5deg) scale(1.05);
-                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
-            }
-            50% { 
-                transform: rotate(0deg) scale(1.1);
-                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
-            }
-            75% { 
-                transform: rotate(-5deg) scale(1.05);
-                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
-            }
-        }
-
         /* Animações de Ícones Meteorológicos */
         .weather-icon-sun {
             color: #FFD700 !important;
@@ -878,44 +853,6 @@
             color: #4CAF50;
         }
 
-        /* Status Bar */
-        .status-bar {
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.85em;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-            color: var(--text-primary);
-            position: relative;
-        }
-
-        body[data-theme="dark"] .status-bar {
-            background: rgba(45, 55, 72, 0.95);
-        }
-
-        .online {
-            color: #4CAF50;
-            border-left: 3px solid #4CAF50;
-        }
-
-        .offline {
-            color: #f44336;
-            border-left: 3px solid #f44336;
-        }
-
-        .device-status {
-            margin-top: 4px;
-            font-size: 0.65em;
-            font-weight: 500;
-        }
-
-        .room-icon {
-            font-size: 0.8em;
-            margin-right: 3px;
-        }
-
         /* Indicador ESP32 */
         .status-content {
             display: flex;
@@ -1307,237 +1244,6 @@
             background: #a8a8a8;
         }
 
-        /* NOVOS ESTILOS PARA O CARD DE ÁGUA */
-        .water-card {
-            position: relative;
-        }
-
-        .water-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .water-status-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 10px;
-        }
-
-        .water-status-text {
-            font-weight: 600;
-            font-size: 1.1em;
-        }
-
-        .water-level-container {
-            margin: 15px 0;
-        }
-
-        .water-level-bar {
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .water-level-fill {
-            height: 100%;
-            background: var(--water-gradient);
-            border-radius: 10px;
-            transition: width 0.5s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .water-level-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .water-level-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 5px;
-            font-size: 0.75em;
-            color: var(--text-secondary);
-        }
-
-        .water-level-value {
-            text-align: center;
-            font-weight: 600;
-            margin-top: 10px;
-            font-size: 1.2em;
-            color: var(--text-primary);
-        }
-
-        .water-level-status {
-            text-align: center;
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        .water-level-status.critical {
-            color: #f44336;
-            font-weight: 600;
-        }
-
-        .water-level-status.low {
-            color: #ff9800;
-        }
-
-        .water-level-status.normal {
-            color: #4CAF50;
-        }
-
-        .water-level-status.high {
-            color: #2196F3;
-        }
-
-        /* MODAL DO DASHBOARD DE ÁGUA */
-        .dashboard-modal {
-            max-width: 95%;
-            width: 95%;
-            height: 90vh;
-        }
-
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .dashboard-iframe {
-            width: 100%;
-            height: calc(100% - 80px);
-            border: none;
-            border-radius: 10px;
-            background: white;
-        }
-
-        .dashboard-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .dashboard-url {
-            flex: 1;
-            margin: 0 15px;
-            padding: 8px 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            font-size: 0.9em;
-            color: var(--text-secondary);
-            border: 1px solid #e9ecef;
-        }
-
-        body[data-theme="dark"] .dashboard-url {
-            background: #4a5568;
-            border-color: #4a5568;
-            color: #e2e8f0;
-        }
-
-        /* Modal de Nível de Água */
-        .water-details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .water-detail-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            border-left: 4px solid #4facfe;
-        }
-
-        body[data-theme="dark"] .water-detail-card {
-            background: #2d3748;
-        }
-
-        .water-detail-card h4 {
-            margin-bottom: 10px;
-            color: var(--text-secondary);
-            font-size: 0.9em;
-        }
-
-        .water-detail-value {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .water-history-chart {
-            height: 150px;
-            margin-top: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 10px;
-            position: relative;
-        }
-
-        body[data-theme="dark"] .water-history-chart {
-            background: #2d3748;
-        }
-
-        .chart-placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-secondary);
-            font-style: italic;
-        }
-
-        /* Responsividade para o modal de água */
-        @media (max-width: 768px) {
-            .water-details-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .dashboard-modal {
-                max-width: 98%;
-                width: 98%;
-                height: 85vh;
-            }
-            
-            .dashboard-controls {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .dashboard-url {
-                margin: 0;
-                width: 100%;
-            }
-        }
-
         /* Responsividade */
         @media (max-width: 768px) {
             .main-grid {
@@ -1673,7 +1379,7 @@
             </div>
         </div>
 
-        <!-- CORREÇÃO: Meteorologia em uma linha só -->
+        <!-- Meteorologia -->
         <div class="weather-expanded">
             <div class="weather-main">
                 <i class="fas fa-sun weather-icon-large weather-icon-sun" id="weather-main-icon"></i>
@@ -1809,7 +1515,7 @@
             </div>
         </div>
 
-        <!-- Sistema de Irrigação reorganizado -->
+        <!-- Sistema de Irrigação -->
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
@@ -1846,57 +1552,6 @@
                 <button class="btn btn-weather" onclick="checkWeather()">
                     <i class="fas fa-cloud-sun"></i>
                     Verificar Clima
-                </button>
-            </div>
-        </div>
-
-        <!-- CARD CORRIGIDO: Monitoramento de Nível de Água -->
-        <div class="card water-card">
-            <div class="water-header">
-                <h2>
-                    <i class="fas fa-tint"></i>
-                    Monitoramento de Caixa d'Água
-                </h2>
-                <img src="https://img.icons8.com/?size=100&id=114444&format=png&color=000000" class="irrigation-large-icon" alt="Status Água">
-            </div>
-            
-            <div class="water-status-container">
-                <div class="water-status-text">
-                    Status: <span id="water-status" class="status-normal">NORMAL</span>
-                </div>
-                <div class="water-status-info">
-                    <div class="water-capacity-text">Capacidade: <span id="water-capacity">1000L</span></div>
-                    <div class="water-update-time">Atualizado: <span id="water-update">--:--</span></div>
-                </div>
-            </div>
-            
-            <div class="water-level-container">
-                <div class="water-level-bar">
-                    <div class="water-level-fill" id="water-level-fill" style="width: 65%"></div>
-                </div>
-                <div class="water-level-labels">
-                    <span>0%</span>
-                    <span>25%</span>
-                    <span>50%</span>
-                    <span>75%</span>
-                    <span>100%</span>
-                </div>
-                <div class="water-level-value" id="water-level-value">65%</div>
-                <div class="water-level-status normal" id="water-level-status">Nível Normal</div>
-            </div>
-            
-            <div class="controls">
-                <button class="btn btn-primary" onclick="openWaterModal()">
-                    <i class="fas fa-info-circle"></i>
-                    Ver Informações
-                </button>
-                <button class="btn btn-weather" onclick="refreshWaterData()">
-                    <i class="fas fa-sync-alt"></i>
-                    Atualizar Dados
-                </button>
-                <button class="btn btn-success" onclick="openWaterDashboard()">
-                    <i class="fas fa-external-link-alt"></i>
-                    Dashboard Completo
                 </button>
             </div>
         </div>
@@ -2033,267 +1688,614 @@
         </div>
     </div>
 
-    <!-- MODAL: Detalhes do Nível de Água -->
-    <div class="modal-overlay" id="water-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>
-                    <i class="fas fa-tint"></i>
-                    Informações Detalhadas - Caixa d'Água
-                </h2>
-                <button class="close-modal" onclick="closeWaterModal()">&times;</button>
-            </div>
-            
-            <div class="modal-section">
-                <h3><i class="fas fa-chart-bar"></i> Status Atual</h3>
-                <div class="water-level-container">
-                    <div class="water-level-bar">
-                        <div class="water-level-fill" id="modal-water-level-fill" style="width: 65%"></div>
-                    </div>
-                    <div class="water-level-labels">
-                        <span>0%</span>
-                        <span>25%</span>
-                        <span>50%</span>
-                        <span>75%</span>
-                        <span>100%</span>
-                    </div>
-                    <div class="water-level-value" id="modal-water-level-value">65%</div>
-                    <div class="water-level-status normal" id="modal-water-level-status">Nível Normal</div>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <h3><i class="fas fa-info-circle"></i> Informações da Caixa d'Água</h3>
-                <div class="water-details-grid">
-                    <div class="water-detail-card">
-                        <h4>Capacidade Total</h4>
-                        <div class="water-detail-value">1000 L</div>
-                    </div>
-                    <div class="water-detail-card">
-                        <h4>Água Disponível</h4>
-                        <div class="water-detail-value">650 L</div>
-                    </div>
-                    <div class="water-detail-card">
-                        <h4>Última Atualização</h4>
-                        <div class="water-detail-value" id="water-last-update">--:--</div>
-                    </div>
-                    <div class="water-detail-card">
-                        <h4>Tendência</h4>
-                        <div class="water-detail-value" id="water-trend">Estável</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <h3><i class="fas fa-history"></i> Histórico de Nível</h3>
-                <div class="water-history-chart">
-                    <div class="chart-placeholder">
-                        <i class="fas fa-chart-line" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
-                        <br>
-                        Gráfico de histórico de nível de água
-                    </div>
-                </div>
-            </div>
-
-            <div class="controls">
-                <button class="btn btn-danger" onclick="closeWaterModal()">
-                    <i class="fas fa-times"></i>
-                    Fechar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NOVO MODAL: Dashboard Completo de Água -->
-    <div class="modal-overlay" id="water-dashboard-modal">
-        <div class="modal-content dashboard-modal">
-            <div class="dashboard-header">
-                <h2>
-                    <i class="fas fa-tint"></i>
-                    Dashboard Completo - Monitoramento de Água
-                </h2>
-                <button class="close-modal" onclick="closeWaterDashboard()">&times;</button>
-            </div>
-            
-            <iframe src="https://testeservidor-6opr.onrender.com" class="dashboard-iframe" id="water-dashboard-iframe"></iframe>
-            
-            <div class="dashboard-controls">
-                <button class="btn btn-primary" onclick="refreshDashboard()">
-                    <i class="fas fa-sync-alt"></i>
-                    Atualizar
-                </button>
-                <div class="dashboard-url">https://testeservidor-6opr.onrender.com</div>
-                <button class="btn btn-danger" onclick="closeWaterDashboard()">
-                    <i class="fas fa-times"></i>
-                    Fechar Dashboard
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // ==================== VARIÁVEIS GLOBAIS ====================
-        let waterLevel = 65; // Nível inicial de água em porcentagem
+        let currentDevices = {
+            lights: {
+                sala: false,
+                quarto1: false,
+                quarto2: false,
+                quarto3: false,
+                corredor: false,
+                cozinha: false,
+                banheiro: false
+            },
+            outlets: {
+                tomada_sala: false,
+                tomada_cozinha: false,
+                tomada_quarto1: false,
+                tomada_quarto2: false,
+                tomada_quarto3: false
+            },
+            irrigation: {
+                bomba_irrigacao: false,
+                modo: 'manual',
+                evitar_chuva: true,
+                duracao: 5,
+                programacoes: []
+            }
+        };
 
-        // ==================== CORREÇÃO DO ERRO [object Object]% ====================
-        async function updateSensorData() {
-            if (!checkAuthorization()) return;
+        let waterLevel = 65;
+
+        // ==================== FUNÇÕES DE CARREGAMENTO ====================
+        function loadDevices() {
+            console.log('🔧 Carregando dispositivos...');
             
-            try {
-                // Buscar dados dos sensores principais
-                const response = await fetch('/api/sensor-data');
-                const data = await response.json();
+            // Simular dados de dispositivos
+            setTimeout(() => {
+                // Gerar estados aleatórios para demonstração
+                Object.keys(currentDevices.lights).forEach(light => {
+                    currentDevices.lights[light] = Math.random() > 0.5;
+                });
                 
-                if (data.data && data.data.length > 0) {
-                    const latest = data.data[0];
-                    
-                    // Atualizar temperatura
-                    const tempElement = document.getElementById('sensor-temperature');
-                    if (tempElement && latest.temperature !== undefined) {
-                        tempElement.textContent = `${latest.temperature}°C`;
-                        
-                        // Mudar cor baseada na temperatura
-                        if (latest.temperature > 30) {
-                            tempElement.style.color = '#ff4444';
-                        } else if (latest.temperature < 15) {
-                            tempElement.style.color = '#4444ff';
-                        } else {
-                            tempElement.style.color = 'white';
-                        }
-                    }
-                    
-                    // Atualizar umidade (simulada)
-                    const humidityElement = document.getElementById('sensor-humidity');
-                    if (humidityElement) {
-                        // Simular umidade baseada na temperatura
-                        const simulatedHumidity = Math.max(30, Math.min(80, 60 - (latest.temperature - 22) * 2));
-                        humidityElement.textContent = `${Math.round(simulatedHumidity)}%`;
-                    }
-                    
-                    // Atualizar nível de gás
-                    const gasElement = document.getElementById('sensor-gas');
-                    if (gasElement && latest.gas_level !== undefined) {
-                        gasElement.textContent = latest.gas_level;
-                        
-                        // Mudar cor baseada no nível de gás
-                        if (latest.gas_level > 500) {
-                            gasElement.style.color = '#ff4444';
-                        } else if (latest.gas_level > 300) {
-                            gasElement.style.color = '#ffaa00';
-                        } else {
-                            gasElement.style.color = 'white';
-                        }
-                    }
-                    
-                    // Atualizar status ESP32
-                    const esp32StatusElement = document.getElementById('esp32-header-status');
-                    if (esp32StatusElement) {
-                        if (data.esp32.connected) {
-                            esp32StatusElement.className = 'esp32-header-status online';
-                            esp32StatusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Online</span>';
-                        } else {
-                            esp32StatusElement.className = 'esp32-header-status offline';
-                            esp32StatusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Offline</span>';
-                        }
-                    }
-                }
+                Object.keys(currentDevices.outlets).forEach(outlet => {
+                    currentDevices.outlets[outlet] = Math.random() > 0.5;
+                });
+                
+                currentDevices.irrigation.bomba_irrigacao = Math.random() > 0.7;
+                
+                updateDeviceDisplays();
+                showNotification('Dispositivos carregados com sucesso!', 'success');
+            }, 1000);
+        }
 
-                // Buscar dados do nível de água do endpoint específico
-                try {
-                    const waterResponse = await fetch('https://testeservidor-6opr.onrender.com/nivel');
-                    if (waterResponse.ok) {
-                        const waterData = await waterResponse.json();
-                        console.log('Dados do nível de água:', waterData);
-                        
-                        // CORREÇÃO: Extrair corretamente o valor numérico do nível
-                        if (waterData.nivel !== undefined) {
-                            // Se for um objeto, extrair o valor numérico
-                            if (typeof waterData.nivel === 'object' && waterData.nivel !== null) {
-                                // Tentar extrair o valor de diferentes propriedades possíveis
-                                waterLevel = waterData.nivel.valor || waterData.nivel.level || waterData.nivel.nivel || 65;
-                            } else {
-                                waterLevel = parseInt(waterData.nivel) || 65;
-                            }
-                            updateWaterDisplay();
-                        }
-                    } else {
-                        console.warn('⚠️ Não foi possível obter dados do nível de água');
-                        // Usar dados simulados como fallback
-                        waterLevel = Math.max(0, Math.min(100, waterLevel + (Math.random() * 6 - 3)));
-                        updateWaterDisplay();
-                    }
-                } catch (waterError) {
-                    console.error('❌ Erro ao buscar dados do nível de água:', waterError);
-                    // Usar dados simulados como fallback
-                    waterLevel = Math.max(0, Math.min(100, waterLevel + (Math.random() * 6 - 3)));
-                    updateWaterDisplay();
-                }
-            } catch (error) {
-                console.error('❌ Erro ao atualizar sensores:', error);
+        function updateWeather() {
+            console.log('🌤️ Atualizando dados meteorológicos...');
+            
+            // Simular dados de clima
+            const temperatures = [22, 23, 24, 25, 26, 27, 28];
+            const humidities = [65, 70, 75, 68, 72, 69, 66];
+            const windSpeeds = [12, 15, 18, 14, 16, 13, 17];
+            const pressures = [1013, 1015, 1012, 1014, 1016, 1013, 1015];
+            
+            const randomIndex = Math.floor(Math.random() * temperatures.length);
+            
+            // Atualizar elementos da interface
+            document.getElementById('weather-main-temp').textContent = `${temperatures[randomIndex]}°C`;
+            document.getElementById('weather-main-desc').textContent = 'Parcialmente nublado';
+            document.getElementById('weather-feels-like').textContent = `${temperatures[randomIndex] + 2}°C`;
+            document.getElementById('weather-humidity').textContent = `${humidities[randomIndex]}%`;
+            document.getElementById('weather-wind').textContent = `${windSpeeds[randomIndex]} km/h`;
+            document.getElementById('weather-pressure').textContent = `${pressures[randomIndex]} hPa`;
+            
+            const now = new Date();
+            document.getElementById('weather-update-time').textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            showNotification('Dados meteorológicos atualizados!', 'success');
+        }
+
+        function updateSensorData() {
+            console.log('📊 Atualizando dados dos sensores...');
+            
+            // Simular dados dos sensores
+            const temperature = Math.floor(Math.random() * 15) + 20; // 20-35°C
+            const humidity = Math.floor(Math.random() * 30) + 50; // 50-80%
+            const gasLevel = Math.floor(Math.random() * 300) + 100; // 100-400
+            const waterLevel = Math.floor(Math.random() * 100); // 0-100%
+            
+            // Atualizar elementos da interface
+            document.getElementById('sensor-temperature').textContent = `${temperature}°C`;
+            document.getElementById('sensor-humidity').textContent = `${humidity}%`;
+            document.getElementById('sensor-gas').textContent = gasLevel;
+            document.getElementById('sensor-water').textContent = `${waterLevel}%`;
+            
+            // Atualizar cores baseadas nos valores
+            const tempElement = document.getElementById('sensor-temperature');
+            if (temperature > 30) {
+                tempElement.style.color = '#ff4444';
+            } else if (temperature < 18) {
+                tempElement.style.color = '#4444ff';
+            } else {
+                tempElement.style.color = 'white';
+            }
+            
+            const gasElement = document.getElementById('sensor-gas');
+            if (gasLevel > 350) {
+                gasElement.style.color = '#ff4444';
+            } else if (gasLevel > 250) {
+                gasElement.style.color = '#ffaa00';
+            } else {
+                gasElement.style.color = 'white';
             }
         }
 
-        // ==================== FUNÇÕES DO DASHBOARD DE ÁGUA ====================
-        function openWaterDashboard() {
-            if (!checkAuthorization()) return;
-            
-            document.getElementById('water-dashboard-modal').style.display = 'flex';
-            
-            // Forçar atualização do iframe
-            const iframe = document.getElementById('water-dashboard-iframe');
-            iframe.src = iframe.src;
+        // ==================== ATUALIZAÇÃO DE DISPLAY ====================
+        function updateDeviceDisplays() {
+            updateLightsDisplay();
+            updateOutletsDisplay();
+            updateIrrigationDisplay();
         }
 
-        function closeWaterDashboard() {
-            document.getElementById('water-dashboard-modal').style.display = 'none';
-        }
+        function updateLightsDisplay() {
+            const container = document.getElementById('lights-container');
+            if (!container) return;
 
-        function refreshDashboard() {
-            const iframe = document.getElementById('water-dashboard-iframe');
-            iframe.src = iframe.src;
-            showNotification('Dashboard atualizado', 'success', 2000);
-        }
-
-        // ==================== FUNÇÕES EXISTENTES (mantidas para compatibilidade) ====================
-        // ... (o restante do código JavaScript permanece igual)
-        // VERIFICAÇÃO DE AUTENTICAÇÃO
-        function checkAuthentication() {
-            const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
-            const userData = localStorage.getItem('casa-automacao-user');
+            container.innerHTML = '';
             
-            if (!isAuthenticated || !userData) {
-                console.log('❌ Usuário não autenticado. Redirecionando para login...');
-                alert('Sessão expirada. Faça login novamente.');
+            Object.entries(currentDevices.lights).forEach(([device, state]) => {
+                const deviceElement = document.createElement('div');
+                deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
+                deviceElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
+                             alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
+                    </div>
+                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('lights', '${device}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                container.appendChild(deviceElement);
+            });
+        }
+
+        function updateOutletsDisplay() {
+            const container = document.getElementById('outlets-container');
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            Object.entries(currentDevices.outlets).forEach(([device, state]) => {
+                const deviceElement = document.createElement('div');
+                deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
+                deviceElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
+                    </div>
+                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('outlets', '${device}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                container.appendChild(deviceElement);
+            });
+        }
+
+        function updateIrrigationDisplay() {
+            const irrigation = currentDevices.irrigation;
+            const statusElement = document.getElementById('irrigation-status');
+            const modeElement = document.getElementById('irrigation-mode');
+            const rainElement = document.getElementById('rain-avoidance');
+            const largeIcon = document.getElementById('irrigation-large-icon');
+            
+            if (statusElement) {
+                statusElement.textContent = irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA';
+                statusElement.className = irrigation.bomba_irrigacao ? 'status-on' : 'status-off';
+            }
+            
+            if (modeElement) {
+                modeElement.textContent = irrigation.modo === 'automatico' ? 'Automático' : 'Manual';
+            }
+            
+            if (rainElement) {
+                rainElement.textContent = irrigation.evitar_chuva ? 'Ativado' : 'Desativado';
+            }
+
+            if (largeIcon) {
+                largeIcon.src = irrigation.bomba_irrigacao ? 
+                    'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000' : 
+                    'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+            }
+        }
+
+        function getDeviceDisplayName(deviceKey) {
+            const names = {
+                // Lâmpadas
+                'sala': 'Sala de Estar',
+                'quarto1': 'Quarto Principal',
+                'quarto2': 'Quarto 2',
+                'quarto3': 'Quarto 3',
+                'corredor': 'Corredor',
+                'cozinha': 'Cozinha',
+                'banheiro': 'Banheiro',
+                
+                // Tomadas
+                'tomada_sala': 'Tomada Sala',
+                'tomada_cozinha': 'Tomada Cozinha',
+                'tomada_quarto1': 'Tomada Quarto 1',
+                'tomada_quarto2': 'Tomada Quarto 2',
+                'tomada_quarto3': 'Tomada Quarto 3'
+            };
+            
+            return names[deviceKey] || deviceKey;
+        }
+
+        // ==================== CONTROLE DE DISPOSITIVOS ====================
+        function toggleDevice(type, device, state) {
+            console.log(`🔌 ${type} - ${device}: ${state ? 'LIGAR' : 'DESLIGAR'}`);
+            
+            // Atualizar estado local
+            if (currentDevices[type]) {
+                currentDevices[type][device] = state;
+            }
+            
+            // Atualizar display
+            updateDeviceDisplays();
+            
+            // Mostrar notificação
+            const action = state ? 'ligado' : 'desligado';
+            const deviceName = getDeviceDisplayName(device);
+            showNotification(`${deviceName} ${action}`, 'success');
+            
+            // Simular envio para servidor
+            simulateServerRequest(type, device, state);
+        }
+
+        function simulateServerRequest(type, device, state) {
+            // Simular delay de rede
+            setTimeout(() => {
+                console.log(`✅ Servidor: ${type}.${device} = ${state}`);
+            }, 500);
+        }
+
+        function controlAllLights(state) {
+            const action = state ? 'ligadas' : 'desligadas';
+            console.log(`💡 Todas as lâmpadas: ${action}`);
+            
+            Object.keys(currentDevices.lights).forEach(light => {
+                currentDevices.lights[light] = state;
+            });
+            
+            updateLightsDisplay();
+            showNotification(`Todas as lâmpadas ${action}`, 'success');
+        }
+
+        function controlAllOutlets(state) {
+            const action = state ? 'ligadas' : 'desligadas';
+            console.log(`🔌 Todas as tomadas: ${action}`);
+            
+            Object.keys(currentDevices.outlets).forEach(outlet => {
+                currentDevices.outlets[outlet] = state;
+            });
+            
+            updateOutletsDisplay();
+            showNotification(`Todas as tomadas ${action}`, 'success');
+        }
+
+        function controlIrrigation(state) {
+            const action = state ? 'ligada' : 'desligada';
+            console.log(`💧 Bomba de irrigação: ${action}`);
+            
+            currentDevices.irrigation.bomba_irrigacao = state;
+            updateIrrigationDisplay();
+            showNotification(`Bomba de irrigação ${action}`, 'success');
+        }
+
+        // ==================== SISTEMA DE NOTIFICAÇÕES ====================
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${getNotificationIcon(type)}"></i>
+                ${message}
+            `;
+            
+            document.getElementById('notification-container').appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        function getNotificationIcon(type) {
+            const icons = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
+
+        // ==================== TEMA ====================
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('casa-automacao-theme', newTheme);
+            
+            const themeIcon = document.querySelector('.theme-toggle i');
+            themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info', 2000);
+        }
+
+        // ==================== LOGOUT ====================
+        function logout() {
+            showNotification('Saindo do sistema...', 'info');
+            setTimeout(() => {
                 window.location.href = 'login.html';
-                return false;
+            }, 1000);
+        }
+
+        // ==================== METEOROLOGIA ====================
+        function checkWeather() {
+            showNotification('Verificando condições climáticas...', 'info');
+            // Simular verificação de clima
+            setTimeout(() => {
+                const isRaining = Math.random() > 0.7;
+                if (isRaining) {
+                    showNotification('⚠️ Está chovendo! A irrigação automática está bloqueada.', 'warning');
+                } else {
+                    showNotification('☀️ Tempo seco - Irrigação automática permitida.', 'success');
+                }
+            }, 1500);
+        }
+
+        // ==================== MODAL DE IRRIGAÇÃO ====================
+        function openIrrigationModal() {
+            document.getElementById('irrigation-modal').style.display = 'flex';
+            loadIrrigationSettings();
+        }
+
+        function closeIrrigationModal() {
+            document.getElementById('irrigation-modal').style.display = 'none';
+        }
+
+        function showTimePicker() {
+            const timeInput = document.getElementById('irrigation-time');
+            timeInput.showPicker();
+        }
+
+        function loadIrrigationSettings() {
+            const irrigation = currentDevices.irrigation;
+            
+            // Modo
+            const modeSelect = document.getElementById('irrigation-mode-select');
+            if (modeSelect) {
+                modeSelect.value = irrigation.modo || 'manual';
             }
             
-            try {
-                const user = JSON.parse(userData);
-                console.log('✅ Usuário autenticado:', user.username);
-                return true;
-            } catch (error) {
-                console.error('❌ Erro ao verificar autenticação:', error);
-                window.location.href = 'login.html';
-                return false;
+            // Evitar chuva
+            const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+            if (rainCheckbox) {
+                rainCheckbox.checked = irrigation.evitar_chuva !== false;
+            }
+            
+            // Duração
+            const durationInput = document.getElementById('irrigation-duration');
+            if (durationInput) {
+                durationInput.value = irrigation.duracao || 5;
+            }
+            
+            // Programações
+            const programmingList = document.getElementById('programming-list');
+            programmingList.innerHTML = '';
+            
+            const programacoes = irrigation.programacoes || [];
+            if (programacoes.length === 0) {
+                programmingList.innerHTML = `
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                `;
+            } else {
+                programacoes.forEach(prog => {
+                    addProgrammingToList(prog);
+                });
+            }
+            
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('irrigation-time').value = '08:00';
+        }
+
+        function addProgramming() {
+            const timeInput = document.getElementById('irrigation-time');
+            const selectedTime = timeInput.value;
+            
+            if (!selectedTime) {
+                showNotification('Por favor, selecione um horário.', 'warning');
+                return;
+            }
+
+            const selectedDays = [];
+            const dayCheckboxes = document.querySelectorAll('.day-checkbox:checked');
+            
+            if (dayCheckboxes.length === 0) {
+                showNotification('Por favor, selecione pelo menos um dia da semana.', 'warning');
+                return;
+            }
+
+            dayCheckboxes.forEach(checkbox => {
+                selectedDays.push(checkbox.value);
+            });
+
+            const newProgramming = {
+                hora: selectedTime,
+                dias: selectedDays
+            };
+
+            addProgrammingToList(newProgramming);
+            
+            timeInput.value = '08:00';
+            document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+            
+            showNotification('Programação adicionada com sucesso!', 'success');
+        }
+
+        function addProgrammingToList(programming) {
+            const programmingList = document.getElementById('programming-list');
+            
+            if (programmingList.querySelector('.no-programming')) {
+                programmingList.innerHTML = '';
+            }
+
+            const programmingElement = document.createElement('div');
+            programmingElement.className = 'programming-item';
+            programmingElement.innerHTML = `
+                <div class="programming-header">
+                    <span class="programming-time">${programming.hora}</span>
+                    <button class="delete-programming" onclick="removeProgramming(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="programming-days">
+                    ${getDaysBadges(programming.dias)}
+                </div>
+            `;
+            
+            programmingList.appendChild(programmingElement);
+        }
+
+        function getDaysBadges(days) {
+            const dayNames = {
+                'seg': 'Seg', 'ter': 'Ter', 'qua': 'Qua', 
+                'qui': 'Qui', 'sex': 'Sex', 'sab': 'Sab', 'dom': 'Dom'
+            };
+            
+            return days.map(day => 
+                `<span class="day-badge active">${dayNames[day]}</span>`
+            ).join('');
+        }
+
+        function removeProgramming(button) {
+            const programmingItem = button.closest('.programming-item');
+            programmingItem.remove();
+            
+            const programmingList = document.getElementById('programming-list');
+            if (programmingList.children.length === 0) {
+                programmingList.innerHTML = `
+                    <div class="no-programming">
+                        <i class="fas fa-calendar-plus" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br>
+                        Nenhuma programação configurada
+                    </div>
+                `;
+            }
+            
+            showNotification('Programação removida', 'info');
+        }
+
+        function getSelectedProgrammings() {
+            const programmingList = document.getElementById('programming-list');
+            const programmings = [];
+            
+            programmingList.querySelectorAll('.programming-item').forEach(item => {
+                const time = item.querySelector('.programming-time').textContent;
+                const days = Array.from(item.querySelectorAll('.day-badge')).map(badge => {
+                    const dayText = badge.textContent.toLowerCase();
+                    const dayMap = {
+                        'seg': 'seg', 'ter': 'ter', 'qua': 'qua', 'qui': 'qui', 
+                        'sex': 'sex', 'sab': 'sab', 'dom': 'dom'
+                    };
+                    return dayMap[dayText];
+                }).filter(day => day);
+                
+                programmings.push({
+                    hora: time,
+                    dias: days
+                });
+            });
+            
+            return programmings;
+        }
+
+        function saveIrrigationSettings() {
+            const modeSelect = document.getElementById('irrigation-mode-select');
+            const rainCheckbox = document.getElementById('avoid-rain-checkbox');
+            const durationInput = document.getElementById('irrigation-duration');
+            
+            const settings = {
+                modo: modeSelect?.value || 'manual',
+                evitar_chuva: rainCheckbox?.checked !== false,
+                duracao: parseInt(durationInput?.value) || 5,
+                programacoes: getSelectedProgrammings()
+            };
+            
+            // Atualizar estado local
+            currentDevices.irrigation = { ...currentDevices.irrigation, ...settings };
+            
+            console.log('✅ Configurações de irrigação salvas:', settings);
+            showNotification('Configurações salvas com sucesso!', 'success');
+            closeIrrigationModal();
+            updateIrrigationDisplay();
+        }
+
+        // ==================== VERIFICAÇÃO DE CONEXÃO ====================
+        function checkConnection() {
+            const offlineIndicator = document.getElementById('offline-indicator');
+            if (!navigator.onLine) {
+                offlineIndicator.classList.add('show');
+                showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
+            } else {
+                offlineIndicator.classList.remove('show');
             }
         }
 
-        function checkAuthorization() {
-            if (!checkAuthentication()) {
-                showNotification('Sessão expirada. Redirecionando para login...', 'error');
-                return false;
-            }
-            return true;
+        // ==================== INICIALIZAÇÃO ====================
+        function startDataUpdates() {
+            // Atualizar dados a cada 5 segundos
+            setInterval(() => {
+                updateSensorData();
+            }, 5000);
+            
+            // Atualizar clima a cada 30 segundos (para demonstração)
+            setInterval(() => {
+                updateWeather();
+            }, 30000);
+            
+            // Carregar inicialmente
+            loadDevices();
+            updateWeather();
+            updateSensorData();
+            
+            // Carregar dados iniciais após um breve delay
+            setTimeout(() => {
+                updateDeviceDisplays();
+            }, 500);
         }
 
-        // ... (demais funções existentes)
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            
+            // Carregar tema salvo
+            const savedTheme = localStorage.getItem('casa-automacao-theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            const themeIcon = document.querySelector('.theme-toggle i');
+            themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Configurar eventos
+            window.addEventListener('online', checkConnection);
+            window.addEventListener('offline', checkConnection);
+            checkConnection();
+            
+            // Fechar modal clicando fora
+            const modal = document.getElementById('irrigation-modal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeIrrigationModal();
+                }
+            });
+            
+            startDataUpdates();
+            
+            showNotification('Sistema inicializado com sucesso!', 'success', 3000);
+        });
 
         // Exportar funções para o escopo global
-        window.openWaterDashboard = openWaterDashboard;
-        window.closeWaterDashboard = closeWaterDashboard;
-        window.refreshDashboard = refreshDashboard;
-        // ... (outras exportações existentes)
+        window.toggleDevice = toggleDevice;
+        window.controlAllLights = controlAllLights;
+        window.controlAllOutlets = controlAllOutlets;
+        window.controlIrrigation = controlIrrigation;
+        window.openIrrigationModal = openIrrigationModal;
+        window.closeIrrigationModal = closeIrrigationModal;
+        window.showTimePicker = showTimePicker;
+        window.addProgramming = addProgramming;
+        window.removeProgramming = removeProgramming;
+        window.saveIrrigationSettings = saveIrrigationSettings;
+        window.updateWeather = updateWeather;
+        window.checkWeather = checkWeather;
+        window.toggleTheme = toggleTheme;
+        window.logout = logout;
     </script>
 </body>
 </html>
