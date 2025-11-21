@@ -388,8 +388,8 @@
         }
 
         .irrigation-icon {
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             animation: waterDrop 2s ease-in-out infinite;
         }
 
@@ -850,6 +850,7 @@
             flex: 0 0 auto;
             margin-left: 15px;
             display: none; /* Inicialmente escondido */
+            text-align: center;
         }
 
         .irrigation-gif {
@@ -862,6 +863,15 @@
 
         .irrigation-gif-container.show {
             display: block; /* Mostrar quando a bomba estiver ligada */
+        }
+
+        .irrigating-text {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #00b894;
+            margin-top: 5px;
+            text-align: center;
+            animation: pulse 1.5s ease-in-out infinite;
         }
 
         /* Status removido - mais compacto */
@@ -1597,7 +1607,7 @@
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
+                    <img src="https://img.icons8.com/?size=100&id=Hh6npc3zPYdk&format=png&color=000000" class="irrigation-icon" alt="Irrigação">
                     Sistema de Irrigação
                 </h2>
                 <div class="irrigation-status-info">
@@ -1606,6 +1616,7 @@
                 </div>
                 <div class="irrigation-gif-container" id="irrigation-gif-container">
                     <img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif" class="irrigation-gif" alt="Sistema de Irrigação" id="irrigation-gif">
+                    <div class="irrigating-text" id="irrigating-text">IRRIGANDO...</div>
                 </div>
             </div>
             
@@ -1959,6 +1970,7 @@
             const modeElement = document.getElementById('irrigation-mode');
             const rainElement = document.getElementById('rain-avoidance');
             const gifContainer = document.getElementById('irrigation-gif-container');
+            const irrigatingText = document.getElementById('irrigating-text');
             
             if (modeElement) {
                 modeElement.textContent = irrigation.modo === 'automatico' ? 'Automático' : 'Manual';
@@ -1968,12 +1980,14 @@
                 rainElement.textContent = irrigation.evitar_chuva ? 'Ativado' : 'Desativado';
             }
 
-            // Mostrar ou esconder o GIF baseado no estado da bomba
-            if (gifContainer) {
+            // Mostrar ou esconder o GIF e texto baseado no estado da bomba
+            if (gifContainer && irrigatingText) {
                 if (irrigation.bomba_irrigacao) {
                     gifContainer.classList.add('show');
+                    irrigatingText.style.display = 'block';
                 } else {
                     gifContainer.classList.remove('show');
+                    irrigatingText.style.display = 'none';
                 }
             }
         }
