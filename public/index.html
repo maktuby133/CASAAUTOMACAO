@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casa Automação 🏠 V3.0</title>
+    <title>🏠 Casa Automação V3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -812,7 +812,7 @@
             pointer-events: none;
         }
 
-        /* Status da irrigação reorganizado - CARD MENOR */
+        /* Status da irrigação reorganizado - CARD MAIS COMPACTO */
         .irrigation-card {
             position: relative;
             min-height: auto;
@@ -823,7 +823,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .irrigation-header h2 {
@@ -849,30 +849,24 @@
         .irrigation-gif-container {
             flex: 0 0 auto;
             margin-left: 15px;
+            display: none; /* Inicialmente escondido */
         }
 
         .irrigation-gif {
-            width: 80px;
-            height: 80px;
+            width: 120px; /* GIF maior */
+            height: 120px; /* GIF maior */
             border-radius: 10px;
             object-fit: cover;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
 
+        .irrigation-gif-container.show {
+            display: block; /* Mostrar quando a bomba estiver ligada */
+        }
+
+        /* Status removido - mais compacto */
         .irrigation-status-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 8px;
-            min-height: 40px;
-        }
-
-        .irrigation-status-text {
-            font-weight: 600;
-            font-size: 0.9em;
+            display: none; /* Removido para economizar espaço */
         }
 
         .status-on {
@@ -1360,8 +1354,8 @@
             }
             
             .irrigation-gif {
-                width: 60px;
-                height: 60px;
+                width: 100px;
+                height: 100px;
             }
 
             .esp32-header-status {
@@ -1372,12 +1366,6 @@
                 margin-bottom: 10px;
             }
             
-            .irrigation-status-container {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-
             .irrigation-header {
                 flex-direction: column;
                 align-items: center;
@@ -1423,8 +1411,8 @@
             }
             
             .irrigation-gif {
-                width: 50px;
-                height: 50px;
+                width: 80px;
+                height: 80px;
             }
             
             .weather-details {
@@ -1616,15 +1604,8 @@
                     <div class="irrigation-mode-text">Modo: <span id="irrigation-mode">Manual</span></div>
                     <div class="irrigation-rain-avoidance">Evitar Chuva: <span id="rain-avoidance">Ativado</span></div>
                 </div>
-                <div class="irrigation-gif-container">
+                <div class="irrigation-gif-container" id="irrigation-gif-container">
                     <img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif" class="irrigation-gif" alt="Sistema de Irrigação" id="irrigation-gif">
-                </div>
-            </div>
-            
-            <!-- Status reorganizado -->
-            <div class="irrigation-status-container">
-                <div class="irrigation-status-text">
-                    Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
                 </div>
             </div>
             
@@ -1975,15 +1956,9 @@
 
         function updateIrrigationDisplay() {
             const irrigation = currentDevices.irrigation || {};
-            const statusElement = document.getElementById('irrigation-status');
             const modeElement = document.getElementById('irrigation-mode');
             const rainElement = document.getElementById('rain-avoidance');
-            const gifElement = document.getElementById('irrigation-gif');
-            
-            if (statusElement) {
-                statusElement.textContent = irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA';
-                statusElement.className = irrigation.bomba_irrigacao ? 'status-on' : 'status-off';
-            }
+            const gifContainer = document.getElementById('irrigation-gif-container');
             
             if (modeElement) {
                 modeElement.textContent = irrigation.modo === 'automatico' ? 'Automático' : 'Manual';
@@ -1993,9 +1968,13 @@
                 rainElement.textContent = irrigation.evitar_chuva ? 'Ativado' : 'Desativado';
             }
 
-            if (gifElement) {
-                // O GIF animado já está definido no HTML
-                // Poderíamos trocar o GIF baseado no estado se necessário
+            // Mostrar ou esconder o GIF baseado no estado da bomba
+            if (gifContainer) {
+                if (irrigation.bomba_irrigacao) {
+                    gifContainer.classList.add('show');
+                } else {
+                    gifContainer.classList.remove('show');
+                }
             }
         }
 
