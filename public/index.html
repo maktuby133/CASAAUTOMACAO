@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏠 Casa Automação V3.0</title>
+    <title>Casa Automação 🏠  V3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -847,24 +847,28 @@
         }
 
         .irrigation-gif-container {
-            flex: 0 0 auto;
-            margin-left: 15px;
-            display: none; /* Inicialmente escondido */
-            text-align: center;
-        }
+    flex: 0 0 auto;
+    margin-left: 15px;
+    display: none; /* Inicialmente escondido */
+    text-align: center;
+    width: 0; /* Adicione esta linha */
+    height: 0; /* Adicione esta linha */
+    overflow: hidden; /* Adicione esta linha */
+}
 
         .irrigation-gif {
-            width: 120px; /* GIF maior */
-            height: 120px; /* GIF maior */
-            border-radius: 10px;
-            object-fit: cover;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-        }
+    width: 100px; /* Reduzi de 120px para 100px */
+    height: 100px; /* Reduzi de 120px para 100px */
+    border-radius: 10px;
+    object-fit: cover;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
 
         .irrigation-gif-container.show {
-            display: block; /* Mostrar quando a bomba estiver ligada */
-        }
-
+    display: block; /* Mostrar quando a bomba estiver ligada */
+    width: auto; /* Adicione esta linha */
+    height: auto; /* Adicione esta linha */
+}
         .irrigating-text {
             font-size: 0.8em;
             font-weight: 600;
