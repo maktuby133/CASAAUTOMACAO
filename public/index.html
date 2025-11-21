@@ -812,53 +812,67 @@
             pointer-events: none;
         }
 
-        /* Status da irrigação reorganizado */
+        /* Status da irrigação reorganizado - CARD MENOR */
         .irrigation-card {
             position: relative;
+            min-height: auto;
+            padding: 15px 20px;
         }
 
         .irrigation-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .irrigation-header h2 {
+            margin-bottom: 0;
+            flex: 1;
         }
 
         .irrigation-status-info {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            font-size: 0.85em;
-        }
-
-        .irrigation-mode-text {
+            gap: 3px;
+            font-size: 0.7em;
             color: var(--text-secondary);
+            margin-top: 5px;
+            flex: 1;
         }
 
-        .irrigation-rain-avoidance {
-            color: var(--text-secondary);
+        .irrigation-mode-text, .irrigation-rain-avoidance {
+            font-size: 0.75em;
+            line-height: 1.2;
         }
 
-        .irrigation-large-icon {
-            width: 60px;
-            height: 60px;
-            transition: var(--transition);
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        .irrigation-gif-container {
+            flex: 0 0 auto;
+            margin-left: 15px;
+        }
+
+        .irrigation-gif {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
         }
 
         .irrigation-status-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 10px;
+            padding: 8px 12px;
             background: rgba(0,0,0,0.05);
-            border-radius: 10px;
+            border-radius: 8px;
+            min-height: 40px;
         }
 
         .irrigation-status-text {
             font-weight: 600;
-            font-size: 1.1em;
+            font-size: 0.9em;
         }
 
         .status-on {
@@ -1345,10 +1359,9 @@
                 gap: 5px;
             }
             
-            .irrigation-large-icon {
+            .irrigation-gif {
                 width: 60px;
                 height: 60px;
-                right: 15px;
             }
 
             .esp32-header-status {
@@ -1363,6 +1376,22 @@
                 flex-direction: column;
                 gap: 10px;
                 text-align: center;
+            }
+
+            .irrigation-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .irrigation-status-info {
+                text-align: center;
+                margin-top: 10px;
+            }
+
+            .irrigation-gif-container {
+                margin-left: 0;
+                margin-top: 10px;
             }
         }
 
@@ -1393,10 +1422,9 @@
                 justify-content: center;
             }
             
-            .irrigation-large-icon {
+            .irrigation-gif {
                 width: 50px;
                 height: 50px;
-                right: 10px;
             }
             
             .weather-details {
@@ -1577,24 +1605,26 @@
             </div>
         </div>
 
-        <!-- Sistema de Irrigação reorganizado -->
+        <!-- Sistema de Irrigação reorganizado e compacto -->
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
                     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDNWMjJNMTIgM0wxNiA3TTEyIDNMMTAgNU0xMiAzTDggN00xMiAyMkwxNiAxOE0xMiAyMkwxMCAyME0xMiAyMkw4IDE4TTIgMTJIMjJNMiAxMkM0IDggOC42IDYgMTIgNkMxNS40IDYgMjAgOCAyMiAxMk0yMiAxMkMyMCAxNiAxNS40IDE4IDEyIDE4QzguNiAxOCA0IDE2IDIgMTIiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="irrigation-icon" alt="Irrigação">
                     Sistema de Irrigação
                 </h2>
-                <img src="https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000" class="irrigation-large-icon" id="irrigation-large-icon" alt="Status Irrigação">
+                <div class="irrigation-status-info">
+                    <div class="irrigation-mode-text">Modo: <span id="irrigation-mode">Manual</span></div>
+                    <div class="irrigation-rain-avoidance">Evitar Chuva: <span id="rain-avoidance">Ativado</span></div>
+                </div>
+                <div class="irrigation-gif-container">
+                    <img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif" class="irrigation-gif" alt="Sistema de Irrigação" id="irrigation-gif">
+                </div>
             </div>
             
             <!-- Status reorganizado -->
             <div class="irrigation-status-container">
                 <div class="irrigation-status-text">
                     Status da Bomba: <span id="irrigation-status" class="status-off">DESLIGADA</span>
-                </div>
-                <div class="irrigation-status-info">
-                    <div class="irrigation-mode-text">Modo: <span id="irrigation-mode">Manual</span></div>
-                    <div class="irrigation-rain-avoidance">Evitar Chuva: <span id="rain-avoidance">Ativado</span></div>
                 </div>
             </div>
             
@@ -1751,6 +1781,9 @@
     </div>
 
     <script>
+        // Configuração da API base
+        const API_BASE = window.API_BASE_URL || '/api';
+
         // ==================== VERIFICAÇÃO DE AUTENTICAÇÃO ====================
         function checkAuthentication() {
             const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
@@ -1796,7 +1829,7 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetch('/api/devices');
+                const response = await fetchWithTimeout(`${API_BASE}/devices`, {}, 8000);
                 if (!response.ok) throw new Error('Erro ao carregar dispositivos');
                 
                 const data = await response.json();
@@ -1812,14 +1845,19 @@
         async function toggleDevice(type, device, state) {
             if (!checkAuthorization()) return;
             
+            if (!type || !device || state === undefined) {
+                showNotification('Parâmetros inválidos', 'error');
+                return;
+            }
+
             try {
-                const response = await fetch('/api/control', {
+                const response = await fetchWithTimeout(`${API_BASE}/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ type, device, state })
-                });
+                }, 5000);
                 
                 const data = await response.json();
                 
@@ -1849,13 +1887,13 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetch('/api/irrigation/control', {
+                const response = await fetchWithTimeout(`${API_BASE}/irrigation/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ state })
-                });
+                }, 5000);
                 
                 const data = await response.json();
                 
@@ -1940,7 +1978,7 @@
             const statusElement = document.getElementById('irrigation-status');
             const modeElement = document.getElementById('irrigation-mode');
             const rainElement = document.getElementById('rain-avoidance');
-            const largeIcon = document.getElementById('irrigation-large-icon');
+            const gifElement = document.getElementById('irrigation-gif');
             
             if (statusElement) {
                 statusElement.textContent = irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA';
@@ -1955,10 +1993,9 @@
                 rainElement.textContent = irrigation.evitar_chuva ? 'Ativado' : 'Desativado';
             }
 
-            if (largeIcon) {
-                largeIcon.src = irrigation.bomba_irrigacao ? 
-                    'https://img.icons8.com/?size=100&id=W0H2A502ZxcY&format=png&color=000000' : 
-                    'https://img.icons8.com/?size=100&id=0T39sTznXkBt&format=png&color=000000';
+            if (gifElement) {
+                // O GIF animado já está definido no HTML
+                // Poderíamos trocar o GIF baseado no estado se necessário
             }
         }
 
@@ -2023,7 +2060,7 @@
             notification.className = `notification ${type}`;
             notification.innerHTML = `
                 <i class="fas fa-${getNotificationIcon(type)}"></i>
-                ${message}
+                ${sanitizeInput(message)}
             `;
             
             document.getElementById('notification-container').appendChild(notification);
@@ -2115,7 +2152,7 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetch('/api/weather');
+                const response = await fetchWithTimeout(`${API_BASE}/weather`, {}, 8000);
                 const data = await response.json();
                 
                 if (data && data.main) {
@@ -2222,7 +2259,7 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetch('/api/weather/raining');
+                const response = await fetchWithTimeout(`${API_BASE}/weather/raining`, {}, 5000);
                 const data = await response.json();
                 
                 if (data.raining) {
@@ -2241,7 +2278,7 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetch('/api/sensor-data');
+                const response = await fetchWithTimeout(`${API_BASE}/sensor-data`, {}, 8000);
                 const data = await response.json();
                 
                 if (data.data && data.data.length > 0) {
@@ -2427,7 +2464,7 @@
             programmingElement.className = 'programming-item';
             programmingElement.innerHTML = `
                 <div class="programming-header">
-                    <span class="programming-time">${programming.hora}</span>
+                    <span class="programming-time">${sanitizeInput(programming.hora)}</span>
                     <button class="delete-programming" onclick="removeProgramming(this)">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -2510,13 +2547,13 @@
                     programacoes: getSelectedProgrammings()
                 };
                 
-                const response = await fetch('/api/irrigation/save', {
+                const response = await fetchWithTimeout(`${API_BASE}/irrigation/save`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(settings)
-                });
+                }, 5000);
                 
                 const data = await response.json();
                 
@@ -2532,6 +2569,44 @@
             } catch (error) {
                 console.error('❌ Erro ao salvar configurações:', error);
                 showNotification('Erro de conexão ao salvar configurações', 'error');
+            }
+        }
+
+        // ==================== FUNÇÕES DE SEGURANÇA E PERFORMANCE ====================
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+
+        function fetchWithTimeout(url, options, timeout = 5000) {
+            return Promise.race([
+                fetch(url, options),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout')), timeout)
+                )
+            ]);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function setLoadingState(element, isLoading) {
+            if (isLoading) {
+                element.classList.add('loading');
+                element.disabled = true;
+            } else {
+                element.classList.remove('loading');
+                element.disabled = false;
             }
         }
 
