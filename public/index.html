@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casa Automação 🏠  V3.0</title>
+    <title>🏠 Casa Automação V3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -847,30 +847,31 @@
         }
 
         .irrigation-gif-container {
-    flex: 0 0 auto;
-    margin-left: 15px;
-    text-align: center;
-    visibility: hidden; /* ADICIONE */
-    opacity: 0; /* ADICIONE */
-    width: 0; /* ADICIONE */
-    height: 0; /* ADICIONE */
-    transition: all 0.3s ease; /* ADICIONE */
-}
+            flex: 0 0 auto;
+            margin-left: 15px;
+            text-align: center;
+            visibility: hidden;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            transition: all 0.3s ease;
+        }
 
         .irrigation-gif {
-    width: 100px; /* Reduzi de 120px para 100px */
-    height: 100px; /* Reduzi de 120px para 100px */
-    border-radius: 10px;
-    object-fit: cover;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-}
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            object-fit: cover;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
 
         .irrigation-gif-container.show {
-    visibility: visible; /* ADICIONE */
-    opacity: 1; /* ADICIONE */
-    width: 120px; /* ADICIONE - mesmo tamanho do GIF */
-    height: 140px; /* ADICIONE - GIF + texto */
-}
+            visibility: visible;
+            opacity: 1;
+            width: 120px;
+            height: 140px;
+        }
+
         .irrigating-text {
             font-size: 0.8em;
             font-weight: 600;
@@ -1370,8 +1371,8 @@
             }
             
             .irrigation-gif {
-                width: 100px;
-                height: 100px;
+                width: 80px;
+                height: 80px;
             }
 
             .esp32-header-status {
@@ -1396,6 +1397,11 @@
             .irrigation-gif-container {
                 margin-left: 0;
                 margin-top: 10px;
+            }
+
+            .irrigation-gif-container.show {
+                width: 100px;
+                height: 120px;
             }
         }
 
@@ -1427,13 +1433,18 @@
             }
             
             .irrigation-gif {
-                width: 80px;
-                height: 80px;
+                width: 70px;
+                height: 70px;
             }
             
             .weather-details {
                 flex-direction: column;
                 align-items: center;
+            }
+
+            .irrigation-gif-container.show {
+                width: 80px;
+                height: 100px;
             }
         }
     </style>
@@ -1976,7 +1987,6 @@
             const modeElement = document.getElementById('irrigation-mode');
             const rainElement = document.getElementById('rain-avoidance');
             const gifContainer = document.getElementById('irrigation-gif-container');
-            const irrigatingText = document.getElementById('irrigating-text');
             
             if (modeElement) {
                 modeElement.textContent = irrigation.modo === 'automatico' ? 'Automático' : 'Manual';
@@ -1987,12 +1997,13 @@
             }
 
             // Mostrar ou esconder o GIF e texto baseado no estado da bomba
-if (gifContainer && irrigatingText) {
-    if (irrigation.bomba_irrigacao) {
-        gifContainer.classList.add('show');
-    } else {
-        gifContainer.classList.remove('show');
-    }
+            if (gifContainer) {
+                if (irrigation.bomba_irrigacao) {
+                    gifContainer.classList.add('show');
+                } else {
+                    gifContainer.classList.remove('show');
+                }
+            }
         }
 
         function getDeviceDisplayName(deviceKey) {
