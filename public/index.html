@@ -526,10 +526,10 @@
             justify-content: center;
         }
 
-        /* NOVO LAYOUT: Dispositivos em LINHA - ÍCONE + NOME + BOTÃO */
+        /* NOVO LAYOUT: Dispositivos em LINHA - ÍCONE + NOME + BOTÃO EM DUAS COLUNAS */
         .devices-compact {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 6px;
             max-height: 220px;
             overflow-y: auto;
@@ -539,7 +539,7 @@
 
         .device-compact-item {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 8px 12px;
+            padding: 8px 10px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
             transition: var(--transition);
@@ -569,7 +569,7 @@
         .device-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex: 1;
         }
 
@@ -595,7 +595,7 @@
         .device-compact-name {
             font-weight: 600;
             color: var(--text-primary);
-            font-size: 0.8em;
+            font-size: 0.75em;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -711,12 +711,12 @@
             pointer-events: none;
         }
 
-        /* CORREÇÃO: Sistema de Irrigação com altura fixa */
+        /* CORREÇÃO: Sistema de Irrigação MANTIDO COMO ESTAVA */
         .irrigation-card {
             position: relative;
             min-height: auto;
-            padding: 12px;
-            height: 160px;
+            padding: 15px 20px;
+            height: 180px;
             overflow: hidden;
         }
 
@@ -724,7 +724,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             position: relative;
         }
 
@@ -736,23 +736,22 @@
         .irrigation-status-info {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            font-size: 0.65em;
+            gap: 3px;
+            font-size: 0.7em;
             color: var(--text-secondary);
-            margin-top: 3px;
+            margin-top: 5px;
             flex: 1;
         }
 
         .irrigation-mode-text, .irrigation-rain-avoidance {
-            font-size: 0.7em;
+            font-size: 0.75em;
             line-height: 1.2;
         }
 
-        /* CORREÇÃO: GIF posicionado absolutamente para não afetar o layout */
         .irrigation-gif-container {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 15px;
+            right: 20px;
             text-align: center;
             visibility: hidden;
             opacity: 0;
@@ -763,25 +762,25 @@
         }
 
         .irrigation-gif {
-            width: 60px;
-            height: 60px;
-            border-radius: 6px;
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
             object-fit: cover;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
 
         .irrigation-gif-container.show {
             visibility: visible;
             opacity: 1;
-            width: 60px;
-            height: 75px;
+            width: 80px;
+            height: 100px;
         }
 
         .irrigating-text {
-            font-size: 0.6em;
+            font-size: 0.7em;
             font-weight: 600;
             color: #00b894;
-            margin-top: 3px;
+            margin-top: 5px;
             text-align: center;
             animation: pulse 1.5s ease-in-out infinite;
         }
@@ -840,54 +839,17 @@
                 gap: 5px;
             }
 
-            /* CORREÇÃO: Responsividade para irrigação */
-            .irrigation-card {
-                height: 180px;
-            }
-            
-            .irrigation-header {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
+            /* Ajuste para dispositivos em mobile - uma coluna */
+            .devices-compact {
+                grid-template-columns: 1fr;
             }
 
-            .irrigation-status-info {
-                text-align: center;
-                margin-top: 8px;
-            }
-
-            .irrigation-gif-container {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-top: 8px;
-            }
-
-            .irrigation-gif-container.show {
-                width: 60px;
-                height: 75px;
-            }
-            
-            .irrigation-gif {
-                width: 60px;
-                height: 60px;
-            }
-
-            .esp32-header-status {
-                position: relative;
-                left: auto;
-                top: auto;
-                justify-content: center;
-                margin-bottom: 8px;
-            }
-
-            /* Ajuste para dispositivos em mobile */
             .device-compact-item {
-                padding: 8px 10px;
+                padding: 8px 12px;
             }
             
             .device-compact-name {
-                font-size: 0.75em;
+                font-size: 0.8em;
             }
         }
 
@@ -912,21 +874,6 @@
             .btn {
                 width: 100%;
                 justify-content: center;
-            }
-
-            /* CORREÇÃO: Responsividade para irrigação em mobile pequeno */
-            .irrigation-card {
-                height: 200px;
-            }
-            
-            .irrigation-gif-container.show {
-                width: 50px;
-                height: 65px;
-            }
-            
-            .irrigation-gif {
-                width: 50px;
-                height: 50px;
             }
             
             .device-info {
@@ -1067,7 +1014,7 @@
 
         <!-- Grid Principal -->
         <div class="main-grid">
-            <!-- Controle de Lâmpadas - LAYOUT EM LINHA -->
+            <!-- Controle de Lâmpadas - LAYOUT EM LINHA COM DUAS COLUNAS -->
             <div class="card">
                 <h2>
                     <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
@@ -1088,7 +1035,7 @@
                 </div>
             </div>
 
-            <!-- Controle de Tomadas - LAYOUT EM LINHA -->
+            <!-- Controle de Tomadas - LAYOUT EM LINHA COM DUAS COLUNAS -->
             <div class="card">
                 <h2>
                     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC45IDE2LjlMNy4xIDE0LjdNMTYuOSAxNi45TDE0LjcgMTQuN1oiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="outlet-icon" alt="Tomada">
@@ -1110,7 +1057,7 @@
             </div>
         </div>
 
-        <!-- Sistema de Irrigação reorganizado e compacto -->
+        <!-- Sistema de Irrigação MANTIDO EXATAMENTE COMO ESTAVA -->
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
@@ -1148,7 +1095,7 @@
         </div>
     </div>
 
-    <!-- Modal de irrigação (mantido igual) -->
+    <!-- Modal de irrigação MANTIDO EXATAMENTE COMO ESTAVA -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
