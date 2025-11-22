@@ -607,7 +607,6 @@
             font-weight: 500;
         }
 
-        /* NOVO LAYOUT COM COLUNAS POR AMBIENTE */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -618,14 +617,13 @@
         .card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 15px;
+            padding: 20px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             color: var(--text-primary);
             display: flex;
             flex-direction: column;
             position: relative;
-            height: 350px; /* Altura fixa para manter consistência */
         }
 
         .card h2 {
@@ -635,52 +633,28 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 1.3em;
+            font-size: 1.4em;
             justify-content: center;
         }
 
-        /* Layout em colunas para dispositivos */
         .devices-compact {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 10px;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .device-room-column {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .room-header {
-            font-weight: 600;
-            font-size: 0.9em;
-            color: var(--text-primary);
-            margin-bottom: 5px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        body[data-theme="dark"] .room-header {
-            border-bottom-color: rgba(255,255,255,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+            flex: 1;
         }
 
         .device-compact-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 10px 12px;
+            padding: 12px;
             border-radius: 10px;
+            text-align: center;
             border: 2px solid #e9ecef;
             transition: var(--transition);
             cursor: pointer;
-            min-height: 50px;
         }
 
         body[data-theme="dark"] .device-compact-item {
@@ -690,8 +664,8 @@
         }
 
         .device-compact-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
         }
 
         .device-compact-item.active {
@@ -699,47 +673,42 @@
             border-color: #fd9644;
         }
 
-        .device-compact-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-        }
-
         .device-compact-icon {
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 6px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255,255,255,0.9);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: var(--transition);
         }
 
         .device-compact-item:hover .device-compact-icon {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
         .device-compact-icon img {
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
             object-fit: contain;
         }
 
         .device-compact-name {
             font-weight: 600;
-            font-size: 0.85em;
+            margin-bottom: 8px;
             color: var(--text-primary);
+            font-size: 0.8em;
         }
 
-        /* Switch Toggle compacto */
+        /* Switch Toggle */
         .switch {
             position: relative;
             display: inline-block;
-            width: 36px;
-            height: 20px;
+            width: 40px;
+            height: 22px;
         }
 
         .switch input {
@@ -765,8 +734,8 @@
             content: "";
             height: 14px;
             width: 14px;
-            left: 3px;
-            bottom: 3px;
+            left: 4px;
+            bottom: 4px;
             background: white;
             transition: .4s;
             border-radius: 50%;
@@ -778,7 +747,7 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(16px);
+            transform: translateX(18px);
         }
 
         /* Botões de Controle */
@@ -1447,16 +1416,6 @@
                 justify-content: center;
                 margin-bottom: 10px;
             }
-            
-            /* Ajuste para colunas em mobile */
-            .devices-compact {
-                grid-template-columns: 1fr;
-            }
-            
-            .card {
-                height: auto; /* Altura automática em mobile */
-                min-height: 400px;
-            }
         }
 
         @media (max-width: 480px) {
@@ -1638,7 +1597,7 @@
                     Controle de Lâmpadas
                 </h2>
                 <div class="devices-compact" id="lights-container">
-                    <!-- Lâmpadas serão carregadas via JavaScript em colunas -->
+                    <!-- Lâmpadas serão carregadas via JavaScript -->
                 </div>
                 <div class="controls">
                     <button class="btn btn-success" onclick="controlAllLights(true)">
@@ -1659,7 +1618,7 @@
                     Controle de Tomadas
                 </h2>
                 <div class="devices-compact" id="outlets-container">
-                    <!-- Tomadas serão carregadas via JavaScript em colunas -->
+                    <!-- Tomadas serão carregadas via JavaScript -->
                 </div>
                 <div class="controls">
                     <button class="btn btn-success" onclick="controlAllOutlets(true)">
@@ -1993,166 +1952,47 @@
             const container = document.getElementById('lights-container');
             if (!container || !currentDevices.lights) return;
 
-            // Agrupar lâmpadas por ambiente
-            const rooms = {
-                'sala': { name: 'Sala de Estar', devices: [] },
-                'quarto1': { name: 'Quarto Principal', devices: [] },
-                'quarto2': { name: 'Quarto 2', devices: [] },
-                'quarto3': { name: 'Quarto 3', devices: [] },
-                'corredor': { name: 'Corredor', devices: [] },
-                'cozinha': { name: 'Cozinha', devices: [] },
-                'banheiro': { name: 'Banheiro', devices: [] }
-            };
-
-            // Organizar dispositivos por ambiente
-            Object.entries(currentDevices.lights).forEach(([device, state]) => {
-                if (rooms[device]) {
-                    rooms[device].devices.push({ device, state });
-                } else {
-                    // Para dispositivos que não se encaixam nos ambientes definidos
-                    if (!rooms.outros) {
-                        rooms.outros = { name: 'Outros', devices: [] };
-                    }
-                    rooms.outros.devices.push({ device, state });
-                }
-            });
-
-            // Renderizar em colunas
             container.innerHTML = '';
             
-            // Criar duas colunas
-            const column1 = document.createElement('div');
-            column1.className = 'device-room-column';
-            
-            const column2 = document.createElement('div');
-            column2.className = 'device-room-column';
-            
-            let columnIndex = 0;
-            
-            // Preencher as colunas com os ambientes
-            Object.entries(rooms).forEach(([roomKey, roomData]) => {
-                if (roomData.devices.length > 0) {
-                    const roomElement = document.createElement('div');
-                    roomElement.className = 'room-devices';
-                    
-                    const roomHeader = document.createElement('div');
-                    roomHeader.className = 'room-header';
-                    roomHeader.innerHTML = `<i class="fas fa-door-open room-icon"></i>${roomData.name}`;
-                    roomElement.appendChild(roomHeader);
-                    
-                    roomData.devices.forEach(({ device, state }) => {
-                        const deviceElement = document.createElement('div');
-                        deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
-                        deviceElement.innerHTML = `
-                            <div class="device-compact-info">
-                                <div class="device-compact-icon">
-                                    <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
-                                         alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
-                                </div>
-                                <div class="device-compact-name">${getDeviceShortName(device)}</div>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('lights', '${device}', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        `;
-                        roomElement.appendChild(deviceElement);
-                    });
-                    
-                    // Alternar entre as colunas
-                    if (columnIndex % 2 === 0) {
-                        column1.appendChild(roomElement);
-                    } else {
-                        column2.appendChild(roomElement);
-                    }
-                    columnIndex++;
-                }
+            Object.entries(currentDevices.lights).forEach(([device, state]) => {
+                const deviceElement = document.createElement('div');
+                deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
+                deviceElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
+                             alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
+                    </div>
+                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('lights', '${device}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                container.appendChild(deviceElement);
             });
-            
-            container.appendChild(column1);
-            container.appendChild(column2);
         }
 
         function updateOutletsDisplay() {
             const container = document.getElementById('outlets-container');
             if (!container || !currentDevices.outlets) return;
 
-            // Agrupar tomadas por ambiente
-            const rooms = {
-                'sala': { name: 'Sala de Estar', devices: [] },
-                'cozinha': { name: 'Cozinha', devices: [] },
-                'quarto1': { name: 'Quarto Principal', devices: [] },
-                'quarto2': { name: 'Quarto 2', devices: [] },
-                'quarto3': { name: 'Quarto 3', devices: [] }
-            };
-
-            // Organizar dispositivos por ambiente
-            Object.entries(currentDevices.outlets).forEach(([device, state]) => {
-                const roomKey = device.replace('tomada_', '');
-                if (rooms[roomKey]) {
-                    rooms[roomKey].devices.push({ device, state });
-                } else {
-                    // Para dispositivos que não se encaixam nos ambientes definidos
-                    if (!rooms.outros) {
-                        rooms.outros = { name: 'Outros', devices: [] };
-                    }
-                    rooms.outros.devices.push({ device, state });
-                }
-            });
-
-            // Renderizar em colunas
             container.innerHTML = '';
             
-            // Criar duas colunas
-            const column1 = document.createElement('div');
-            column1.className = 'device-room-column';
-            
-            const column2 = document.createElement('div');
-            column2.className = 'device-room-column';
-            
-            let columnIndex = 0;
-            
-            // Preencher as colunas com os ambientes
-            Object.entries(rooms).forEach(([roomKey, roomData]) => {
-                if (roomData.devices.length > 0) {
-                    const roomElement = document.createElement('div');
-                    roomElement.className = 'room-devices';
-                    
-                    const roomHeader = document.createElement('div');
-                    roomHeader.className = 'room-header';
-                    roomHeader.innerHTML = `<i class="fas fa-plug room-icon"></i>${roomData.name}`;
-                    roomElement.appendChild(roomHeader);
-                    
-                    roomData.devices.forEach(({ device, state }) => {
-                        const deviceElement = document.createElement('div');
-                        deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
-                        deviceElement.innerHTML = `
-                            <div class="device-compact-info">
-                                <div class="device-compact-icon">
-                                    <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
-                                </div>
-                                <div class="device-compact-name">${getDeviceShortName(device)}</div>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('outlets', '${device}', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        `;
-                        roomElement.appendChild(deviceElement);
-                    });
-                    
-                    // Alternar entre as colunas
-                    if (columnIndex % 2 === 0) {
-                        column1.appendChild(roomElement);
-                    } else {
-                        column2.appendChild(roomElement);
-                    }
-                    columnIndex++;
-                }
+            Object.entries(currentDevices.outlets).forEach(([device, state]) => {
+                const deviceElement = document.createElement('div');
+                deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
+                deviceElement.innerHTML = `
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
+                    </div>
+                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
+                    <label class="switch">
+                        <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('outlets', '${device}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                container.appendChild(deviceElement);
             });
-            
-            container.appendChild(column1);
-            container.appendChild(column2);
         }
 
         function updateIrrigationDisplay() {
@@ -2199,28 +2039,6 @@
             };
             
             return names[deviceKey] || deviceKey;
-        }
-
-        function getDeviceShortName(deviceKey) {
-            const names = {
-                // Lâmpadas
-                'sala': 'Lâmpada',
-                'quarto1': 'Lâmpada',
-                'quarto2': 'Lâmpada',
-                'quarto3': 'Lâmpada',
-                'corredor': 'Lâmpada',
-                'cozinha': 'Lâmpada',
-                'banheiro': 'Lâmpada',
-                
-                // Tomadas
-                'tomada_sala': 'Tomada',
-                'tomada_cozinha': 'Tomada',
-                'tomada_quarto1': 'Tomada',
-                'tomada_quarto2': 'Tomada',
-                'tomada_quarto3': 'Tomada'
-            };
-            
-            return names[deviceKey] || 'Dispositivo';
         }
 
         // ==================== CONTROLE EM MASSA ====================
