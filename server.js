@@ -179,15 +179,24 @@ function checkScheduledIrrigation() {
         return;
     }
 
-    let foundActiveSchedule = false;
+    let foundActiveSchedules = [];
     
     programacoes.forEach((prog, index) => {
         console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias.join(', ')}`);
         
         // Verificação exata do horário e dias
         if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
-            foundActiveSchedule = true;
+            foundActiveSchedules.push({ index, prog });
             console.log(`💧 ✅ PROGRAMação ${index + 1} ATIVADA!`);
+        }
+    });
+
+    // 🚨 CORREÇÃO CRÍTICA: Executar TODAS as programações ativas, não apenas a primeira
+    if (foundActiveSchedules.length > 0) {
+        console.log(`💧 🎯 Encontradas ${foundActiveSchedules.length} programações ativas!`);
+        
+        foundActiveSchedules.forEach(({ index, prog }) => {
+            console.log(`💧 🚀 PROCESSANDO programação ${index + 1}: ${prog.hora}`);
             
             // Verificar se já está executando
             if (devicesState.irrigation.bomba_irrigacao) {
@@ -213,10 +222,8 @@ function checkScheduledIrrigation() {
                 console.log('💧 ✅ Evitar chuva desativado - Iniciando irrigação');
                 startScheduledIrrigation(index);
             }
-        }
-    });
-
-    if (!foundActiveSchedule) {
+        });
+    } else {
         console.log('💧 Nenhuma programação ativa no momento');
     }
 }
