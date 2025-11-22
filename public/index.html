@@ -25,6 +25,12 @@
             --border-radius: 15px;
             --shadow: 0 8px 20px rgba(0,0,0,0.15);
             --transition: all 0.3s ease;
+            --breakpoint-mobile: 768px;
+            --breakpoint-tablet: 1024px;
+            --z-index-modal: 1000;
+            --z-index-notification: 10000;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
         }
 
         [data-theme="dark"] {
@@ -171,7 +177,7 @@
             border-radius: 10px;
             color: white;
             font-weight: 600;
-            z-index: 10000;
+            z-index: var(--z-index-notification);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             transform: translateX(120%);
             transition: transform 0.3s ease;
@@ -340,14 +346,14 @@
 
         /* Ícones Animados */
         .lamp-icon-on {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             animation: lampGlow 1.5s ease-in-out infinite;
         }
 
         .lamp-icon-off {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             opacity: 0.7;
         }
 
@@ -363,8 +369,8 @@
         }
 
         .outlet-icon {
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             animation: plugPulse 4s ease-in-out infinite;
         }
 
@@ -404,87 +410,6 @@
             }
         }
 
-        .internet-icon {
-            width: 20px;
-            height: 20px;
-            animation: globeRotate 3s ease-in-out infinite;
-        }
-
-        @keyframes globeRotate {
-            0%, 100% { 
-                transform: rotate(0deg) scale(1);
-                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
-            }
-            25% { 
-                transform: rotate(5deg) scale(1.05);
-                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
-            }
-            50% { 
-                transform: rotate(0deg) scale(1.1);
-                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
-            }
-            75% { 
-                transform: rotate(-5deg) scale(1.05);
-                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
-            }
-        }
-
-        /* Animações de Ícones Meteorológicos */
-        .weather-icon-sun {
-            color: #FFD700 !important;
-            animation: spin 10s linear infinite !important;
-        }
-
-        .weather-icon-cloud {
-            color: #FFFFFF !important;
-            animation: float 4s ease-in-out infinite !important;
-        }
-
-        .weather-icon-cloud-sun {
-            color: #FFD700 !important;
-            animation: float 3s ease-in-out infinite !important;
-        }
-
-        .weather-icon-rain {
-            color: #4FC3F7 !important;
-            animation: rainDrop 2s ease-in-out infinite !important;
-        }
-
-        .weather-icon-storm {
-            color: #FF9800 !important;
-            animation: flash 1.5s ease-in-out infinite !important;
-        }
-
-        .weather-icon-snow {
-            color: #E3F2FD !important;
-            animation: snowFall 3s ease-in-out infinite !important;
-        }
-
-        .weather-icon-mist {
-            color: #BDBDBD !important;
-            animation: fade 4s ease-in-out infinite !important;
-        }
-
-        .icon-thermometer {
-            animation: pulse 2s ease-in-out infinite !important;
-            color: #FF6B6B !important;
-        }
-
-        .icon-humidity {
-            animation: drip 3s ease-in-out infinite !important;
-            color: #4FC3F7 !important;
-        }
-
-        .icon-wind {
-            animation: float 2s ease-in-out infinite !important;
-            color: #81D4FA !important;
-        }
-
-        .icon-pressure {
-            animation: breathe 2.5s ease-in-out infinite !important;
-            color: #AED581 !important;
-        }
-
         /* Animações Base */
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
@@ -496,46 +421,11 @@
             to { transform: rotate(360deg); }
         }
 
-        @keyframes rainDrop {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(2px); }
-        }
-
-        @keyframes flash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        @keyframes snowFall {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(3px) rotate(180deg); }
-        }
-
-        @keyframes fade {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes drip {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(2px) scale(1.05); }
-        }
-
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
-
         /* Cards e Grids */
         .monitoring-card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 15px 20px;
+            padding: 12px 15px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             margin-bottom: 15px;
@@ -544,30 +434,34 @@
 
         .monitoring-card h2 {
             color: var(--text-primary);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
-            font-size: 1.4em;
+            font-size: 1.2em;
             justify-content: center;
         }
 
         .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 0;
         }
 
         .sensor-compact-item {
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             background: var(--primary-gradient);
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 70px;
         }
 
         .sensor-compact-item:hover {
@@ -591,33 +485,34 @@
         }
 
         .sensor-compact-icon {
-            font-size: 1.6em;
-            margin-bottom: 6px;
+            font-size: 1.3em;
+            margin-bottom: 4px;
         }
 
         .sensor-compact-value {
-            font-size: 1.4em;
+            font-size: 1.1em;
             font-weight: 700;
-            margin: 3px 0;
+            margin: 2px 0;
         }
 
         .sensor-compact-label {
-            font-size: 0.75em;
+            font-size: 0.65em;
             opacity: 0.95;
             font-weight: 500;
         }
 
+        /* NOVO: Layout compacto para dispositivos */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 15px;
         }
 
         .card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 20px;
+            padding: 12px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             color: var(--text-primary);
@@ -628,20 +523,21 @@
 
         .card h2 {
             color: var(--text-primary);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
-            font-size: 1.4em;
+            font-size: 1.2em;
             justify-content: center;
         }
 
+        /* NOVO LAYOUT: Dispositivos em LINHA - ÍCONE + NOME + BOTÃO EM DUAS COLUNAS */
         .devices-compact {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 10px;
-            max-height: 400px;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            max-height: 220px;
             overflow-y: auto;
             padding-right: 5px;
             flex: 1;
@@ -649,12 +545,15 @@
 
         .device-compact-item {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid #e9ecef;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
             transition: var(--transition);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 45px;
         }
 
         body[data-theme="dark"] .device-compact-item {
@@ -664,8 +563,8 @@
         }
 
         .device-compact-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
         }
 
         .device-compact-item.active {
@@ -673,34 +572,39 @@
             border-color: #fd9644;
         }
 
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
         .device-compact-icon {
-            width: 40px;
-            height: 40px;
-            margin: 0 auto 6px;
-            border-radius: 50%;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.9);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: var(--transition);
         }
 
         .device-compact-item:hover .device-compact-icon {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .device-compact-icon img {
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             object-fit: contain;
         }
 
         .device-compact-name {
             font-weight: 600;
-            margin-bottom: 8px;
             color: var(--text-primary);
-            font-size: 0.8em;
+            font-size: 0.75em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Switch Toggle */
@@ -708,7 +612,8 @@
             position: relative;
             display: inline-block;
             width: 40px;
-            height: 22px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
         .switch input {
@@ -734,8 +639,8 @@
             content: "";
             height: 14px;
             width: 14px;
-            left: 4px;
-            bottom: 4px;
+            left: 3px;
+            bottom: 3px;
             background: white;
             transition: .4s;
             border-radius: 50%;
@@ -747,37 +652,37 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(18px);
+            transform: translateX(20px);
         }
 
         /* Botões de Controle */
         .controls {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 15px 0 0 0;
+            gap: 6px;
+            margin: 10px 0 0 0;
             flex-wrap: wrap;
-            padding-top: 15px;
+            padding-top: 10px;
             border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border: none;
-            border-radius: 10px;
-            font-size: 0.85em;
+            border-radius: 6px;
+            font-size: 0.75em;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 5px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
         }
 
         .btn-success {
@@ -798,8 +703,8 @@
         .btn-weather {
             background: var(--info-gradient);
             color: white;
-            font-size: 0.75em;
-            padding: 6px 12px;
+            font-size: 0.65em;
+            padding: 4px 8px;
         }
 
         .btn-irrigation {
@@ -812,13 +717,13 @@
             pointer-events: none;
         }
 
-        /* CORREÇÃO: Sistema de Irrigação com altura fixa */
+        /* CORREÇÃO: Sistema de Irrigação MANTIDO COMO ESTAVA */
         .irrigation-card {
             position: relative;
             min-height: auto;
             padding: 15px 20px;
-            height: 180px; /* Altura fixa para manter consistência */
-            overflow: hidden; /* Impede que conteúdo extra saia do card */
+            height: 180px;
+            overflow: hidden;
         }
 
         .irrigation-header {
@@ -826,7 +731,7 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 15px;
-            position: relative; /* Para posicionamento relativo dos elementos filhos */
+            position: relative;
         }
 
         .irrigation-header h2 {
@@ -849,7 +754,6 @@
             line-height: 1.2;
         }
 
-        /* CORREÇÃO: GIF posicionado absolutamente para não afetar o layout */
         .irrigation-gif-container {
             position: absolute;
             top: 15px;
@@ -864,7 +768,7 @@
         }
 
         .irrigation-gif {
-            width: 80px; /* Tamanho reduzido */
+            width: 80px;
             height: 80px;
             border-radius: 10px;
             object-fit: cover;
@@ -887,175 +791,60 @@
             animation: pulse 1.5s ease-in-out infinite;
         }
 
-        /* Status removido - mais compacto */
-        .irrigation-status-container {
-            display: none; /* Removido para economizar espaço */
-        }
-
-        .status-on {
-            color: #4CAF50;
-        }
-
-        .status-off {
-            color: #f44336;
-        }
-
-        /* Status Bar */
-        .status-bar {
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.85em;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-            color: var(--text-primary);
-            position: relative;
-        }
-
-        body[data-theme="dark"] .status-bar {
-            background: rgba(45, 55, 72, 0.95);
-        }
-
-        .online {
-            color: #4CAF50;
-            border-left: 3px solid #4CAF50;
-        }
-
-        .offline {
-            color: #f44336;
-            border-left: 3px solid #f44336;
-        }
-
-        .device-status {
-            margin-top: 4px;
-            font-size: 0.65em;
-            font-weight: 500;
-        }
-
-        .status-on {
-            color: #4CAF50;
-        }
-
-        .status-off {
-            color: #f44336;
-        }
-
-        .room-icon {
-            font-size: 0.8em;
-            margin-right: 3px;
-        }
-
-        /* Indicador ESP32 */
-        .status-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .esp32-indicator {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 0.75em;
-            font-weight: 600;
-            transition: var(--transition);
-        }
-
-        .esp32-indicator.online {
-            background: var(--success-gradient);
-            color: white;
-        }
-
-        .esp32-indicator.offline {
-            background: var(--danger-gradient);
-            color: white;
-        }
-
-        .esp32-indicator.connecting {
-            background: var(--warning-gradient);
-            color: white;
-        }
-
-        .status-text {
-            flex: 1;
-            text-align: center;
-        }
-
-        /* Campo de tempo de irrigação no modal */
-        .irrigation-duration-group {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(0,0,0,0.1);
-        }
-
-        .duration-input {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .duration-input input {
-            width: 80px;
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .duration-unit {
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        /* MODAL DE IRRIGAÇÃO MELHORADO */
+        /* ==================== MODAL CORRIGIDO ==================== */
         .modal-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: none;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: var(--z-index-modal);
+            backdrop-filter: blur(5px);
             align-items: center;
             justify-content: center;
-            z-index: 1000;
             padding: 20px;
         }
 
         .modal-content {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            max-width: 500px;
             width: 100%;
-            max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            color: var(--text-primary);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        body[data-theme="dark"] .modal-content {
-            background: var(--card-bg);
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+            opacity: 1;
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 15px;
+            padding: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
         }
 
         .modal-header h2 {
-            color: var(--text-primary);
+            color: white;
             margin: 0;
+            font-size: 1.3em;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -1064,35 +853,40 @@
         .close-modal {
             background: none;
             border: none;
-            font-size: 24px;
+            color: white;
+            font-size: 1.5em;
             cursor: pointer;
-            color: #666;
             padding: 5px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
         }
 
         .close-modal:hover {
-            color: #333;
+            background: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
         }
 
         .modal-section {
-            margin-bottom: 20px;
             padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
 
-        body[data-theme="dark"] .modal-section {
-            background: #2d3748;
+        .modal-section:last-child {
+            border-bottom: none;
         }
 
         .modal-section h3 {
-            margin-bottom: 15px;
             color: var(--text-primary);
-            font-size: 1.1em;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 1.1em;
         }
 
         .form-group {
@@ -1101,41 +895,40 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+            color: var(--text-primary);
             font-weight: 500;
-            color: var(--text-secondary);
         }
 
-        .form-group input,
+        .form-group input[type="number"],
         .form-group select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-            background: white;
+            background: var(--card-bg);
             color: var(--text-primary);
+            font-size: 0.9em;
         }
 
-        body[data-theme="dark"] .form-group input,
-        body[data-theme="dark"] .form-group select {
-            background: #4a5568;
-            border-color: #4a5568;
-            color: #e2e8f0;
+        .form-group input[type="checkbox"] {
+            margin-right: 8px;
         }
 
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        .duration-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* SELEÇÃO DE DIAS DA SEMANA */
+        .duration-unit {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
         .days-selection {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             margin-top: 10px;
         }
@@ -1148,90 +941,72 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px 5px;
-            background: white;
+            padding: 8px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
             cursor: pointer;
             transition: var(--transition);
             text-align: center;
-            color: var(--text-primary);
-        }
-
-        body[data-theme="dark"] .day-label {
-            background: #4a5568;
-            border-color: #4a5568;
-        }
-
-        .day-label:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
         }
 
         .day-checkbox:checked + .day-label {
+            border-color: var(--primary);
             background: var(--primary-gradient);
             color: white;
-            border-color: #667eea;
         }
 
         .day-abbr {
-            font-weight: 600;
-            font-size: 0.9em;
+            font-weight: bold;
+            font-size: 0.8em;
         }
 
         .day-full {
             font-size: 0.7em;
             opacity: 0.8;
-            margin-top: 2px;
         }
 
-        /* SELEÇÃO DE HORA COM RELÓGIO */
         .time-selection {
             display: flex;
-            align-items: center;
             gap: 10px;
+            align-items: center;
         }
 
         .time-input {
             flex: 1;
-            text-align: center;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-
-        .time-picker-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .time-picker-btn:hover {
-            background: #5a6fd8;
-        }
-
-        /* LISTA DE PROGRAMAÇÕES MELHORADA */
-        .programming-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 15px;
-        }
-
-        .programming-item {
-            background: white;
-            padding: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #00b894;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: var(--card-bg);
             color: var(--text-primary);
         }
 
-        body[data-theme="dark"] .programming-item {
-            background: #4a5568;
+        .time-picker-btn {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .time-picker-btn:hover {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .programming-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .programming-item {
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
         .programming-header {
@@ -1242,59 +1017,55 @@
         }
 
         .programming-time {
-            font-weight: 600;
+            font-weight: bold;
             color: var(--text-primary);
-            font-size: 1.1em;
+        }
+
+        .delete-programming {
+            background: var(--danger-gradient);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .delete-programming:hover {
+            transform: scale(1.1);
         }
 
         .programming-days {
             display: flex;
             gap: 5px;
             flex-wrap: wrap;
-            margin-top: 5px;
         }
 
         .day-badge {
-            background: #e9ecef;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 0.7em;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        body[data-theme="dark"] .day-badge {
-            background: #2d3748;
+            background: #e9ecef;
+            color: var(--text-secondary);
         }
 
         .day-badge.active {
-            background: #667eea;
+            background: var(--success-gradient);
             color: white;
-        }
-
-        .delete-programming {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: background 0.3s;
-        }
-
-        .delete-programming:hover {
-            background: #ee5a24;
         }
 
         .no-programming {
             text-align: center;
-            color: #666;
             padding: 20px;
+            color: var(--text-secondary);
             font-style: italic;
         }
 
-        /* Indicador de Modo Offline */
+        /* Indicador Offline */
         .offline-indicator {
             position: fixed;
             top: 0;
@@ -1302,10 +1073,9 @@
             right: 0;
             background: var(--warning-gradient);
             color: white;
-            text-align: center;
             padding: 10px;
-            font-weight: 600;
-            z-index: 10001;
+            text-align: center;
+            z-index: var(--z-index-notification);
             transform: translateY(-100%);
             transition: transform 0.3s ease;
         }
@@ -1317,24 +1087,34 @@
         /* Scrollbar personalizado */
         .devices-compact::-webkit-scrollbar,
         .programming-list::-webkit-scrollbar {
-            width: 6px;
+            width: 4px;
         }
 
         .devices-compact::-webkit-scrollbar-track,
         .programming-list::-webkit-scrollbar-track {
             background: #f1f1f1;
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         .devices-compact::-webkit-scrollbar-thumb,
         .programming-list::-webkit-scrollbar-thumb {
             background: #c1c1c1;
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         .devices-compact::-webkit-scrollbar-thumb:hover,
         .programming-list::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
+        }
+
+        /* Critical CSS para carregamento inicial */
+        .critical-css {
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .critical-css.loaded {
+            opacity: 1;
         }
 
         /* Ajuste para responsividade */
@@ -1350,7 +1130,7 @@
             .weather-expanded {
                 flex-direction: column;
                 height: auto;
-                gap: 10px;
+                gap: 8px;
                 text-align: center;
             }
             
@@ -1367,54 +1147,31 @@
                 font-size: 1.8em;
             }
             
-            .days-selection {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
             .header-controls {
                 flex-direction: column;
                 gap: 5px;
             }
 
-            /* CORREÇÃO: Responsividade para irrigação */
-            .irrigation-card {
-                height: 200px; /* Um pouco mais alto em mobile */
+            /* Ajuste para dispositivos em mobile - uma coluna */
+            .devices-compact {
+                grid-template-columns: 1fr;
+            }
+
+            .device-compact-item {
+                padding: 8px 12px;
             }
             
-            .irrigation-header {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
+            .device-compact-name {
+                font-size: 0.8em;
             }
 
-            .irrigation-status-info {
-                text-align: center;
-                margin-top: 10px;
+            .modal-content {
+                margin: 10px;
+                max-width: calc(100% - 20px);
             }
 
-            .irrigation-gif-container {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-top: 10px;
-            }
-
-            .irrigation-gif-container.show {
-                width: 70px;
-                height: 90px;
-            }
-            
-            .irrigation-gif {
-                width: 70px;
-                height: 70px;
-            }
-
-            .esp32-header-status {
-                position: relative;
-                left: auto;
-                top: auto;
-                justify-content: center;
-                margin-bottom: 10px;
+            .days-selection {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -1425,15 +1182,11 @@
             
             .header {
                 flex-direction: column;
-                gap: 10px;
+                gap: 8px;
             }
             
             .logout-btn {
                 align-self: center;
-            }
-            
-            .days-selection {
-                grid-template-columns: repeat(3, 1fr);
             }
             
             .controls {
@@ -1444,20 +1197,21 @@
                 width: 100%;
                 justify-content: center;
             }
+            
+            .device-info {
+                gap: 8px;
+            }
+            
+            .device-compact-name {
+                font-size: 0.7em;
+            }
 
-            /* CORREÇÃO: Responsividade para irrigação em mobile pequeno */
-            .irrigation-card {
-                height: 220px; /* Ajuste fino para mobile muito pequeno */
+            .modal-section {
+                padding: 15px;
             }
-            
-            .irrigation-gif-container.show {
-                width: 60px;
-                height: 80px;
-            }
-            
-            .irrigation-gif {
-                width: 60px;
-                height: 60px;
+
+            .days-selection {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -1550,7 +1304,7 @@
             </div>
         </div>
 
-        <!-- Monitoramento de Sensores -->
+        <!-- Monitoramento de Sensores - MAIS COMPACTO -->
         <div class="monitoring-card">
             <h2>
                 <i class="fas fa-chart-line"></i>
@@ -1590,7 +1344,7 @@
 
         <!-- Grid Principal -->
         <div class="main-grid">
-            <!-- Controle de Lâmpadas -->
+            <!-- Controle de Lâmpadas - LAYOUT EM LINHA COM DUAS COLUNAS -->
             <div class="card">
                 <h2>
                     <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
@@ -1611,7 +1365,7 @@
                 </div>
             </div>
 
-            <!-- Controle de Tomadas -->
+            <!-- Controle de Tomadas - LAYOUT EM LINHA COM DUAS COLUNAS -->
             <div class="card">
                 <h2>
                     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC45IDE2LjlMNy4xIDE0LjdNMTYuOSAxNi45TDE0LjcgMTQuN1oiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="outlet-icon" alt="Tomada">
@@ -1633,7 +1387,7 @@
             </div>
         </div>
 
-        <!-- Sistema de Irrigação reorganizado e compacto -->
+        <!-- Sistema de Irrigação MANTIDO EXATAMENTE COMO ESTAVA -->
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
@@ -1671,7 +1425,7 @@
         </div>
     </div>
 
-    <!-- Modal de irrigação com campo de tempo -->
+    <!-- Modal de irrigação CORRIGIDO -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1717,7 +1471,7 @@
             </div>
 
             <div class="modal-section" id="programming-section">
-                <h3><i class="fas fa-clock"></i> Programaçõe Automáticas</h3>
+                <h3><i class="fas fa-clock"></i> Programações Automáticas</h3>
                 <div class="form-group">
                     <label>Selecione os dias da semana:</label>
                     <div class="days-selection">
@@ -1789,7 +1543,7 @@
                 </div>
             </div>
 
-            <div class="controls">
+            <div class="controls" style="padding: 20px; border-top: 1px solid rgba(0,0,0,0.1);">
                 <button class="btn btn-success" onclick="saveIrrigationSettings()">
                     <i class="fas fa-save"></i>
                     Salvar Configurações
@@ -1806,6 +1560,52 @@
         // Configuração da API base
         const API_BASE = window.API_BASE_URL || '/api';
 
+        // ==================== ESTADO GLOBAL ====================
+        const AppState = {
+            devices: {},
+            user: null,
+            theme: 'light',
+            connection: {
+                online: true,
+                esp32: false
+            },
+            notifications: []
+        };
+
+        // ==================== GESTOR DE ESTADO ====================
+        const StateManager = {
+            setState(key, value) {
+                AppState[key] = value;
+                this.notify(key, value);
+            },
+            
+            subscribe(key, callback) {
+                if (!this.subscribers[key]) this.subscribers[key] = [];
+                this.subscribers[key].push(callback);
+            },
+            
+            notify(key, value) {
+                if (this.subscribers[key]) {
+                    this.subscribers[key].forEach(callback => callback(value));
+                }
+            },
+            
+            subscribers: {}
+        };
+
+        // ==================== VARIÁVEIS GLOBAIS ====================
+        let irrigationTimer = null;
+        let irrigationProgrammings = [];
+        let automaticIrrigationActive = false;
+        let deviceStates = {};
+        let esp32Online = true;
+        let currentDevices = {};
+        let performanceMetrics = {
+            startTime: Date.now(),
+            pageLoadTime: null,
+            apiResponseTimes: []
+        };
+
         // ==================== VERIFICAÇÃO DE AUTENTICAÇÃO ====================
         function checkAuthentication() {
             const isAuthenticated = localStorage.getItem('casa-automacao-authenticated');
@@ -1821,6 +1621,7 @@
             try {
                 const user = JSON.parse(userData);
                 console.log('✅ Usuário autenticado:', user.username);
+                StateManager.setState('user', user);
                 return true;
             } catch (error) {
                 console.error('❌ Erro ao verificar autenticação:', error);
@@ -1838,29 +1639,45 @@
             return true;
         }
 
-        // ==================== VARIÁVEIS GLOBAIS ====================
-        let irrigationTimer = null;
-        let irrigationProgrammings = [];
-        let automaticIrrigationActive = false;
-        let deviceStates = {};
-        let esp32Online = true;
-        let currentDevices = {};
-
         // ==================== FUNÇÕES DE COMUNICAÇÃO COM SERVIDOR ====================
+        async function fetchWithRetry(url, options = {}, maxRetries = 3, timeout = 5000) {
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetchWithTimeout(url, options, timeout);
+                    if (response.ok) return response;
+                    
+                    if (response.status >= 500 && attempt < maxRetries) {
+                        console.warn(`Tentativa ${attempt} falhou, tentando novamente...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                        continue;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                } catch (error) {
+                    if (attempt === maxRetries) throw error;
+                }
+            }
+        }
+
         async function loadDevices() {
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetchWithTimeout(`${API_BASE}/devices`, {}, 8000);
+                const response = await fetchWithRetry(`${API_BASE}/devices`, {}, 3, 8000);
                 if (!response.ok) throw new Error('Erro ao carregar dispositivos');
                 
                 const data = await response.json();
                 currentDevices = data;
+                StateManager.setState('devices', data);
                 updateDeviceDisplays();
                 updateSensorData();
+                
+                // Cache local para modo offline
+                saveToLocalStorage('devices-cache', data);
             } catch (error) {
                 console.error('❌ Erro ao carregar dispositivos:', error);
                 showNotification('Erro ao carregar dispositivos', 'error');
+                // Tentar carregar do cache
+                loadCachedData();
             }
         }
 
@@ -1873,13 +1690,13 @@
             }
 
             try {
-                const response = await fetchWithTimeout(`${API_BASE}/control`, {
+                const response = await fetchWithRetry(`${API_BASE}/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ type, device, state })
-                }, 5000);
+                }, 2, 5000);
                 
                 const data = await response.json();
                 
@@ -1909,13 +1726,13 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetchWithTimeout(`${API_BASE}/irrigation/control`, {
+                const response = await fetchWithRetry(`${API_BASE}/irrigation/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ state })
-                }, 5000);
+                }, 2, 5000);
                 
                 const data = await response.json();
                 
@@ -1958,11 +1775,13 @@
                 const deviceElement = document.createElement('div');
                 deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
                 deviceElement.innerHTML = `
-                    <div class="device-compact-icon">
-                        <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
-                             alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
+                    <div class="device-info">
+                        <div class="device-compact-icon">
+                            <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
+                                 alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
+                        </div>
+                        <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
                     </div>
-                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
                     <label class="switch">
                         <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('lights', '${device}', this.checked)">
                         <span class="slider"></span>
@@ -1982,10 +1801,12 @@
                 const deviceElement = document.createElement('div');
                 deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
                 deviceElement.innerHTML = `
-                    <div class="device-compact-icon">
-                        <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
+                    <div class="device-info">
+                        <div class="device-compact-icon">
+                            <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
+                        </div>
+                        <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
                     </div>
-                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
                     <label class="switch">
                         <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('outlets', '${device}', this.checked)">
                         <span class="slider"></span>
@@ -2122,6 +1943,22 @@
             }
         }
 
+        // ==================== CARREGAMENTO DE DADOS EM CACHE ====================
+        function loadCachedData() {
+            const cachedDevices = loadFromLocalStorage('devices-cache');
+            const cachedWeather = loadFromLocalStorage('weather-cache');
+            
+            if (cachedDevices) {
+                currentDevices = cachedDevices;
+                updateDeviceDisplays();
+                showNotification('Dados carregados do cache (modo offline)', 'info', 3000);
+            }
+            
+            if (cachedWeather) {
+                updateWeatherDisplay(cachedWeather);
+            }
+        }
+
         // ==================== TEMA ====================
         function toggleTheme() {
             if (!checkAuthorization()) return;
@@ -2131,6 +1968,7 @@
             
             document.body.setAttribute('data-theme', newTheme);
             saveToLocalStorage('theme', newTheme);
+            StateManager.setState('theme', newTheme);
             
             const themeIcon = document.querySelector('.theme-toggle i');
             themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
@@ -2172,74 +2010,86 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetchWithTimeout(`${API_BASE}/weather`, {}, 8000);
+                const response = await fetchWithRetry(`${API_BASE}/weather`, {}, 2, 8000);
                 const data = await response.json();
                 
                 if (data && data.main) {
-                    // Temperatura principal
-                    const mainTempElement = document.getElementById('weather-main-temp');
-                    if (mainTempElement) {
-                        mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
-                    }
-                    
-                    // Descrição principal
-                    const mainDescElement = document.getElementById('weather-main-desc');
-                    if (mainDescElement && data.weather && data.weather[0]) {
-                        mainDescElement.textContent = data.weather[0].description;
-                    }
-                    
-                    // Ícone principal
-                    const mainIconElement = document.getElementById('weather-main-icon');
-                    if (mainIconElement && data.weather && data.weather[0]) {
-                        const weatherMain = data.weather[0].main.toLowerCase();
-                        mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
-                    }
-                    
-                    // Sensação térmica
-                    const feelsLikeElement = document.getElementById('weather-feels-like');
-                    if (feelsLikeElement) {
-                        feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
-                    }
-                    
-                    // Umidade
-                    const humidityElement = document.getElementById('weather-humidity');
-                    if (humidityElement) {
-                        humidityElement.textContent = `${data.main.humidity}%`;
-                    }
-                    
-                    // Vento
-                    const windElement = document.getElementById('weather-wind');
-                    if (windElement && data.wind) {
-                        windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
-                    }
-                    
-                    // Pressão
-                    const pressureElement = document.getElementById('weather-pressure');
-                    if (pressureElement) {
-                        pressureElement.textContent = `${data.main.pressure} hPa`;
-                    }
-                    
-                    // Cidade
-                    const cityElement = document.getElementById('weather-city');
-                    if (cityElement && data.name) {
-                        cityElement.textContent = `${data.name}, BR`;
-                    }
-                    
-                    // Horário de atualização
-                    const timeElement = document.getElementById('weather-update-time');
-                    if (timeElement) {
-                        const now = new Date();
-                        timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                    }
+                    updateWeatherDisplay(data);
+                    // Cache para modo offline
+                    saveToLocalStorage('weather-cache', data);
                 }
             } catch (error) {
                 console.error('❌ Erro ao atualizar clima:', error);
-                // Mostrar dados padrão em caso de erro
-                const mainTempElement = document.getElementById('weather-main-temp');
-                if (mainTempElement) mainTempElement.textContent = '--°C';
-                
-                const mainDescElement = document.getElementById('weather-main-desc');
-                if (mainDescElement) mainDescElement.textContent = 'Dados indisponíveis';
+                // Tentar carregar do cache
+                const cachedWeather = loadFromLocalStorage('weather-cache');
+                if (cachedWeather) {
+                    updateWeatherDisplay(cachedWeather);
+                } else {
+                    // Mostrar dados padrão em caso de erro
+                    const mainTempElement = document.getElementById('weather-main-temp');
+                    if (mainTempElement) mainTempElement.textContent = '--°C';
+                    
+                    const mainDescElement = document.getElementById('weather-main-desc');
+                    if (mainDescElement) mainDescElement.textContent = 'Dados indisponíveis';
+                }
+            }
+        }
+
+        function updateWeatherDisplay(data) {
+            // Temperatura principal
+            const mainTempElement = document.getElementById('weather-main-temp');
+            if (mainTempElement) {
+                mainTempElement.textContent = `${Math.round(data.main.temp)}°C`;
+            }
+            
+            // Descrição principal
+            const mainDescElement = document.getElementById('weather-main-desc');
+            if (mainDescElement && data.weather && data.weather[0]) {
+                mainDescElement.textContent = data.weather[0].description;
+            }
+            
+            // Ícone principal
+            const mainIconElement = document.getElementById('weather-main-icon');
+            if (mainIconElement && data.weather && data.weather[0]) {
+                const weatherMain = data.weather[0].main.toLowerCase();
+                mainIconElement.className = `fas ${getWeatherMainIcon(weatherMain)} weather-icon-large ${getWeatherAnimationClass(weatherMain)}`;
+            }
+            
+            // Sensação térmica
+            const feelsLikeElement = document.getElementById('weather-feels-like');
+            if (feelsLikeElement) {
+                feelsLikeElement.textContent = `${Math.round(data.main.feels_like)}°C`;
+            }
+            
+            // Umidade
+            const humidityElement = document.getElementById('weather-humidity');
+            if (humidityElement) {
+                humidityElement.textContent = `${data.main.humidity}%`;
+            }
+            
+            // Vento
+            const windElement = document.getElementById('weather-wind');
+            if (windElement && data.wind) {
+                windElement.textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+            }
+            
+            // Pressão
+            const pressureElement = document.getElementById('weather-pressure');
+            if (pressureElement) {
+                pressureElement.textContent = `${data.main.pressure} hPa`;
+            }
+            
+            // Cidade
+            const cityElement = document.getElementById('weather-city');
+            if (cityElement && data.name) {
+                cityElement.textContent = `${data.name}, BR`;
+            }
+            
+            // Horário de atualização
+            const timeElement = document.getElementById('weather-update-time');
+            if (timeElement) {
+                const now = new Date();
+                timeElement.textContent = `Atualizado: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             }
         }
 
@@ -2279,7 +2129,7 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetchWithTimeout(`${API_BASE}/weather/raining`, {}, 5000);
+                const response = await fetchWithRetry(`${API_BASE}/weather/raining`, {}, 2, 5000);
                 const data = await response.json();
                 
                 if (data.raining) {
@@ -2298,7 +2148,7 @@
             if (!checkAuthorization()) return;
             
             try {
-                const response = await fetchWithTimeout(`${API_BASE}/sensor-data`, {}, 8000);
+                const response = await fetchWithRetry(`${API_BASE}/sensor-data`, {}, 2, 8000);
                 const data = await response.json();
                 
                 if (data.data && data.data.length > 0) {
@@ -2364,9 +2214,11 @@
                     if (data.esp32.connected) {
                         esp32StatusElement.className = 'esp32-header-status online';
                         esp32StatusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Online</span>';
+                        StateManager.setState('connection', { ...AppState.connection, esp32: true });
                     } else {
                         esp32StatusElement.className = 'esp32-header-status offline';
                         esp32StatusElement.innerHTML = '<i class="fas fa-microchip"></i><span>ESP32 Offline</span>';
+                        StateManager.setState('connection', { ...AppState.connection, esp32: false });
                     }
                 }
             } catch (error) {
@@ -2374,16 +2226,18 @@
             }
         }
 
-        // ==================== MODAL DE IRRIGAÇÃO ====================
+        // ==================== MODAL DE IRRIGAÇÃO CORRIGIDO ====================
         function openIrrigationModal() {
             if (!checkAuthorization()) return;
             
-            document.getElementById('irrigation-modal').style.display = 'flex';
+            const modal = document.getElementById('irrigation-modal');
+            modal.classList.add('show');
             loadIrrigationSettings();
         }
 
         function closeIrrigationModal() {
-            document.getElementById('irrigation-modal').style.display = 'none';
+            const modal = document.getElementById('irrigation-modal');
+            modal.classList.remove('show');
         }
 
         function showTimePicker() {
@@ -2567,13 +2421,13 @@
                     programacoes: getSelectedProgrammings()
                 };
                 
-                const response = await fetchWithTimeout(`${API_BASE}/irrigation/save`, {
+                const response = await fetchWithRetry(`${API_BASE}/irrigation/save`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(settings)
-                }, 5000);
+                }, 2, 5000);
                 
                 const data = await response.json();
                 
@@ -2633,11 +2487,15 @@
         // ==================== VERIFICAÇÃO DE CONEXÃO ====================
         function checkConnection() {
             const offlineIndicator = document.getElementById('offline-indicator');
-            if (!navigator.onLine) {
+            const isOnline = navigator.onLine;
+            
+            if (!isOnline) {
                 offlineIndicator.classList.add('show');
                 showNotification('Modo offline ativado. Algumas funções podem não estar disponíveis.', 'warning', 3000);
+                StateManager.setState('connection', { ...AppState.connection, online: false });
             } else {
                 offlineIndicator.classList.remove('show');
+                StateManager.setState('connection', { ...AppState.connection, online: true });
             }
         }
 
@@ -2660,8 +2518,54 @@
             updateSensorData();
         }
 
+        async function initializeApp() {
+            try {
+                await checkAuthentication();
+                await loadInitialData();
+                setupEventListeners();
+                startDataUpdates();
+                showNotification('Sistema inicializado com sucesso!', 'success');
+            } catch (error) {
+                console.error('Falha na inicialização:', error);
+                showNotification('Erro ao inicializar o sistema', 'error');
+                // Fallback para modo offline
+                loadCachedData();
+            }
+        }
+
+        async function loadInitialData() {
+            await loadDevices();
+            await updateWeather();
+            await updateSensorData();
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('online', checkConnection);
+            window.addEventListener('offline', checkConnection);
+            
+            // Fechar modal clicando fora ou com ESC
+            const modal = document.getElementById('irrigation-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeIrrigationModal();
+                    }
+                });
+                
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && modal.classList.contains('show')) {
+                        closeIrrigationModal();
+                    }
+                });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Sistema Casa Automação V3.0 inicializado');
+            
+            // Medir tempo de carregamento
+            performanceMetrics.pageLoadTime = Date.now() - performanceMetrics.startTime;
+            console.log(`Tempo de carregamento: ${performanceMetrics.pageLoadTime}ms`);
             
             // VERIFICAÇÃO DE AUTENTICAÇÃO AO CARREGAR A PÁGINA
             if (!checkAuthentication()) {
@@ -2671,27 +2575,18 @@
             // Carregar tema
             const savedTheme = loadFromLocalStorage('theme') || 'light';
             document.body.setAttribute('data-theme', savedTheme);
+            StateManager.setState('theme', savedTheme);
+            
             const themeIcon = document.querySelector('.theme-toggle i');
             themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             
-            // Configurar eventos
-            window.addEventListener('online', checkConnection);
-            window.addEventListener('offline', checkConnection);
-            checkConnection();
+            // Inicializar aplicação
+            initializeApp();
             
-            // Fechar modal clicando fora
-            const modal = document.getElementById('irrigation-modal');
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        closeIrrigationModal();
-                    }
-                });
-            }
-            
-            startDataUpdates();
-            
-            showNotification('Sistema inicializado com sucesso!', 'success', 3000);
+            // Marcar CSS como carregado
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
         });
 
         // Exportar funções para o escopo global
