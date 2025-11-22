@@ -340,14 +340,14 @@
 
         /* Ícones Animados */
         .lamp-icon-on {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             animation: lampGlow 1.5s ease-in-out infinite;
         }
 
         .lamp-icon-off {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             opacity: 0.7;
         }
 
@@ -363,8 +363,8 @@
         }
 
         .outlet-icon {
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
             animation: plugPulse 4s ease-in-out infinite;
         }
 
@@ -404,6 +404,87 @@
             }
         }
 
+        .internet-icon {
+            width: 20px;
+            height: 20px;
+            animation: globeRotate 3s ease-in-out infinite;
+        }
+
+        @keyframes globeRotate {
+            0%, 100% { 
+                transform: rotate(0deg) scale(1);
+                filter: brightness(1) drop-shadow(0 0 3px rgba(74, 144, 226, 0.6));
+            }
+            25% { 
+                transform: rotate(5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+            50% { 
+                transform: rotate(0deg) scale(1.1);
+                filter: brightness(1.2) drop-shadow(0 0 7px rgba(74, 144, 226, 1));
+            }
+            75% { 
+                transform: rotate(-5deg) scale(1.05);
+                filter: brightness(1.1) drop-shadow(0 0 5px rgba(74, 144, 226, 0.8));
+            }
+        }
+
+        /* Animações de Ícones Meteorológicos */
+        .weather-icon-sun {
+            color: #FFD700 !important;
+            animation: spin 10s linear infinite !important;
+        }
+
+        .weather-icon-cloud {
+            color: #FFFFFF !important;
+            animation: float 4s ease-in-out infinite !important;
+        }
+
+        .weather-icon-cloud-sun {
+            color: #FFD700 !important;
+            animation: float 3s ease-in-out infinite !important;
+        }
+
+        .weather-icon-rain {
+            color: #4FC3F7 !important;
+            animation: rainDrop 2s ease-in-out infinite !important;
+        }
+
+        .weather-icon-storm {
+            color: #FF9800 !important;
+            animation: flash 1.5s ease-in-out infinite !important;
+        }
+
+        .weather-icon-snow {
+            color: #E3F2FD !important;
+            animation: snowFall 3s ease-in-out infinite !important;
+        }
+
+        .weather-icon-mist {
+            color: #BDBDBD !important;
+            animation: fade 4s ease-in-out infinite !important;
+        }
+
+        .icon-thermometer {
+            animation: pulse 2s ease-in-out infinite !important;
+            color: #FF6B6B !important;
+        }
+
+        .icon-humidity {
+            animation: drip 3s ease-in-out infinite !important;
+            color: #4FC3F7 !important;
+        }
+
+        .icon-wind {
+            animation: float 2s ease-in-out infinite !important;
+            color: #81D4FA !important;
+        }
+
+        .icon-pressure {
+            animation: breathe 2.5s ease-in-out infinite !important;
+            color: #AED581 !important;
+        }
+
         /* Animações Base */
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
@@ -415,11 +496,46 @@
             to { transform: rotate(360deg); }
         }
 
+        @keyframes rainDrop {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(2px); }
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes snowFall {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(3px) rotate(180deg); }
+        }
+
+        @keyframes fade {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes drip {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(2px) scale(1.05); }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
         /* Cards e Grids */
         .monitoring-card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 12px 15px;
+            padding: 15px 20px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             margin-bottom: 15px;
@@ -428,34 +544,30 @@
 
         .monitoring-card h2 {
             color: var(--text-primary);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-weight: 600;
-            font-size: 1.2em;
+            font-size: 1.4em;
             justify-content: center;
         }
 
         .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 0;
         }
 
         .sensor-compact-item {
             text-align: center;
-            padding: 10px;
+            padding: 12px;
             background: var(--primary-gradient);
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            min-height: 70px;
         }
 
         .sensor-compact-item:hover {
@@ -479,34 +591,33 @@
         }
 
         .sensor-compact-icon {
-            font-size: 1.3em;
-            margin-bottom: 4px;
+            font-size: 1.6em;
+            margin-bottom: 6px;
         }
 
         .sensor-compact-value {
-            font-size: 1.1em;
+            font-size: 1.4em;
             font-weight: 700;
-            margin: 2px 0;
+            margin: 3px 0;
         }
 
         .sensor-compact-label {
-            font-size: 0.65em;
+            font-size: 0.75em;
             opacity: 0.95;
             font-weight: 500;
         }
 
-        /* NOVO: Layout compacto para dispositivos */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 15px;
             margin-bottom: 15px;
         }
 
         .card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 12px;
+            padding: 20px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             color: var(--text-primary);
@@ -517,21 +628,20 @@
 
         .card h2 {
             color: var(--text-primary);
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-weight: 600;
-            font-size: 1.2em;
+            font-size: 1.4em;
             justify-content: center;
         }
 
-        /* NOVO LAYOUT: Dispositivos em LINHA - ÍCONE + NOME + BOTÃO EM DUAS COLUNAS */
         .devices-compact {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            max-height: 220px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            max-height: 400px;
             overflow-y: auto;
             padding-right: 5px;
             flex: 1;
@@ -539,15 +649,12 @@
 
         .device-compact-item {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e9ecef;
             transition: var(--transition);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            min-height: 45px;
         }
 
         body[data-theme="dark"] .device-compact-item {
@@ -557,8 +664,8 @@
         }
 
         .device-compact-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
         }
 
         .device-compact-item.active {
@@ -566,39 +673,34 @@
             border-color: #fd9644;
         }
 
-        .device-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-        }
-
         .device-compact-icon {
-            width: 24px;
-            height: 24px;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 6px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: var(--transition);
         }
 
         .device-compact-item:hover .device-compact-icon {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
         .device-compact-icon img {
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
             object-fit: contain;
         }
 
         .device-compact-name {
             font-weight: 600;
+            margin-bottom: 8px;
             color: var(--text-primary);
-            font-size: 0.75em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.8em;
         }
 
         /* Switch Toggle */
@@ -606,8 +708,7 @@
             position: relative;
             display: inline-block;
             width: 40px;
-            height: 20px;
-            flex-shrink: 0;
+            height: 22px;
         }
 
         .switch input {
@@ -633,8 +734,8 @@
             content: "";
             height: 14px;
             width: 14px;
-            left: 3px;
-            bottom: 3px;
+            left: 4px;
+            bottom: 4px;
             background: white;
             transition: .4s;
             border-radius: 50%;
@@ -646,37 +747,37 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(20px);
+            transform: translateX(18px);
         }
 
         /* Botões de Controle */
         .controls {
             display: flex;
             justify-content: center;
-            gap: 6px;
-            margin: 10px 0 0 0;
+            gap: 10px;
+            margin: 15px 0 0 0;
             flex-wrap: wrap;
-            padding-top: 10px;
+            padding-top: 15px;
             border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .btn {
-            padding: 6px 12px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 6px;
-            font-size: 0.75em;
+            border-radius: 10px;
+            font-size: 0.85em;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            gap: 5px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
         }
 
         .btn-success {
@@ -697,8 +798,8 @@
         .btn-weather {
             background: var(--info-gradient);
             color: white;
-            font-size: 0.65em;
-            padding: 4px 8px;
+            font-size: 0.75em;
+            padding: 6px 12px;
         }
 
         .btn-irrigation {
@@ -711,13 +812,13 @@
             pointer-events: none;
         }
 
-        /* CORREÇÃO: Sistema de Irrigação MANTIDO COMO ESTAVA */
+        /* CORREÇÃO: Sistema de Irrigação com altura fixa */
         .irrigation-card {
             position: relative;
             min-height: auto;
             padding: 15px 20px;
-            height: 180px;
-            overflow: hidden;
+            height: 180px; /* Altura fixa para manter consistência */
+            overflow: hidden; /* Impede que conteúdo extra saia do card */
         }
 
         .irrigation-header {
@@ -725,7 +826,7 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 15px;
-            position: relative;
+            position: relative; /* Para posicionamento relativo dos elementos filhos */
         }
 
         .irrigation-header h2 {
@@ -748,6 +849,7 @@
             line-height: 1.2;
         }
 
+        /* CORREÇÃO: GIF posicionado absolutamente para não afetar o layout */
         .irrigation-gif-container {
             position: absolute;
             top: 15px;
@@ -762,7 +864,7 @@
         }
 
         .irrigation-gif {
-            width: 80px;
+            width: 80px; /* Tamanho reduzido */
             height: 80px;
             border-radius: 10px;
             object-fit: cover;
@@ -785,22 +887,453 @@
             animation: pulse 1.5s ease-in-out infinite;
         }
 
+        /* Status removido - mais compacto */
+        .irrigation-status-container {
+            display: none; /* Removido para economizar espaço */
+        }
+
+        .status-on {
+            color: #4CAF50;
+        }
+
+        .status-off {
+            color: #f44336;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: rgba(255,255,255,0.95);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85em;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        body[data-theme="dark"] .status-bar {
+            background: rgba(45, 55, 72, 0.95);
+        }
+
+        .online {
+            color: #4CAF50;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .offline {
+            color: #f44336;
+            border-left: 3px solid #f44336;
+        }
+
+        .device-status {
+            margin-top: 4px;
+            font-size: 0.65em;
+            font-weight: 500;
+        }
+
+        .status-on {
+            color: #4CAF50;
+        }
+
+        .status-off {
+            color: #f44336;
+        }
+
+        .room-icon {
+            font-size: 0.8em;
+            margin-right: 3px;
+        }
+
+        /* Indicador ESP32 */
+        .status-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .esp32-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .esp32-indicator.online {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .esp32-indicator.offline {
+            background: var(--danger-gradient);
+            color: white;
+        }
+
+        .esp32-indicator.connecting {
+            background: var(--warning-gradient);
+            color: white;
+        }
+
+        .status-text {
+            flex: 1;
+            text-align: center;
+        }
+
+        /* Campo de tempo de irrigação no modal */
+        .irrigation-duration-group {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .duration-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .duration-input input {
+            width: 80px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .duration-unit {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* MODAL DE IRRIGAÇÃO MELHORADO */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: var(--text-primary);
+        }
+
+        body[data-theme="dark"] .modal-content {
+            background: var(--card-bg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        body[data-theme="dark"] .modal-section {
+            background: #2d3748;
+        }
+
+        .modal-section h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background: white;
+            color: var(--text-primary);
+        }
+
+        body[data-theme="dark"] .form-group input,
+        body[data-theme="dark"] .form-group select {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        /* SELEÇÃO DE DIAS DA SEMANA */
+        .days-selection {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .day-checkbox {
+            display: none;
+        }
+
+        .day-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 5px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        body[data-theme="dark"] .day-label {
+            background: #4a5568;
+            border-color: #4a5568;
+        }
+
+        .day-label:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .day-checkbox:checked + .day-label {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .day-abbr {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .day-full {
+            font-size: 0.7em;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* SELEÇÃO DE HORA COM RELÓGIO */
+        .time-selection {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input {
+            flex: 1;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .time-picker-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .time-picker-btn:hover {
+            background: #5a6fd8;
+        }
+
+        /* LISTA DE PROGRAMAÇÕES MELHORADA */
+        .programming-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .programming-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #00b894;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            color: var(--text-primary);
+        }
+
+        body[data-theme="dark"] .programming-item {
+            background: #4a5568;
+        }
+
+        .programming-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .programming-time {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.1em;
+        }
+
+        .programming-days {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .day-badge {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        body[data-theme="dark"] .day-badge {
+            background: #2d3748;
+        }
+
+        .day-badge.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .delete-programming {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.3s;
+        }
+
+        .delete-programming:hover {
+            background: #ee5a24;
+        }
+
+        .no-programming {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* Indicador de Modo Offline */
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--warning-gradient);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: 600;
+            z-index: 10001;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .offline-indicator.show {
+            transform: translateY(0);
+        }
+
         /* Scrollbar personalizado */
-        .devices-compact::-webkit-scrollbar {
-            width: 4px;
+        .devices-compact::-webkit-scrollbar,
+        .programming-list::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .devices-compact::-webkit-scrollbar-track {
+        .devices-compact::-webkit-scrollbar-track,
+        .programming-list::-webkit-scrollbar-track {
             background: #f1f1f1;
-            border-radius: 2px;
+            border-radius: 3px;
         }
 
-        .devices-compact::-webkit-scrollbar-thumb {
+        .devices-compact::-webkit-scrollbar-thumb,
+        .programming-list::-webkit-scrollbar-thumb {
             background: #c1c1c1;
-            border-radius: 2px;
+            border-radius: 3px;
         }
 
-        .devices-compact::-webkit-scrollbar-thumb:hover {
+        .devices-compact::-webkit-scrollbar-thumb:hover,
+        .programming-list::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
 
@@ -817,7 +1350,7 @@
             .weather-expanded {
                 flex-direction: column;
                 height: auto;
-                gap: 8px;
+                gap: 10px;
                 text-align: center;
             }
             
@@ -834,22 +1367,54 @@
                 font-size: 1.8em;
             }
             
+            .days-selection {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
             .header-controls {
                 flex-direction: column;
                 gap: 5px;
             }
 
-            /* Ajuste para dispositivos em mobile - uma coluna */
-            .devices-compact {
-                grid-template-columns: 1fr;
-            }
-
-            .device-compact-item {
-                padding: 8px 12px;
+            /* CORREÇÃO: Responsividade para irrigação */
+            .irrigation-card {
+                height: 200px; /* Um pouco mais alto em mobile */
             }
             
-            .device-compact-name {
-                font-size: 0.8em;
+            .irrigation-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .irrigation-status-info {
+                text-align: center;
+                margin-top: 10px;
+            }
+
+            .irrigation-gif-container {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-top: 10px;
+            }
+
+            .irrigation-gif-container.show {
+                width: 70px;
+                height: 90px;
+            }
+            
+            .irrigation-gif {
+                width: 70px;
+                height: 70px;
+            }
+
+            .esp32-header-status {
+                position: relative;
+                left: auto;
+                top: auto;
+                justify-content: center;
+                margin-bottom: 10px;
             }
         }
 
@@ -860,11 +1425,15 @@
             
             .header {
                 flex-direction: column;
-                gap: 8px;
+                gap: 10px;
             }
             
             .logout-btn {
                 align-self: center;
+            }
+            
+            .days-selection {
+                grid-template-columns: repeat(3, 1fr);
             }
             
             .controls {
@@ -875,13 +1444,20 @@
                 width: 100%;
                 justify-content: center;
             }
-            
-            .device-info {
-                gap: 8px;
+
+            /* CORREÇÃO: Responsividade para irrigação em mobile pequeno */
+            .irrigation-card {
+                height: 220px; /* Ajuste fino para mobile muito pequeno */
             }
             
-            .device-compact-name {
-                font-size: 0.7em;
+            .irrigation-gif-container.show {
+                width: 60px;
+                height: 80px;
+            }
+            
+            .irrigation-gif {
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
@@ -974,7 +1550,7 @@
             </div>
         </div>
 
-        <!-- Monitoramento de Sensores - MAIS COMPACTO -->
+        <!-- Monitoramento de Sensores -->
         <div class="monitoring-card">
             <h2>
                 <i class="fas fa-chart-line"></i>
@@ -1014,7 +1590,7 @@
 
         <!-- Grid Principal -->
         <div class="main-grid">
-            <!-- Controle de Lâmpadas - LAYOUT EM LINHA COM DUAS COLUNAS -->
+            <!-- Controle de Lâmpadas -->
             <div class="card">
                 <h2>
                     <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
@@ -1035,7 +1611,7 @@
                 </div>
             </div>
 
-            <!-- Controle de Tomadas - LAYOUT EM LINHA COM DUAS COLUNAS -->
+            <!-- Controle de Tomadas -->
             <div class="card">
                 <h2>
                     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC45IDE2LjlMNy4xIDE0LjdNMTYuOSAxNi45TDE0LjcgMTQuN1oiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="outlet-icon" alt="Tomada">
@@ -1057,7 +1633,7 @@
             </div>
         </div>
 
-        <!-- Sistema de Irrigação MANTIDO EXATAMENTE COMO ESTAVA -->
+        <!-- Sistema de Irrigação reorganizado e compacto -->
         <div class="card irrigation-card">
             <div class="irrigation-header">
                 <h2>
@@ -1095,7 +1671,7 @@
         </div>
     </div>
 
-    <!-- Modal de irrigação MANTIDO EXATAMENTE COMO ESTAVA -->
+    <!-- Modal de irrigação com campo de tempo -->
     <div class="modal-overlay" id="irrigation-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1382,13 +1958,11 @@
                 const deviceElement = document.createElement('div');
                 deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
                 deviceElement.innerHTML = `
-                    <div class="device-info">
-                        <div class="device-compact-icon">
-                            <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
-                                 alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
-                        </div>
-                        <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
+                    <div class="device-compact-icon">
+                        <img src="${state ? 'https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=55787&format=png&color=000000'}" 
+                             alt="${device}" class="${state ? 'lamp-icon-on' : 'lamp-icon-off'}">
                     </div>
+                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
                     <label class="switch">
                         <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('lights', '${device}', this.checked)">
                         <span class="slider"></span>
@@ -1408,12 +1982,10 @@
                 const deviceElement = document.createElement('div');
                 deviceElement.className = `device-compact-item ${state ? 'active' : ''}`;
                 deviceElement.innerHTML = `
-                    <div class="device-info">
-                        <div class="device-compact-icon">
-                            <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
-                        </div>
-                        <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
+                    <div class="device-compact-icon">
+                        <i class="fas fa-plug" style="color: ${state ? '#4CAF50' : '#666'}"></i>
                     </div>
+                    <div class="device-compact-name">${getDeviceDisplayName(device)}</div>
                     <label class="switch">
                         <input type="checkbox" ${state ? 'checked' : ''} onchange="toggleDevice('outlets', '${device}', this.checked)">
                         <span class="slider"></span>
