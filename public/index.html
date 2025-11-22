@@ -340,14 +340,14 @@
 
         /* Ícones Animados */
         .lamp-icon-on {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             animation: lampGlow 1.5s ease-in-out infinite;
         }
 
         .lamp-icon-off {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             opacity: 0.7;
         }
 
@@ -363,8 +363,8 @@
         }
 
         .outlet-icon {
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             animation: plugPulse 4s ease-in-out infinite;
         }
 
@@ -535,7 +535,7 @@
         .monitoring-card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 15px 20px;
+            padding: 12px 15px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             margin-bottom: 15px;
@@ -544,30 +544,34 @@
 
         .monitoring-card h2 {
             color: var(--text-primary);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
-            font-size: 1.4em;
+            font-size: 1.2em;
             justify-content: center;
         }
 
         .sensors-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 0;
         }
 
         .sensor-compact-item {
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             background: var(--primary-gradient);
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 70px;
         }
 
         .sensor-compact-item:hover {
@@ -591,18 +595,18 @@
         }
 
         .sensor-compact-icon {
-            font-size: 1.6em;
-            margin-bottom: 6px;
+            font-size: 1.3em;
+            margin-bottom: 4px;
         }
 
         .sensor-compact-value {
-            font-size: 1.4em;
+            font-size: 1.1em;
             font-weight: 700;
-            margin: 3px 0;
+            margin: 2px 0;
         }
 
         .sensor-compact-label {
-            font-size: 0.75em;
+            font-size: 0.65em;
             opacity: 0.95;
             font-weight: 500;
         }
@@ -611,14 +615,14 @@
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 15px;
         }
 
         .card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 15px;
+            padding: 12px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255,255,255,0.3);
             color: var(--text-primary);
@@ -629,21 +633,21 @@
 
         .card h2 {
             color: var(--text-primary);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
-            font-size: 1.3em;
+            font-size: 1.2em;
             justify-content: center;
         }
 
-        /* NOVO: Layout compacto para dispositivos */
+        /* NOVO: Layout ULTRA compacto para dispositivos */
         .devices-compact {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            max-height: 300px;
+            gap: 6px;
+            max-height: 220px;
             overflow-y: auto;
             padding-right: 5px;
             flex: 1;
@@ -651,17 +655,17 @@
 
         .device-compact-item {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 10px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 6px;
             text-align: center;
-            border: 2px solid #e9ecef;
+            border: 1px solid #e9ecef;
             transition: var(--transition);
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            min-height: 100px;
+            min-height: 70px;
         }
 
         body[data-theme="dark"] .device-compact-item {
@@ -681,15 +685,15 @@
         }
 
         .device-compact-icon {
-            width: 30px;
-            height: 30px;
-            margin: 0 auto 5px;
+            width: 24px;
+            height: 24px;
+            margin: 0 auto 4px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255,255,255,0.9);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             transition: var(--transition);
         }
 
@@ -698,26 +702,26 @@
         }
 
         .device-compact-icon img {
-            width: 18px;
-            height: 18px;
+            width: 14px;
+            height: 14px;
             object-fit: contain;
         }
 
         .device-compact-name {
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: var(--text-primary);
-            font-size: 0.75em;
+            font-size: 0.7em;
             text-align: center;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         /* Switch Toggle */
         .switch {
             position: relative;
             display: inline-block;
-            width: 36px;
-            height: 20px;
+            width: 32px;
+            height: 18px;
         }
 
         .switch input {
@@ -741,8 +745,8 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 14px;
-            width: 14px;
+            height: 12px;
+            width: 12px;
             left: 3px;
             bottom: 3px;
             background: white;
@@ -756,37 +760,37 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(16px);
+            transform: translateX(14px);
         }
 
         /* Botões de Controle */
         .controls {
             display: flex;
             justify-content: center;
-            gap: 8px;
-            margin: 12px 0 0 0;
+            gap: 6px;
+            margin: 10px 0 0 0;
             flex-wrap: wrap;
-            padding-top: 12px;
+            padding-top: 10px;
             border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .btn {
-            padding: 6px 12px;
+            padding: 5px 10px;
             border: none;
-            border-radius: 8px;
-            font-size: 0.8em;
+            border-radius: 6px;
+            font-size: 0.75em;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            gap: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
         }
 
         .btn-success {
@@ -807,8 +811,8 @@
         .btn-weather {
             background: var(--info-gradient);
             color: white;
-            font-size: 0.7em;
-            padding: 5px 10px;
+            font-size: 0.65em;
+            padding: 4px 8px;
         }
 
         .btn-irrigation {
@@ -825,17 +829,17 @@
         .irrigation-card {
             position: relative;
             min-height: auto;
-            padding: 15px;
-            height: 180px; /* Altura fixa para manter consistência */
-            overflow: hidden; /* Impede que conteúdo extra saia do card */
+            padding: 12px;
+            height: 160px;
+            overflow: hidden;
         }
 
         .irrigation-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
-            position: relative; /* Para posicionamento relativo dos elementos filhos */
+            margin-bottom: 12px;
+            position: relative;
         }
 
         .irrigation-header h2 {
@@ -846,23 +850,23 @@
         .irrigation-status-info {
             display: flex;
             flex-direction: column;
-            gap: 3px;
-            font-size: 0.7em;
+            gap: 2px;
+            font-size: 0.65em;
             color: var(--text-secondary);
-            margin-top: 5px;
+            margin-top: 3px;
             flex: 1;
         }
 
         .irrigation-mode-text, .irrigation-rain-avoidance {
-            font-size: 0.75em;
+            font-size: 0.7em;
             line-height: 1.2;
         }
 
         /* CORREÇÃO: GIF posicionado absolutamente para não afetar o layout */
         .irrigation-gif-container {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 12px;
+            right: 12px;
             text-align: center;
             visibility: hidden;
             opacity: 0;
@@ -873,32 +877,32 @@
         }
 
         .irrigation-gif {
-            width: 70px; /* Tamanho reduzido */
-            height: 70px;
-            border-radius: 8px;
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
             object-fit: cover;
-            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
 
         .irrigation-gif-container.show {
             visibility: visible;
             opacity: 1;
-            width: 70px;
-            height: 90px;
+            width: 60px;
+            height: 75px;
         }
 
         .irrigating-text {
-            font-size: 0.65em;
+            font-size: 0.6em;
             font-weight: 600;
             color: #00b894;
-            margin-top: 5px;
+            margin-top: 3px;
             text-align: center;
             animation: pulse 1.5s ease-in-out infinite;
         }
 
         /* Status removido - mais compacto */
         .irrigation-status-container {
-            display: none; /* Removido para economizar espaço */
+            display: none;
         }
 
         .status-on {
@@ -912,12 +916,12 @@
         /* Status Bar */
         .status-bar {
             background: rgba(255,255,255,0.95);
-            padding: 8px;
-            border-radius: 8px;
+            padding: 6px;
+            border-radius: 6px;
             text-align: center;
             font-weight: 600;
-            font-size: 0.8em;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.75em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             color: var(--text-primary);
             position: relative;
         }
@@ -928,17 +932,17 @@
 
         .online {
             color: #4CAF50;
-            border-left: 3px solid #4CAF50;
+            border-left: 2px solid #4CAF50;
         }
 
         .offline {
             color: #f44336;
-            border-left: 3px solid #f44336;
+            border-left: 2px solid #f44336;
         }
 
         .device-status {
-            margin-top: 3px;
-            font-size: 0.6em;
+            margin-top: 2px;
+            font-size: 0.55em;
             font-weight: 500;
         }
 
@@ -951,8 +955,8 @@
         }
 
         .room-icon {
-            font-size: 0.75em;
-            margin-right: 3px;
+            font-size: 0.7em;
+            margin-right: 2px;
         }
 
         /* Indicador ESP32 */
@@ -960,17 +964,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
         }
 
         .esp32-indicator {
             display: flex;
             align-items: center;
-            gap: 5px;
-            padding: 3px 6px;
-            border-radius: 15px;
-            font-size: 0.7em;
+            gap: 4px;
+            padding: 2px 5px;
+            border-radius: 12px;
+            font-size: 0.65em;
             font-weight: 600;
             transition: var(--transition);
         }
@@ -997,22 +1001,22 @@
 
         /* Campo de tempo de irrigação no modal */
         .irrigation-duration-group {
-            margin-top: 12px;
-            padding-top: 12px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .duration-input {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .duration-input input {
-            width: 70px;
-            padding: 6px 8px;
+            width: 60px;
+            padding: 5px 6px;
             border: 1px solid #ddd;
-            border-radius: 6px;
+            border-radius: 4px;
             text-align: center;
             font-weight: 600;
         }
@@ -1039,13 +1043,13 @@
 
         .modal-content {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 18px;
             width: 100%;
-            max-width: 550px;
+            max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
             color: var(--text-primary);
         }
 
@@ -1057,9 +1061,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 12px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 10px;
         }
 
         .modal-header h2 {
@@ -1067,17 +1071,17 @@
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 1.2em;
+            gap: 6px;
+            font-size: 1.1em;
         }
 
         .close-modal {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
             color: #666;
-            padding: 4px;
+            padding: 3px;
         }
 
         .close-modal:hover {
@@ -1085,11 +1089,11 @@
         }
 
         .modal-section {
-            margin-bottom: 15px;
-            padding: 15px;
+            margin-bottom: 12px;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
         }
 
         body[data-theme="dark"] .modal-section {
@@ -1097,33 +1101,33 @@
         }
 
         .modal-section h3 {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             color: var(--text-primary);
-            font-size: 1em;
+            font-size: 0.95em;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             font-weight: 500;
             color: var(--text-secondary);
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
+            border-radius: 4px;
+            font-size: 12px;
             transition: border-color 0.3s;
             background: white;
             color: var(--text-primary);
@@ -1147,8 +1151,8 @@
         .days-selection {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
-            margin-top: 8px;
+            gap: 4px;
+            margin-top: 6px;
         }
 
         .day-checkbox {
@@ -1159,10 +1163,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 8px 4px;
+            padding: 6px 3px;
             background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
             cursor: pointer;
             transition: var(--transition);
             text-align: center;
@@ -1187,26 +1191,26 @@
 
         .day-abbr {
             font-weight: 600;
-            font-size: 0.8em;
+            font-size: 0.75em;
         }
 
         .day-full {
-            font-size: 0.65em;
+            font-size: 0.6em;
             opacity: 0.8;
-            margin-top: 2px;
+            margin-top: 1px;
         }
 
         /* SELEÇÃO DE HORA COM RELÓGIO */
         .time-selection {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .time-input {
             flex: 1;
             text-align: center;
-            font-size: 1em;
+            font-size: 0.9em;
             font-weight: 600;
         }
 
@@ -1214,8 +1218,8 @@
             background: #667eea;
             color: white;
             border: none;
-            padding: 6px 10px;
-            border-radius: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
             cursor: pointer;
             transition: background 0.3s;
         }
@@ -1226,18 +1230,18 @@
 
         /* LISTA DE PROGRAMAÇÕES MELHORADA */
         .programming-list {
-            max-height: 180px;
+            max-height: 150px;
             overflow-y: auto;
-            margin-top: 12px;
+            margin-top: 10px;
         }
 
         .programming-item {
             background: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            border-left: 4px solid #00b894;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            border-left: 3px solid #00b894;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             color: var(--text-primary);
         }
 
@@ -1249,27 +1253,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .programming-time {
             font-weight: 600;
             color: var(--text-primary);
-            font-size: 1em;
+            font-size: 0.9em;
         }
 
         .programming-days {
             display: flex;
-            gap: 4px;
+            gap: 3px;
             flex-wrap: wrap;
-            margin-top: 4px;
+            margin-top: 3px;
         }
 
         .day-badge {
             background: #e9ecef;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 0.65em;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-size: 0.6em;
             font-weight: 500;
             color: var(--text-primary);
         }
@@ -1287,10 +1291,10 @@
             background: #ff6b6b;
             color: white;
             border: none;
-            border-radius: 3px;
-            padding: 3px 6px;
+            border-radius: 2px;
+            padding: 2px 5px;
             cursor: pointer;
-            font-size: 0.75em;
+            font-size: 0.7em;
             transition: background 0.3s;
         }
 
@@ -1301,9 +1305,9 @@
         .no-programming {
             text-align: center;
             color: #666;
-            padding: 15px;
+            padding: 12px;
             font-style: italic;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         /* Indicador de Modo Offline */
@@ -1315,12 +1319,12 @@
             background: var(--warning-gradient);
             color: white;
             text-align: center;
-            padding: 8px;
+            padding: 6px;
             font-weight: 600;
             z-index: 10001;
             transform: translateY(-100%);
             transition: transform 0.3s ease;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .offline-indicator.show {
@@ -1330,19 +1334,19 @@
         /* Scrollbar personalizado */
         .devices-compact::-webkit-scrollbar,
         .programming-list::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
 
         .devices-compact::-webkit-scrollbar-track,
         .programming-list::-webkit-scrollbar-track {
             background: #f1f1f1;
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         .devices-compact::-webkit-scrollbar-thumb,
         .programming-list::-webkit-scrollbar-thumb {
             background: #c1c1c1;
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         .devices-compact::-webkit-scrollbar-thumb:hover,
@@ -1363,7 +1367,7 @@
             .weather-expanded {
                 flex-direction: column;
                 height: auto;
-                gap: 10px;
+                gap: 8px;
                 text-align: center;
             }
             
@@ -1391,7 +1395,7 @@
 
             /* CORREÇÃO: Responsividade para irrigação */
             .irrigation-card {
-                height: 200px; /* Um pouco mais alto em mobile */
+                height: 180px;
             }
             
             .irrigation-header {
@@ -1402,24 +1406,24 @@
 
             .irrigation-status-info {
                 text-align: center;
-                margin-top: 10px;
+                margin-top: 8px;
             }
 
             .irrigation-gif-container {
                 position: relative;
                 top: auto;
                 right: auto;
-                margin-top: 10px;
+                margin-top: 8px;
             }
 
             .irrigation-gif-container.show {
-                width: 70px;
-                height: 90px;
+                width: 60px;
+                height: 75px;
             }
             
             .irrigation-gif {
-                width: 70px;
-                height: 70px;
+                width: 60px;
+                height: 60px;
             }
 
             .esp32-header-status {
@@ -1427,7 +1431,7 @@
                 left: auto;
                 top: auto;
                 justify-content: center;
-                margin-bottom: 10px;
+                margin-bottom: 8px;
             }
 
             /* NOVO: Ajuste para dispositivos em mobile */
@@ -1443,7 +1447,7 @@
             
             .header {
                 flex-direction: column;
-                gap: 10px;
+                gap: 8px;
             }
             
             .logout-btn {
@@ -1465,17 +1469,17 @@
 
             /* CORREÇÃO: Responsividade para irrigação em mobile pequeno */
             .irrigation-card {
-                height: 220px; /* Ajuste fino para mobile muito pequeno */
+                height: 200px;
             }
             
             .irrigation-gif-container.show {
-                width: 60px;
-                height: 80px;
+                width: 50px;
+                height: 65px;
             }
             
             .irrigation-gif {
-                width: 60px;
-                height: 60px;
+                width: 50px;
+                height: 50px;
             }
         }
     </style>
@@ -1568,7 +1572,7 @@
             </div>
         </div>
 
-        <!-- Monitoramento de Sensores -->
+        <!-- Monitoramento de Sensores - MAIS COMPACTO -->
         <div class="monitoring-card">
             <h2>
                 <i class="fas fa-chart-line"></i>
@@ -1608,7 +1612,7 @@
 
         <!-- Grid Principal -->
         <div class="main-grid">
-            <!-- Controle de Lâmpadas -->
+            <!-- Controle de Lâmpadas - MAIS COMPACTO -->
             <div class="card">
                 <h2>
                     <img src="https://img.icons8.com/?size=100&id=KgisVcJhnUAQ&format=png&color=000000" class="lamp-icon-on" alt="Lâmpada">
@@ -1629,7 +1633,7 @@
                 </div>
             </div>
 
-            <!-- Controle de Tomadas -->
+            <!-- Controle de Tomadas - MAIS COMPACTO -->
             <div class="card">
                 <h2>
                     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk0zLjUgMTJINy41TTE2LjUgMTJIMjAuNU00LjkgNy4xTDcuMSA5LjNNMTYuOSA3LjFMMTQuNyA5LjNNNC45IDE2LjlMNy4xIDE0LjdNMTYuOSAxNi45TDE0LjcgMTQuN1oiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K" class="outlet-icon" alt="Tomada">
