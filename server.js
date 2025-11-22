@@ -309,6 +309,29 @@ async function isRaining() {
     }
 }
 
+// 🚨 NOVA FUNÇÃO: Converter programações do frontend para formato ESP32
+function converterProgramacoesParaESP32(programacoesFrontend) {
+    console.log('🔄 Convertendo programações do frontend para ESP32...');
+    
+    // Estrutura para 4 programações no ESP32
+    const programacoesESP32 = [];
+    
+    // Preencher as programações com dados do frontend (máximo 4)
+    const programacoesLimitadas = programacoesFrontend.slice(0, 4);
+    
+    programacoesLimitadas.forEach((prog, index) => {
+        programacoesESP32.push({
+            hora: prog.hora || "08:00",
+            duracao: prog.duracao || 5,
+            dias: prog.dias || []
+        });
+        console.log(`   ✅ Programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias?.join(', ') || 'nenhum'}`);
+    });
+
+    console.log(`📋 Total de programações convertidas: ${programacoesESP32.length}`);
+    return programacoesESP32;
+}
+
 // Inicializar dados
 let devicesState = loadState();
 
@@ -646,10 +669,13 @@ app.get('/api/commands', (req, res) => {
     
     console.log('📥 ESP32 solicitando comandos');
     
-    // 🚨 CORREÇÃO: Estrutura EXATA que o ESP32 espera
-    const horario = devicesState.irrigation.horario_irrigacao || "";
-    console.log('💧 Horário que será enviado:', horario);
-    console.log('💧 Estado da bomba no servidor:', devicesState.irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA');
+    // 🚨 CORREÇÃO: Converter programações do frontend para formato ESP32
+    const programacoesESP32 = converterProgramacoesParaESP32(devicesState.irrigation.programacoes || []);
+    
+    console.log('💧 Programações que serão enviadas para ESP32:');
+    programacoesESP32.forEach((prog, index) => {
+        console.log(`   ${index + 1}. ${prog.hora} - ${prog.duracao}min - Dias: ${prog.dias.join(', ')}`);
+    });
     
     const response = {
         lights: devicesState.lights,
@@ -657,12 +683,15 @@ app.get('/api/commands', (req, res) => {
         irrigation: {
             bomba_irrigacao: devicesState.irrigation.bomba_irrigacao,
             modo_automatico: devicesState.irrigation.modo === 'automatico',
-            horario_irrigacao: horario,
-            duracao: devicesState.irrigation.duracao || 5
+            horario_irrigacao: devicesState.irrigation.horario_irrigacao || "",
+            duracao: devicesState.irrigation.duracao || 5,
+            // 🚨 NOVO: Enviar programações convertidas para ESP32
+            programacoes: programacoesESP32
         }
     };
     
     console.log('📤 Enviando para ESP32 - Bomba:', response.irrigation.bomba_irrigacao ? 'LIGADA' : 'DESLIGADA');
+    console.log('📤 Programações enviadas:', programacoesESP32.length);
     
     res.json(response);
 });
