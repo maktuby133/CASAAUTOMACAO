@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 3000;
 
 // Configurações Web Push (VAPID) - USE SUAS CHAVES
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || 'BAxf50baaqvRBw9_oj74uT8NLR9FJZ5TjyLCU8y5VA-cOy1B3I32rQXVZ_BQYcZpw7zNJspHYrwr4Ugbd0f4hi0',
-  privateKey: process.env.VAPID_PRIVATE_KEY || 'NoKQMPKBKzEw4VtzpaDKCHsggGjioAdZfXM26W9Ph2I'
+  publicKey: process.env.VAPID_PUBLIC_KEY || 'BEl62iUYb3e2kEuFw_3rKWj0eO6q5eXyVWjKdXqoY3jz1JhLmZpYqXqoY3jz1JhLmZpYqXqoY3jz1JhLmZpYq',
+  privateKey: process.env.VAPID_PRIVATE_KEY || 'q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c2v3b4n5m6'
 };
 
 webpush.setVapidDetails(
@@ -41,14 +41,16 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
 // Servir arquivos estáticos ANTES da autenticação
 app.use(express.static('public'));
 
 // Arquivo para persistência
 const STATE_FILE = 'devices-state.json';
+const SUBSCRIPTIONS_FILE = 'push-subscriptions.json';
 
 // Monitoramento de conexão ESP32
 let esp32Status = {
@@ -58,6 +60,33 @@ let esp32Status = {
     ipAddress: null,
     lastHeartbeat: null
 };
+
+// 🔥 CORREÇÃO: Carregar subscriptions salvas
+function loadSubscriptions() {
+    try {
+        if (fs.existsSync(SUBSCRIPTIONS_FILE)) {
+            const data = fs.readFileSync(SUBSCRIPTIONS_FILE, 'utf8');
+            const subscriptions = JSON.parse(data);
+            pushSubscriptions = subscriptions;
+            console.log(`📱 ${subscriptions.length} subscriptions carregadas do arquivo`);
+        }
+    } catch (error) {
+        console.log('❌ Erro ao carregar subscriptions:', error.message);
+        pushSubscriptions = [];
+    }
+}
+
+// 🔥 CORREÇÃO: Salvar subscriptions
+function saveSubscriptions() {
+    try {
+        fs.writeFileSync(SUBSCRIPTIONS_FILE, JSON.stringify(pushSubscriptions, null, 2));
+        console.log(`💾 ${pushSubscriptions.length} subscriptions salvas`);
+        return true;
+    } catch (error) {
+        console.error('❌ Erro ao salvar subscriptions:', error);
+        return false;
+    }
+}
 
 // Carregar estado salvo
 function loadState() {
@@ -152,14 +181,13 @@ function checkESP32Connection() {
     return esp32Status.connected;
 }
 
-// 🔥 FUNÇÃO CORRIGIDA: Enviar notificação push com melhor tratamento
+// 🔥 CORREÇÃO CRÍTICA: Enviar notificação push com tratamento robusto
 async function sendPushNotification(subscription, payload) {
     return new Promise((resolve, reject) => {
-        // Timeout aumentado para dispositivos móveis
         const timeout = setTimeout(() => {
             console.log('⏰ Timeout na notificação push');
             reject(new Error('Timeout ao enviar notificação'));
-        }, 15000);
+        }, 10000);
 
         console.log('📤 Enviando notificação push para:', subscription.endpoint.substring(0, 50) + '...');
         
@@ -179,13 +207,14 @@ async function sendPushNotification(subscription, payload) {
                     pushSubscriptions = pushSubscriptions.filter(sub => 
                         sub.endpoint !== subscription.endpoint
                     );
+                    saveSubscriptions();
                 }
                 reject(error);
             });
     });
 }
 
-// 🔥 FUNÇÃO MELHORADA: Enviar alerta de gás para todos os dispositivos
+// 🔥 CORREÇÃO: Enviar alerta de gás para todos os dispositivos
 async function sendGasAlert(gasLevel, alertType) {
     const alertMessages = {
         warning: {
@@ -239,7 +268,7 @@ async function sendGasAlert(gasLevel, alertType) {
     // Atualizar estado do alerta ativo
     activeGasAlerts[alertType] = true;
 
-    // 🔥 CORREÇÃO: Enviar para todas as subscriptions com tratamento individual
+    // Enviar para todas as subscriptions com tratamento individual
     const sendPromises = pushSubscriptions.map((subscription, index) => 
         sendPushNotification(subscription, payload)
             .then(() => {
@@ -267,7 +296,7 @@ async function sendGasAlert(gasLevel, alertType) {
     };
 }
 
-// 🔥 FUNÇÃO CORRIGIDA: Gerenciar subscriptions existentes
+// 🔥 CORREÇÃO: Gerenciar subscriptions existentes
 function managePushSubscription(newSubscription) {
     if (!newSubscription || !newSubscription.endpoint) {
         return { error: 'Subscription inválida' };
@@ -282,6 +311,7 @@ function managePushSubscription(newSubscription) {
         console.log('🔄 Atualizando subscription existente');
         // Atualizar a subscription existente
         pushSubscriptions[existingIndex] = newSubscription;
+        saveSubscriptions();
         return { 
             status: 'UPDATED', 
             message: 'Subscription atualizada',
@@ -291,6 +321,7 @@ function managePushSubscription(newSubscription) {
         console.log('✅ Nova subscription adicionada');
         // Adicionar nova subscription
         pushSubscriptions.push(newSubscription);
+        saveSubscriptions();
         return { 
             status: 'CREATED', 
             message: 'Nova subscription criada',
@@ -512,6 +543,7 @@ function converterProgramacoesParaESP32(programacoesFrontend) {
 
 // Inicializar dados
 let devicesState = loadState();
+loadSubscriptions(); // 🔥 CARREGAR SUBSCRIPTIONS AO INICIAR
 
 // Inicializar sistemas
 function initializeSystems() {
@@ -804,6 +836,7 @@ app.post('/api/push/unsubscribe', (req, res) => {
         console.log('🗑️ Removendo TODAS as subscriptions');
         const previousCount = pushSubscriptions.length;
         pushSubscriptions = [];
+        saveSubscriptions();
         res.json({ 
             status: 'OK', 
             message: `Todas as subscriptions removidas (${previousCount} removidas)`,
@@ -811,6 +844,7 @@ app.post('/api/push/unsubscribe', (req, res) => {
         });
     } else if (endpoint) {
         pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== endpoint);
+        saveSubscriptions();
         res.json({ status: 'OK', message: 'Subscription removida' });
     } else {
         res.status(400).json({ error: 'Endpoint não especificado' });
@@ -825,6 +859,12 @@ app.get('/api/push/vapid-public-key', (req, res) => {
 // Rota para testar notificação push
 app.post('/api/push/test', async (req, res) => {
     try {
+        if (pushSubscriptions.length === 0) {
+            return res.status(400).json({ 
+                error: 'Nenhum dispositivo inscrito para notificações push' 
+            });
+        }
+
         const payload = {
             title: '🔔 Teste de Notificação Push',
             body: 'Esta é uma notificação de teste do sistema de automação! Funcionando perfeitamente! 🎉',
@@ -840,12 +880,19 @@ app.post('/api/push/test', async (req, res) => {
 
         console.log(`📤 Enviando notificação de teste para ${pushSubscriptions.length} dispositivos`);
 
-        const results = await sendGasAlert(350, 'warning');
+        const results = await Promise.all(
+            pushSubscriptions.map((subscription, index) => 
+                sendPushNotification(subscription, payload)
+                    .then(() => ({ success: true, index }))
+                    .catch(error => ({ success: false, index, error: error.message }))
+            )
+        );
 
+        const successful = results.filter(r => r.success).length;
+        
         res.json({ 
             status: 'OK', 
-            message: `Notificação de teste processada`,
-            sentTo: pushSubscriptions.length,
+            message: `Notificação de teste enviada para ${successful}/${pushSubscriptions.length} dispositivos`,
             results: results
         });
     } catch (error) {
@@ -870,6 +917,12 @@ app.post('/api/alerts/test-gas', async (req, res) => {
     
     if (!['warning', 'critical'].includes(type)) {
         return res.status(400).json({ error: 'Tipo de alerta inválido' });
+    }
+
+    if (pushSubscriptions.length === 0) {
+        return res.status(400).json({ 
+            error: 'Nenhum dispositivo inscrito para notificações push' 
+        });
     }
 
     try {
