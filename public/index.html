@@ -168,7 +168,140 @@
             border: 1px solid rgba(244, 67, 54, 0.3);
         }
 
-        /* Sistema de Notificações */
+        /* SISTEMA DE NOTIFICAÇÕES DE GÁS - MELHORADO */
+        .gas-alert-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 20px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: var(--z-index-notification);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            transform: translateX(120%);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            max-width: 350px;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255,255,255,0.2);
+            animation: pulseAlert 2s infinite;
+        }
+
+        .gas-alert-notification.show {
+            transform: translateX(0);
+        }
+
+        .gas-alert-notification.critical {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            border-color: rgba(255,100,100,0.5);
+        }
+
+        .gas-alert-notification.warning {
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            border-color: rgba(255,180,0,0.5);
+        }
+
+        .gas-alert-notification.normal {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border-color: rgba(76,175,80,0.5);
+        }
+
+        .gas-alert-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .gas-alert-icon {
+            font-size: 1.4em;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        .gas-alert-content {
+            font-size: 0.9em;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .gas-alert-level {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .gas-alert-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .gas-alert-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .gas-alert-btn.acknowledge {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .gas-alert-btn.acknowledge:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-1px);
+        }
+
+        .gas-alert-btn.silence {
+            background: rgba(0,0,0,0.3);
+            color: white;
+        }
+
+        .gas-alert-btn.silence:hover {
+            background: rgba(0,0,0,0.4);
+            transform: translateY(-1px);
+        }
+
+        .notification-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: var(--transition);
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        /* Sistema de Notificações Gerais */
         .notification {
             position: fixed;
             top: 20px;
@@ -410,7 +543,24 @@
             }
         }
 
-        /* Animações Base */
+        /* Animações para Alertas de Gás */
+        @keyframes pulseAlert {
+            0%, 100% { 
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+                transform: translateX(0) scale(1);
+            }
+            50% { 
+                box-shadow: 0 8px 35px rgba(255,0,0,0.5);
+                transform: translateX(0) scale(1.02);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-2px) rotate(-2deg); }
+            75% { transform: translateX(2px) rotate(2deg); }
+        }
+
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-3px); }
@@ -1173,6 +1323,12 @@
             .days-selection {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .gas-alert-notification {
+                max-width: 300px;
+                right: 10px;
+                left: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1213,11 +1369,19 @@
             .days-selection {
                 grid-template-columns: 1fr;
             }
+
+            .gas-alert-notification {
+                max-width: 280px;
+                padding: 15px 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Sistema de Notificações -->
+    <!-- Sistema de Notificações de Gás -->
+    <div id="gas-alert-container"></div>
+    
+    <!-- Sistema de Notificações Gerais -->
     <div id="notification-container"></div>
     
     <!-- Indicador de Modo Offline -->
@@ -1574,8 +1738,147 @@
                 online: true,
                 esp32: false
             },
-            notifications: []
+            notifications: [],
+            gasAlerts: {
+                active: false,
+                lastLevel: 0,
+                silenced: false,
+                acknowledged: false
+            }
         };
+
+        // ==================== SISTEMA DE NOTIFICAÇÕES DE GÁS ====================
+        function showGasAlert(gasLevel, gasAlert) {
+            // Se o alerta já foi silenciado, não mostrar
+            if (AppState.gasAlerts.silenced) return;
+            
+            const container = document.getElementById('gas-alert-container');
+            let alertType = 'normal';
+            let alertTitle = 'Nível de Gás Normal';
+            let alertMessage = 'Os níveis de gás estão dentro dos parâmetros seguros.';
+            let alertIcon = 'fa-check-circle';
+            
+            // Determinar o tipo de alerta baseado no nível de gás
+            if (gasLevel > 500 || gasAlert) {
+                alertType = 'critical';
+                alertTitle = '🚨 ALERTA CRÍTICO DE GÁS!';
+                alertMessage = `Nível de gás muito alto: ${gasLevel}. Risco de vazamento! Ventile o ambiente imediatamente.`;
+                alertIcon = 'fa-exclamation-triangle';
+                
+                // Em caso de alerta crítico, tocar som (se permitido)
+                playAlertSound();
+                
+            } else if (gasLevel > 300) {
+                alertType = 'warning';
+                alertTitle = '⚠️ Alerta de Gás Elevado';
+                alertMessage = `Nível de gás elevado: ${gasLevel}. Monitore a situação.`;
+                alertIcon = 'fa-exclamation-circle';
+            }
+
+            // Não mostrar alerta se for normal e não houver mudança significativa
+            if (alertType === 'normal' && Math.abs(gasLevel - AppState.gasAlerts.lastLevel) < 50) {
+                return;
+            }
+
+            // Atualizar último nível
+            AppState.gasAlerts.lastLevel = gasLevel;
+
+            // Criar elemento de alerta
+            const alertElement = document.createElement('div');
+            alertElement.className = `gas-alert-notification ${alertType}`;
+            alertElement.innerHTML = `
+                <button class="notification-close" onclick="closeGasAlert(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="gas-alert-header">
+                    <i class="fas ${alertIcon} gas-alert-icon"></i>
+                    <strong>${alertTitle}</strong>
+                </div>
+                <div class="gas-alert-content">
+                    ${alertMessage}
+                    <div class="gas-alert-level">Nível: ${gasLevel}</div>
+                </div>
+                <div class="gas-alert-actions">
+                    <button class="gas-alert-btn acknowledge" onclick="acknowledgeGasAlert()">
+                        <i class="fas fa-check"></i>
+                        Entendi
+                    </button>
+                    <button class="gas-alert-btn silence" onclick="silenceGasAlerts()">
+                        <i class="fas fa-volume-mute"></i>
+                        Silenciar
+                    </button>
+                </div>
+            `;
+
+            // Remover alertas anteriores
+            container.innerHTML = '';
+            container.appendChild(alertElement);
+
+            // Mostrar alerta com animação
+            setTimeout(() => alertElement.classList.add('show'), 100);
+
+            // Configurar auto-remover para alertas normais
+            if (alertType === 'normal') {
+                setTimeout(() => closeGasAlert(alertElement.querySelector('.notification-close')), 5000);
+            }
+
+            AppState.gasAlerts.active = true;
+        }
+
+        function closeGasAlert(closeButton) {
+            const alertElement = closeButton.closest('.gas-alert-notification');
+            if (alertElement) {
+                alertElement.classList.remove('show');
+                setTimeout(() => alertElement.remove(), 300);
+                AppState.gasAlerts.active = false;
+            }
+        }
+
+        function acknowledgeGasAlert() {
+            AppState.gasAlerts.acknowledged = true;
+            const container = document.getElementById('gas-alert-container');
+            container.innerHTML = '';
+            AppState.gasAlerts.active = false;
+            showNotification('Alerta de gás reconhecido', 'info', 3000);
+        }
+
+        function silenceGasAlerts() {
+            AppState.gasAlerts.silenced = true;
+            const container = document.getElementById('gas-alert-container');
+            container.innerHTML = '';
+            AppState.gasAlerts.active = false;
+            showNotification('Alertas de gás silenciados por 30 minutos', 'warning', 3000);
+            
+            // Reativar alertas após 30 minutos
+            setTimeout(() => {
+                AppState.gasAlerts.silenced = false;
+                showNotification('Alertas de gás reativados', 'info', 3000);
+            }, 30 * 60 * 1000);
+        }
+
+        function playAlertSound() {
+            // Criar som de alerta (será executado apenas se o usuário interagiu com a página)
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.log('Som de alerta não disponível');
+            }
+        }
 
         // ==================== GESTOR DE ESTADO ====================
         const StateManager = {
@@ -1900,7 +2203,7 @@
             }
         }
 
-        // ==================== SISTEMA DE NOTIFICAÇÕES ====================
+        // ==================== SISTEMA DE NOTIFICAÇÕES GERAIS ====================
         function showNotification(message, type = 'info', duration = 5000) {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -2195,6 +2498,9 @@
                         } else {
                             gasElement.style.color = 'white';
                         }
+
+                        // MOSTRAR NOTIFICAÇÃO DE GÁS
+                        showGasAlert(latest.gas_level, latest.gas_alert);
                     }
                     
                     // Atualizar alerta
@@ -2204,12 +2510,6 @@
                         alertElement.textContent = isAlert ? 'ALERTA!' : 'NORMAL';
                         alertElement.style.color = isAlert ? '#ff4444' : '#4CAF50';
                         alertElement.style.fontWeight = isAlert ? 'bold' : 'normal';
-                        
-                        if (isAlert && latest.gas_level > 500) {
-                            showNotification('⚠️ ALERTA CRÍTICO: Nível de gás muito alto!', 'error');
-                        } else if (isAlert) {
-                            showNotification('⚠️ Alerta: Nível de gás elevado', 'warning');
-                        }
                     }
                 }
 
@@ -2612,6 +2912,10 @@
         window.logout = logout;
         window.checkAuthorization = checkAuthorization;
         window.toggleTheme = toggleTheme;
+        window.showGasAlert = showGasAlert;
+        window.closeGasAlert = closeGasAlert;
+        window.acknowledgeGasAlert = acknowledgeGasAlert;
+        window.silenceGasAlerts = silenceGasAlerts;
     </script>
 </body>
 </html>
