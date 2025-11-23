@@ -1436,7 +1436,7 @@
                 </h1>
             </div>
             <div class="header-controls">
-                <button class="push-notification-toggle" id="push-notification-toggle" onclick="togglePushNotifications()">
+                <button class="push-notification-toggle" id="push-notification-toggle" onclick="setupPushNotifications()">
                     <i class="fas fa-bell"></i>
                     Push: Ativar
                 </button>
@@ -1787,58 +1787,87 @@
             }
         };
 
-        // ==================== SISTEMA DE NOTIFICAÇÕES PUSH ====================
-        async function initializePushNotifications() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                console.log('❌ Notificações Push não suportadas');
-                updatePushNotificationUI(false);
+        // ==================== SISTEMA DE NOTIFICAÇÕES PUSH CORRIGIDO ====================
+        async function setupPushNotifications() {
+            console.log('📱 Iniciando configuração de notificações push...');
+            
+            // Verificar se Service Worker é suportado
+            if (!('serviceWorker' in navigator)) {
+                console.error('❌ Service Worker não suportado');
+                showNotification('Seu navegador não suporta notificações push', 'error');
+                return;
+            }
+
+            // Verificar se Push Manager é suportado
+            if (!('PushManager' in window)) {
+                console.error('❌ Push Manager não suportado');
+                showNotification('Seu dispositivo não suporta notificações push', 'error');
                 return;
             }
 
             try {
                 // Registrar Service Worker
                 const registration = await navigator.serviceWorker.register('/sw.js');
-                console.log('✅ Service Worker registrado');
+                console.log('✅ Service Worker registrado:', registration);
 
-                // Verificar permissão atual
+                // Solicitar permissão
                 const permission = await Notification.requestPermission();
-                AppState.pushNotifications.permission = permission;
-                
+                console.log('📋 Permissão:', permission);
+
                 if (permission === 'granted') {
-                    await subscribeToPushNotifications(registration);
+                    console.log('🎉 Permissão concedida!');
+                    
+                    // Obter chave pública VAPID
+                    const response = await fetch('/api/push/vapid-public-key');
+                    const { publicKey } = await response.json();
+                    
+                    // Converter chave para Uint8Array
+                    const applicationServerKey = urlBase64ToUint8Array(publicKey);
+                    
+                    // Inscrever para notificações push
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: applicationServerKey
+                    });
+                    
+                    console.log('📝 Subscription criada:', subscription);
+                    
+                    // Enviar subscription para o servidor
+                    const subscribeResponse = await fetch('/api/push/subscribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(subscription)
+                    });
+                    
+                    const result = await subscribeResponse.json();
+                    console.log('✅ Inscrito em notificações push!', result);
+                    
+                    // Atualizar UI
                     updatePushNotificationUI(true);
+                    
+                    showNotification('Notificações ativadas! Você receberá alertas mesmo com o app fechado.', 'success');
+                    
+                    // Testar notificação após 2 segundos
+                    setTimeout(() => {
+                        testPushNotification();
+                    }, 2000);
+                    
                 } else {
+                    console.error('❌ Permissão negada:', permission);
+                    showNotification('Permissão para notificações negada. Ative nas configurações do navegador.', 'warning');
                     updatePushNotificationUI(false);
                 }
+                
             } catch (error) {
-                console.error('❌ Erro ao inicializar notificações push:', error);
+                console.error('❌ Erro ao configurar notificações:', error);
+                showNotification('Erro ao configurar notificações: ' + error.message, 'error');
                 updatePushNotificationUI(false);
             }
         }
 
-        async function subscribeToPushNotifications(registration) {
-            try {
-                const subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array('BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U')
-                });
-
-                // Enviar subscription para o servidor
-                await fetch(`${API_BASE}/push/subscribe`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(subscription)
-                });
-
-                AppState.pushNotifications.enabled = true;
-                console.log('✅ Inscrito em notificações push');
-            } catch (error) {
-                console.error('❌ Erro ao inscrever em notificações push:', error);
-            }
-        }
-
+        // Função auxiliar para converter chave
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
             const base64 = (base64String + padding)
@@ -1854,37 +1883,48 @@
             return outputArray;
         }
 
-        async function togglePushNotifications() {
-            if (!AppState.pushNotifications.enabled) {
-                await initializePushNotifications();
-            } else {
-                await disablePushNotifications();
+        // Testar notificação
+        async function testPushNotification() {
+            try {
+                console.log('🧪 Enviando teste de notificação...');
+                const response = await fetch('/api/push/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                console.log('🧪 Resultado do teste:', result);
+                
+                if (result.status === 'OK') {
+                    showNotification('Teste enviado! Verifique as notificações.', 'success');
+                } else {
+                    showNotification('Erro no teste: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Erro no teste:', error);
+                showNotification('Erro ao testar notificações: ' + error.message, 'error');
             }
         }
 
-        async function disablePushNotifications() {
+        // Verificar se já está inscrito
+        async function checkExistingSubscription() {
             try {
+                if (!('serviceWorker' in navigator)) return false;
+                
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.getSubscription();
                 
                 if (subscription) {
-                    await subscription.unsubscribe();
-                    
-                    // Notificar servidor
-                    await fetch(`${API_BASE}/push/unsubscribe`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ endpoint: subscription.endpoint })
-                    });
+                    console.log('✅ Já inscrito em notificações push');
+                    updatePushNotificationUI(true);
+                    return true;
                 }
-
-                AppState.pushNotifications.enabled = false;
-                updatePushNotificationUI(false);
-                showNotification('Notificações Push desativadas', 'info');
+                return false;
             } catch (error) {
-                console.error('❌ Erro ao desativar notificações push:', error);
+                console.error('❌ Erro ao verificar subscription:', error);
+                return false;
             }
         }
 
@@ -1895,10 +1935,12 @@
                     button.innerHTML = '<i class="fas fa-bell"></i> Push: Ativo';
                     button.classList.add('enabled');
                     button.classList.remove('disabled');
+                    AppState.pushNotifications.enabled = true;
                 } else {
                     button.innerHTML = '<i class="fas fa-bell-slash"></i> Push: Inativo';
                     button.classList.add('disabled');
                     button.classList.remove('enabled');
+                    AppState.pushNotifications.enabled = false;
                 }
             }
         }
@@ -3056,6 +3098,51 @@
             }
         }
 
+        // ==================== INICIALIZAÇÃO DE NOTIFICAÇÕES PUSH ====================
+        async function initializePushNotifications() {
+            console.log('🔔 Inicializando sistema de notificações...');
+            
+            // Aguardar um pouco antes de solicitar permissão
+            setTimeout(async () => {
+                const alreadySubscribed = await checkExistingSubscription();
+                
+                if (!alreadySubscribed) {
+                    console.log('📱 Não inscrito em notificações - mostrando aviso');
+                    showNotification('Ative as notificações para receber alertas de gás!', 'info', 5000);
+                    
+                    // Aguardar interação do usuário
+                    const activateBtn = document.createElement('button');
+                    activateBtn.innerHTML = '🔔 Ativar Notificações';
+                    activateBtn.style.cssText = `
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        background: var(--primary-gradient);
+                        color: white;
+                        border: none;
+                        padding: 12px 20px;
+                        border-radius: 25px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        z-index: 10000;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    `;
+                    activateBtn.onclick = setupPushNotifications;
+                    
+                    document.body.appendChild(activateBtn);
+                    
+                    // Remover botão após 30 segundos
+                    setTimeout(() => {
+                        if (document.body.contains(activateBtn)) {
+                            document.body.removeChild(activateBtn);
+                        }
+                    }, 30000);
+                } else {
+                    console.log('✅ Já inscrito em notificações push');
+                }
+            }, 3000);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Sistema Casa Automação V3.0 inicializado');
             
@@ -3106,7 +3193,8 @@
         window.closeGasAlert = closeGasAlert;
         window.acknowledgeGasAlert = acknowledgeGasAlert;
         window.silenceGasAlerts = silenceGasAlerts;
-        window.togglePushNotifications = togglePushNotifications;
+        window.setupPushNotifications = setupPushNotifications;
+        window.testPushNotification = testPushNotification;
     </script>
 </body>
 </html>
