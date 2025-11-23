@@ -10,10 +10,10 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurações Web Push (VAPID)
+// Configurações Web Push (VAPID) - USE SUAS CHAVES
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U',
-  privateKey: process.env.VAPID_PRIVATE_KEY || 'your-private-key-here'
+  publicKey: process.env.VAPID_PUBLIC_KEY || 'BAxf50baaqvRBw9_oj74uT8NLR9FJZ5TjyLCU8y5VA-cOy1B3I32rQXVZ_BQYcZpw7zNJspHYrwr4Ugbd0f4hi0',
+  privateKey: process.env.VAPID_PRIVATE_KEY || 'NoKQMPKBKzEw4VtzpaDKCHsggGjioAdZfXM26W9Ph2I'
 };
 
 webpush.setVapidDetails(
@@ -265,6 +265,38 @@ async function sendGasAlert(gasLevel, alertType) {
         failed,
         results
     };
+}
+
+// 🔥 FUNÇÃO CORRIGIDA: Gerenciar subscriptions existentes
+function managePushSubscription(newSubscription) {
+    if (!newSubscription || !newSubscription.endpoint) {
+        return { error: 'Subscription inválida' };
+    }
+
+    // Verificar se já existe uma subscription com o mesmo endpoint
+    const existingIndex = pushSubscriptions.findIndex(sub => 
+        sub.endpoint === newSubscription.endpoint
+    );
+
+    if (existingIndex !== -1) {
+        console.log('🔄 Atualizando subscription existente');
+        // Atualizar a subscription existente
+        pushSubscriptions[existingIndex] = newSubscription;
+        return { 
+            status: 'UPDATED', 
+            message: 'Subscription atualizada',
+            totalSubscriptions: pushSubscriptions.length
+        };
+    } else {
+        console.log('✅ Nova subscription adicionada');
+        // Adicionar nova subscription
+        pushSubscriptions.push(newSubscription);
+        return { 
+            status: 'CREATED', 
+            message: 'Nova subscription criada',
+            totalSubscriptions: pushSubscriptions.length
+        };
+    }
 }
 
 // Função para verificar e enviar alertas de gás
@@ -757,35 +789,32 @@ app.post('/api/push/subscribe', (req, res) => {
         return res.status(400).json({ error: 'Subscription inválida' });
     }
 
-    // Verificar se já existe
-    const exists = pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
-    if (!exists) {
-        pushSubscriptions.push(subscription);
-        console.log('✅ Nova subscription push adicionada. Total:', pushSubscriptions.length);
-    } else {
-        console.log('ℹ️ Subscription já existe, atualizando...');
-        pushSubscriptions = pushSubscriptions.map(sub => 
-            sub.endpoint === subscription.endpoint ? subscription : sub
-        );
-    }
+    const result = managePushSubscription(subscription);
+    
+    console.log(`📱 Subscription ${result.status}. Total: ${pushSubscriptions.length}`);
 
-    res.json({ 
-        status: 'OK', 
-        message: 'Subscription salva com sucesso',
-        totalSubscriptions: pushSubscriptions.length
-    });
+    res.json(result);
 });
 
-// Rota para remover subscription
+// 🔥 NOVA ROTA: Limpar todas as subscriptions
 app.post('/api/push/unsubscribe', (req, res) => {
-    const subscription = req.body;
+    const { endpoint } = req.body;
     
-    if (subscription && subscription.endpoint) {
-        pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== subscription.endpoint);
-        console.log('🗑️ Subscription removida. Total:', pushSubscriptions.length);
+    if (endpoint === 'all') {
+        console.log('🗑️ Removendo TODAS as subscriptions');
+        const previousCount = pushSubscriptions.length;
+        pushSubscriptions = [];
+        res.json({ 
+            status: 'OK', 
+            message: `Todas as subscriptions removidas (${previousCount} removidas)`,
+            removed: previousCount
+        });
+    } else if (endpoint) {
+        pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== endpoint);
+        res.json({ status: 'OK', message: 'Subscription removida' });
+    } else {
+        res.status(400).json({ error: 'Endpoint não especificado' });
     }
-
-    res.json({ status: 'OK', message: 'Subscription removida' });
 });
 
 // Rota para obter chave pública VAPID
@@ -793,7 +822,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
     res.json({ publicKey: vapidKeys.publicKey });
 });
 
-// 🔥 ROTA CORRIGIDA: Testar notificação push
+// Rota para testar notificação push
 app.post('/api/push/test', async (req, res) => {
     try {
         const payload = {
@@ -835,7 +864,7 @@ app.get('/api/alerts/history', (req, res) => {
     });
 });
 
-// 🔥 ROTA CORRIGIDA: Forçar alerta de gás (apenas para testes)
+// Rota para forçar alerta de gás (apenas para testes)
 app.post('/api/alerts/test-gas', async (req, res) => {
     const { level = 450, type = 'warning' } = req.body;
     
@@ -857,7 +886,7 @@ app.post('/api/alerts/test-gas', async (req, res) => {
     }
 });
 
-// ESP32 envia dados - CORREÇÃO CRÍTICA COM ALERTAS DE GÁS
+// ESP32 envia dados
 app.post('/api/data', (req, res) => {
     const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto, irrigation_active } = req.body;
 
@@ -942,7 +971,7 @@ app.post('/api/data', (req, res) => {
     });
 });
 
-// ESP32 busca comandos - Estrutura compatível
+// ESP32 busca comandos
 app.get('/api/commands', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress;
     updateESP32Status('ESP32-CASA-AUTOMACAO-V3', clientIP);
@@ -975,7 +1004,7 @@ app.get('/api/commands', (req, res) => {
     res.json(response);
 });
 
-// ESP32 confirma comandos - Estrutura compatível
+// ESP32 confirma comandos
 app.post('/api/confirm', (req, res) => {
     console.log('✅ Confirmação recebida do ESP32:', req.body);
     
