@@ -1,28 +1,38 @@
-
-// public/sw.js - Service Worker para notificações push
-const CACHE_NAME = 'casa-automacao-v1';
+// public/sw.js - SERVICE WORKER CORRIGIDO PARA NOTIFICAÇÕES
+const CACHE_NAME = 'casa-automacao-v3-push';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/login.html',
   '/styles.css',
   '/script.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/badge-72x72.png',
+  '/icons/alert-gas-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
-  console.log('🛠️ Service Worker instalado');
+  console.log('🛠️ Service Worker instalando...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('📦 Cache aberto');
+        console.log('📦 Cache aberto - adicionando URLs');
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('✅ Todos os recursos em cache');
+        return self.skipWaiting();
+      })
+      .catch(error => {
+        console.error('❌ Erro no cache:', error);
+      })
   );
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker ativado');
+  console.log('🚀 Service Worker ativado - tomando controle');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -45,103 +55,121 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         return fetch(event.request);
-      }
-    )
+      })
   );
 });
 
-// 🚨 SISTEMA DE NOTIFICAÇÕES PUSH
+// 🚨 SISTEMA DE NOTIFICAÇÕES PUSH CORRIGIDO
 self.addEventListener('push', (event) => {
-  console.log('📨 Push notification recebida', event);
+  console.log('📨 Push notification recebida - Navegador pode estar fechado!');
   
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
+    console.log('📊 Dados da notificação:', data);
   } catch (error) {
     console.error('❌ Erro ao parsear dados push:', error);
     data = {
-      title: 'Alerta de Segurança',
-      body: 'Alerta do sistema de automação',
+      title: '🚨 Alerta de Segurança',
+      body: 'Alerta do sistema de automação residencial',
       icon: '/icons/icon-192x192.png'
     };
   }
 
+  // Configurações da notificação
   const options = {
-    body: data.body || 'Alerta do sistema de automação residencial',
+    body: data.body || 'Alerta do sistema de automação',
     icon: data.icon || '/icons/icon-192x192.png',
     badge: '/icons/badge-72x72.png',
     image: data.image || '/icons/alert-gas-512x512.png',
-    vibrate: [200, 100, 200, 100, 200],
-    requireInteraction: true,
+    vibrate: [1000, 500, 1000, 500, 1000], // Vibração mais longa
+    requireInteraction: true, // Exige interação do usuário
+    tag: data.alertType || 'gas-alert', // Agrupa notificações similares
+    renotify: true, // Renotificar se mesma tag
+    silent: false, // Permitir som
     actions: [
       {
         action: 'view-details',
-        title: 'Ver Detalhes',
-        icon: '/icons/eye-24x24.png'
+        title: '🔍 Ver Detalhes',
+        icon: '/icons/icon-72x72.png'
       },
       {
-        action: 'snooze',
-        title: 'Adiar 5min',
-        icon: '/icons/snooze-24x24.png'
+        action: 'silencio',
+        title: '🔇 Silenciar',
+        icon: '/icons/icon-72x72.png'
       }
     ],
     data: {
       url: data.url || '/',
       alertType: data.alertType || 'gas',
       timestamp: data.timestamp || new Date().toISOString(),
-      gasLevel: data.gasLevel || 0
+      gasLevel: data.gasLevel || 0,
+      critical: data.critical || false
     }
   };
 
+  // 🔥 CORREÇÃO CRÍTICA: Mostrar notificação SEMPRE
   event.waitUntil(
-    self.registration.showNotification(data.title || '🚨 Alerta de Gás', options)
+    self.registration.showNotification(
+      data.title || '🚨 Alerta de Gás - Casa Automação', 
+      options
+    ).then(() => {
+      console.log('✅ Notificação exibida com sucesso!');
+    }).catch(error => {
+      console.error('❌ Erro ao mostrar notificação:', error);
+    })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Notificação clicada:', event);
+  console.log('🔔 Notificação clicada:', event.action);
   
   event.notification.close();
 
+  const notificationData = event.notification.data || {};
+  
   if (event.action === 'view-details') {
+    // Abrir/focar na aplicação
     event.waitUntil(
-      clients.matchAll({ type: 'window' }).then((clientList) => {
+      clients.matchAll({ 
+        type: 'window', 
+        includeUncontrolled: true 
+      }).then((clientList) => {
         for (const client of clientList) {
-          if (client.url === '/' && 'focus' in client) {
+          if (client.url.includes('/index.html') && 'focus' in client) {
             return client.focus();
           }
         }
-        if (clients.openWindow) {
-          return clients.openWindow('/');
-        }
+        // Se não encontrou janela aberta, abrir nova
+        return clients.openWindow('/index.html');
       })
     );
-  } else if (event.action === 'snooze') {
-    // Implementar adiamento se necessário
-    console.log('⏰ Notificação adiada por 5 minutos');
+  } else if (event.action === 'silencio') {
+    console.log('🔇 Notificação silenciada pelo usuário');
+    // Aqui você pode implementar lógica para silenciar alertas
   } else {
     // Clique normal na notificação
     event.waitUntil(
-      clients.matchAll({ type: 'window' }).then((clientList) => {
-        for (const client of clientList) {
-          if (client.url === '/' && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        if (clients.openWindow) {
-          return clients.openWindow('/');
-        }
+      clients.openWindow('/index.html').then((windowClient) => {
+        console.log('📍 Aplicação aberta pelo clique na notificação');
       })
     );
   }
 });
 
-self.addEventListener('pushsubscriptionchange', (event) => {
-  console.log('🔄 Assinatura push alterada');
-  event.waitUntil(
-    self.registration.pushManager.subscribe(event.oldSubscription.options)
-      .then((subscription) => {
-        console.log('✅ Nova assinatura criada:', subscription);
-      })
-  );
+self.addEventListener('notificationclose', (event) => {
+  console.log('❌ Notificação fechada pelo usuário');
 });
+
+// Background sync para notificações offline
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'background-sync') {
+    console.log('🔄 Background sync triggered');
+    event.waitUntil(doBackgroundSync());
+  }
+});
+
+async function doBackgroundSync() {
+  // Implementar sincronização em background se necessário
+  console.log('🔄 Executando sincronização em background');
+}
