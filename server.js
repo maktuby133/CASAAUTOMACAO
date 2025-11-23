@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 3000;
 
 // Configurações Web Push (VAPID)
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || 'BEl62iUYb3e2kEuFw_3rKWj0eO6q5eXyVWjKdXqoY3jz1JhLmZpYqXqoY3jz1JhLmZpYqXqoY3jz1JhLmZpYq',
-  privateKey: process.env.VAPID_PRIVATE_KEY || 'q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c2v3b4n5m6'
+  publicKey: process.env.VAPID_PUBLIC_KEY,
+  privateKey: process.env.VAPID_PRIVATE_KEY
 };
 
 webpush.setVapidDetails(
@@ -22,7 +22,7 @@ webpush.setVapidDetails(
   vapidKeys.privateKey
 );
 
-// Armazenamento de subscriptions (em produção use um banco de dados)
+// Armazenamento de subscriptions
 let pushSubscriptions = [];
 
 // Sistema de alertas de gás
@@ -67,10 +67,9 @@ function loadState() {
             console.log('💾 Estado carregado do arquivo');
             const state = JSON.parse(data);
             
-            // 🚨 CORREÇÃO: Garantir estrutura compatível com ESP32
             if (!state.irrigation) {
                 state.irrigation = {
-                    bomba_irrigacao: false, // 🚨 SEMPRE INICIAR DESLIGADA
+                    bomba_irrigacao: false,
                     modo: 'manual',
                     programacoes: [],
                     evitar_chuva: true,
@@ -80,17 +79,14 @@ function loadState() {
                 };
             }
             
-            // Garantir que modo_automatico existe e é booleano
             if (typeof state.irrigation.modo_automatico === 'undefined') {
                 state.irrigation.modo_automatico = state.irrigation.modo === 'automatico';
             }
             
-            // Garantir que horario_irrigacao existe no formato correto
             if (!state.irrigation.horario_irrigacao) {
                 state.irrigation.horario_irrigacao = "";
             }
             
-            // 🚨 CORREÇÃO CRÍTICA: Forçar bomba desligada ao carregar
             state.irrigation.bomba_irrigacao = false;
             
             return state;
@@ -110,7 +106,7 @@ function loadState() {
             tomada_quarto2: false, tomada_quarto3: false
         },
         irrigation: {
-            bomba_irrigacao: false, // 🚨 INICIA DESLIGADA
+            bomba_irrigacao: false,
             modo: 'manual',
             programacoes: [],
             evitar_chuva: true,
@@ -161,13 +157,12 @@ function sendPushNotification(subscription, payload) {
     return new Promise((resolve, reject) => {
         webpush.sendNotification(subscription, JSON.stringify(payload))
             .then(response => {
-                console.log('✅ Notificação push enviada:', response.statusCode);
+                console.log('✅ Notificação push enviada');
                 resolve(response);
             })
             .catch(error => {
                 console.error('❌ Erro ao enviar notificação push:', error);
                 
-                // Remove subscription inválida
                 if (error.statusCode === 410) {
                     console.log('🗑️ Removendo subscription expirada');
                     pushSubscriptions = pushSubscriptions.filter(sub => 
@@ -271,19 +266,16 @@ let irrigationCheckInterval = null;
 let activeIrrigationTimer = null;
 
 function startIrrigationScheduler() {
-    // Para qualquer intervalo existente
     if (irrigationCheckInterval) {
         clearInterval(irrigationCheckInterval);
     }
     
-    // Verifica a cada 30 segundos
     irrigationCheckInterval = setInterval(() => {
         checkScheduledIrrigation();
     }, 30000);
     
     console.log('⏰ Agendador de irrigação iniciado (verificação a cada 30 segundos)');
     
-    // Verifica imediatamente ao iniciar
     setTimeout(() => {
         checkScheduledIrrigation();
     }, 2000);
@@ -297,7 +289,6 @@ function checkScheduledIrrigation() {
 
     console.log(`💧 [${currentTime}] Verificando programações...`);
 
-    // Verificar se está no modo automático
     if (devicesState.irrigation.modo !== 'automatico') {
         console.log('💧 Modo não é automático, ignorando verificação');
         return;
@@ -317,27 +308,23 @@ function checkScheduledIrrigation() {
     programacoes.forEach((prog, index) => {
         console.log(`💧 Verificando programação ${index + 1}: ${prog.hora} - Dias: ${prog.dias.join(', ')}`);
         
-        // Verificação exata do horário e dias
         if (prog.hora === currentTime && prog.dias.includes(currentDay)) {
             foundActiveSchedules.push({ index, prog });
             console.log(`💧 ✅ PROGRAMação ${index + 1} ATIVADA!`);
         }
     });
 
-    // 🚨 CORREÇÃO CRÍTICA: Executar TODAS as programações ativas, não apenas a primeira
     if (foundActiveSchedules.length > 0) {
         console.log(`💧 🎯 Encontradas ${foundActiveSchedules.length} programações ativas!`);
         
         foundActiveSchedules.forEach(({ index, prog }) => {
             console.log(`💧 🚀 PROCESSANDO programação ${index + 1}: ${prog.hora}`);
             
-            // Verificar se já está executando
             if (devicesState.irrigation.bomba_irrigacao) {
                 console.log('💧 Bomba já está ligada, ignorando ativação duplicada');
                 return;
             }
 
-            // Verificar condições climáticas se necessário
             if (devicesState.irrigation.evitar_chuva) {
                 console.log('💧 Verificando se está chovendo...');
                 isRaining().then(raining => {
@@ -369,23 +356,19 @@ function getCurrentDayOfWeek() {
 function startScheduledIrrigation(programIndex) {
     console.log(`💧 🚀 INICIANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1}`);
     
-    // Atualiza estado e salva
     devicesState.irrigation.bomba_irrigacao = true;
     saveState(devicesState);
 
     const duracao = devicesState.irrigation.duracao || 5;
     console.log(`⏰ Irrigação programada por ${duracao} minutos`);
     
-    // Limpar timer anterior se existir
     if (activeIrrigationTimer) {
         clearTimeout(activeIrrigationTimer);
     }
     
-    // Timer para desligar a bomba
     activeIrrigationTimer = setTimeout(() => {
         console.log(`💧 ⏹️ DESLIGANDO IRRIGAÇÃO PROGRAMADA #${programIndex + 1} após ${duracao} minutos`);
         
-        // 🚨 CORREÇÃO CRÍTICA: Atualiza o estado no servidor também
         devicesState.irrigation.bomba_irrigacao = false;
         saveState(devicesState);
         console.log('💧 ✅ Estado da bomba atualizado para DESLIGADA no servidor');
@@ -442,14 +425,11 @@ async function isRaining() {
     }
 }
 
-// 🚨 NOVA FUNÇÃO: Converter programações do frontend para formato ESP32
+// Converter programações do frontend para formato ESP32
 function converterProgramacoesParaESP32(programacoesFrontend) {
     console.log('🔄 Convertendo programações do frontend para ESP32...');
     
-    // Estrutura para 4 programações no ESP32
     const programacoesESP32 = [];
-    
-    // Preencher as programações com dados do frontend (máximo 4)
     const programacoesLimitadas = programacoesFrontend.slice(0, 4);
     
     programacoesLimitadas.forEach((prog, index) => {
@@ -743,7 +723,6 @@ app.post('/api/push/subscribe', (req, res) => {
         return res.status(400).json({ error: 'Subscription inválida' });
     }
 
-    // Verificar se já existe
     const exists = pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
     if (!exists) {
         pushSubscriptions.push(subscription);
@@ -812,7 +791,7 @@ app.post('/api/push/test', async (req, res) => {
 // Rota para histórico de alertas
 app.get('/api/alerts/history', (req, res) => {
     res.json({
-        alerts: gasAlertHistory.slice(0, 20), // Últimos 20 alertas
+        alerts: gasAlertHistory.slice(0, 20),
         activeAlerts: activeGasAlerts,
         totalSubscriptions: pushSubscriptions.length,
         pushEnabled: pushSubscriptions.length > 0
@@ -1201,7 +1180,7 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\n🔥 Servidor Automação V3.0 CORRIGIDO rodando na porta ${PORT}`);
+    console.log(`\n🔥 Servidor Automação V3.0 COMPLETO rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETA COM ESP32');
