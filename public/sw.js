@@ -1,5 +1,5 @@
 // public/sw.js - SERVICE WORKER CORRIGIDO PARA NOTIFICAÇÕES
-const CACHE_NAME = 'casa-automacao-v3-push';
+const CACHE_NAME = 'casa-automacao-v3-push-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -59,7 +59,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// 🚨 SISTEMA DE NOTIFICAÇÕES PUSH CORRIGIDO
+// 🚨 SISTEMA DE NOTIFICAÇÕES PUSH CORRIGIDO - FUNCIONA COM NAVEGADOR FECHADO
 self.addEventListener('push', (event) => {
   console.log('📨 Push notification recebida - Navegador pode estar fechado!');
   
@@ -76,17 +76,17 @@ self.addEventListener('push', (event) => {
     };
   }
 
-  // Configurações da notificação
+  // 🔥 CORREÇÃO CRÍTICA: Configurações otimizadas para mobile
   const options = {
     body: data.body || 'Alerta do sistema de automação',
     icon: data.icon || '/icons/icon-192x192.png',
     badge: '/icons/badge-72x72.png',
     image: data.image || '/icons/alert-gas-512x512.png',
-    vibrate: [1000, 500, 1000, 500, 1000], // Vibração mais longa
-    requireInteraction: true, // Exige interação do usuário
-    tag: data.alertType || 'gas-alert', // Agrupa notificações similares
-    renotify: true, // Renotificar se mesma tag
-    silent: false, // Permitir som
+    vibrate: [1000, 500, 1000, 500, 1000],
+    requireInteraction: true,
+    tag: data.alertType || 'gas-alert',
+    renotify: true,
+    silent: false,
     actions: [
       {
         action: 'view-details',
@@ -100,7 +100,7 @@ self.addEventListener('push', (event) => {
       }
     ],
     data: {
-      url: data.url || '/',
+      url: data.url || '/index.html',
       alertType: data.alertType || 'gas',
       timestamp: data.timestamp || new Date().toISOString(),
       gasLevel: data.gasLevel || 0,
@@ -108,15 +108,25 @@ self.addEventListener('push', (event) => {
     }
   };
 
-  // 🔥 CORREÇÃO CRÍTICA: Mostrar notificação SEMPRE
+  // 🔥 CORREÇÃO: Garantir que a notificação seja mostrada SEMPRE
   event.waitUntil(
     self.registration.showNotification(
-      data.title || '🚨 Alerta de Gás - Casa Automação', 
+      data.title || '🚨 Alerta - Casa Automação', 
       options
     ).then(() => {
-      console.log('✅ Notificação exibida com sucesso!');
+      console.log('✅ Notificação exibida com sucesso no celular!');
     }).catch(error => {
-      console.error('❌ Erro ao mostrar notificação:', error);
+      console.error('❌ Erro crítico ao mostrar notificação:', error);
+      // Fallback: tentar com configurações mínimas
+      const fallbackOptions = {
+        body: data.body || 'Alerta importante',
+        icon: '/icons/icon-192x192.png',
+        vibrate: [1000, 500, 1000]
+      };
+      return self.registration.showNotification(
+        data.title || 'Alerta',
+        fallbackOptions
+      );
     })
   );
 });
@@ -146,7 +156,17 @@ self.addEventListener('notificationclick', (event) => {
     );
   } else if (event.action === 'silencio') {
     console.log('🔇 Notificação silenciada pelo usuário');
-    // Aqui você pode implementar lógica para silenciar alertas
+    // Enviar mensagem para a aplicação sobre o silenciamento
+    event.waitUntil(
+      clients.matchAll().then((allClients) => {
+        allClients.forEach((client) => {
+          client.postMessage({
+            type: 'SILENCE_ALERTS',
+            timestamp: new Date().toISOString()
+          });
+        });
+      })
+    );
   } else {
     // Clique normal na notificação
     event.waitUntil(
@@ -170,6 +190,15 @@ self.addEventListener('sync', (event) => {
 });
 
 async function doBackgroundSync() {
-  // Implementar sincronização em background se necessário
   console.log('🔄 Executando sincronização em background');
+  // Implementar sincronização em background se necessário
 }
+
+// 🔥 NOVO: Message handler para comunicação com a aplicação
+self.addEventListener('message', (event) => {
+  console.log('📨 Mensagem recebida no Service Worker:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
