@@ -338,6 +338,38 @@
             background: var(--info-gradient);
         }
 
+        /* Botão de Controle de Notificações Push */
+        .push-notification-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .push-notification-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .push-notification-toggle.enabled {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .push-notification-toggle.disabled {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.5);
+        }
+
         /* Botão de Tema */
         .theme-toggle {
             background: rgba(255, 255, 255, 0.2);
@@ -1404,6 +1436,10 @@
                 </h1>
             </div>
             <div class="header-controls">
+                <button class="push-notification-toggle" id="push-notification-toggle" onclick="togglePushNotifications()">
+                    <i class="fas fa-bell"></i>
+                    Push: Ativar
+                </button>
                 <button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
                     <i class="fas fa-moon"></i>
                     Tema
@@ -1744,8 +1780,128 @@
                 lastLevel: 0,
                 silenced: false,
                 acknowledged: false
+            },
+            pushNotifications: {
+                enabled: false,
+                permission: 'default'
             }
         };
+
+        // ==================== SISTEMA DE NOTIFICAÇÕES PUSH ====================
+        async function initializePushNotifications() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                console.log('❌ Notificações Push não suportadas');
+                updatePushNotificationUI(false);
+                return;
+            }
+
+            try {
+                // Registrar Service Worker
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('✅ Service Worker registrado');
+
+                // Verificar permissão atual
+                const permission = await Notification.requestPermission();
+                AppState.pushNotifications.permission = permission;
+                
+                if (permission === 'granted') {
+                    await subscribeToPushNotifications(registration);
+                    updatePushNotificationUI(true);
+                } else {
+                    updatePushNotificationUI(false);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao inicializar notificações push:', error);
+                updatePushNotificationUI(false);
+            }
+        }
+
+        async function subscribeToPushNotifications(registration) {
+            try {
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array('BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U')
+                });
+
+                // Enviar subscription para o servidor
+                await fetch(`${API_BASE}/push/subscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(subscription)
+                });
+
+                AppState.pushNotifications.enabled = true;
+                console.log('✅ Inscrito em notificações push');
+            } catch (error) {
+                console.error('❌ Erro ao inscrever em notificações push:', error);
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        async function togglePushNotifications() {
+            if (!AppState.pushNotifications.enabled) {
+                await initializePushNotifications();
+            } else {
+                await disablePushNotifications();
+            }
+        }
+
+        async function disablePushNotifications() {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                
+                if (subscription) {
+                    await subscription.unsubscribe();
+                    
+                    // Notificar servidor
+                    await fetch(`${API_BASE}/push/unsubscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ endpoint: subscription.endpoint })
+                    });
+                }
+
+                AppState.pushNotifications.enabled = false;
+                updatePushNotificationUI(false);
+                showNotification('Notificações Push desativadas', 'info');
+            } catch (error) {
+                console.error('❌ Erro ao desativar notificações push:', error);
+            }
+        }
+
+        function updatePushNotificationUI(enabled) {
+            const button = document.getElementById('push-notification-toggle');
+            if (button) {
+                if (enabled) {
+                    button.innerHTML = '<i class="fas fa-bell"></i> Push: Ativo';
+                    button.classList.add('enabled');
+                    button.classList.remove('disabled');
+                } else {
+                    button.innerHTML = '<i class="fas fa-bell-slash"></i> Push: Inativo';
+                    button.classList.add('disabled');
+                    button.classList.remove('enabled');
+                }
+            }
+        }
 
         // ==================== SISTEMA DE NOTIFICAÇÕES DE GÁS ====================
         function showGasAlert(gasLevel, gasAlert) {
@@ -1768,11 +1924,21 @@
                 // Em caso de alerta crítico, tocar som (se permitido)
                 playAlertSound();
                 
+                // ENVIAR NOTIFICAÇÃO PUSH PARA ALERTAS CRÍTICOS
+                if (AppState.pushNotifications.enabled) {
+                    sendPushNotification(alertTitle, alertMessage, gasLevel);
+                }
+                
             } else if (gasLevel > 300) {
                 alertType = 'warning';
                 alertTitle = '⚠️ Alerta de Gás Elevado';
                 alertMessage = `Nível de gás elevado: ${gasLevel}. Monitore a situação.`;
                 alertIcon = 'fa-exclamation-circle';
+                
+                // ENVIAR NOTIFICAÇÃO PUSH PARA ALERTAS DE ATENÇÃO
+                if (AppState.pushNotifications.enabled) {
+                    sendPushNotification(alertTitle, alertMessage, gasLevel);
+                }
             }
 
             // Não mostrar alerta se for normal e não houver mudança significativa
@@ -1823,6 +1989,26 @@
             }
 
             AppState.gasAlerts.active = true;
+        }
+
+        async function sendPushNotification(title, message, gasLevel) {
+            try {
+                await fetch(`${API_BASE}/push/send-gas-alert`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        message: message,
+                        gasLevel: gasLevel,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                console.log('📤 Notificação push enviada para o servidor');
+            } catch (error) {
+                console.error('❌ Erro ao enviar notificação push:', error);
+            }
         }
 
         function closeGasAlert(closeButton) {
@@ -2830,6 +3016,10 @@
                 await loadInitialData();
                 setupEventListeners();
                 startDataUpdates();
+                
+                // Inicializar notificações push
+                await initializePushNotifications();
+                
                 showNotification('Sistema inicializado com sucesso!', 'success');
             } catch (error) {
                 console.error('Falha na inicialização:', error);
@@ -2916,6 +3106,7 @@
         window.closeGasAlert = closeGasAlert;
         window.acknowledgeGasAlert = acknowledgeGasAlert;
         window.silenceGasAlerts = silenceGasAlerts;
+        window.togglePushNotifications = togglePushNotifications;
     </script>
 </body>
 </html>
