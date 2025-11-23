@@ -1831,10 +1831,16 @@
             }
 
             try {
-                // Registrar Service Worker
-                const registration = await navigator.serviceWorker.register('/sw.js');
+                // 🔥 CORREÇÃO: Registrar Service Worker com escopo correto
+                const registration = await navigator.serviceWorker.register('/sw.js', {
+                    scope: '/'
+                });
+                
                 console.log('✅ Service Worker registrado:', registration);
 
+                // Aguardar o Service Worker estar pronto
+                await navigator.serviceWorker.ready;
+                
                 // Solicitar permissão
                 const permission = await Notification.requestPermission();
                 console.log('📋 Permissão:', permission);
@@ -1889,6 +1895,40 @@
                 console.error('❌ Erro ao configurar notificações:', error);
                 showNotification('Erro ao configurar notificações: ' + error.message, 'error');
                 updatePushNotificationUI(false);
+            }
+        }
+
+        // 🔥 NOVA FUNÇÃO: Verificar e atualizar Service Worker
+        async function updateServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    await registration.update();
+                    console.log('🔄 Service Worker atualizado');
+                } catch (error) {
+                    console.error('❌ Erro ao atualizar Service Worker:', error);
+                }
+            }
+        }
+
+        // 🔥 NOVA FUNÇÃO: Forçar atualização do Service Worker
+        async function forceServiceWorkerUpdate() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        console.log('🗑️ Service Worker removido:', registration);
+                    }
+                    
+                    // Recarregar a página para registrar novo Service Worker
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao forçar atualização:', error);
+                }
             }
         }
 
@@ -2200,6 +2240,15 @@
                     if (attempt === maxRetries) throw error;
                 }
             }
+        }
+
+        function fetchWithTimeout(url, options, timeout = 5000) {
+            return Promise.race([
+                fetch(url, options),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout')), timeout)
+                )
+            ]);
         }
 
         async function loadDevices() {
@@ -2995,15 +3044,6 @@
             return div.innerHTML;
         }
 
-        function fetchWithTimeout(url, options, timeout = 5000) {
-            return Promise.race([
-                fetch(url, options),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout')), timeout)
-                )
-            ]);
-        }
-
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -3184,6 +3224,8 @@
         window.updatePushNotificationUI = updatePushNotificationUI;
         window.checkExistingSubscription = checkExistingSubscription;
         window.initializePushNotifications = initializePushNotifications;
+        window.updateServiceWorker = updateServiceWorker;
+        window.forceServiceWorkerUpdate = forceServiceWorkerUpdate;
         window.showTimePicker = showTimePicker;
         window.addProgramming = addProgramming;
         window.removeProgramming = removeProgramming;
