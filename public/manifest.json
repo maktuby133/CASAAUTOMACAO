@@ -1,14 +1,12 @@
-
 {
-  "name": "Casa Automação - Alertas",
-  "short_name": "CasaAutomação",
+  "name": "Casa Automação",
+  "short_name": "CasaAuto",
   "description": "Sistema de automação residencial com alertas de gás",
-  "start_url": "/",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#667eea",
-  "theme_color": "#764ba2",
+  "theme_color": "#667eea",
   "orientation": "portrait",
-  "scope": "/",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -51,14 +49,5 @@
       "type": "image/png"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/dashboard.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    }
-  ],
-  "categories": ["productivity", "utilities"],
-  "lang": "pt-BR"
+  "gcm_sender_id": "103953800507"
 }
