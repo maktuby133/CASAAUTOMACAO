@@ -4,10 +4,33 @@ const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const fetch = require('node-fetch');
+const webpush = require('web-push');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configurações Web Push (VAPID)
+const vapidKeys = {
+  publicKey: process.env.VAPID_PUBLIC_KEY || 'BEl62iUYb3e2kEuFw_3rKWj0eO6q5eXyVWjKdXqoY3jz1JhLmZpYqXqoY3jz1JhLmZpYqXqoY3jz1JhLmZpYq',
+  privateKey: process.env.VAPID_PRIVATE_KEY || 'q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c2v3b4n5m6'
+};
+
+webpush.setVapidDetails(
+  'mailto:admin@casaautomacao.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
+
+// Armazenamento de subscriptions (em produção use um banco de dados)
+let pushSubscriptions = [];
+
+// Sistema de alertas de gás
+let gasAlertHistory = [];
+let activeGasAlerts = {
+  warning: false,
+  critical: false
+};
 
 // CORS configurado para permitir cookies
 app.use(cors({
@@ -131,6 +154,116 @@ function checkESP32Connection() {
         }
     }
     return esp32Status.connected;
+}
+
+// Função para enviar notificação push
+function sendPushNotification(subscription, payload) {
+    return new Promise((resolve, reject) => {
+        webpush.sendNotification(subscription, JSON.stringify(payload))
+            .then(response => {
+                console.log('✅ Notificação push enviada:', response.statusCode);
+                resolve(response);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao enviar notificação push:', error);
+                
+                // Remove subscription inválida
+                if (error.statusCode === 410) {
+                    console.log('🗑️ Removendo subscription expirada');
+                    pushSubscriptions = pushSubscriptions.filter(sub => 
+                        sub.endpoint !== subscription.endpoint
+                    );
+                }
+                reject(error);
+            });
+    });
+}
+
+// Função para enviar alerta de gás para todos os dispositivos
+async function sendGasAlert(gasLevel, alertType) {
+    const alertMessages = {
+        warning: {
+            title: '⚠️ Alerta de Gás - Nível Elevado',
+            body: `Nível de gás detectado: ${gasLevel}. Verifique possíveis vazamentos.`,
+            alertType: 'gas_warning'
+        },
+        critical: {
+            title: '🚨 ALERTA CRÍTICO DE GÁS',
+            body: `NÍVEL PERIGOSO: ${gasLevel}! EVACUAR ÁREA E CHAMAR BOMBEIROS!`,
+            alertType: 'gas_critical'
+        }
+    };
+
+    const alert = alertMessages[alertType];
+    if (!alert) return;
+
+    const payload = {
+        title: alert.title,
+        body: alert.body,
+        icon: '/icons/icon-192x192.png',
+        image: '/icons/alert-gas-512x512.png',
+        badge: '/icons/badge-72x72.png',
+        vibrate: [1000, 500, 1000],
+        requireInteraction: true,
+        timestamp: new Date().toISOString(),
+        gasLevel: gasLevel,
+        alertType: alert.alertType,
+        url: '/'
+    };
+
+    console.log(`🚨 Enviando alerta de gás (${alertType}): ${gasLevel}`);
+
+    // Registrar no histórico
+    gasAlertHistory.unshift({
+        type: alertType,
+        level: gasLevel,
+        timestamp: new Date(),
+        message: alert.body
+    });
+
+    // Manter apenas últimos 100 alertas
+    if (gasAlertHistory.length > 100) {
+        gasAlertHistory = gasAlertHistory.slice(0, 100);
+    }
+
+    // Atualizar estado do alerta ativo
+    activeGasAlerts[alertType] = true;
+
+    // Enviar para todas as subscriptions
+    const sendPromises = pushSubscriptions.map(subscription => 
+        sendPushNotification(subscription, payload).catch(error => {
+            console.error('Erro ao enviar para subscription:', error);
+        })
+    );
+
+    await Promise.all(sendPromises);
+}
+
+// Função para verificar e enviar alertas de gás
+function checkGasAlerts(gasLevel) {
+    // Limpar alertas anteriores se o nível voltou ao normal
+    if (gasLevel <= 300) {
+        if (activeGasAlerts.warning || activeGasAlerts.critical) {
+            console.log('✅ Nível de gás normalizado');
+            activeGasAlerts.warning = false;
+            activeGasAlerts.critical = false;
+        }
+        return;
+    }
+
+    // Verificar se já existe um alerta ativo para evitar spam
+    const now = new Date();
+    const lastAlert = gasAlertHistory[0];
+    const timeSinceLastAlert = lastAlert ? now - new Date(lastAlert.timestamp) : Infinity;
+
+    // Alerta crítico (acima de 500)
+    if (gasLevel > 500 && !activeGasAlerts.critical && timeSinceLastAlert > 30000) {
+        sendGasAlert(gasLevel, 'critical');
+    }
+    // Alerta de aviso (acima de 300)
+    else if (gasLevel > 300 && !activeGasAlerts.warning && timeSinceLastAlert > 60000) {
+        sendGasAlert(gasLevel, 'warning');
+    }
 }
 
 // Sistema de irrigação automática
@@ -390,13 +523,21 @@ const requireAuth = (req, res, next) => {
         '/api/irrigation/save',
         '/api/irrigation/test-schedule',
         '/api/irrigation/schedule-status',
+        '/api/push/subscribe',
+        '/api/push/unsubscribe',
+        '/api/push/vapid-public-key',
+        '/api/push/test',
+        '/api/alerts/history',
         '/health',
         '/favicon.ico',
         '/styles.css',
-        '/script.js'
+        '/script.js',
+        '/sw.js',
+        '/manifest.json',
+        '/icons/*'
     ];
 
-    if (publicRoutes.includes(req.path)) {
+    if (publicRoutes.includes(req.path) || req.path.startsWith('/icons/')) {
         return next();
     }
 
@@ -482,7 +623,8 @@ app.get('/api/status', (req, res) => {
         message: '🚀 Servidor Automação V3.0',
         status: 'online',
         authenticated: authToken === 'admin123',
-        esp32: { connected: espConnected }
+        esp32: { connected: espConnected },
+        pushSubscriptions: pushSubscriptions.length
     });
 });
 
@@ -591,7 +733,114 @@ app.get('/api/irrigation/schedule-status', (req, res) => {
     });
 });
 
-// ESP32 envia dados - CORREÇÃO CRÍTICA
+// ==================== SISTEMA DE NOTIFICAÇÕES PUSH ====================
+
+// Rota para salvar subscription push
+app.post('/api/push/subscribe', (req, res) => {
+    const subscription = req.body;
+    
+    if (!subscription || !subscription.endpoint) {
+        return res.status(400).json({ error: 'Subscription inválida' });
+    }
+
+    // Verificar se já existe
+    const exists = pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
+    if (!exists) {
+        pushSubscriptions.push(subscription);
+        console.log('✅ Nova subscription push adicionada. Total:', pushSubscriptions.length);
+    }
+
+    res.json({ 
+        status: 'OK', 
+        message: 'Subscription salva com sucesso',
+        totalSubscriptions: pushSubscriptions.length
+    });
+});
+
+// Rota para remover subscription
+app.post('/api/push/unsubscribe', (req, res) => {
+    const subscription = req.body;
+    
+    if (subscription && subscription.endpoint) {
+        pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== subscription.endpoint);
+        console.log('🗑️ Subscription removida. Total:', pushSubscriptions.length);
+    }
+
+    res.json({ status: 'OK', message: 'Subscription removida' });
+});
+
+// Rota para obter chave pública VAPID
+app.get('/api/push/vapid-public-key', (req, res) => {
+    res.json({ publicKey: vapidKeys.publicKey });
+});
+
+// Rota para testar notificação
+app.post('/api/push/test', async (req, res) => {
+    try {
+        const payload = {
+            title: '🔔 Teste de Notificação',
+            body: 'Esta é uma notificação de teste do sistema de automação! Funcionando perfeitamente! 🎉',
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/badge-72x72.png',
+            image: '/icons/alert-gas-512x512.png',
+            vibrate: [200, 100, 200],
+            timestamp: new Date().toISOString(),
+            url: '/'
+        };
+
+        console.log(`📤 Enviando notificação de teste para ${pushSubscriptions.length} dispositivos`);
+
+        const sendPromises = pushSubscriptions.map(subscription => 
+            sendPushNotification(subscription, payload).catch(error => {
+                console.error('Erro ao enviar teste:', error);
+            })
+        );
+
+        await Promise.all(sendPromises);
+        
+        res.json({ 
+            status: 'OK', 
+            message: `Notificação de teste enviada para ${pushSubscriptions.length} dispositivos`,
+            sentTo: pushSubscriptions.length
+        });
+    } catch (error) {
+        console.error('❌ Erro ao enviar notificação de teste:', error);
+        res.status(500).json({ error: 'Erro ao enviar notificação de teste' });
+    }
+});
+
+// Rota para histórico de alertas
+app.get('/api/alerts/history', (req, res) => {
+    res.json({
+        alerts: gasAlertHistory.slice(0, 20), // Últimos 20 alertas
+        activeAlerts: activeGasAlerts,
+        totalSubscriptions: pushSubscriptions.length,
+        pushEnabled: pushSubscriptions.length > 0
+    });
+});
+
+// Rota para forçar alerta de gás (apenas para testes)
+app.post('/api/alerts/test-gas', async (req, res) => {
+    const { level = 450, type = 'warning' } = req.body;
+    
+    if (!['warning', 'critical'].includes(type)) {
+        return res.status(400).json({ error: 'Tipo de alerta inválido' });
+    }
+
+    try {
+        await sendGasAlert(level, type);
+        res.json({ 
+            status: 'OK', 
+            message: `Alerta de gás ${type} enviado`,
+            level: level,
+            sentTo: pushSubscriptions.length
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao enviar alerta de teste' });
+    }
+});
+
+// ESP32 envia dados - CORREÇÃO CRÍTICA COM ALERTAS DE GÁS
 app.post('/api/data', (req, res) => {
     const { temperature, humidity, gas_level, gas_alert, device, heartbeat, wifi_rssi, irrigation_auto, irrigation_active } = req.body;
 
@@ -630,6 +879,19 @@ app.post('/api/data', (req, res) => {
         devicesState.sensorData = devicesState.sensorData.slice(0, 100);
     }
 
+    // 🚨 SISTEMA DE ALERTAS DE GÁS - Verificar e enviar notificações
+    if (processedGasLevel > 300) {
+        console.log(`🚨 Nível de gás elevado detectado: ${processedGasLevel}`);
+        checkGasAlerts(processedGasLevel);
+    } else {
+        // Limpar alertas se o nível voltou ao normal
+        if (activeGasAlerts.warning || activeGasAlerts.critical) {
+            console.log('✅ Nível de gás normalizado');
+            activeGasAlerts.warning = false;
+            activeGasAlerts.critical = false;
+        }
+    }
+
     // 🚨 CORREÇÃO CRÍTICA: Sincronizar estado da bomba com o ESP32
     if (typeof irrigation_active !== 'undefined') {
         console.log('💧 Sincronizando estado da bomba com ESP32:', 
@@ -658,7 +920,8 @@ app.post('/api/data', (req, res) => {
     res.json({ 
         status: 'OK', 
         message: heartbeat ? 'Heartbeat recebido!' : 'Dados salvos!',
-        devices: devicesState
+        devices: devicesState,
+        gas_alert: processedGasLevel > 300
     });
 });
 
@@ -926,7 +1189,8 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
-        esp32: { connected: esp32Status.connected }
+        esp32: { connected: esp32Status.connected },
+        pushSubscriptions: pushSubscriptions.length
     });
 });
 
@@ -941,6 +1205,8 @@ app.listen(PORT, () => {
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log('📡 Monitoramento ESP32: ATIVADO');
     console.log('💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETA COM ESP32');
+    console.log('🔔 Sistema de Notificações Push: ATIVADO');
+    console.log('🚨 Alertas de Gás: CONFIGURADOS');
     console.log('🔐 Sistema de Login: FUNCIONANDO');
     console.log('📊 Sensores: FUNCIONANDO');
     console.log('🔧 ESP32: COMUNICAÇÃO ESTÁVEL E COMPATÍVEL\n');
