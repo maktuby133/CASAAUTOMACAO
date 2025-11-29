@@ -1,5 +1,6 @@
-// public/sw.js - SERVICE WORKER CORRIGIDO PARA NOTIFICAÇÕES
-const CACHE_NAME = 'casa-automacao-v3-push-v2';
+// public/sw.js - SERVICE WORKER CORRIGIDO PARA NOTIFICAÇÕES PUSH
+
+const CACHE_NAME = 'casa-automacao-v3-push-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -194,11 +195,33 @@ async function doBackgroundSync() {
   // Implementar sincronização em background se necessário
 }
 
-// 🔥 NOVO: Message handler para comunicação com a aplicação
+// 🔥 CORREÇÃO: Message handler para comunicação com a aplicação
 self.addEventListener('message', (event) => {
   console.log('📨 Mensagem recebida no Service Worker:', event.data);
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  // 🔥 NOVO: Mensagem para cancelar subscriptions
+  if (event.data && event.data.type === 'UNSUBSCRIBE_PUSH') {
+    console.log('🔕 Cancelando todas as subscriptions push...');
+    event.waitUntil(
+      self.registration.pushManager.getSubscription()
+        .then(subscription => {
+          if (subscription) {
+            return subscription.unsubscribe();
+          }
+        })
+        .then(success => {
+          console.log('✅ Subscription cancelada:', success);
+          // Enviar confirmação
+          event.ports[0].postMessage({ success: true });
+        })
+        .catch(error => {
+          console.error('❌ Erro ao cancelar subscription:', error);
+          event.ports[0].postMessage({ success: false, error: error.message });
+        })
+    );
   }
 });
