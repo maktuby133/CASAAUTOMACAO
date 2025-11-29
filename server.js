@@ -835,40 +835,42 @@ app.post('/api/push/disable', async (req, res) => {
     try {
         const { endpoint } = req.body;
         
+        console.log('🔕 Solicitando desativação de notificações push:', endpoint);
+        
         if (endpoint === 'all') {
             console.log('🔕 Desativando TODAS as notificações push');
             const previousCount = pushSubscriptions.length;
             
-            // Tentar cancelar todas as subscriptions no navegador
-            const cancelPromises = pushSubscriptions.map(async (subscription) => {
-                try {
-                    // Aqui você poderia enviar uma requisição para o service worker cancelar a subscription
-                    console.log(`🗑️ Removendo subscription: ${subscription.endpoint.substring(0, 50)}...`);
-                } catch (error) {
-                    console.error('Erro ao cancelar subscription:', error);
-                }
-            });
-            
-            await Promise.all(cancelPromises);
-            
             // Limpar todas as subscriptions do servidor
             pushSubscriptions = [];
-            saveSubscriptions();
+            const saveResult = saveSubscriptions();
             
-            res.json({ 
-                status: 'OK', 
-                message: `Todas as notificações push desativadas (${previousCount} removidas)`,
-                removed: previousCount,
-                pushEnabled: false
-            });
+            if (saveResult) {
+                console.log(`✅ ${previousCount} subscriptions removidas com sucesso`);
+                res.json({ 
+                    status: 'OK', 
+                    message: `Todas as notificações push desativadas (${previousCount} removidas)`,
+                    removed: previousCount,
+                    pushEnabled: false
+                });
+            } else {
+                console.error('❌ Erro ao salvar estado após desativação');
+                res.status(500).json({ 
+                    error: 'Erro ao salvar estado das notificações' 
+                });
+            }
         } else if (endpoint) {
             // Remover subscription específica
+            const initialCount = pushSubscriptions.length;
             pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== endpoint);
+            const removedCount = initialCount - pushSubscriptions.length;
             saveSubscriptions();
             
+            console.log(`✅ ${removedCount} subscription específica removida`);
             res.json({ 
                 status: 'OK', 
                 message: 'Notificações push desativadas para este dispositivo',
+                removed: removedCount,
                 pushEnabled: pushSubscriptions.length > 0
             });
         } else {
@@ -876,7 +878,7 @@ app.post('/api/push/disable', async (req, res) => {
         }
     } catch (error) {
         console.error('❌ Erro ao desativar notificações:', error);
-        res.status(500).json({ error: 'Erro interno ao desativar notificações' });
+        res.status(500).json({ error: 'Erro interno ao desativar notificações: ' + error.message });
     }
 });
 
@@ -1343,7 +1345,7 @@ app.listen(PORT, () => {
     console.log(`\n🔥 Servidor Automação V3.0 CORRIGIDO rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log(`📡 Monitoramento ESP32: ATIVADO`);
-    console.log(`💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETE`);
+    console.log(`💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETA`);
     console.log(`🔔 Sistema de Notificações Push: CORRIGIDO E FUNCIONANDO`);
     console.log(`🚨 Alertas de Gás: FUNCIONANDO COM NAVEGADOR FECHADO`);
     console.log(`🔐 Sistema de Login: FUNCIONANDO`);
