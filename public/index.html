@@ -1436,7 +1436,7 @@
                 </h1>
             </div>
             <div class="header-controls">
-                <button class="push-notification-toggle" id="push-notification-toggle" onclick="togglePushNotifications()">
+                <button class="push-notification-toggle" id="push-notification-toggle">
                     <i class="fas fa-bell"></i>
                     Push: Ativar
                 </button>
@@ -1818,6 +1818,9 @@
 
         // 🔥 NOVA FUNÇÃO: Alternar notificações push (toggle)
         async function togglePushNotifications() {
+            console.log('🔄 Alternando notificações push...');
+            console.log('🎯 Estado atual:', AppState.pushNotifications.enabled);
+            
             if (AppState.pushNotifications.enabled) {
                 await disablePushNotifications();
             } else {
@@ -1848,6 +1851,8 @@
                 } else {
                     console.error('❌ Erro ao desativar notificações:', result.error);
                     showNotification('Erro ao desativar notificações', 'error');
+                    // Mesmo com erro, atualizar UI localmente
+                    updatePushNotificationUI(false);
                 }
             } catch (error) {
                 console.error('❌ Erro na comunicação:', error);
@@ -3181,6 +3186,17 @@
             window.addEventListener('online', checkConnection);
             window.addEventListener('offline', checkConnection);
             
+            // 🔥 CORREÇÃO CRÍTICA: Adicionar event listener para o botão de notificações push
+            const pushButton = document.getElementById('push-notification-toggle');
+            if (pushButton) {
+                pushButton.addEventListener('click', function(e) {
+                    console.log('🎯 Botão de notificações push clicado!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePushNotifications();
+                });
+            }
+            
             // Fechar modal clicando fora ou com ESC
             const modal = document.getElementById('irrigation-modal');
             if (modal) {
@@ -3276,6 +3292,7 @@
         window.updatePushNotificationUI = updatePushNotificationUI;
         window.togglePushNotifications = togglePushNotifications;
         window.disablePushNotifications = disablePushNotifications;
+        window.setupPushNotifications = setupPushNotifications;
         window.checkExistingSubscription = checkExistingSubscription;
         window.initializePushNotifications = initializePushNotifications;
         window.updateServiceWorker = updateServiceWorker;
@@ -3300,7 +3317,6 @@
         window.closeGasAlert = closeGasAlert;
         window.acknowledgeGasAlert = acknowledgeGasAlert;
         window.silenceGasAlerts = silenceGasAlerts;
-        window.setupPushNotifications = setupPushNotifications;
         window.testPushNotification = testPushNotification;
     </script>
 </body>
