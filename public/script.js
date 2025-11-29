@@ -1,4 +1,4 @@
-// public/script.js - Cliente CORRIGIDO sem loops + Novas funcionalidades
+// public/script.js - Cliente CORRIGIDO com sistema de notificações push funcional
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar se estamos na página de login
@@ -785,6 +785,238 @@ async function saveIrrigationSettings() {
     }
 }
 
+// ==================== SISTEMA DE NOTIFICAÇÕES PUSH CORRIGIDO ====================
+
+// 🔥 CORREÇÃO CRÍTICA: Função para configurar notificações push
+async function setupPushNotifications() {
+    console.log('📱 Iniciando configuração de notificações push...');
+    
+    // Verificar se Service Worker é suportado
+    if (!('serviceWorker' in navigator)) {
+        console.error('❌ Service Worker não suportado');
+        showNotification('Seu navegador não suporta notificações push', 'error');
+        return;
+    }
+
+    // Verificar se Push Manager é suportado
+    if (!('PushManager' in window)) {
+        console.error('❌ Push Manager não suportado');
+        showNotification('Seu dispositivo não suporta notificações push', 'error');
+        return;
+    }
+
+    try {
+        // Registrar Service Worker
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/'
+        });
+        
+        console.log('✅ Service Worker registrado:', registration);
+
+        // Aguardar o Service Worker estar pronto
+        await navigator.serviceWorker.ready;
+        
+        // Solicitar permissão
+        const permission = await Notification.requestPermission();
+        console.log('📋 Permissão:', permission);
+
+        if (permission === 'granted') {
+            console.log('🎉 Permissão concedida!');
+            
+            // Obter chave pública VAPID
+            const response = await fetch('/api/push/vapid-public-key');
+            const { publicKey } = await response.json();
+            
+            // Converter chave para Uint8Array
+            const applicationServerKey = urlBase64ToUint8Array(publicKey);
+            
+            // Inscrever para notificações push
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: applicationServerKey
+            });
+            
+            console.log('📝 Subscription criada:', subscription);
+            
+            // Enviar subscription para o servidor
+            const subscribeResponse = await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(subscription)
+            });
+            
+            const result = await subscribeResponse.json();
+            console.log('✅ Inscrito em notificações push!', result);
+            
+            // Atualizar UI
+            updatePushNotificationUI(true);
+            
+            showNotification('Notificações ativadas! Você receberá alertas mesmo com o app fechado.', 'success');
+            
+            // Testar notificação após 2 segundos
+            setTimeout(() => {
+                testPushNotification();
+            }, 2000);
+            
+        } else {
+            console.error('❌ Permissão negada:', permission);
+            showNotification('Permissão para notificações negada. Ative nas configurações do navegador.', 'warning');
+            updatePushNotificationUI(false);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao configurar notificações:', error);
+        showNotification('Erro ao configurar notificações: ' + error.message, 'error');
+        updatePushNotificationUI(false);
+    }
+}
+
+// 🔥 CORREÇÃO CRÍTICA: Função para DESATIVAR notificações push
+async function disablePushNotifications() {
+    try {
+        console.log('🔕 Desativando notificações push...');
+        
+        if (!('serviceWorker' in navigator)) {
+            showNotification('Service Worker não suportado', 'error');
+            return;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        
+        if (subscription) {
+            // Cancelar subscription no navegador
+            await subscription.unsubscribe();
+            console.log('✅ Subscription cancelada no navegador');
+        }
+
+        // Enviar requisição para o servidor remover todas as subscriptions
+        const response = await fetch('/api/push/disable', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ endpoint: 'all' })
+        });
+
+        const result = await response.json();
+        console.log('✅ Notificações desativadas no servidor:', result);
+
+        // Atualizar UI
+        updatePushNotificationUI(false);
+        
+        showNotification('Notificações push desativadas com sucesso!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao desativar notificações:', error);
+        showNotification('Erro ao desativar notificações: ' + error.message, 'error');
+    }
+}
+
+// 🔥 CORREÇÃO: Função para alternar entre ativar/desativar
+async function togglePushNotifications() {
+    const isEnabled = await checkExistingSubscription();
+    
+    if (isEnabled) {
+        // Se já está ativado, desativar
+        await disablePushNotifications();
+    } else {
+        // Se não está ativado, ativar
+        await setupPushNotifications();
+    }
+}
+
+// 🔥 CORREÇÃO: Função para verificar subscription existente
+async function checkExistingSubscription() {
+    try {
+        if (!('serviceWorker' in navigator)) return false;
+        
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        
+        if (subscription) {
+            console.log('✅ Já inscrito em notificações push');
+            updatePushNotificationUI(true);
+            return true;
+        }
+        
+        updatePushNotificationUI(false);
+        return false;
+    } catch (error) {
+        console.error('❌ Erro ao verificar subscription:', error);
+        updatePushNotificationUI(false);
+        return false;
+    }
+}
+
+// 🔥 CORREÇÃO: Função para atualizar UI das notificações
+function updatePushNotificationUI(enabled) {
+    try {
+        const button = document.getElementById('push-notification-toggle');
+        if (!button) {
+            console.warn('Botão de notificação push não encontrado');
+            return;
+        }
+        
+        if (enabled) {
+            button.innerHTML = '<i class="fas fa-bell"></i> Push: Ativo';
+            button.classList.add('enabled');
+            button.classList.remove('disabled');
+            button.onclick = () => togglePushNotifications();
+        } else {
+            button.innerHTML = '<i class="fas fa-bell-slash"></i> Push: Inativo';
+            button.classList.add('disabled');
+            button.classList.remove('enabled');
+            button.onclick = () => togglePushNotifications();
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar UI de notificações:', error);
+    }
+}
+
+// Função auxiliar para converter chave VAPID
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Testar notificação
+async function testPushNotification() {
+    try {
+        console.log('🧪 Enviando teste de notificação...');
+        const response = await fetch('/api/push/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        console.log('🧪 Resultado do teste:', result);
+        
+        if (result.status === 'OK') {
+            showNotification('Teste enviado! Verifique as notificações.', 'success');
+        } else {
+            showNotification('Erro no teste: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Erro no teste:', error);
+        showNotification('Erro ao testar notificações: ' + error.message, 'error');
+    }
+}
+
 // 🆕 SISTEMA DE NOTIFICAÇÕES
 function showNotification(message, type = 'info', duration = 5000) {
     // Remove notificações existentes para evitar acumulação
@@ -931,7 +1163,15 @@ if (modal) {
     });
 }
 
-// 🚨 CORREÇÃO: Exportar todas as funções globais
+// Inicializar notificações push quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar subscription existente após um breve delay
+    setTimeout(() => {
+        checkExistingSubscription();
+    }, 2000);
+});
+
+// 🚨 CORREÇÃO: Exportar todas as funções globais CORRETAMENTE
 window.controlAllLights = controlAllLights;
 window.controlAllOutlets = controlAllOutlets;
 window.controlIrrigation = controlIrrigation;
@@ -948,4 +1188,12 @@ window.showNotification = showNotification;
 window.logout = logout;
 window.toggleTheme = toggleTheme;
 
-console.log('🔧 Script.js carregado com todas as funcionalidades!');
+// 🔥 CORREÇÃO: Exportar funções de notificações push
+window.setupPushNotifications = setupPushNotifications;
+window.disablePushNotifications = disablePushNotifications;
+window.togglePushNotifications = togglePushNotifications;
+window.checkExistingSubscription = checkExistingSubscription;
+window.updatePushNotificationUI = updatePushNotificationUI;
+window.testPushNotification = testPushNotification;
+
+console.log('🔧 Script.js carregado com todas as funcionalidades! Sistema de notificações push CORRIGIDO!');
