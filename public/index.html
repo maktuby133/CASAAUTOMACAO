@@ -1436,7 +1436,7 @@
                 </h1>
             </div>
             <div class="header-controls">
-                <button class="push-notification-toggle" id="push-notification-toggle" onclick="setupPushNotifications()">
+                <button class="push-notification-toggle" id="push-notification-toggle" onclick="togglePushNotifications()">
                     <i class="fas fa-bell"></i>
                     Push: Ativar
                 </button>
@@ -1807,8 +1807,53 @@
                     button.classList.remove('enabled');
                     AppState.pushNotifications.enabled = false;
                 }
+                
+                // 🔥 CORREÇÃO: Salvar o estado no localStorage
+                saveToLocalStorage('push-notifications-enabled', enabled);
+                
             } catch (error) {
                 console.error('Erro ao atualizar UI de notificações:', error);
+            }
+        }
+
+        // 🔥 NOVA FUNÇÃO: Alternar notificações push (toggle)
+        async function togglePushNotifications() {
+            if (AppState.pushNotifications.enabled) {
+                await disablePushNotifications();
+            } else {
+                await setupPushNotifications();
+            }
+        }
+
+        // 🔥 NOVA FUNÇÃO: Desativar notificações push
+        async function disablePushNotifications() {
+            console.log('🔕 Desativando notificações push...');
+            
+            try {
+                // Chamar API para remover subscription
+                const response = await fetch('/api/push/disable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ endpoint: 'all' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'OK') {
+                    console.log('✅ Notificações push desativadas:', result.message);
+                    updatePushNotificationUI(false);
+                    showNotification('Notificações push desativadas', 'success');
+                } else {
+                    console.error('❌ Erro ao desativar notificações:', result.error);
+                    showNotification('Erro ao desativar notificações', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Erro na comunicação:', error);
+                // Mesmo com erro de comunicação, atualizar UI localmente
+                updatePushNotificationUI(false);
+                showNotification('Notificações desativadas localmente', 'warning');
             }
         }
 
@@ -2087,7 +2132,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    },
+                        },
                     body: JSON.stringify({
                         title: title,
                         message: message,
@@ -2323,7 +2368,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    },
+                        },
                     body: JSON.stringify({ state })
                 }, 2, 5000);
                 
@@ -3107,6 +3152,13 @@
                 setupEventListeners();
                 startDataUpdates();
                 
+                // 🔥 CORREÇÃO: Carregar estado das notificações push
+                const pushEnabled = loadFromLocalStorage('push-notifications-enabled');
+                if (pushEnabled !== null) {
+                    AppState.pushNotifications.enabled = pushEnabled;
+                    updatePushNotificationUI(pushEnabled);
+                }
+                
                 // Inicializar notificações push
                 await initializePushNotifications();
                 
@@ -3222,6 +3274,8 @@
 
         // ==================== EXPORTAR FUNÇÕES PARA O ESCOPO GLOBAL ====================
         window.updatePushNotificationUI = updatePushNotificationUI;
+        window.togglePushNotifications = togglePushNotifications;
+        window.disablePushNotifications = disablePushNotifications;
         window.checkExistingSubscription = checkExistingSubscription;
         window.initializePushNotifications = initializePushNotifications;
         window.updateServiceWorker = updateServiceWorker;
