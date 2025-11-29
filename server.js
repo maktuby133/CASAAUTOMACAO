@@ -828,26 +828,53 @@ app.post('/api/push/subscribe', (req, res) => {
     res.json(result);
 });
 
-// 🔥 NOVA ROTA: Limpar todas as subscriptions
-app.post('/api/push/unsubscribe', (req, res) => {
-    const { endpoint } = req.body;
-    
-    if (endpoint === 'all') {
-        console.log('🗑️ Removendo TODAS as subscriptions');
-        const previousCount = pushSubscriptions.length;
-        pushSubscriptions = [];
-        saveSubscriptions();
-        res.json({ 
-            status: 'OK', 
-            message: `Todas as subscriptions removidas (${previousCount} removidas)`,
-            removed: previousCount
-        });
-    } else if (endpoint) {
-        pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== endpoint);
-        saveSubscriptions();
-        res.json({ status: 'OK', message: 'Subscription removida' });
-    } else {
-        res.status(400).json({ error: 'Endpoint não especificado' });
+// 🔥 CORREÇÃO CRÍTICA: Nova rota para desativar notificações push
+app.post('/api/push/disable', async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        
+        if (endpoint === 'all') {
+            console.log('🔕 Desativando TODAS as notificações push');
+            const previousCount = pushSubscriptions.length;
+            
+            // Tentar cancelar todas as subscriptions no navegador
+            const cancelPromises = pushSubscriptions.map(async (subscription) => {
+                try {
+                    // Aqui você poderia enviar uma requisição para o service worker cancelar a subscription
+                    console.log(`🗑️ Removendo subscription: ${subscription.endpoint.substring(0, 50)}...`);
+                } catch (error) {
+                    console.error('Erro ao cancelar subscription:', error);
+                }
+            });
+            
+            await Promise.all(cancelPromises);
+            
+            // Limpar todas as subscriptions do servidor
+            pushSubscriptions = [];
+            saveSubscriptions();
+            
+            res.json({ 
+                status: 'OK', 
+                message: `Todas as notificações push desativadas (${previousCount} removidas)`,
+                removed: previousCount,
+                pushEnabled: false
+            });
+        } else if (endpoint) {
+            // Remover subscription específica
+            pushSubscriptions = pushSubscriptions.filter(sub => sub.endpoint !== endpoint);
+            saveSubscriptions();
+            
+            res.json({ 
+                status: 'OK', 
+                message: 'Notificações push desativadas para este dispositivo',
+                pushEnabled: pushSubscriptions.length > 0
+            });
+        } else {
+            res.status(400).json({ error: 'Endpoint não especificado' });
+        }
+    } catch (error) {
+        console.error('❌ Erro ao desativar notificações:', error);
+        res.status(500).json({ error: 'Erro interno ao desativar notificações' });
     }
 });
 
@@ -893,12 +920,22 @@ app.post('/api/push/test', async (req, res) => {
         res.json({ 
             status: 'OK', 
             message: `Notificação de teste enviada para ${successful}/${pushSubscriptions.length} dispositivos`,
-            results: results
+            results: results,
+            pushEnabled: pushSubscriptions.length > 0
         });
     } catch (error) {
         console.error('❌ Erro ao enviar notificação de teste:', error);
         res.status(500).json({ error: 'Erro ao enviar notificação de teste: ' + error.message });
     }
+});
+
+// Rota para verificar status das notificações
+app.get('/api/push/status', (req, res) => {
+    res.json({
+        pushEnabled: pushSubscriptions.length > 0,
+        totalSubscriptions: pushSubscriptions.length,
+        vapidPublicKey: vapidKeys.publicKey ? 'Configurada' : 'Não configurada'
+    });
 });
 
 // Rota para histórico de alertas
@@ -1289,6 +1326,7 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         esp32: { connected: esp32Status.connected },
         pushSubscriptions: pushSubscriptions.length,
+        pushEnabled: pushSubscriptions.length > 0,
         version: '3.0.0-push-fixed'
     });
 });
@@ -1302,11 +1340,12 @@ app.use((req, res) => {
 app.listen(PORT, () => {
     console.log(`\n🔥 Servidor Automação V3.0 CORRIGIDO rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
-    console.log('📡 Monitoramento ESP32: ATIVADO');
-    console.log('💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETA');
-    console.log('🔔 Sistema de Notificações Push: CORRIGIDO E FUNCIONANDO');
-    console.log('🚨 Alertas de Gás: FUNCIONANDO COM NAVEGADOR FECHADO');
-    console.log('🔐 Sistema de Login: FUNCIONANDO');
-    console.log('📊 Sensores: FUNCIONANDO');
-    console.log(`📱 Notificações Push: ${pushSubscriptions.length} dispositivos registrados\n`);
+    console.log(`📡 Monitoramento ESP32: ATIVADO`);
+    console.log(`💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETA`);
+    console.log(`🔔 Sistema de Notificações Push: CORRIGIDO E FUNCIONANDO`);
+    console.log(`🚨 Alertas de Gás: FUNCIONANDO COM NAVEGADOR FECHADO`);
+    console.log(`🔐 Sistema de Login: FUNCIONANDO`);
+    console.log(`📊 Sensores: FUNCIONANDO`);
+    console.log(`📱 Notificações Push: ${pushSubscriptions.length} dispositivos registrados`);
+    console.log(`🔕 Sistema de Desativação: IMPLEMENTADO\n`);
 });
