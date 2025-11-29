@@ -604,6 +604,8 @@ const requireAuth = (req, res, next) => {
         '/api/push/unsubscribe',
         '/api/push/vapid-public-key',
         '/api/push/test',
+        '/api/push/disable',
+        '/api/push/status',
         '/api/alerts/history',
         '/health',
         '/favicon.ico',
@@ -1341,7 +1343,7 @@ app.listen(PORT, () => {
     console.log(`\n🔥 Servidor Automação V3.0 CORRIGIDO rodando na porta ${PORT}`);
     console.log(`🌐 Acesse: http://localhost:${PORT}`);
     console.log(`📡 Monitoramento ESP32: ATIVADO`);
-    console.log(`💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETA`);
+    console.log(`💧 Sistema de Irrigação: SINCRONIZAÇÃO COMPLETE`);
     console.log(`🔔 Sistema de Notificações Push: CORRIGIDO E FUNCIONANDO`);
     console.log(`🚨 Alertas de Gás: FUNCIONANDO COM NAVEGADOR FECHADO`);
     console.log(`🔐 Sistema de Login: FUNCIONANDO`);
