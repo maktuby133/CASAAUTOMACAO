@@ -1,1 +1,1170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoFlow — Painel de Automação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0e14;
+  --bg2: #111620;
+  --bg3: #181e2a;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #00d4a0;
+  --accent2: #0ea5e9;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --green: #10b981;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Syne', sans-serif;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* === NOISE OVERLAY === */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* === LAYOUT === */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+
+/* === TOPBAR === */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.logo-text span { color: var(--accent); }
+
+.logo-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.conn-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.dot.connecting { background: var(--warn); animation: pulse-dot 1s ease-in-out infinite; }
+
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--bg3); border-color: var(--border2); }
+.btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { background: #00b889; }
+.btn.danger { border-color: var(--danger); color: var(--danger); }
+.btn.danger:hover { background: rgba(239,68,68,0.1); }
+
+/* === GRID LAYOUT === */
+.grid-main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.col-left { display: flex; flex-direction: column; gap: 20px; }
+.col-right { display: flex; flex-direction: column; gap: 20px; }
+
+/* === CARDS === */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--border2); }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* === MQTT CONFIG === */
+.config-panel {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.config-panel.open { display: block; }
+
+.config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.field input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus { border-color: var(--accent); }
+
+.config-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* === METRICS === */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.metric-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.metric-box:hover { border-color: var(--border2); }
+
+.metric-box::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+.metric-box.has-data::after { transform: scaleX(1); }
+.metric-box.warn::after { background: var(--warn); }
+
+.metric-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: -1px;
+}
+.metric-value .unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+  margin-left: 2px;
+}
+
+.metric-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.metric-sub.ok { color: var(--green); }
+.metric-sub.warn { color: var(--warn); }
+
+/* === LIVE BAR === */
+.live-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* === RELAYS === */
+.relay-list { display: flex; flex-direction: column; gap: 10px; }
+
+.relay-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+.relay-item:hover { border-color: var(--border2); }
+.relay-item.active { border-color: rgba(0,212,160,0.3); }
+
+.relay-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.relay-item.active .relay-icon {
+  background: rgba(0,212,160,0.12);
+  border-color: rgba(0,212,160,0.3);
+}
+
+.relay-info { flex: 1; min-width: 0; }
+
+.relay-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.relay-topic {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.relay-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.relay-badge.on { background: rgba(0,212,160,0.15); color: var(--accent); border: 1px solid rgba(0,212,160,0.25); }
+.relay-badge.off { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+
+/* === TOGGLE SWITCH === */
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle input:checked ~ .toggle-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle-knob {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--muted);
+  border-radius: 50%;
+  top: 4px;
+  left: 4px;
+  pointer-events: none;
+  transition: all 0.2s;
+}
+.toggle input:checked ~ .toggle-knob {
+  transform: translateX(20px);
+  background: #000;
+}
+
+.relay-actions { display: flex; align-items: center; gap: 8px; }
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.btn-icon:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.08); }
+
+.add-relay-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: 1px dashed var(--border2);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 10px;
+}
+.add-relay-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.04); }
+
+/* === SCHEDULE === */
+.sched-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+.sched-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+.sched-item:hover { border-color: var(--border2); }
+
+.sched-time {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  min-width: 64px;
+}
+
+.sched-info { flex: 1; }
+
+.sched-relay {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sched-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.days-row {
+  display: flex;
+  gap: 3px;
+}
+
+.day-chip {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  background: var(--bg2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  letter-spacing: 0;
+}
+.day-chip.active {
+  background: rgba(0,212,160,0.15);
+  color: var(--accent);
+  border-color: rgba(0,212,160,0.3);
+}
+
+/* === ADD SCHEDULE FORM === */
+.add-sched {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.add-sched-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.day-picker {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.day-pick-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.day-pick-btn.sel {
+  background: rgba(0,212,160,0.15);
+  color: var(--accent);
+  border-color: rgba(0,212,160,0.4);
+}
+
+.add-sched-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-sched-row input[type=time],
+.add-sched-row input[type=number],
+.add-sched-row select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  height: 36px;
+}
+.add-sched-row input[type=time]:focus,
+.add-sched-row input[type=number]:focus,
+.add-sched-row select:focus { border-color: var(--accent); }
+
+.add-sched-row input[type=time] { width: 100px; }
+.add-sched-row input[type=number] { width: 64px; }
+.add-sched-row select { flex: 1; min-width: 140px; }
+.add-sched-row .unit-lbl {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* === AUTO RULES === */
+.rule-list { display: flex; flex-direction: column; gap: 8px; }
+
+.rule-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.rule-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+}
+
+.rule-text {
+  flex: 1;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.rule-text strong { color: var(--text); font-weight: 600; }
+
+.rule-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.rule-badge.active { background: rgba(0,212,160,0.12); color: var(--accent); border: 1px solid rgba(0,212,160,0.2); }
+.rule-badge.off { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
+
+/* === LOG === */
+.log-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+.log-box::-webkit-scrollbar { width: 4px; }
+.log-box::-webkit-scrollbar-track { background: transparent; }
+.log-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.log-line { display: block; }
+.log-line .ts { color: var(--muted); margin-right: 8px; }
+.log-ok .msg { color: var(--accent); }
+.log-warn .msg { color: var(--warn); }
+.log-info .msg { color: var(--accent2); }
+.log-sys .msg { color: var(--muted); }
+
+/* === ADD RELAY MODAL === */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.modal-fields { display: flex; flex-direction: column; gap: 12px; }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 760px) {
+  .grid-main { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: repeat(3, 1fr); }
+  .config-grid { grid-template-columns: 1fr; }
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card { animation: fadeIn 0.3s ease both; }
+.card:nth-child(1) { animation-delay: 0.05s; }
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.15s; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo">
+      <span class="logo-text">Auto<span>Flow</span></span>
+      <span class="logo-tag">v1.0</span>
+    </div>
+    <div class="topbar-right">
+      <div class="conn-status">
+        <div class="dot" id="mqtt-dot"></div>
+        <span id="mqtt-label">Desconectado</span>
+      </div>
+      <button class="btn" onclick="toggleConfig()">⚙ MQTT</button>
+    </div>
+  </div>
+
+  <!-- MQTT CONFIG -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-title">Conexão MQTT — HiveMQ</span>
+      <button class="btn" onclick="toggleConfig()" id="btn-toggle-cfg">Expandir</button>
+    </div>
+    <div class="config-panel" id="cfg-panel">
+      <div class="config-grid">
+        <div class="field"><label>Host</label><input id="cfg-host" value="13efa30a8367496d82053ae1fec856fb.s1.eu.hivemq.cloud" /></div>
+        <div class="field"><label>Porta (WSS)</label><input id="cfg-port" value="8884" /></div>
+        <div class="field"><label>Usuário MQTT</label><input id="cfg-user" placeholder="seu usuário" /></div>
+        <div class="field"><label>Senha MQTT</label><input id="cfg-pass" type="password" placeholder="••••••••" /></div>
+        <div class="field"><label>Device ID — Caixa d'água</label><input id="cfg-water" placeholder="ex: A1B2C3D4" /></div>
+        <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" placeholder="ex: E5F6G7H8" /></div>
+      </div>
+      <div class="config-actions">
+        <button class="btn primary" onclick="connectMQTT()">Conectar</button>
+        <button class="btn" onclick="toggleConfig()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div class="col-left">
+
+      <!-- DADOS EM TEMPO REAL -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Dados em tempo real</span>
+          <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted)">aguardando...</span>
+        </div>
+        <div class="live-bar">
+          <div class="dot" id="live-dot"></div>
+          <span id="live-msg">Configure o broker MQTT para começar a receber dados.</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-box" id="mb-water">
+            <div class="metric-label">Nível caixa</div>
+            <div class="metric-value" id="mv-water">—<span class="unit">%</span></div>
+            <div class="metric-sub" id="ms-water">sem dados</div>
+          </div>
+          <div class="metric-box" id="mb-temp">
+            <div class="metric-label">Temperatura</div>
+            <div class="metric-value" id="mv-temp">—<span class="unit">°C</span></div>
+            <div class="metric-sub" id="ms-temp">sem dados</div>
+          </div>
+          <div class="metric-box" id="mb-hum">
+            <div class="metric-label">Umidade</div>
+            <div class="metric-value" id="mv-hum">—<span class="unit">%</span></div>
+            <div class="metric-sub" id="ms-hum">sem dados</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RELÉS -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Controle de relés</span>
+          <button class="btn" onclick="openRelayModal()">+ Adicionar</button>
+        </div>
+        <div class="relay-list" id="relay-list"></div>
+        <button class="add-relay-btn" onclick="openRelayModal()">＋ Novo relé</button>
+      </div>
+
+      <!-- REGRAS AUTOMÁTICAS -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Regras automáticas</span>
+        </div>
+        <div class="rule-list">
+          <div class="rule-item">
+            <span class="rule-icon">💧</span>
+            <span class="rule-text">Se <strong>nível da caixa &lt; 20%</strong> → desligar irrigação automaticamente</span>
+            <span class="rule-badge active">ativa</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">🌡️</span>
+            <span class="rule-text">Se <strong>temperatura &gt; 35°C</strong> → acionar irrigação extra por 5 min</span>
+            <span class="rule-badge active">ativa</span>
+          </div>
+          <div class="rule-item" style="opacity:0.45">
+            <span class="rule-icon">＋</span>
+            <span class="rule-text" style="font-style:italic">Mais regras disponíveis após integração com hardware</span>
+            <span class="rule-badge off">em breve</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-right">
+
+      <!-- IRRIGAÇÃO PROGRAMADA -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Irrigação programada</span>
+        </div>
+        <div class="sched-list" id="sched-list"></div>
+        <div class="add-sched">
+          <div class="add-sched-title">Novo agendamento</div>
+          <div class="day-picker" id="day-picker">
+            <button class="day-pick-btn" data-d="0" onclick="toggleDay(this)">D</button>
+            <button class="day-pick-btn" data-d="1" onclick="toggleDay(this)">S</button>
+            <button class="day-pick-btn" data-d="2" onclick="toggleDay(this)">T</button>
+            <button class="day-pick-btn" data-d="3" onclick="toggleDay(this)">Q</button>
+            <button class="day-pick-btn" data-d="4" onclick="toggleDay(this)">Q</button>
+            <button class="day-pick-btn" data-d="5" onclick="toggleDay(this)">S</button>
+            <button class="day-pick-btn" data-d="6" onclick="toggleDay(this)">S</button>
+          </div>
+          <div class="add-sched-row">
+            <input type="time" id="sched-time" value="06:00" />
+            <input type="number" id="sched-dur" value="15" min="1" max="120" />
+            <span class="unit-lbl">min</span>
+            <select id="sched-relay"></select>
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn primary" style="width:100%" onclick="addSchedule()">Adicionar agendamento</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Log de eventos</span>
+          <button class="btn" onclick="clearLog()">Limpar</button>
+        </div>
+        <div class="log-box" id="log-box">
+          <span class="log-line log-sys"><span class="ts">--:--:--</span><span class="msg">Sistema iniciado. Aguardando MQTT.</span></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADICIONAR RELÉ -->
+<div class="modal-overlay" id="relay-modal">
+  <div class="modal">
+    <div class="modal-title">Novo relé</div>
+    <div class="modal-fields">
+      <div class="field"><label>Nome</label><input id="rm-name" placeholder="ex: Bomba de irrigação" /></div>
+      <div class="field"><label>Ícone (emoji)</label><input id="rm-icon" placeholder="ex: 💧" value="🔌" maxlength="2" style="width:80px"/></div>
+      <div class="field"><label>Tópico MQTT</label><input id="rm-topic" placeholder="ex: home/relay/bomba" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeRelayModal()">Cancelar</button>
+      <button class="btn primary" onclick="confirmAddRelay()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
+<script>
+// ============ STATE ============
+let client = null;
+let relays = [
+  {id:'r1',name:'Bomba de irrigação',icon:'💧',topic:'home/relay/irrigacao',state:false},
+  {id:'r2',name:'Lâmpada varanda',icon:'💡',topic:'home/relay/lampada1',state:false},
+  {id:'r3',name:'Tomada geral',icon:'🔌',topic:'home/relay/tomada1',state:false},
+];
+let schedules = [
+  {id:'s1',days:[1,3,5],time:'06:00',duration:20,relay:'r1',active:true},
+  {id:'s2',days:[0,2,4,6],time:'18:30',duration:15,relay:'r1',active:true},
+];
+let selectedDays = [];
+let cfg = {};
+let liveData = {water:null,temp:null,hum:null};
+const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const dayShort = ['D','S','T','Q','Q','S','S'];
+
+// ============ MQTT ============
+function toggleConfig(){
+  const p = document.getElementById('cfg-panel');
+  const b = document.getElementById('btn-toggle-cfg');
+  const open = p.classList.toggle('open');
+  b.textContent = open ? 'Recolher' : 'Expandir';
+}
+
+function connectMQTT(){
+  cfg = {
+    host: document.getElementById('cfg-host').value.trim(),
+    port: parseInt(document.getElementById('cfg-port').value)||8884,
+    user: document.getElementById('cfg-user').value.trim(),
+    pass: document.getElementById('cfg-pass').value.trim(),
+    waterDev: document.getElementById('cfg-water').value.trim().toUpperCase(),
+    tempDev: document.getElementById('cfg-temp').value.trim().toUpperCase(),
+  };
+  if(!cfg.user||!cfg.pass){log('Preencha usuário e senha MQTT','warn');return;}
+  if(client){try{client.end(true)}catch(e){}}
+  setConnStatus('connecting','Conectando...');
+  log(`Conectando a ${cfg.host}...`,'info');
+  const url = `wss://${cfg.host}:${cfg.port}/mqtt`;
+  client = mqtt.connect(url,{
+    username:cfg.user, password:cfg.pass,
+    clientId:'autoflow_'+Math.random().toString(16).slice(2,8),
+    clean:true, connectTimeout:10000, reconnectPeriod:5000
+  });
+  client.on('connect',()=>{
+    setConnStatus('on','Conectado');
+    log('Broker MQTT conectado!','ok');
+    document.getElementById('cfg-panel').classList.remove('open');
+    document.getElementById('btn-toggle-cfg').textContent='Expandir';
+    subscribeAll();
+    startScheduleEngine();
+  });
+  client.on('error',(e)=>{setConnStatus('off','Erro: '+e.message);log('Erro MQTT: '+e.message,'warn');});
+  client.on('offline',()=>{setConnStatus('off','Offline');log('MQTT offline','warn');});
+  client.on('message',(t,m)=>handleMsg(t,m.toString()));
+}
+
+function subscribeAll(){
+  const subs = [];
+  if(cfg.waterDev) subs.push(`sensors/${cfg.waterDev}/data`,`water/${cfg.waterDev}/level`);
+  if(cfg.tempDev) subs.push(`sensors/${cfg.tempDev}/data`);
+  relays.forEach(r=>subs.push(r.topic+'/state'));
+  subs.forEach(t=>client.subscribe(t,()=>log(`↳ inscrito: ${t}`,'sys')));
+}
+
+function handleMsg(topic,payload){
+  document.getElementById('live-dot').className='dot on';
+  document.getElementById('live-msg').textContent='Dados recebidos — '+new Date().toLocaleTimeString('pt-BR');
+  document.getElementById('live-ts').textContent=new Date().toLocaleTimeString('pt-BR');
+  log(`↓ ${topic}: ${payload.substring(0,50)}`,'sys');
+  try {
+    const d = JSON.parse(payload);
+    if(d.level!==undefined||d.nivel!==undefined){
+      const v = d.level??d.nivel;
+      liveData.water = v;
+      const pct = Math.round(v);
+      document.getElementById('mv-water').innerHTML=`${pct}<span class="unit">%</span>`;
+      const mb = document.getElementById('mb-water');
+      const ms = document.getElementById('ms-water');
+      mb.classList.add('has-data');
+      if(v<20){mb.classList.add('warn');ms.textContent='⚠ nível baixo';ms.className='metric-sub warn';checkRules();}
+      else{mb.classList.remove('warn');ms.textContent='nível ok';ms.className='metric-sub ok';}
+    }
+    if(d.temperature!==undefined||d.temperatura!==undefined){
+      const t = d.temperature??d.temperatura;
+      liveData.temp = t;
+      document.getElementById('mv-temp').innerHTML=`${t.toFixed(1)}<span class="unit">°C</span>`;
+      const mb = document.getElementById('mb-temp');
+      const ms = document.getElementById('ms-temp');
+      mb.classList.add('has-data');
+      if(t>35){mb.classList.add('warn');ms.textContent='⚠ temperatura alta';ms.className='metric-sub warn';checkRules();}
+      else{mb.classList.remove('warn');ms.textContent='normal';ms.className='metric-sub ok';}
+    }
+    if(d.humidity!==undefined||d.umidade!==undefined){
+      const h = d.humidity??d.umidade;
+      liveData.hum = h;
+      document.getElementById('mv-hum').innerHTML=`${Math.round(h)}<span class="unit">%</span>`;
+      document.getElementById('mb-hum').classList.add('has-data');
+      document.getElementById('ms-hum').textContent='atualizado';
+      document.getElementById('ms-hum').className='metric-sub ok';
+    }
+  } catch(e) {
+    relays.forEach(r=>{
+      if(topic===r.topic+'/state'){
+        r.state = (payload==='ON'||payload==='1');
+        renderRelays();
+      }
+    });
+  }
+}
+
+function checkRules(){
+  if(liveData.water!==null&&liveData.water<20){
+    const pump = relays.find(r=>r.id==='r1');
+    if(pump&&pump.state){log('REGRA: nível baixo → desligando irrigação','warn');setRelay(pump,false);}
+  }
+  if(liveData.temp!==null&&liveData.temp>35){
+    const pump = relays.find(r=>r.id==='r1');
+    if(pump&&!pump.state){log('REGRA: temp alta → irrigação extra (5 min)','warn');setRelay(pump,true);setTimeout(()=>{setRelay(pump,false);log('REGRA: fim irrigação extra','info');},5*60000);}
+  }
+}
+
+function setConnStatus(cls,txt){
+  document.getElementById('mqtt-dot').className='dot '+cls;
+  document.getElementById('mqtt-label').textContent=txt;
+}
+
+// ============ RELAYS ============
+function setRelay(relay, state){
+  relay.state = state;
+  if(client&&client.connected){
+    client.publish(relay.topic, state?'ON':'OFF', {retain:true, qos:1});
+    log(`Relé "${relay.name}" → ${state?'LIGADO':'DESLIGADO'}`,'ok');
+  } else {
+    log(`[simulado] "${relay.name}" → ${state?'LIGADO':'DESLIGADO'}`,'info');
+  }
+  renderRelays();
+}
+
+function renderRelays(){
+  const el = document.getElementById('relay-list');
+  const sel = document.getElementById('sched-relay');
+  el.innerHTML = relays.map(r=>`
+    <div class="relay-item ${r.state?'active':''}" id="ri-${r.id}">
+      <div class="relay-icon">${r.icon}</div>
+      <div class="relay-info">
+        <div class="relay-name">${r.name}</div>
+        <div class="relay-topic">${r.topic}</div>
+      </div>
+      <span class="relay-badge ${r.state?'on':'off'}">${r.state?'Ligado':'Desligado'}</span>
+      <div class="relay-actions">
+        <label class="toggle">
+          <input type="checkbox" ${r.state?'checked':''} onchange="setRelay(relays.find(x=>x.id==='${r.id}'),this.checked)">
+          <div class="toggle-track"></div>
+          <div class="toggle-knob"></div>
+        </label>
+        <button class="btn-icon" onclick="removeRelay('${r.id}')" title="Remover">✕</button>
+      </div>
+    </div>
+  `).join('');
+  sel.innerHTML = relays.map(r=>`<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+}
+
+function removeRelay(id){
+  relays = relays.filter(r=>r.id!==id);
+  renderRelays();
+  log('Relé removido','sys');
+}
+
+function openRelayModal(){
+  document.getElementById('relay-modal').classList.add('open');
+  document.getElementById('rm-name').focus();
+}
+function closeRelayModal(){
+  document.getElementById('relay-modal').classList.remove('open');
+}
+function confirmAddRelay(){
+  const name = document.getElementById('rm-name').value.trim();
+  const icon = document.getElementById('rm-icon').value.trim()||'🔌';
+  const topic = document.getElementById('rm-topic').value.trim();
+  if(!name||!topic){log('Preencha nome e tópico','warn');return;}
+  relays.push({id:'r'+Date.now(),name,icon,topic,state:false});
+  renderRelays();
+  if(client&&client.connected) client.subscribe(topic+'/state');
+  log(`Relé "${name}" adicionado`,'ok');
+  closeRelayModal();
+  document.getElementById('rm-name').value='';
+  document.getElementById('rm-topic').value='';
+  document.getElementById('rm-icon').value='🔌';
+}
+
+// ============ SCHEDULE ============
+function toggleDay(btn){
+  btn.classList.toggle('sel');
+  const d = parseInt(btn.dataset.d);
+  if(selectedDays.includes(d)) selectedDays = selectedDays.filter(x=>x!==d);
+  else selectedDays.push(d);
+}
+
+function renderSchedules(){
+  const el = document.getElementById('sched-list');
+  if(!schedules.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0 8px;font-family:var(--mono)">Nenhum agendamento.</div>';
+    return;
+  }
+  el.innerHTML = schedules.map(s=>{
+    const rel = relays.find(r=>r.id===s.relay);
+    return `<div class="sched-item">
+      <div class="sched-time">${s.time}</div>
+      <div class="sched-info">
+        <div class="sched-relay">${rel?rel.icon+' '+rel.name:'relé removido'}</div>
+        <div class="sched-meta">${s.duration} min</div>
+        <div class="days-row" style="margin-top:6px">
+          ${dayShort.map((d,i)=>`<div class="day-chip ${s.days.includes(i)?'active':''}">${d}</div>`).join('')}
+        </div>
+      </div>
+      <button class="btn-icon" onclick="removeSchedule('${s.id}')" title="Remover">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addSchedule(){
+  if(!selectedDays.length){log('Selecione pelo menos um dia','warn');return;}
+  const t = document.getElementById('sched-time').value;
+  const dur = parseInt(document.getElementById('sched-dur').value)||15;
+  const rel = document.getElementById('sched-relay').value;
+  schedules.push({id:'s'+Date.now(),days:[...selectedDays],time:t,duration:dur,relay:rel,active:true});
+  selectedDays=[];
+  document.querySelectorAll('.day-pick-btn').forEach(b=>b.classList.remove('sel'));
+  renderSchedules();
+  log(`Agendamento: ${t} por ${dur}min`,'ok');
+}
+
+function removeSchedule(id){
+  schedules = schedules.filter(s=>s.id!==id);
+  renderSchedules();
+  log('Agendamento removido','sys');
+}
+
+function startScheduleEngine(){
+  setInterval(()=>{
+    const now = new Date();
+    const dow = now.getDay();
+    const hm = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+    schedules.filter(s=>s.active&&s.days.includes(dow)&&s.time===hm).forEach(s=>{
+      const relay = relays.find(r=>r.id===s.relay);
+      if(relay){
+        log(`⏰ Agendamento ${hm} → ligando "${relay.name}"`,'ok');
+        setRelay(relay,true);
+        setTimeout(()=>{setRelay(relay,false);log(`⏰ Desligando "${relay.name}" (${s.duration}min)`,'info');},s.duration*60000);
+      }
+    });
+  },30000);
+}
+
+// ============ LOG ============
+function log(msg, type='sys'){
+  const box = document.getElementById('log-box');
+  const ts = new Date().toLocaleTimeString('pt-BR');
+  const cls = {ok:'log-ok',warn:'log-warn',info:'log-info',sys:'log-sys'}[type]||'log-sys';
+  const el = document.createElement('span');
+  el.className = 'log-line '+cls;
+  el.innerHTML = `<span class="ts">${ts}</span><span class="msg">${msg}</span>`;
+  box.appendChild(el);
+  box.appendChild(document.createTextNode('\n'));
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLog(){
+  document.getElementById('log-box').innerHTML='';
+  log('Log limpo','sys');
+}
+
+// ============ INIT ============
+renderRelays();
+renderSchedules();
+</script>
+</body>
+</html>
 
