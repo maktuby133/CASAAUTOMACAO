@@ -383,9 +383,10 @@ let selectedDays = [];
 let liveData = {water:null, temp:null, hum:null, liters:null, distance:null};
 const dayShort = ['D','S','T','Q','Q','S','S'];
 
-// ============ TÓPICOS (definidos a partir dos códigos do usuário) ============
+// ============ TÓPICOS ============
 let TOPICS_WATER = { dados: '', status: '' };
 let TOPICS_TEMP  = '';
+let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
 
 // ============ CONFIG ============
 function toggleConfig() {
@@ -402,31 +403,35 @@ function togglePanel(bodyId, arrowId) {
   if (arrow) arrow.style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
 
-// Atualiza preview dos tópicos conforme usuário digita
 document.addEventListener('DOMContentLoaded', () => {
-  // Restaura configurações salvas
-  try {
-    const saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
-    if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
-    if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
-    if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
-    if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
-    if (saved.water) document.getElementById('cfg-water').value = saved.water;
-    if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
-    if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
-    if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
-  } catch(e) {}
+  // Restaura e preenche campos
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}'); } catch(e) {}
+
+  if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
+  if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
+  if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
+  if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
+  if (saved.water) document.getElementById('cfg-water').value = saved.water;
+  if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
+  if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
+  if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
 
   document.getElementById('cfg-water').addEventListener('input', function() {
-    const c = this.value.trim() || '{codigo}';
-    document.getElementById('preview-water').textContent = `caixas/agua/${c}/dados`;
+    document.getElementById('preview-water').textContent = `caixas/agua/${this.value.trim()||'{codigo}'}/dados`;
   });
   document.getElementById('cfg-temp').addEventListener('input', function() {
-    const c = this.value.trim() || '{deviceId}';
-    document.getElementById('preview-temp').textContent = `sensors/${c}/data`;
+    document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
+
   renderRelays();
   renderSchedules();
+
+  // Auto-conecta se tiver senha salva
+  if (saved.pass) {
+    log('Credenciais salvas encontradas — conectando automaticamente...', 'info');
+    setTimeout(connectMQTT, 300);
+  }
 });
 
 function connectMQTT() {
@@ -438,32 +443,26 @@ function connectMQTT() {
   const temp  = document.getElementById('cfg-temp').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!pass) { log('Preencha a senha MQTT', 'warn'); return; }
-  if (!water && !temp) { log('Informe pelo menos um código de dispositivo', 'warn'); return; }
 
-  // Salva configurações no localStorage
-  try {
-    localStorage.setItem('autoflow_cfg', JSON.stringify({ host, port, user, pass, water, temp }));
-    log('Configurações salvas', 'sys');
-  } catch(e) {}
+  // Salva no localStorage
+  try { localStorage.setItem('autoflow_cfg', JSON.stringify({ host, port, user, pass, water, temp })); } catch(e) {}
 
-  // Monta tópicos com os códigos corretos
+  // Define tópicos e device ID
+  TEMP_DEVICE_ID = temp;
   if (water) {
     TOPICS_WATER = {
-      dados:   `caixas/agua/${water}/dados`,
-      status:  `caixas/agua/${water}/status`,
+      dados:  `caixas/agua/${water}/dados`,
+      status: `caixas/agua/${water}/status`,
     };
   }
-  if (temp) {
-    TOPICS_TEMP = `sensors/${temp}/data`;
-  }
+  TOPICS_TEMP = temp ? `sensors/${temp}/data` : '';
 
   if (client) { try { client.end(true); } catch(e) {} }
 
   setConnStatus('connecting', 'Conectando...');
-  log(`Conectando a ${host}...`, 'info');
+  log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
 
-  const url = `wss://${host}:${port}/mqtt`;
-  client = mqtt.connect(url, {
+  client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
     username: user,
     password: pass,
     clientId: 'autoflow_' + Math.random().toString(36).substr(2, 8),
@@ -479,7 +478,6 @@ function connectMQTT() {
     subscribeAll();
     startScheduleEngine();
   });
-
   client.on('error',   (e) => { setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
   client.on('offline', ()  => { setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
   client.on('message', (t, m, pkt) => handleMsg(t, m.toString(), pkt));
@@ -487,14 +485,11 @@ function connectMQTT() {
 
 function subscribeAll() {
   const subs = [];
-  if (TOPICS_WATER.dados)  { subs.push(TOPICS_WATER.dados);  subs.push(TOPICS_WATER.status); }
-  // Usa wildcard sensors/# para garantir que mensagens retained chegam independente do timing
-  if (TOPICS_TEMP) subs.push('sensors/#');
+  if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
+  // Wildcard para capturar retained de temperatura independente de timing
+  subs.push('sensors/#');
   relays.forEach(r => subs.push(r.topic + '/state'));
-
-  subs.forEach(t => {
-    client.subscribe(t, { qos: 1 }, () => log(`↳ inscrito: ${t}`, 'sys'));
-  });
+  subs.forEach(t => client.subscribe(t, { qos: 1 }, () => log(`↳ inscrito: ${t}`, 'sys')));
 }
 
 // ============ MENSAGENS MQTT ============
@@ -514,21 +509,7 @@ function handleMsg(topic, payload, pkt) {
     return;
   }
 
-  // Checa dinamicamente se é tópico de sensor de temperatura
-  if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
-    // Extrai o device ID do tópico recebido
-    const receivedId = topic.split('/')[1];
-    // Se TOPICS_TEMP ainda não definido mas temos ID salvo, define agora
-    if (!TOPICS_TEMP) {
-      try {
-        const saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
-        if (saved.temp) TOPICS_TEMP = `sensors/${saved.temp}/data`;
-      } catch(e) {}
-    }
-    if (TOPICS_TEMP && topic !== TOPICS_TEMP) {
-      log(`⚠ sensor recebido: "${receivedId}" — esperado: "${TOPICS_TEMP.split('/')[1]}"`, 'warn');
-    }
-  }
+
 
   // ------ CAIXA D'ÁGUA: caixas/agua/{code}/dados ------
   if (topic === TOPICS_WATER.dados) {
@@ -572,11 +553,10 @@ function handleMsg(topic, payload, pkt) {
   }
 
   // ------ TEMPERATURA: sensors/{id}/data ------
-  // Aceita tanto match exato quanto quando TOPICS_TEMP ainda não foi definido mas o device ID bate
-  const isTempTopic = TOPICS_TEMP
-    ? topic === TOPICS_TEMP
-    : (topic.startsWith('sensors/') && topic.endsWith('/data'));
-  if (isTempTopic) {
+  // Extrai o device ID do tópico recebido e compara com o configurado
+  if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
+    const incomingId = topic.split('/')[1];
+    if (!TEMP_DEVICE_ID || incomingId === TEMP_DEVICE_ID) {
     // payload: { temperature, humidity, heat_index, ... }
     const t = parseFloat(data.temperature);
     const h = parseFloat(data.humidity);
@@ -599,6 +579,7 @@ function handleMsg(topic, payload, pkt) {
     }
     updateLiveBar(topic, false);
     return;
+    }  // end incomingId match
   }
 }
 
