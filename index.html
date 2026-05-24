@@ -232,7 +232,7 @@ body::before {
       </div>
     </div>
     <div class="alert-banner" id="alert-banner"></div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px" id="metrics-row">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px" id="metrics-row">
       <div class="metric-box" id="mb-water">
         <div class="metric-label">💧 Nível caixa</div>
         <div class="metric-value" id="mv-water">—<span class="unit">%</span></div>
@@ -252,11 +252,6 @@ body::before {
         <div class="metric-label">💨 Umidade</div>
         <div class="metric-value" id="mv-hum">—<span class="unit">%</span></div>
         <div class="metric-sub" id="ms-hum">sem dados</div>
-      </div>
-      <div class="metric-box" id="mb-dist">
-        <div class="metric-label">📏 Dist. sensor</div>
-        <div class="metric-value" id="mv-dist">—<span class="unit">cm</span></div>
-        <div class="metric-sub" id="ms-dist">sem dados</div>
       </div>
     </div>
   </div>
@@ -427,7 +422,7 @@ function connectMQTT() {
   const user  = document.getElementById('cfg-user').value.trim();
   const pass  = document.getElementById('cfg-pass').value.trim();
   const water = document.getElementById('cfg-water').value.trim();
-  const temp  = document.getElementById('cfg-temp').value.trim();
+  const temp  = document.getElementById('cfg-temp').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!pass) { log('Preencha a senha MQTT', 'warn'); return; }
   if (!water && !temp) { log('Informe pelo menos um código de dispositivo', 'warn'); return; }
@@ -522,13 +517,6 @@ function handleMsg(topic, payload, pkt) {
       document.getElementById('mb-liters').classList.add('has-data');
       document.getElementById('ms-liters').textContent = 'atualizado';
       document.getElementById('ms-liters').className = 'metric-sub ok';
-    }
-    if (!isNaN(dist)) {
-      liveData.distance = dist;
-      document.getElementById('mv-dist').innerHTML = `${dist.toFixed(1)}<span class="unit">cm</span>`;
-      document.getElementById('mb-dist').classList.add('has-data');
-      document.getElementById('ms-dist').textContent = sensorOK ? 'ok' : '⚠ falha';
-      document.getElementById('ms-dist').className = sensorOK ? 'metric-sub ok' : 'metric-sub warn';
     }
     updateLiveBar(topic, data.cached);
     return;
