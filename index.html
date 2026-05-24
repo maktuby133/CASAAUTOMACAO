@@ -488,7 +488,8 @@ function connectMQTT() {
 function subscribeAll() {
   const subs = [];
   if (TOPICS_WATER.dados)  { subs.push(TOPICS_WATER.dados);  subs.push(TOPICS_WATER.status); }
-  if (TOPICS_TEMP)          subs.push(TOPICS_TEMP);
+  // Usa wildcard sensors/# para garantir que mensagens retained chegam independente do timing
+  if (TOPICS_TEMP) subs.push('sensors/#');
   relays.forEach(r => subs.push(r.topic + '/state'));
 
   subs.forEach(t => {
@@ -513,10 +514,19 @@ function handleMsg(topic, payload, pkt) {
     return;
   }
 
-  // Debug: mostra se tópico bate com o esperado
-  if (TOPICS_TEMP && topic.startsWith('sensors/')) {
-    if (topic !== TOPICS_TEMP) {
-      log(`⚠ tópico temp recebido: "${topic}" — esperado: "${TOPICS_TEMP}"`, 'warn');
+  // Checa dinamicamente se é tópico de sensor de temperatura
+  if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
+    // Extrai o device ID do tópico recebido
+    const receivedId = topic.split('/')[1];
+    // Se TOPICS_TEMP ainda não definido mas temos ID salvo, define agora
+    if (!TOPICS_TEMP) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
+        if (saved.temp) TOPICS_TEMP = `sensors/${saved.temp}/data`;
+      } catch(e) {}
+    }
+    if (TOPICS_TEMP && topic !== TOPICS_TEMP) {
+      log(`⚠ sensor recebido: "${receivedId}" — esperado: "${TOPICS_TEMP.split('/')[1]}"`, 'warn');
     }
   }
 
@@ -562,7 +572,11 @@ function handleMsg(topic, payload, pkt) {
   }
 
   // ------ TEMPERATURA: sensors/{id}/data ------
-  if (topic === TOPICS_TEMP) {
+  // Aceita tanto match exato quanto quando TOPICS_TEMP ainda não foi definido mas o device ID bate
+  const isTempTopic = TOPICS_TEMP
+    ? topic === TOPICS_TEMP
+    : (topic.startsWith('sensors/') && topic.endsWith('/data'));
+  if (isTempTopic) {
     // payload: { temperature, humidity, heat_index, ... }
     const t = parseFloat(data.temperature);
     const h = parseFloat(data.humidity);
