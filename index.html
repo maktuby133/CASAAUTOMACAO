@@ -404,6 +404,19 @@ function togglePanel(bodyId, arrowId) {
 
 // Atualiza preview dos tópicos conforme usuário digita
 document.addEventListener('DOMContentLoaded', () => {
+  // Restaura configurações salvas
+  try {
+    const saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
+    if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
+    if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
+    if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
+    if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
+    if (saved.water) document.getElementById('cfg-water').value = saved.water;
+    if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
+    if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
+    if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
+  } catch(e) {}
+
   document.getElementById('cfg-water').addEventListener('input', function() {
     const c = this.value.trim() || '{codigo}';
     document.getElementById('preview-water').textContent = `caixas/agua/${c}/dados`;
@@ -426,6 +439,12 @@ function connectMQTT() {
 
   if (!pass) { log('Preencha a senha MQTT', 'warn'); return; }
   if (!water && !temp) { log('Informe pelo menos um código de dispositivo', 'warn'); return; }
+
+  // Salva configurações no localStorage
+  try {
+    localStorage.setItem('autoflow_cfg', JSON.stringify({ host, port, user, pass, water, temp }));
+    log('Configurações salvas', 'sys');
+  } catch(e) {}
 
   // Monta tópicos com os códigos corretos
   if (water) {
@@ -479,6 +498,9 @@ function subscribeAll() {
 
 // ============ MENSAGENS MQTT ============
 function handleMsg(topic, payload, pkt) {
+  // Log bruto de TODAS as mensagens — ajuda a debugar tópicos inesperados
+  log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
+
   let data;
   try { data = JSON.parse(payload); } catch(e) {
     // payload simples ON/OFF para relés
@@ -489,6 +511,13 @@ function handleMsg(topic, payload, pkt) {
       }
     });
     return;
+  }
+
+  // Debug: mostra se tópico bate com o esperado
+  if (TOPICS_TEMP && topic.startsWith('sensors/')) {
+    if (topic !== TOPICS_TEMP) {
+      log(`⚠ tópico temp recebido: "${topic}" — esperado: "${TOPICS_TEMP}"`, 'warn');
+    }
   }
 
   // ------ CAIXA D'ÁGUA: caixas/agua/{code}/dados ------
