@@ -102,6 +102,7 @@ body::before {
 /* RELAYS */
 .relay-list { display: flex; flex-direction: column; gap: 10px; }
 .relay-item { display: flex; align-items: center; gap: 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: border-color 0.2s; }
+.relay-disabled { border-style: dashed !important; }
 .relay-item:hover { border-color: var(--border2); }
 .relay-item.active { border-color: rgba(0,212,160,0.3); }
 .relay-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: all 0.2s; }
@@ -315,13 +316,12 @@ body::before {
       <div class="card-header" style="cursor:pointer;user-select:none" onclick="togglePanel('relay-body','relay-arrow')">
         <span class="card-title">Controle de relés</span>
         <div style="display:flex;align-items:center;gap:8px">
-          <button class="btn" onclick="event.stopPropagation();openRelayModal()" style="font-size:10px;padding:4px 10px">+</button>
+          <button class="btn" onclick="event.stopPropagation();openRelayModal()" style="font-size:10px;padding:4px 10px">⚙ Prefixo</button>
           <span id="relay-arrow" style="color:var(--muted);font-size:12px;transition:transform 0.2s">▼</span>
         </div>
       </div>
       <div id="relay-body">
         <div class="relay-list" id="relay-list"></div>
-        <button class="add-relay-btn" onclick="openRelayModal()" style="margin-top:10px;font-size:10px;padding:8px">＋ Novo relé</button>
       </div>
     </div>
 
@@ -370,14 +370,23 @@ body::before {
 <script>
 // ============ STATE ============
 let client = null;
+// 8 saídas fixas — saída 1 = bomba (fixa), 2-8 livres
+// O usuário define o prefixo; tópicos gerados: {prefixo}/out1 … {prefixo}/out8
+let RELAY_PREFIX = 'home/relay';
 let relays = [
-  {id:'r1', name:'Bomba de irrigação', icon:'💧', topic:'home/relay/irrigacao', state:false},
-  {id:'r2', name:'Lâmpada varanda',    icon:'💡', topic:'home/relay/lampada1',  state:false},
-  {id:'r3', name:'Tomada geral',       icon:'🔌', topic:'home/relay/tomada1',   state:false},
+  {id:'out1', name:'Bomba de irrigação', icon:'💧', enabled:true,  locked:true,  state:false},
+  {id:'out2', name:'Saída 2',            icon:'🔌', enabled:false, locked:false, state:false},
+  {id:'out3', name:'Saída 3',            icon:'🔌', enabled:false, locked:false, state:false},
+  {id:'out4', name:'Saída 4',            icon:'🔌', enabled:false, locked:false, state:false},
+  {id:'out5', name:'Saída 5',            icon:'🔌', enabled:false, locked:false, state:false},
+  {id:'out6', name:'Saída 6',            icon:'🔌', enabled:false, locked:false, state:false},
+  {id:'out7', name:'Saída 7',            icon:'🔌', enabled:false, locked:false, state:false},
+  {id:'out8', name:'Saída 8',            icon:'🔌', enabled:false, locked:false, state:false},
 ];
+function relayTopic(r) { return `${RELAY_PREFIX}/${r.id}`; }
 let schedules = [
-  {id:'s1', days:[1,3,5],   time:'06:00', duration:20, relay:'r1', active:true},
-  {id:'s2', days:[0,2,4,6], time:'18:30', duration:15, relay:'r1', active:true},
+  {id:'s1', days:[1,3,5],   time:'06:00', duration:20, relay:'out1', active:true},
+  {id:'s2', days:[0,2,4,6], time:'18:30', duration:15, relay:'out1', active:true},
 ];
 let selectedDays = [];
 let liveData = {water:null, temp:null, hum:null, liters:null, distance:null};
@@ -408,14 +417,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}'); } catch(e) {}
 
-  if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
-  if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
-  if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
-  if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
-  if (saved.water) document.getElementById('cfg-water').value = saved.water;
-  if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
+  if (saved.host)        document.getElementById('cfg-host').value  = saved.host;
+  if (saved.port)        document.getElementById('cfg-port').value  = saved.port;
+  if (saved.user)        document.getElementById('cfg-user').value  = saved.user;
+  if (saved.pass)        document.getElementById('cfg-pass').value  = saved.pass;
+  if (saved.water)       document.getElementById('cfg-water').value = saved.water;
+  if (saved.temp)        document.getElementById('cfg-temp').value  = saved.temp;
+  if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
   if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
   if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
+  // Restaura nomes/ícones/estados das saídas
+  try {
+    const savedRelays = JSON.parse(localStorage.getItem('autoflow_relays') || '[]');
+    savedRelays.forEach(sr => {
+      const r = relays.find(x => x.id === sr.id);
+      if (r && !r.locked) { r.name = sr.name; r.icon = sr.icon; r.enabled = sr.enabled; }
+    });
+  } catch(e) {}
 
   document.getElementById('cfg-water').addEventListener('input', function() {
     document.getElementById('preview-water').textContent = `caixas/agua/${this.value.trim()||'{codigo}'}/dados`;
@@ -445,7 +463,7 @@ function connectMQTT() {
   if (!pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
   // Salva no localStorage
-  try { localStorage.setItem('autoflow_cfg', JSON.stringify({ host, port, user, pass, water, temp })); } catch(e) {}
+  try { localStorage.setItem('autoflow_cfg', JSON.stringify({ host, port, user, pass, water, temp, relayPrefix: RELAY_PREFIX })); } catch(e) {}
 
   // Define tópicos e device ID
   TEMP_DEVICE_ID = temp;
@@ -488,7 +506,7 @@ function subscribeAll() {
   if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
   // Wildcard para capturar retained de temperatura independente de timing
   subs.push('sensors/#');
-  relays.forEach(r => subs.push(r.topic + '/state'));
+  relays.filter(r => r.enabled).forEach(r => subs.push(relayTopic(r) + '/state'));
   subs.forEach(t => client.subscribe(t, { qos: 1 }, () => log(`↳ inscrito: ${t}`, 'sys')));
 }
 
@@ -501,7 +519,7 @@ function handleMsg(topic, payload, pkt) {
   try { data = JSON.parse(payload); } catch(e) {
     // payload simples ON/OFF para relés
     relays.forEach(r => {
-      if (topic === r.topic + '/state') {
+      if (topic === relayTopic(r) + '/state') {
         r.state = (payload === 'ON' || payload === '1');
         renderRelays();
       }
@@ -686,7 +704,7 @@ async function setCity(cityName) {
 function checkRules() {
   // Regra: nível baixo → desliga irrigação se estiver ligada
   if (liveData.water !== null && liveData.water < 20) {
-    const pump = relays.find(r => r.id === 'r1');
+    const pump = relays.find(r => r.id === 'out1');
     if (pump && pump.state) {
       log('REGRA: nível < 20% → desligando irrigação', 'warn');
       showAlert('⚠ Nível crítico da caixa — irrigação desligada automaticamente.');
@@ -713,10 +731,12 @@ function setConnStatus(cls, txt) {
 
 // ============ RELAYS ============
 function setRelay(relay, state) {
+  if (!relay || !relay.enabled) return;
   relay.state = state;
+  const topic = relayTopic(relay);
   if (client && client.connected) {
-    client.publish(relay.topic, state ? 'ON' : 'OFF', { retain: true, qos: 1 });
-    log(`Relé "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'ok');
+    client.publish(topic, state ? 'ON' : 'OFF', { retain: true, qos: 1 });
+    log(`${relay.id.toUpperCase()} "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'ok');
   } else {
     log(`[sem MQTT] "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'info');
   }
@@ -726,49 +746,107 @@ function setRelay(relay, state) {
 function renderRelays() {
   const el  = document.getElementById('relay-list');
   const sel = document.getElementById('sched-relay');
-  el.innerHTML = relays.map(r => `
-    <div class="relay-item ${r.state ? 'active' : ''}" id="ri-${r.id}">
-      <div class="relay-icon">${r.icon}</div>
-      <div class="relay-info">
-        <div class="relay-name">${r.name}</div>
-        <div class="relay-topic">${r.topic}</div>
+
+  el.innerHTML = relays.map(r => {
+    const topic = relayTopic(r);
+    const isLocked = r.locked;
+    return `<div class="relay-item ${r.enabled ? (r.state ? 'active' : '') : 'relay-disabled'}" id="ri-${r.id}">
+      <div class="relay-icon" style="${!r.enabled ? 'opacity:0.35' : ''}">${r.icon}</div>
+      <div class="relay-info" style="${!r.enabled ? 'opacity:0.45' : ''}">
+        <div class="relay-name" style="display:flex;align-items:center;gap:6px">
+          ${r.name}
+          ${isLocked ? '<span style="font-size:9px;font-family:var(--mono);color:var(--accent);border:1px solid rgba(0,212,160,0.3);padding:1px 5px;border-radius:3px">FIXA</span>' : ''}
+        </div>
+        <div class="relay-topic">${topic}</div>
       </div>
-      <span class="relay-badge ${r.state ? 'on' : 'off'}">${r.state ? 'Ligado' : 'Desligado'}</span>
-      <div class="relay-actions">
-        <label class="toggle">
-          <input type="checkbox" ${r.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${r.id}'),this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-knob"></div>
-        </label>
-        <button class="btn-icon" onclick="removeRelay('${r.id}')" title="Remover">✕</button>
-      </div>
-    </div>
-  `).join('');
-  sel.innerHTML = relays.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+      ${r.enabled ? `
+        <span class="relay-badge ${r.state ? 'on' : 'off'}">${r.state ? 'Ligado' : 'Desligado'}</span>
+        <div class="relay-actions">
+          <label class="toggle">
+            <input type="checkbox" ${r.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${r.id}'),this.checked)">
+            <div class="toggle-track"></div><div class="toggle-knob"></div>
+          </label>
+          ${!isLocked ? `<button class="btn-icon" onclick="openEditRelay('${r.id}')" title="Editar">✏</button>` : ''}
+        </div>
+      ` : `
+        <button class="btn" style="font-size:10px;padding:4px 10px" onclick="enableRelay('${r.id}')">Ativar</button>
+      `}
+    </div>`;
+  }).join('');
+
+  // só saídas ativas no select de agendamento
+  sel.innerHTML = relays
+    .filter(r => r.enabled)
+    .map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`)
+    .join('');
 }
 
-function removeRelay(id) {
-  relays = relays.filter(r => r.id !== id);
+function enableRelay(id) {
+  const r = relays.find(x => x.id === id);
+  if (!r) return;
+  const name = prompt(`Nome para ${id.toUpperCase()}:`, r.name);
+  if (!name) return;
+  const icon = prompt('Ícone (emoji):', r.icon) || r.icon;
+  r.name    = name;
+  r.icon    = icon;
+  r.enabled = true;
+  if (client && client.connected) client.subscribe(relayTopic(r) + '/state', { qos:1 });
+  saveRelayState();
   renderRelays();
-  log('Relé removido', 'sys');
+  log(`${id.toUpperCase()} ativada: "${name}" → ${relayTopic(r)}`, 'ok');
 }
 
-function openRelayModal()  { document.getElementById('relay-modal').classList.add('open'); }
+function openEditRelay(id) {
+  const r = relays.find(x => x.id === id);
+  if (!r) return;
+  const name = prompt('Novo nome:', r.name);
+  if (!name) return;
+  const icon = prompt('Ícone:', r.icon) || r.icon;
+  r.name = name;
+  r.icon = icon;
+  saveRelayState();
+  renderRelays();
+  log(`${id.toUpperCase()} renomeada: "${name}"`, 'sys');
+}
+
+function openRelayModal() {
+  document.getElementById('rm-prefix').value = RELAY_PREFIX;
+  updatePrefixPreview();
+  document.getElementById('relay-modal').classList.add('open');
+}
+
+function updatePrefixPreview() {
+  const p = document.getElementById('rm-prefix').value.trim() || 'home/relay';
+  const preview = document.getElementById('rm-preview');
+  if (!preview) return;
+  preview.innerHTML = Array.from({length:8}, (_,i) =>
+    `<span style="color:var(--accent2)">${p}/out${i+1}</span>${i===0?' <span style="color:var(--accent);font-size:9px">← bomba (fixa)</span>':''}`
+  ).join('<br>');
+}
 function closeRelayModal() { document.getElementById('relay-modal').classList.remove('open'); }
 
 function confirmAddRelay() {
-  const name  = document.getElementById('rm-name').value.trim();
-  const icon  = document.getElementById('rm-icon').value.trim() || '🔌';
-  const topic = document.getElementById('rm-topic').value.trim();
-  if (!name || !topic) { log('Preencha nome e tópico', 'warn'); return; }
-  relays.push({ id: 'r' + Date.now(), name, icon, topic, state: false });
+  const prefix = document.getElementById('rm-prefix').value.trim();
+  if (!prefix) { log('Preencha o prefixo', 'warn'); return; }
+  RELAY_PREFIX = prefix;
+  if (client && client.connected) {
+    relays.filter(r => r.enabled).forEach(r => {
+      client.subscribe(relayTopic(r) + '/state', { qos:1 });
+    });
+  }
+  try { localStorage.setItem('autoflow_cfg', JSON.stringify(
+    Object.assign(JSON.parse(localStorage.getItem('autoflow_cfg')||'{}'), { relayPrefix: RELAY_PREFIX })
+  )); } catch(e) {}
   renderRelays();
-  if (client && client.connected) client.subscribe(topic + '/state', { qos: 1 });
-  log(`Relé "${name}" adicionado`, 'ok');
+  log(`Prefixo: ${RELAY_PREFIX} → out1…out8`, 'ok');
   closeRelayModal();
-  document.getElementById('rm-name').value  = '';
-  document.getElementById('rm-topic').value = '';
-  document.getElementById('rm-icon').value  = '🔌';
+}
+function saveRelayState() {
+  try {
+    localStorage.setItem('autoflow_relays', JSON.stringify(
+      relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled }))
+    ));
+  } catch(e) {}
 }
 
 // ============ SCHEDULE ============
@@ -827,7 +905,7 @@ function startScheduleEngine() {
     const dow = now.getDay();
     const hm  = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     schedules.filter(s => s.active && s.days.includes(dow) && s.time === hm).forEach(s => {
-      const relay = relays.find(r => r.id === s.relay);
+      const relay = relays.find(r => r.id === s.relay && r.enabled);
       if (!relay) return;
       // Bloqueia se nível baixo
       if (liveData.water !== null && liveData.water < 20) {
