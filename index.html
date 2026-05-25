@@ -746,50 +746,72 @@ function setRelay(relay, state) {
 function renderRelays() {
   const el  = document.getElementById('relay-list');
   const sel = document.getElementById('sched-relay');
+  const enabled   = relays.filter(r => r.enabled);
+  const available = relays.filter(r => !r.enabled);
 
-  el.innerHTML = relays.map(r => {
+  el.innerHTML = enabled.map(r => {
     const topic = relayTopic(r);
-    const isLocked = r.locked;
-    return `<div class="relay-item ${r.enabled ? (r.state ? 'active' : '') : 'relay-disabled'}" id="ri-${r.id}">
-      <div class="relay-icon" style="${!r.enabled ? 'opacity:0.35' : ''}">${r.icon}</div>
-      <div class="relay-info" style="${!r.enabled ? 'opacity:0.45' : ''}">
+    return `<div class="relay-item ${r.state ? 'active' : ''}" id="ri-${r.id}">
+      <div class="relay-icon">${r.icon}</div>
+      <div class="relay-info">
         <div class="relay-name" style="display:flex;align-items:center;gap:6px">
           ${r.name}
-          ${isLocked ? '<span style="font-size:9px;font-family:var(--mono);color:var(--accent);border:1px solid rgba(0,212,160,0.3);padding:1px 5px;border-radius:3px">FIXA</span>' : ''}
+          ${r.locked ? '<span style="font-size:9px;font-family:var(--mono);color:var(--accent);border:1px solid rgba(0,212,160,0.3);padding:1px 5px;border-radius:3px">FIXA</span>' : ''}
         </div>
         <div class="relay-topic">${topic}</div>
       </div>
-      ${r.enabled ? `
-        <span class="relay-badge ${r.state ? 'on' : 'off'}">${r.state ? 'Ligado' : 'Desligado'}</span>
-        <div class="relay-actions">
-          <label class="toggle">
-            <input type="checkbox" ${r.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${r.id}'),this.checked)">
-            <div class="toggle-track"></div><div class="toggle-knob"></div>
-          </label>
-          ${!isLocked ? `<button class="btn-icon" onclick="openEditRelay('${r.id}')" title="Editar">✏</button>` : ''}
-        </div>
-      ` : `
-        <button class="btn" style="font-size:10px;padding:4px 10px" onclick="enableRelay('${r.id}')">Ativar</button>
-      `}
+      <span class="relay-badge ${r.state ? 'on' : 'off'}">${r.state ? 'Ligado' : 'Desligado'}</span>
+      <div class="relay-actions">
+        <label class="toggle">
+          <input type="checkbox" ${r.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${r.id}'),this.checked)">
+          <div class="toggle-track"></div><div class="toggle-knob"></div>
+        </label>
+        ${!r.locked ? `<button class="btn-icon" onclick="openEditRelay('${r.id}')" title="Editar">✏</button>
+        <button class="btn-icon" onclick="disableRelay('${r.id}')" title="Remover">✕</button>` : ''}
+      </div>
     </div>`;
   }).join('');
 
-  // só saídas ativas no select de agendamento
-  sel.innerHTML = relays
-    .filter(r => r.enabled)
-    .map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`)
-    .join('');
+  if (available.length) {
+    el.innerHTML += `<button class="add-relay-btn" onclick="pickRelay()" style="margin-top:${enabled.length ? '10px' : '0'}">
+      ＋ Adicionar saída <span style="font-family:var(--mono);font-size:10px;opacity:0.6">(${available.length} disponíve${available.length===1?'l':'is'})</span>
+    </button>`;
+  }
+
+  sel.innerHTML = enabled.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+}
+
+function pickRelay() {
+  const available = relays.filter(r => !r.enabled);
+  if (!available.length) return;
+  const opts = available.map(r =>
+    `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;font-size:12px;padding:8px 12px" onclick="enableRelay('${r.id}');closePicker()">${r.id.toUpperCase()} <span style="color:var(--muted);font-family:var(--mono);font-size:10px">→ ${relayTopic(r)}</span></button>`
+  ).join('');
+  const overlay = document.createElement('div');
+  overlay.id = 'picker-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px;width:360px;max-width:90vw">
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">Qual saída ativar?</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:16px">Selecione para nomear e ativar</div>
+      ${opts}
+      <button class="btn" style="width:100%;margin-top:4px" onclick="closePicker()">Cancelar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closePicker() {
+  const el = document.getElementById('picker-overlay');
+  if (el) el.remove();
 }
 
 function enableRelay(id) {
   const r = relays.find(x => x.id === id);
   if (!r) return;
-  const name = prompt(`Nome para ${id.toUpperCase()}:`, r.name);
+  const name = prompt(`Nome para ${id.toUpperCase()}:`, `Saída ${id.replace('out','')}`);
   if (!name) return;
-  const icon = prompt('Ícone (emoji):', r.icon) || r.icon;
-  r.name    = name;
-  r.icon    = icon;
-  r.enabled = true;
+  const icon = prompt('Ícone (emoji):', '🔌') || '🔌';
+  r.name = name; r.icon = icon; r.enabled = true;
   if (client && client.connected) client.subscribe(relayTopic(r) + '/state', { qos:1 });
   saveRelayState();
   renderRelays();
@@ -802,11 +824,21 @@ function openEditRelay(id) {
   const name = prompt('Novo nome:', r.name);
   if (!name) return;
   const icon = prompt('Ícone:', r.icon) || r.icon;
-  r.name = name;
-  r.icon = icon;
+  r.name = name; r.icon = icon;
   saveRelayState();
   renderRelays();
   log(`${id.toUpperCase()} renomeada: "${name}"`, 'sys');
+}
+
+function disableRelay(id) {
+  const r = relays.find(x => x.id === id);
+  if (!r || r.locked) return;
+  if (!confirm(`Remover "${r.name}" do painel?`)) return;
+  r.enabled = false; r.state = false;
+  r.name = `Saída ${id.replace('out','')}`; r.icon = '🔌';
+  saveRelayState();
+  renderRelays();
+  log(`${id.toUpperCase()} removida do painel`, 'sys');
 }
 
 function openRelayModal() {
