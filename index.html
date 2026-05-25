@@ -252,15 +252,35 @@ body::before {
         <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Sensores</span>
       </div>
       <!-- Nível + Volume juntos -->
-      <div class="metric-inline" id="mb-water">
-        <span class="metric-inline-icon">💧</span>
-        <div>
-          <span class="metric-inline-val" id="mv-water">—<span class="metric-inline-unit">%</span></span>
-          <span class="metric-inline-sub" id="ms-water">nível</span>
+      <!-- Caixa d'água: ícone SVG + barra de nível + valores -->
+      <div class="metric-inline" id="mb-water" style="gap:10px;padding-right:16px">
+        <!-- Ícone caixa d'água com nível sobreposto -->
+        <div style="position:relative;flex-shrink:0;width:34px;height:38px">
+          <svg viewBox="0 0 34 38" width="34" height="38" xmlns="http://www.w3.org/2000/svg">
+            <!-- Tampa -->
+            <rect x="5" y="0" width="24" height="4" rx="1.5" fill="rgba(255,255,255,0.15)"/>
+            <!-- Corpo da caixa (contorno) -->
+            <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+            <!-- Nível de água (preenchimento dinâmico) — clip do bottom -->
+            <clipPath id="waterClip">
+              <rect x="3" y="5" width="28" height="28" rx="2"/>
+            </clipPath>
+            <rect id="water-fill" x="3" y="33" width="28" height="0" rx="2" fill="var(--accent)" opacity="0.35" clip-path="url(#waterClip)"/>
+            <rect id="water-fill-top" x="3" y="33" width="28" height="2" rx="1" fill="var(--accent)" opacity="0.7" clip-path="url(#waterClip)"/>
+            <!-- Borda inferior da caixa -->
+            <rect x="2" y="34" width="30" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+            <!-- Saída (cano) -->
+            <rect x="13" y="35" width="8" height="3" rx="1" fill="rgba(255,255,255,0.15)"/>
+          </svg>
         </div>
-        <div style="width:1px;height:28px;background:var(--border);margin:0 4px"></div>
-        <span class="metric-inline-icon" style="font-size:12px">🪣</span>
-        <span class="metric-inline-val" id="mv-liters" style="font-size:16px">—<span class="metric-inline-unit">L</span></span>
+        <!-- Valores -->
+        <div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <span class="metric-inline-val" id="mv-water">—<span class="metric-inline-unit">%</span></span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="mv-liters">— L</span>
+          </div>
+          <span class="metric-inline-sub" id="ms-water">caixa d'água</span>
+        </div>
       </div>
       <div class="metric-inline-sep"></div>
       <!-- Temperatura -->
@@ -569,18 +589,29 @@ function handleMsg(topic, payload, pkt) {
     if (!isNaN(pct)) {
       liveData.water = pct;
       document.getElementById('mv-water').innerHTML = `${pct}<span class="metric-inline-unit">%</span>`;
+      // Anima barra SVG da caixa — área interna tem 28px de altura (y5 a y33)
+      const fillH = Math.round((Math.min(pct, 100) / 100) * 28);
+      const fillY = 33 - fillH;
+      const wf  = document.getElementById('water-fill');
+      const wft = document.getElementById('water-fill-top');
+      if (wf)  { wf.setAttribute('y', fillY); wf.setAttribute('height', fillH); }
+      if (wft) { wft.setAttribute('y', Math.max(fillY, 5)); }
+      // Cor muda conforme nível
+      const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+      if (wf)  wf.setAttribute('fill', col);
+      if (wft) wft.setAttribute('fill', col);
       const mb = document.getElementById('mb-water');
       const ms = document.getElementById('ms-water');
       mb.classList.remove('warn','ok');
-      if (!sensorOK)      { mb.classList.add('warn'); ms.textContent = '⚠ falha'; }
+      if (!sensorOK)      { mb.classList.add('warn'); ms.textContent = '⚠ falha sensor'; }
       else if (pct <= 10) { mb.classList.add('warn'); ms.textContent = '⚠ crítico'; }
-      else if (pct <= 25) { mb.classList.add('warn'); ms.textContent = '⚠ baixo'; }
-      else                { mb.classList.add('ok');   ms.textContent = 'nível'; }
+      else if (pct <= 25) { mb.classList.add('warn'); ms.textContent = '⚠ nível baixo'; }
+      else                { mb.classList.add('ok');   ms.textContent = "caixa d'água"; }
       checkRules();
     }
     if (!isNaN(lit)) {
       liveData.liters = lit;
-      document.getElementById('mv-liters').innerHTML = `${lit}<span class="metric-inline-unit">L</span>`;
+      document.getElementById('mv-liters').textContent = `${lit} L`;
     }
     updateLiveBar(topic, data.cached);
     return;
