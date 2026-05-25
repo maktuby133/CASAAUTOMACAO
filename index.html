@@ -38,7 +38,7 @@ body::before {
 .app { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 24px 60px; }
 
 /* TOPBAR */
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
 .logo { display: flex; align-items: baseline; gap: 10px; }
 .logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
 .logo-text span { color: var(--accent); }
@@ -61,11 +61,11 @@ body::before {
 .col-right { display: flex; flex-direction: column; gap: 20px; }
 
 /* CARDS */
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; transition: border-color 0.2s; animation: fadeIn 0.3s ease both; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; transition: border-color 0.2s; animation: fadeIn 0.3s ease both; }
 .card:hover { border-color: var(--border2); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .card-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
 
@@ -85,13 +85,13 @@ body::before {
 
 /* METRICS */
 .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.metric-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+.metric-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; position: relative; overflow: hidden; transition: border-color 0.2s; }
 .metric-box:hover { border-color: var(--border2); }
 .metric-box::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease; }
 .metric-box.has-data::after { transform: scaleX(1); }
 .metric-box.warn::after { background: var(--warn); }
 .metric-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
-.metric-value { font-size: 28px; font-weight: 700; line-height: 1; color: var(--text); letter-spacing: -1px; }
+.metric-value { font-size: 22px; font-weight: 700; line-height: 1; color: var(--text); letter-spacing: -1px; }
 .metric-value .unit { font-size: 13px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: 2px; }
 .metric-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
 .metric-sub.ok { color: var(--green); }
@@ -100,12 +100,12 @@ body::before {
 .live-bar { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
 /* RELAYS */
-.relay-list { display: flex; flex-direction: column; gap: 10px; }
-.relay-item { display: flex; align-items: center; gap: 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: border-color 0.2s; }
+.relay-list { display: flex; flex-direction: column; gap: 6px; }
+.relay-item { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; transition: border-color 0.2s; }
 .relay-disabled { border-style: dashed !important; }
 .relay-item:hover { border-color: var(--border2); }
 .relay-item.active { border-color: rgba(0,212,160,0.3); }
-.relay-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: all 0.2s; }
+.relay-icon { width: 28px; height: 28px; border-radius: 6px; background: var(--bg2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; transition: all 0.2s; }
 .relay-item.active .relay-icon { background: rgba(0,212,160,0.12); border-color: rgba(0,212,160,0.3); }
 .relay-info { flex: 1; min-width: 0; }
 .relay-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -126,10 +126,10 @@ body::before {
 .add-relay-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.04); }
 
 /* SCHEDULE */
-.sched-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.sched-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .sched-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
 .sched-item:hover { border-color: var(--border2); }
-.sched-time { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--accent); letter-spacing: -0.5px; min-width: 64px; }
+.sched-time { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--accent); letter-spacing: -0.5px; min-width: 52px; }
 .sched-info { flex: 1; }
 .sched-relay { font-size: 12px; font-weight: 600; color: var(--text); }
 .sched-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
@@ -151,8 +151,8 @@ body::before {
 .unit-lbl { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
 /* RULES */
-.rule-list { display: flex; flex-direction: column; gap: 8px; }
-.rule-item { display: flex; align-items: center; gap: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.rule-list { display: flex; flex-direction: column; gap: 6px; }
+.rule-item { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
 .rule-icon { font-size: 18px; flex-shrink: 0; width: 32px; text-align: center; }
 .rule-text { flex: 1; font-size: 12px; color: var(--muted); line-height: 1.5; }
 .rule-text strong { color: var(--text); font-weight: 600; }
@@ -180,6 +180,26 @@ body::before {
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
 
 @media (max-width: 760px) { .grid-main { grid-template-columns: 1fr; } .config-grid { grid-template-columns: 1fr; } }
+
+/* === INLINE METRICS === */
+.metric-inline {
+  display: flex; align-items: center; gap: 7px; padding: 0 14px 0 0;
+}
+.metric-inline-icon { font-size: 15px; flex-shrink: 0; }
+.metric-inline-val {
+  font-family: var(--mono); font-size: 18px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.5px; line-height: 1;
+}
+.metric-inline-unit { font-size: 11px; font-weight: 400; color: var(--muted); }
+.metric-inline-sub {
+  display: block; font-family: var(--mono); font-size: 9px;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-top: 2px;
+}
+.metric-inline-sep {
+  width: 1px; height: 32px; background: var(--border); flex-shrink: 0; margin-right: 14px;
+}
+.metric-inline.warn .metric-inline-val { color: var(--warn); }
+.metric-inline.ok .metric-inline-val   { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -223,42 +243,51 @@ body::before {
     </div>
   </div>
 
-  <!-- ROW 1: métricas em tempo real — full width, 5 colunas -->
-  <div class="card" style="margin-bottom:20px">
-    <div class="card-header">
-      <span class="card-title">Monitoramento em tempo real</span>
-      <div style="display:flex;align-items:center;gap:10px">
+  <!-- ROW 1: métricas compactas inline -->
+  <div class="card" style="margin-bottom:16px;padding:12px 18px">
+    <div style="display:flex;align-items:center;gap:0;flex-wrap:nowrap">
+      <!-- Label + dot -->
+      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;margin-right:18px">
         <div class="dot" id="live-dot"></div>
-        <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted)">aguardando...</span>
+        <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Sensores</span>
       </div>
+      <!-- Nível + Volume juntos -->
+      <div class="metric-inline" id="mb-water">
+        <span class="metric-inline-icon">💧</span>
+        <div>
+          <span class="metric-inline-val" id="mv-water">—<span class="metric-inline-unit">%</span></span>
+          <span class="metric-inline-sub" id="ms-water">nível</span>
+        </div>
+        <div style="width:1px;height:28px;background:var(--border);margin:0 4px"></div>
+        <span class="metric-inline-icon" style="font-size:12px">🪣</span>
+        <span class="metric-inline-val" id="mv-liters" style="font-size:16px">—<span class="metric-inline-unit">L</span></span>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- Temperatura -->
+      <div class="metric-inline" id="mb-temp">
+        <span class="metric-inline-icon">🌡️</span>
+        <div>
+          <span class="metric-inline-val" id="mv-temp">—<span class="metric-inline-unit">°C</span></span>
+          <span class="metric-inline-sub" id="ms-temp">temp</span>
+        </div>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- Umidade -->
+      <div class="metric-inline" id="mb-hum">
+        <span class="metric-inline-icon">💨</span>
+        <div>
+          <span class="metric-inline-val" id="mv-hum">—<span class="metric-inline-unit">%</span></span>
+          <span class="metric-inline-sub" id="ms-hum">umidade</span>
+        </div>
+      </div>
+      <!-- timestamp -->
+      <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0">aguardando...</span>
     </div>
-    <div class="alert-banner" id="alert-banner"></div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px" id="metrics-row">
-      <div class="metric-box" id="mb-water">
-        <div class="metric-label">💧 Nível caixa</div>
-        <div class="metric-value" id="mv-water">—<span class="unit">%</span></div>
-        <div class="metric-sub" id="ms-water">sem dados</div>
-      </div>
-      <div class="metric-box" id="mb-liters">
-        <div class="metric-label">🪣 Volume</div>
-        <div class="metric-value" id="mv-liters">—<span class="unit">L</span></div>
-        <div class="metric-sub" id="ms-liters">sem dados</div>
-      </div>
-      <div class="metric-box" id="mb-temp">
-        <div class="metric-label">🌡️ Temperatura</div>
-        <div class="metric-value" id="mv-temp">—<span class="unit">°C</span></div>
-        <div class="metric-sub" id="ms-temp">sem dados</div>
-      </div>
-      <div class="metric-box" id="mb-hum">
-        <div class="metric-label">💨 Umidade</div>
-        <div class="metric-value" id="mv-hum">—<span class="unit">%</span></div>
-        <div class="metric-sub" id="ms-hum">sem dados</div>
-      </div>
-    </div>
+    <div class="alert-banner" id="alert-banner" style="margin-top:8px;margin-bottom:0"></div>
   </div>
 
   <!-- ROW 2: 3 colunas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
     <!-- COL 1: Meteorologia -->
     <div class="card" id="weather-card" style="min-height:200px">
@@ -328,7 +357,7 @@ body::before {
   </div>
 
   <!-- ROW 3: regras + log -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 
     <!-- Regras -->
     <div class="card">
@@ -358,7 +387,7 @@ body::before {
         <span class="card-title">Log de eventos</span>
         <button class="btn" onclick="clearLog()" style="font-size:10px;padding:4px 10px">Limpar</button>
       </div>
-      <div class="log-box" id="log-box" style="max-height:170px">
+      <div class="log-box" id="log-box" style="max-height:130px">
         <span class="log-line log-sys"><span class="ts">--:--:--</span><span class="msg">Sistema iniciado. Configure o MQTT acima.</span></span>
       </div>
     </div>
@@ -539,22 +568,19 @@ function handleMsg(topic, payload, pkt) {
 
     if (!isNaN(pct)) {
       liveData.water = pct;
-      document.getElementById('mv-water').innerHTML = `${pct}<span class="unit">%</span>`;
+      document.getElementById('mv-water').innerHTML = `${pct}<span class="metric-inline-unit">%</span>`;
       const mb = document.getElementById('mb-water');
       const ms = document.getElementById('ms-water');
-      mb.classList.add('has-data');
-      if (!sensorOK)    { mb.classList.add('warn'); ms.textContent = '⚠ falha no sensor'; ms.className = 'metric-sub warn'; }
-      else if (pct <= 10) { mb.classList.add('warn'); ms.textContent = '⚠ crítico'; ms.className = 'metric-sub warn'; }
-      else if (pct <= 25) { mb.classList.add('warn'); ms.textContent = '⚠ nível baixo'; ms.className = 'metric-sub warn'; }
-      else               { mb.classList.remove('warn'); ms.textContent = 'nível ok'; ms.className = 'metric-sub ok'; }
+      mb.classList.remove('warn','ok');
+      if (!sensorOK)      { mb.classList.add('warn'); ms.textContent = '⚠ falha'; }
+      else if (pct <= 10) { mb.classList.add('warn'); ms.textContent = '⚠ crítico'; }
+      else if (pct <= 25) { mb.classList.add('warn'); ms.textContent = '⚠ baixo'; }
+      else                { mb.classList.add('ok');   ms.textContent = 'nível'; }
       checkRules();
     }
     if (!isNaN(lit)) {
       liveData.liters = lit;
-      document.getElementById('mv-liters').innerHTML = `${lit}<span class="unit">L</span>`;
-      document.getElementById('mb-liters').classList.add('has-data');
-      document.getElementById('ms-liters').textContent = 'atualizado';
-      document.getElementById('ms-liters').className = 'metric-sub ok';
+      document.getElementById('mv-liters').innerHTML = `${lit}<span class="metric-inline-unit">L</span>`;
     }
     updateLiveBar(topic, data.cached);
     return;
@@ -581,19 +607,21 @@ function handleMsg(topic, payload, pkt) {
 
     if (!isNaN(t)) {
       liveData.temp = t;
-      document.getElementById('mv-temp').innerHTML = `${t.toFixed(1)}<span class="unit">°C</span>`;
+      document.getElementById('mv-temp').innerHTML = `${t.toFixed(1)}<span class="metric-inline-unit">°C</span>`;
       const mb = document.getElementById('mb-temp');
       const ms = document.getElementById('ms-temp');
-      mb.classList.add('has-data');
-      if (t > 35) { mb.classList.add('warn'); ms.textContent = '⚠ temperatura alta'; ms.className = 'metric-sub warn'; }
-      else        { mb.classList.remove('warn'); ms.textContent = 'normal'; ms.className = 'metric-sub ok'; }
+      mb.classList.remove('warn','ok');
+      if (t > 35) { mb.classList.add('warn'); ms.textContent = '⚠ quente'; }
+      else        { mb.classList.add('ok');   ms.textContent = 'temp'; }
     }
     if (!isNaN(h)) {
       liveData.hum = h;
-      document.getElementById('mv-hum').innerHTML = `${Math.round(h)}<span class="unit">%</span>`;
-      document.getElementById('mb-hum').classList.add('has-data');
-      document.getElementById('ms-hum').textContent = h < 30 ? '⚠ baixa' : 'normal';
-      document.getElementById('ms-hum').className = h < 30 ? 'metric-sub warn' : 'metric-sub ok';
+      document.getElementById('mv-hum').innerHTML = `${Math.round(h)}<span class="metric-inline-unit">%</span>`;
+      const mb = document.getElementById('mb-hum');
+      const ms = document.getElementById('ms-hum');
+      mb.classList.remove('warn','ok');
+      if (h < 30) { mb.classList.add('warn'); ms.textContent = '⚠ seca'; }
+      else        { mb.classList.add('ok');   ms.textContent = 'umidade'; }
     }
     updateLiveBar(topic, false);
     return;
@@ -603,7 +631,6 @@ function handleMsg(topic, payload, pkt) {
 
 function updateLiveBar(topic, cached) {
   document.getElementById('live-dot').className = 'dot on';
-  document.getElementById('live-msg').textContent = (cached ? '[retido] ' : '') + 'Dados recebidos de ' + topic.split('/').slice(0,3).join('/') + '  —  ' + new Date().toLocaleTimeString('pt-BR');
   document.getElementById('live-ts').textContent = new Date().toLocaleTimeString('pt-BR');
   log(`↓ ${topic}${cached?' [retained]':''}`, 'sys');
 }
