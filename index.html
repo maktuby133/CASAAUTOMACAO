@@ -100,29 +100,44 @@ body::before {
 .live-bar { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
 /* RELAYS */
-.relay-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.relay-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.relay-item {
-  display: flex; flex-direction: column; gap: 8px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 12px;
-  transition: border-color 0.2s;
+.relay-scroll {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+  max-height: 220px; overflow-y: auto; padding-right: 2px;
 }
-.relay-disabled { border-style: dashed !important; }
+.relay-scroll::-webkit-scrollbar { width: 3px; }
+.relay-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.relay-item {
+  position: relative;
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 7px 9px;
+  transition: border-color 0.2s; overflow: hidden;
+  min-width: 0;
+}
 .relay-item:hover { border-color: var(--border2); }
+.relay-item:hover .relay-hover-actions { opacity: 1; pointer-events: all; }
 .relay-item.active { border-color: rgba(0,212,160,0.3); background: rgba(0,212,160,0.04); }
-.relay-item-top { display: flex; align-items: center; gap: 8px; }
 .relay-icon {
-  width: 26px; height: 26px; border-radius: 6px;
+  width: 22px; height: 22px; border-radius: 5px;
   background: var(--bg2); border: 1px solid var(--border2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; flex-shrink: 0; transition: all 0.2s;
+  font-size: 11px; flex-shrink: 0;
 }
 .relay-item.active .relay-icon { background: rgba(0,212,160,0.12); border-color: rgba(0,212,160,0.3); }
 .relay-info { flex: 1; min-width: 0; }
-.relay-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.relay-topic { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.relay-item-bottom { display: flex; align-items: center; justify-content: space-between; }
+.relay-name { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.relay-state-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--muted); transition: background 0.2s;
+}
+.relay-item.active .relay-state-dot { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+.relay-hover-actions {
+  position: absolute; inset: 0;
+  background: rgba(17,22,32,0.92);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  border-radius: var(--radius);
+}
 .relay-badge { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 3px; font-weight: 500; }
 .relay-badge.on  { background: rgba(0,212,160,0.15); color: var(--accent); border: 1px solid rgba(0,212,160,0.25); }
 .relay-badge.off { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
@@ -131,7 +146,7 @@ body::before {
 .toggle-track { position: absolute; inset: 0; background: var(--bg); border: 1px solid var(--border2); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
 .toggle input:checked ~ .toggle-track { background: var(--accent); border-color: var(--accent); }
 .toggle-knob { position: absolute; width: 16px; height: 16px; background: var(--muted); border-radius: 50%; top: 4px; left: 4px; pointer-events: none; transition: all 0.2s; }
-.toggle input:checked ~ .toggle-knob { transform: translateX(17px); background: #000; }
+.toggle input:checked ~ .toggle-knob { transform: translateX(20px); background: #000; }
 .relay-actions { display: flex; align-items: center; gap: 4px; }
 .btn-icon { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.15s; }
 .btn-icon:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.08); }
@@ -383,7 +398,7 @@ body::before {
         </div>
       </div>
       <div id="relay-body">
-        <div class="relay-list" id="relay-list"></div>
+        <div class="relay-scroll" id="relay-list"></div>
       </div>
     </div>
 
@@ -821,36 +836,30 @@ function renderRelays() {
   const available = relays.filter(r => !r.enabled);
 
   el.innerHTML = enabled.map(r => {
-    const topic = relayTopic(r);
-    return `<div class="relay-item ${r.state ? 'active' : ''}" id="ri-${r.id}">
-      <div class="relay-item-top">
-        <div class="relay-icon">${r.icon}</div>
-        <div class="relay-info">
-          <div class="relay-name">
-            ${r.name}
-            ${r.locked ? '<span style="font-size:8px;font-family:var(--mono);color:var(--accent);border:1px solid rgba(0,212,160,0.3);padding:1px 4px;border-radius:3px;margin-left:4px">FIXA</span>' : ''}
-          </div>
-          <div class="relay-topic">${topic}</div>
-        </div>
+    const id = r.id;
+    return `<div class="relay-item ${r.state ? 'active' : ''}" id="ri-${id}">
+      <div class="relay-icon">${r.icon}</div>
+      <div class="relay-info">
+        <div class="relay-name">${r.name}${r.locked?'<span style="font-size:7px;font-family:var(--mono);color:var(--accent);margin-left:4px">●</span>':''}</div>
       </div>
-      <div class="relay-item-bottom">
-        <span class="relay-badge ${r.state ? 'on' : 'off'}">${r.state ? 'Ligado' : 'Desligado'}</span>
-        <div class="relay-actions">
-          <label class="toggle" style="width:36px;height:20px">
-            <input type="checkbox" ${r.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${r.id}'),this.checked)">
-            <div class="toggle-track"></div>
-            <div class="toggle-knob" style="width:13px;height:13px;top:3px;left:3px"></div>
-          </label>
-          ${!r.locked ? `<button class="btn-icon" onclick="openEditRelay('${r.id}')" title="Editar" style="width:22px;height:22px;font-size:11px">✏</button>
-          <button class="btn-icon" onclick="disableRelay('${r.id}')" title="Remover" style="width:22px;height:22px;font-size:11px">✕</button>` : ''}
-        </div>
+      <div class="relay-state-dot"></div>
+      <!-- Hover overlay: toggle + ações -->
+      <div class="relay-hover-actions">
+        <label class="toggle" style="width:34px;height:19px">
+          <input type="checkbox" ${r.state?'checked':''} onchange="setRelay(relays.find(x=>x.id==='${id}'),this.checked)">
+          <div class="toggle-track"></div>
+          <div class="toggle-knob" style="width:12px;height:12px;top:3px;left:3px"></div>
+        </label>
+        ${!r.locked?`
+        <button class="btn-icon" onclick="openEditRelay('${id}')" style="width:22px;height:22px;font-size:10px" title="Renomear">✏</button>
+        <button class="btn-icon" onclick="disableRelay('${id}')" style="width:22px;height:22px;font-size:10px" title="Remover">✕</button>`:''}
       </div>
     </div>`;
   }).join('');
 
   if (available.length) {
-    el.innerHTML += `<button class="add-relay-btn" onclick="pickRelay()" style="grid-column:1/-1;margin-top:${enabled.length ? '2px' : '0'};padding:7px">
-      ＋ Adicionar saída <span style="font-family:var(--mono);font-size:10px;opacity:0.6">(${available.length} disponíve${available.length===1?'l':'is'})</span>
+    el.innerHTML += `<button class="add-relay-btn" onclick="pickRelay()" style="grid-column:1/-1;padding:6px 8px;font-size:10px">
+      ＋ saída <span style="opacity:0.5">(${available.length} livre${available.length===1?'':'s'})</span>
     </button>`;
   }
 
