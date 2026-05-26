@@ -70,7 +70,7 @@ body::before {
 .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
 
 /* CONFIG */
-.config-panel { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.config-panel { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 .config-panel.open { display: block; }
 .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field label { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
@@ -565,8 +565,9 @@ let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
 // ============ CONFIG ============
 function toggleConfig() {
   const p = document.getElementById('cfg-panel');
-  const hidden = p.style.display === 'none' || p.style.display === '';
-  p.style.display = hidden ? 'block' : 'none';
+  if (!p) return;
+  const isHidden = window.getComputedStyle(p).display === 'none';
+  p.style.setProperty('display', isHidden ? 'block' : 'none', 'important');
 }
 
 function togglePanel(bodyId, arrowId) {
@@ -660,7 +661,7 @@ function connectMQTT() {
   client.on('connect', () => {
     setConnStatus('on', 'Conectado');
     log('Broker MQTT conectado!', 'ok');
-    document.getElementById('cfg-panel').style.display = 'none';
+    document.getElementById('cfg-panel').style.setProperty('display','none','important');
     subscribeAll();
     startScheduleEngine();
   });
