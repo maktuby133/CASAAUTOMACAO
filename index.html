@@ -244,6 +244,7 @@ body::before {
 .room-name { font-size:12px; font-weight:600; color:var(--text); flex:1; }
 .room-remove { font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; padding:2px; opacity:0; transition:opacity 0.15s; }
 .room-card:hover .room-remove { opacity:1; }
+.room-card:hover .room-actions { opacity:1 !important; }
 .room-sensors { display:flex; flex-direction:column; gap:5px; }
 .room-sensor-row { display:flex; align-items:center; gap:6px; }
 .room-sensor-label { font-family:var(--mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; width:18px; flex-shrink:0; }
@@ -363,7 +364,23 @@ body::before {
     <div class="alert-banner" id="alert-banner" style="margin-top:8px;margin-bottom:0"></div>
   </div>
 
-  <!-- ROW 2: 3 colunas -->
+  <!-- ROW 2: ambientes -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-header">
+      <span class="card-title">Ambientes</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="rooms-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">nenhum ambiente</span>
+        <button class="btn" style="font-size:10px;padding:4px 10px" onclick="openRoomModal()">+ Adicionar</button>
+      </div>
+    </div>
+    <div id="rooms-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: 3 colunas -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
     <!-- COL 1: Meteorologia -->
@@ -433,23 +450,7 @@ body::before {
 
   </div>
 
-  <!-- ROW 3: ambientes -->
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-header">
-      <span class="card-title">Ambientes</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span id="rooms-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">nenhum ambiente</span>
-        <button class="btn" style="font-size:10px;padding:4px 10px" onclick="openRoomModal()">+ Adicionar</button>
-      </div>
-    </div>
-    <div id="rooms-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-      <div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
-        Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
-      </div>
-    </div>
-  </div>
-
-  <!-- ROW 4: regras + log -->
+  <!-- ROW 3: regras + log -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 
     <!-- Regras -->
@@ -491,30 +492,44 @@ body::before {
 
 <!-- MODAL AMBIENTE -->
 <div class="modal-overlay" id="room-modal">
-  <div class="modal">
-    <div class="modal-title">Novo ambiente</div>
+  <div class="modal" style="width:480px">
+    <div class="modal-title">Configurar ambiente</div>
     <div class="modal-fields">
-      <div class="field"><label>Nome do ambiente</label><input id="rm-room-name" placeholder="ex: Sala, Quarto 1, Cozinha" /></div>
-      <div class="field" style="display:flex;gap:12px;align-items:flex-end">
-        <div style="flex:0"><label>Ícone</label><input id="rm-room-icon" value="🏠" maxlength="2" style="width:60px"/></div>
-        <div style="flex:1"><label>Prefixo MQTT</label><input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()" /></div>
+
+      <!-- Identificação -->
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field" style="flex:0"><label>Ícone</label><input id="rm-room-icon" value="🏠" maxlength="2" style="width:56px"/></div>
+        <div class="field" style="flex:1"><label>Nome do ambiente</label><input id="rm-room-name" placeholder="ex: Sala, Quarto 1, Garagem" /></div>
       </div>
-      <div style="padding:8px 12px;background:var(--bg3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:2">
-        <span style="color:var(--accent2)" id="rm-room-preview-temp">{prefixo}/temperatura</span><br>
-        <span style="color:var(--accent2)" id="rm-room-preview-smoke">{prefixo}/fumaca</span>
+
+      <div class="field"><label>Prefixo MQTT base</label><input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()" /></div>
+
+      <!-- Sensores -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px">Sensores</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px">
+          <input type="checkbox" id="rm-has-temp" checked style="accent-color:var(--accent)">
+          <span>🌡️ Temperatura / Umidade</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px">
+          <input type="checkbox" id="rm-has-smoke" checked style="accent-color:var(--accent)">
+          <span>🔥 Fumaça / Gás</span>
+        </label>
       </div>
-      <div style="display:flex;gap:16px">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
-          <input type="checkbox" id="rm-has-temp" checked style="accent-color:var(--accent)"> Temperatura/Umidade
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
-          <input type="checkbox" id="rm-has-smoke" checked style="accent-color:var(--accent)"> Fumaça/Gás
-        </label>
+
+      <!-- Relés vinculados -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;margin-top:4px">Relés vinculados <span style="opacity:0.5;font-size:9px">(opcional)</span></div>
+      <div id="rm-relay-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+
+      <!-- Preview tópicos -->
+      <div style="padding:8px 12px;background:var(--bg3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.9;margin-top:4px" id="rm-room-preview">
+        {prefixo}/temperatura<br>{prefixo}/fumaca
       </div>
     </div>
+    <input type="hidden" id="rm-room-modal-edit-id" value="">
     <div class="modal-actions">
       <button class="btn" onclick="closeRoomModal()">Cancelar</button>
-      <button class="btn primary" onclick="confirmAddRoom()">Adicionar</button>
+      <button class="btn primary" onclick="confirmAddRoom()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1122,6 +1137,228 @@ function startScheduleEngine() {
   }, 30000);
   log('Motor de agendamentos iniciado (verifica a cada 30s)', 'info');
 }
+
+// ============ LOG ============
+function log(msg, type = 'sys') {
+  const box = document.getElementById('log-box');
+  const ts  = new Date().toLocaleTimeString('pt-BR');
+  const cls = { ok:'log-ok', warn:'log-warn', info:'log-info', sys:'log-sys' }[type] || 'log-sys';
+  const el  = document.createElement('span');
+  el.className = 'log-line ' + cls;
+  el.innerHTML = `<span class="ts">${ts}</span><span class="msg">${msg}</span>`;
+  box.appendChild(el);
+  box.appendChild(document.createTextNode('\n'));
+  box.scrollTop = box.scrollHeight;
+}
+
+
+// ============ AMBIENTES ============
+let rooms = [];
+
+function saveRooms() {
+  try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+}
+
+function loadRooms() {
+  try { rooms = JSON.parse(localStorage.getItem('autoflow_rooms') || '[]'); } catch(e) {}
+}
+
+function openRoomModal(editId) {
+  const r = editId ? rooms.find(x => x.id === editId) : null;
+  document.getElementById('rm-room-name').value  = r ? r.name  : '';
+  document.getElementById('rm-room-icon').value  = r ? r.icon  : '🏠';
+  document.getElementById('rm-room-topic').value = r ? r.topic : '';
+  document.getElementById('rm-has-temp').checked  = r ? r.hasTemp  : true;
+  document.getElementById('rm-has-smoke').checked = r ? r.hasSmoke : true;
+  // Populate relay checkboxes
+  const enabled = relays.filter(x => x.enabled);
+  const checks  = document.getElementById('rm-relay-checks');
+  const linked  = r ? (r.relays || []) : [];
+  checks.innerHTML = enabled.length
+    ? enabled.map(rel => `
+        <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px">
+          <input type="checkbox" value="${rel.id}" ${linked.includes(rel.id)?'checked':''} style="accent-color:var(--accent)">
+          ${rel.icon} ${rel.name}
+        </label>`).join('')
+    : '<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:4px">Nenhum relé ativo ainda.</div>';
+  document.getElementById('rm-room-modal-edit-id').value = editId || '';
+  updateRoomPreview();
+  document.getElementById('room-modal').classList.add('open');
+}
+
+function closeRoomModal() {
+  document.getElementById('room-modal').classList.remove('open');
+}
+
+function updateRoomPreview() {
+  const t     = document.getElementById('rm-room-topic').value.trim() || '{prefixo}';
+  const temp  = document.getElementById('rm-has-temp')?.checked;
+  const smoke = document.getElementById('rm-has-smoke')?.checked;
+  const lines = [];
+  if (temp)  lines.push(`${t}/temperatura`);
+  if (smoke) lines.push(`${t}/fumaca`);
+  lines.push(`${t}/status`);
+  document.getElementById('rm-room-preview').innerHTML = lines
+    .map(l => `<span style="color:var(--accent2)">${l}</span>`).join('<br>');
+}
+
+function confirmAddRoom() {
+  const name     = document.getElementById('rm-room-name').value.trim();
+  const icon     = document.getElementById('rm-room-icon').value.trim() || '🏠';
+  const topic    = document.getElementById('rm-room-topic').value.trim();
+  const hasTemp  = document.getElementById('rm-has-temp').checked;
+  const hasSmoke = document.getElementById('rm-has-smoke').checked;
+  const editId   = document.getElementById('rm-room-modal-edit-id').value;
+  const linkedRelays = [...document.querySelectorAll('#rm-relay-checks input:checked')].map(i => i.value);
+
+  if (!name || !topic) { log('Preencha nome e prefixo MQTT', 'warn'); return; }
+
+  if (editId) {
+    const r = rooms.find(x => x.id === editId);
+    if (r) { r.name = name; r.icon = icon; r.topic = topic; r.hasTemp = hasTemp; r.hasSmoke = hasSmoke; r.relays = linkedRelays; }
+  } else {
+    rooms.push({
+      id: 'room_' + Date.now(), name, icon, topic, hasTemp, hasSmoke,
+      relays: linkedRelays,
+      data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
+    });
+  }
+  saveRooms();
+  renderRooms();
+  if (client && client.connected) subscribeRoom(rooms.find(x => x.topic === topic));
+  log(`Ambiente "${name}" salvo`, 'ok');
+  closeRoomModal();
+}
+
+function removeRoom(id) {
+  const r = rooms.find(x => x.id === id);
+  if (!r || !confirm(`Remover "${r.name}"?`)) return;
+  rooms = rooms.filter(x => x.id !== id);
+  saveRooms();
+  renderRooms();
+  log(`Ambiente "${r.name}" removido`, 'sys');
+}
+
+function subscribeRoom(room) {
+  if (!room || !client || !client.connected) return;
+  if (room.hasTemp)  client.subscribe(room.topic + '/temperatura', { qos:1 }, () => log(`↳ ${room.topic}/temperatura`, 'sys'));
+  if (room.hasSmoke) client.subscribe(room.topic + '/fumaca',      { qos:1 }, () => log(`↳ ${room.topic}/fumaca`, 'sys'));
+  client.subscribe(room.topic + '/status', { qos:1 });
+}
+
+function subscribeAllRooms() {
+  rooms.forEach(r => subscribeRoom(r));
+}
+
+function handleRoomMessage(topic, payload) {
+  rooms.forEach(room => {
+    if (topic === room.topic + '/temperatura') {
+      try {
+        const d = JSON.parse(payload);
+        room.data.temp     = d.temperature ?? d.temperatura ?? null;
+        room.data.hum      = d.humidity    ?? d.umidade    ?? null;
+        room.data.lastSeen = new Date();
+        room.data.online   = true;
+        renderRooms();
+      } catch(e) {}
+    }
+    if (topic === room.topic + '/fumaca') {
+      try {
+        let val;
+        try { const d = JSON.parse(payload); val = d.value ?? d.ppm ?? d.percent ?? parseFloat(payload); }
+        catch(e) { val = parseFloat(payload); }
+        if (!isNaN(val)) {
+          room.data.smokeRaw = val;
+          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
+          room.data.lastSeen = new Date();
+          if (room.data.smoke >= 60) log(`🚨 ALARME FUMAÇA — ${room.name}: ${room.data.smoke}%`, 'warn');
+          renderRooms();
+        }
+      } catch(e) {}
+    }
+    if (topic === room.topic + '/status') {
+      try { room.data.online = JSON.parse(payload).online !== false; renderRooms(); } catch(e) {}
+    }
+  });
+}
+
+function smokeLevel(pct) {
+  if (pct === null) return { cls:'', label:'—', color:'var(--muted)' };
+  if (pct >= 60)   return { cls:'smoke-alarm', label:'ALARME', color:'var(--danger)' };
+  if (pct >= 30)   return { cls:'smoke-warn',  label:'ATENÇÃO', color:'var(--warn)' };
+  return               { cls:'smoke-ok',   label:'Normal',  color:'var(--accent)' };
+}
+
+function renderRooms() {
+  const grid = document.getElementById('rooms-grid');
+  const cnt  = document.getElementById('rooms-count');
+  if (!grid) return;
+  cnt.textContent = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
+
+  if (!rooms.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente. Clique em "+ Adicionar".</div>';
+    return;
+  }
+
+  grid.innerHTML = rooms.map(r => {
+    const d  = r.data;
+    const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
+    const alarmCls = d.smoke >= 60 ? 'alarm' : d.smoke >= 30 ? 'warn-smoke' : '';
+
+    // Linked relays
+    const linkedRelays = (r.relays || []).map(rid => relays.find(x => x.id === rid)).filter(Boolean);
+
+    const tempBlock = r.hasTemp ? `
+      <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:4px">
+        <span style="font-size:11px">🌡️</span>
+        <span style="font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:-0.5px;color:var(--text)">${d.temp !== null ? d.temp.toFixed(1) : '—'}<span style="font-size:9px;font-weight:400;color:var(--muted)">°C</span></span>
+        ${d.hum !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">💧${Math.round(d.hum)}%</span>` : ''}
+      </div>` : '';
+
+    const smokeBlock = r.hasSmoke ? `
+      <div style="margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+          <span style="font-size:10px">🔥</span>
+          <div style="flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${d.smoke ?? 0}%;background:${sl.color};border-radius:2px;transition:width 0.5s"></div>
+          </div>
+          <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:${sl.color};min-width:40px;text-align:right">${sl.label}</span>
+        </div>
+      </div>` : '';
+
+    const relayBlock = linkedRelays.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;display:flex;flex-wrap:wrap;gap:4px">
+        ${linkedRelays.map(rel => `
+          <button onclick="setRelay(relays.find(x=>x.id==='${rel.id}'),${!rel.state})"
+            style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);padding:3px 7px;border-radius:4px;cursor:pointer;border:1px solid;transition:all 0.15s;
+            ${rel.state
+              ? 'background:rgba(0,212,160,0.12);color:var(--accent);border-color:rgba(0,212,160,0.3)'
+              : 'background:var(--bg2);color:var(--muted);border-color:var(--border)'}">
+            ${rel.icon} ${rel.name}
+            <span style="font-size:7px;opacity:0.7">${rel.state ? '●ON' : '○OFF'}</span>
+          </button>`).join('')}
+      </div>` : '';
+
+    const noData = !d.lastSeen ? '<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0">aguardando dados...</div>' : '';
+
+    return `<div class="room-card ${alarmCls}" id="room-${r.id}">
+      <div class="room-header">
+        <span class="room-icon">${r.icon}</span>
+        <span class="room-name">${r.name}</span>
+        ${d.lastSeen ? `<span style="font-family:var(--mono);font-size:8px;color:var(--muted)">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
+        <div style="display:flex;gap:4px;opacity:0" class="room-actions">
+          <button onclick="openRoomModal('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)" title="Editar">✏</button>
+          <button onclick="removeRoom('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)" title="Remover">✕</button>
+        </div>
+      </div>
+      <div class="room-sensors">
+        ${noData || (tempBlock + smokeBlock)}
+      </div>
+      ${relayBlock}
+    </div>`;
+  }).join('');
+}
+
 
 // ============ LOG ============
 function log(msg, type = 'sys') {
