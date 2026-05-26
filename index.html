@@ -230,34 +230,43 @@ body::before {
 .metric-inline.ok .metric-inline-val   { color: var(--accent); }
 
 /* === ROOMS === */
+.rooms-scroll { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:6px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 12px;
-  transition: border-color 0.2s; position: relative;
+  border-radius: var(--radius); padding: 8px 9px;
+  transition: border-color 0.2s; position:relative; min-width:0;
 }
 .room-card:hover { border-color: var(--border2); }
-.room-card.alarm { border-color: var(--danger); background: rgba(239,68,68,0.05); animation: pulse-alarm 1.5s ease-in-out infinite; }
-.room-card.warn-smoke { border-color: var(--warn); }
-@keyframes pulse-alarm { 0%,100%{border-color:var(--danger)} 50%{border-color:rgba(239,68,68,0.3)} }
-.room-header { display:flex; align-items:center; gap:7px; margin-bottom:8px; }
-.room-icon { font-size:16px; }
-.room-name { font-size:12px; font-weight:600; color:var(--text); flex:1; }
-.room-remove { font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; padding:2px; opacity:0; transition:opacity 0.15s; }
-.room-card:hover .room-remove { opacity:1; }
 .room-card:hover .room-actions { opacity:1 !important; }
-.room-sensors { display:flex; flex-direction:column; gap:5px; }
-.room-sensor-row { display:flex; align-items:center; gap:6px; }
-.room-sensor-label { font-family:var(--mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; width:18px; flex-shrink:0; }
-.room-sensor-val { font-family:var(--mono); font-size:14px; font-weight:600; color:var(--text); letter-spacing:-0.5px; }
-.room-sensor-unit { font-size:9px; color:var(--muted); font-weight:400; }
-.room-sensor-sub { font-family:var(--mono); font-size:9px; color:var(--muted); flex:1; }
-.smoke-bar { flex:1; height:5px; background:var(--bg2); border-radius:3px; overflow:hidden; }
-.smoke-bar-fill { height:100%; border-radius:3px; transition:width 0.5s ease, background 0.3s; background:var(--accent); }
-.smoke-status { font-family:var(--mono); font-size:9px; font-weight:600; padding:1px 6px; border-radius:3px; flex-shrink:0; }
-.smoke-ok   { background:rgba(0,212,160,0.12); color:var(--accent); }
-.smoke-warn { background:rgba(245,158,11,0.15); color:var(--warn); }
-.smoke-alarm{ background:rgba(239,68,68,0.15); color:var(--danger); }
-.room-no-data { font-family:var(--mono); font-size:10px; color:var(--muted); text-align:center; padding:8px 0; }
+.room-card.alarm { border-color:var(--danger); background:rgba(239,68,68,0.05); animation:pulse-alarm 1.5s ease-in-out infinite; }
+.room-card.warn-smoke { border-color:var(--warn); }
+@keyframes pulse-alarm { 0%,100%{border-color:var(--danger)} 50%{border-color:rgba(239,68,68,0.3)} }
+/* header */
+.room-header { display:flex; align-items:center; gap:5px; margin-bottom:6px; }
+.room-icon   { font-size:13px; flex-shrink:0; }
+.room-name   { font-size:11px; font-weight:600; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.room-actions{ display:flex; gap:2px; opacity:0; transition:opacity 0.15s; }
+.room-act-btn{ font-size:9px; background:none; border:none; cursor:pointer; color:var(--muted); padding:1px 3px; }
+/* data row: icon · value · sep · icon · value */
+.room-data { display:flex; align-items:center; gap:4px; margin-bottom:4px; flex-wrap:wrap; }
+.room-val  { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); letter-spacing:-0.5px; }
+.room-unit { font-size:8px; color:var(--muted); font-weight:400; }
+.room-sep  { width:1px; height:12px; background:var(--border); flex-shrink:0; }
+/* smoke bar */
+.room-smoke { display:flex; align-items:center; gap:4px; }
+.smoke-bar  { flex:1; height:3px; background:var(--bg2); border-radius:2px; overflow:hidden; min-width:30px; }
+.smoke-fill { height:100%; border-radius:2px; transition:width 0.5s,background 0.3s; }
+.smoke-lbl  { font-family:var(--mono); font-size:8px; font-weight:700; flex-shrink:0; width:38px; text-align:right; }
+/* relay pills */
+.room-relays { display:flex; flex-wrap:wrap; gap:3px; border-top:1px solid var(--border); padding-top:5px; margin-top:4px; }
+.room-relay-pill {
+  font-family:var(--mono); font-size:9px; padding:2px 6px; border-radius:3px;
+  cursor:pointer; border:1px solid; transition:all 0.15s; display:flex; align-items:center; gap:3px;
+}
+.room-relay-pill.on  { background:rgba(0,212,160,0.12); color:var(--accent); border-color:rgba(0,212,160,0.3); }
+.room-relay-pill.off { background:var(--bg2); color:var(--muted); border-color:var(--border); }
+/* no data */
+.room-nodata { font-family:var(--mono); font-size:9px; color:var(--muted); padding:4px 0; }
 </style>
 </head>
 <body>
@@ -373,15 +382,15 @@ body::before {
         <button class="btn" style="font-size:10px;padding:4px 10px" onclick="openRoomModal()">+ Adicionar</button>
       </div>
     </div>
-    <div id="rooms-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    <div id="rooms-grid" class="rooms-scroll">
       <div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
         Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
       </div>
     </div>
   </div>
 
-  <!-- ROW 3: 3 colunas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+  <!-- ROW 3: 2 colunas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
 
     <!-- COL 1: Meteorologia -->
     <div class="card" id="weather-card" style="min-height:200px">
@@ -431,20 +440,6 @@ body::before {
             <button class="btn primary" style="width:100%;font-size:11px" onclick="addSchedule()">+ Adicionar</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- COL 3: Relés (card colapsável) -->
-    <div class="card">
-      <div class="card-header" style="cursor:pointer;user-select:none" onclick="togglePanel('relay-body','relay-arrow')">
-        <span class="card-title">Controle de relés</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <button class="btn" onclick="event.stopPropagation();openRelayModal()" style="font-size:10px;padding:4px 10px">⚙ Prefixo</button>
-          <span id="relay-arrow" style="color:var(--muted);font-size:12px;transition:transform 0.2s">▼</span>
-        </div>
-      </div>
-      <div id="relay-body">
-        <div class="relay-scroll" id="relay-list"></div>
       </div>
     </div>
 
@@ -534,6 +529,8 @@ body::before {
   </div>
 </div>
 
+<div id="relay-list" style="display:none"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
 // ============ STATE ============
@@ -568,7 +565,8 @@ let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
 // ============ CONFIG ============
 function toggleConfig() {
   const p = document.getElementById('cfg-panel');
-  p.style.display = p.style.display === 'none' ? '' : 'none';
+  const hidden = p.style.display === 'none' || p.style.display === '';
+  p.style.display = hidden ? 'block' : 'none';
 }
 
 function togglePanel(bodyId, arrowId) {
