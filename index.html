@@ -207,7 +207,66 @@ body::before {
 .modal-fields { display: flex; flex-direction: column; gap: 12px; }
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
 
-@media (max-width: 760px) { .grid-main { grid-template-columns: 1fr; } .config-grid { grid-template-columns: 1fr; } }
+
+/* ═══════════════════════════════════════
+   MOBILE — até 768px
+═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .app { padding: 0 12px 80px; }
+
+  /* Topbar */
+  .topbar { padding: 12px 0 10px; flex-wrap: nowrap; }
+  .logo-tag { display: none; }
+  .logo-text { font-size: 17px; }
+  .topbar-right { gap: 8px; }
+  .conn-status span { display: none; }
+  .btn { font-size: 10px; padding: 6px 10px; }
+
+  /* Config panel */
+  .config-grid { grid-template-columns: 1fr !important; }
+
+  /* Metrics bar — stack on mobile */
+  .metric-inline-sep { display: none; }
+
+  /* Ambient rooms — 2 cols on mobile */
+  .rooms-scroll { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Row 2 (weather + irrigation) — 1 col */
+  .row-2 { grid-template-columns: 1fr !important; }
+
+  /* Row 3 (rules + log) — 1 col */
+  .row-3 { grid-template-columns: 1fr !important; }
+
+  /* Cards */
+  .card { padding: 12px 14px; }
+  .card-header { margin-bottom: 10px; }
+
+  /* Schedule */
+  .sched-item { flex-wrap: wrap; gap: 8px; }
+  .add-sched-row { flex-wrap: wrap; }
+
+  /* Relay pills in rooms — 2 cols on small */
+  .room-relay-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Modal */
+  .modal { width: 95vw !important; padding: 18px 16px !important; }
+
+  /* Log */
+  .log-box { max-height: 100px; }
+
+  /* Water metric bar */
+  .metric-inline { padding-right: 10px; }
+  .metric-inline-val { font-size: 15px; }
+}
+
+/* ═══════════════════════════════════════
+   TABLET — 769px a 1024px
+═══════════════════════════════════════ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app { padding: 0 16px 60px; }
+  .rooms-scroll { grid-template-columns: repeat(3, 1fr) !important; }
+  .row-2 { grid-template-columns: 1fr 1fr !important; }
+}
 
 /* === INLINE METRICS === */
 .metric-inline {
@@ -382,7 +441,7 @@ body::before {
   </div>
 
   <!-- ROW 3: 2 colunas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+  <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
     <!-- COL 1: Meteorologia -->
     <div class="card" id="weather-card">
@@ -442,7 +501,7 @@ body::before {
   </div>
 
   <!-- ROW 3: regras + log -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  <div class="row-3" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 
     <!-- Regras -->
     <div class="card">
@@ -1316,18 +1375,38 @@ const RELAY_ICONS = [
   { icon:'🔆', label:'LED'        },
 ];
 
+function getUsedRelayIds(exceptRoomId) {
+  // Coleta todos os relay IDs já vinculados a qualquer ambiente
+  const used = new Set();
+  rooms.forEach(room => {
+    if (room.id === exceptRoomId) return; // ignora o ambiente que está sendo editado
+    (room.relays || []).forEach(rel => {
+      const rid = typeof rel === 'string' ? rel : rel.id;
+      used.add(rid);
+    });
+  });
+  // Também exclui os que já estão nas rows atuais do modal
+  rmRelayRows.forEach(row => used.add(row.relayId));
+  return used;
+}
+
 function addRoomRelayRow(preset) {
-  const available = relays.filter(r => r.enabled && r.id !== 'out1');
+  const editId = document.getElementById('rm-room-modal-edit-id')?.value || '';
+  const used   = getUsedRelayIds(editId);
+  // Remove da used o próprio preset se existir (edição)
+  if (preset?.relayId) used.delete(preset.relayId);
+
+  const available = relays.filter(r => r.enabled && r.id !== 'out1' && !used.has(r.id));
   if (!available.length) {
-    alert('Nenhuma saída ativa disponível. Ative saídas no painel primeiro.');
+    alert('Todas as saídas disponíveis já foram vinculadas a ambientes.');
     return;
   }
   const rowId = 'rmrow_' + Date.now();
   const row = {
-    id: rowId,
+    id:      rowId,
     relayId: preset?.relayId || available[0].id,
-    icon: preset?.icon || '💡',
-    label: preset?.label || 'Iluminação',
+    icon:    preset?.icon    || '💡',
+    label:   preset?.label   || 'Iluminação',
   };
   rmRelayRows.push(row);
   renderRmRelayRows();
@@ -1360,6 +1439,9 @@ function toggleIconPicker(rowId) {
 function renderRmRelayRows() {
   const container = document.getElementById('rm-relay-rows');
   if (!container) return;
+  const editId = document.getElementById('rm-room-modal-edit-id')?.value || '';
+  // Para cada row, o "available" inclui a saída dela mesma + não usadas
+  const allUsed = getUsedRelayIds(editId);
   const available = relays.filter(r => r.enabled && r.id !== 'out1');
 
   if (!rmRelayRows.length) {
@@ -1370,9 +1452,12 @@ function renderRmRelayRows() {
   }
 
   container.innerHTML = rmRelayRows.map(row => {
-    const opts = available.map(r =>
-      `<option value="${r.id}" ${r.id===row.relayId?'selected':''}>${r.id.toUpperCase()} — ${r.name}</option>`
-    ).join('');
+    // For this row: available = not used by other rows OR already this row's selection
+    const rowUsed = new Set(rmRelayRows.filter(x=>x.id!==row.id).map(x=>x.relayId));
+    const opts = available.map(r => {
+      const disabled = rowUsed.has(r.id) ? 'disabled style="opacity:0.4"' : '';
+      return `<option value="${r.id}" ${r.id===row.relayId?'selected':''} ${disabled}>${r.id.toUpperCase()} — ${r.name}</option>`;
+    }).join('');
 
     const iconOpts = RELAY_ICONS.map(o =>
       `<div onclick="setRmRelayIcon('${row.id}','${o.icon}','${o.label}')"
