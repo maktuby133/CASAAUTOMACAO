@@ -1108,7 +1108,17 @@ function renderRelays() {
     </button>`;
   }
 
-  sel.innerHTML = enabled.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+  // Irrigação: mostra apenas out1 (bomba) + relés que não foram vinculados a nenhum ambiente
+  const roomUsed = new Set();
+  rooms.forEach(room => {
+    (room.relays || []).forEach(rel => {
+      roomUsed.add(typeof rel === 'string' ? rel : rel.id);
+    });
+  });
+  const schedAvailable = enabled.filter(r => r.id === 'out1' || !roomUsed.has(r.id));
+  sel.innerHTML = schedAvailable.length
+    ? schedAvailable.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('')
+    : '<option disabled>Nenhuma saída disponível</option>';
 }
 
 function pickRelay() {
