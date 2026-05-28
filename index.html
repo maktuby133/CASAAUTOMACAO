@@ -35,7 +35,7 @@ body::before {
   pointer-events: none; z-index: 0; opacity: 0.4;
 }
 
-.app { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 24px 60px; }
+.app { position: relative; z-index: 1; max-width: 100%; margin: 0; padding: 0 20px 60px; }
 
 /* TOPBAR */
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
@@ -301,12 +301,12 @@ body::before {
   <div id="cfg-panel" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:20px">
     <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>Conexão MQTT — HiveMQ</div>
     <div class="config-grid">
-      <div class="field" style="grid-column:1/-1"><label>Host (broker)</label><input id="cfg-host" value="13efa30a8367496d82053ae1fec856fb.s1.eu.hivemq.cloud" /></div>
-      <div class="field"><label>Porta (WSS)</label><input id="cfg-port" value="8884" /></div>
-      <div class="field"><label>Usuário MQTT</label><input id="cfg-user" value="esp32-Project" /></div>
-      <div class="field" style="grid-column:1/-1"><label>Senha MQTT</label><input id="cfg-pass" type="password" placeholder="sua senha do HiveMQ" /></div>
-      <div class="field"><label>Código da caixa d'água</label><input id="cfg-water" placeholder="ex: A1B2C3D4" /></div>
-      <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" placeholder="ex: E5F6G7H8" /></div>
+      <div class="field" style="grid-column:1/-1"><label>Host (broker)</label><input id="cfg-host" oninput="saveCfgField()" value="13efa30a8367496d82053ae1fec856fb.s1.eu.hivemq.cloud" /></div>
+      <div class="field"><label>Porta (WSS)</label><input id="cfg-port" oninput="saveCfgField()" value="8884" /></div>
+      <div class="field"><label>Usuário MQTT</label><input id="cfg-user" oninput="saveCfgField()" value="esp32-Project" /></div>
+      <div class="field" style="grid-column:1/-1"><label>Senha MQTT</label><input id="cfg-pass" oninput="saveCfgField()" type="password" placeholder="sua senha do HiveMQ" /></div>
+      <div class="field"><label>Código da caixa d'água</label><input id="cfg-water" oninput="saveCfgField()" placeholder="ex: A1B2C3D4" /></div>
+      <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" oninput="saveCfgField()" placeholder="ex: E5F6G7H8" /></div>
     </div>
     <div style="margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
@@ -382,7 +382,7 @@ body::before {
   </div>
 
   <!-- ROW 3: 2 colunas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
     <!-- COL 1: Meteorologia -->
     <div class="card" id="weather-card">
@@ -600,6 +600,19 @@ let TOPICS_TEMP  = '';
 let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
 
 // ============ CONFIG ============
+function saveCfgField() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
+    saved.host  = document.getElementById('cfg-host')?.value.trim()  || saved.host;
+    saved.port  = document.getElementById('cfg-port')?.value.trim()  || saved.port;
+    saved.user  = document.getElementById('cfg-user')?.value.trim()  || saved.user;
+    saved.pass  = document.getElementById('cfg-pass')?.value.trim()  || saved.pass;
+    saved.water = document.getElementById('cfg-water')?.value.trim() || saved.water;
+    saved.temp  = document.getElementById('cfg-temp')?.value.trim()  || saved.temp;
+    localStorage.setItem('autoflow_cfg', JSON.stringify(saved));
+  } catch(e) {}
+}
+
 function toggleConfig() {
   const p = document.getElementById('cfg-panel');
   if (!p) return;
@@ -940,6 +953,7 @@ async function setCity(cityName) {
       cfg.weatherLat  = geo.lat;
       cfg.weatherLon  = geo.lon;
       localStorage.setItem('autoflow_cfg', JSON.stringify(cfg));
+      log(`Cidade salva: ${geo.name}`, 'ok');
     } catch(e) {}
     log(`Localização: ${geo.name} (${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)})`, 'ok');
     await fetchWeather();
@@ -952,14 +966,11 @@ async function setCity(cityName) {
 
 // ============ REGRAS AUTOMÁTICAS ============
 function checkRules() {
-  // Regra: nível baixo → desliga irrigação se estiver ligada
+  // Regra: nível baixo — apenas alerta, não desliga irrigação
   if (liveData.water !== null && liveData.water < 20) {
-    const pump = relays.find(r => r.id === 'out1');
-    if (pump && pump.state) {
-      log('REGRA: nível < 20% → desligando irrigação', 'warn');
-      showAlert('⚠ Nível crítico da caixa — irrigação desligada automaticamente.');
-      setRelay(pump, false);
-    }
+    showAlert(`⚠ Nível da caixa crítico (${liveData.water}%) — verifique o abastecimento.`);
+  } else {
+    hideAlert();
   }
 }
 
@@ -990,7 +1001,9 @@ function setRelay(relay, state) {
   } else {
     log(`[sem MQTT] "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'info');
   }
+  // Atualiza UI imediatamente — sem aguardar MQTT echo
   renderRelays();
+  renderRooms();
 }
 
 function renderRelays() {
@@ -1188,10 +1201,9 @@ function startScheduleEngine() {
     schedules.filter(s => s.active && s.days.includes(dow) && s.time === hm).forEach(s => {
       const relay = relays.find(r => r.id === s.relay && r.enabled);
       if (!relay) return;
-      // Bloqueia se nível baixo
+      // Avisa se nível baixo mas não bloqueia
       if (liveData.water !== null && liveData.water < 20) {
-        log(`⏰ ${hm}: nível baixo (${liveData.water}%) — irrigação bloqueada 🚫`, 'warn');
-        return;
+        log(`⏰ ${hm}: nível baixo (${liveData.water}%) — verifique caixa`, 'warn');
       }
       // Bloqueia se chovendo ou alta probabilidade de chuva
       if (weather.isRaining) {
