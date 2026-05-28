@@ -600,17 +600,22 @@ let TOPICS_TEMP  = '';
 let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
 
 // ============ CONFIG ============
+// ── Persistência central ────────────────────────────────────────────────
+function getCfg() {
+  try { return JSON.parse(localStorage.getItem('autoflow_cfg') || '{}'); } catch(e) { return {}; }
+}
+function setCfg(patch) {
+  try { localStorage.setItem('autoflow_cfg', JSON.stringify(Object.assign(getCfg(), patch))); } catch(e) {}
+}
 function saveCfgField() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
-    saved.host  = document.getElementById('cfg-host')?.value.trim()  || saved.host;
-    saved.port  = document.getElementById('cfg-port')?.value.trim()  || saved.port;
-    saved.user  = document.getElementById('cfg-user')?.value.trim()  || saved.user;
-    saved.pass  = document.getElementById('cfg-pass')?.value.trim()  || saved.pass;
-    saved.water = document.getElementById('cfg-water')?.value.trim() || saved.water;
-    saved.temp  = document.getElementById('cfg-temp')?.value.trim()  || saved.temp;
-    localStorage.setItem('autoflow_cfg', JSON.stringify(saved));
-  } catch(e) {}
+  setCfg({
+    host:  document.getElementById('cfg-host')?.value.trim(),
+    port:  document.getElementById('cfg-port')?.value.trim(),
+    user:  document.getElementById('cfg-user')?.value.trim(),
+    pass:  document.getElementById('cfg-pass')?.value.trim(),
+    water: document.getElementById('cfg-water')?.value.trim(),
+    temp:  document.getElementById('cfg-temp')?.value.trim(),
+  });
 }
 
 function toggleConfig() {
@@ -632,23 +637,30 @@ function togglePanel(bodyId, arrowId) {
 document.addEventListener('DOMContentLoaded', () => {
   // Restaura e preenche campos
   let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}'); } catch(e) {}
+  saved = getCfg();
 
-  if (saved.host)        document.getElementById('cfg-host').value  = saved.host;
-  if (saved.port)        document.getElementById('cfg-port').value  = saved.port;
-  if (saved.user)        document.getElementById('cfg-user').value  = saved.user;
-  if (saved.pass)        document.getElementById('cfg-pass').value  = saved.pass;
-  if (saved.water)       document.getElementById('cfg-water').value = saved.water;
-  if (saved.temp)        document.getElementById('cfg-temp').value  = saved.temp;
+  // MQTT fields
+  if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
+  if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
+  if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
+  if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
+  if (saved.water) document.getElementById('cfg-water').value = saved.water;
+  if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
+
+  // Topic previews
   if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
   if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
-  // Restaura nomes/ícones/estados das saídas
+
+  // Relay names/icons/enabled
   try {
     const savedRelays = JSON.parse(localStorage.getItem('autoflow_relays') || '[]');
     savedRelays.forEach(sr => {
       const r = relays.find(x => x.id === sr.id);
-      if (r && !r.locked) { r.name = sr.name; r.icon = sr.icon; r.enabled = sr.enabled; }
+      if (r) {
+        if (!r.locked) { r.name = sr.name; r.icon = sr.icon; r.enabled = sr.enabled; }
+        if (sr.state !== undefined) r.state = sr.state;
+      }
     });
   } catch(e) {}
 
@@ -673,8 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Restaura cidade da meteorologia
   if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
     weather.city = saved.weatherCity;
-    weather.lat  = saved.weatherLat;
-    weather.lon  = saved.weatherLon;
+    weather.lat  = parseFloat(saved.weatherLat);
+    weather.lon  = parseFloat(saved.weatherLon);
     log(`Clima restaurado: ${saved.weatherCity}`, 'info');
     fetchWeather().then(() => {
       if (weatherInterval) clearInterval(weatherInterval);
@@ -693,8 +705,8 @@ function connectMQTT() {
 
   if (!pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
-  // Salva no localStorage
-  try { localStorage.setItem('autoflow_cfg', JSON.stringify({ host, port, user, pass, water, temp, relayPrefix: RELAY_PREFIX })); } catch(e) {}
+  // Salva no localStorage (merge — preserva weatherCity, relayPrefix etc)
+  setCfg({ host, port, user, pass, water, temp, relayPrefix: RELAY_PREFIX });
 
   // Define tópicos e device ID
   TEMP_DEVICE_ID = temp;
@@ -948,11 +960,7 @@ async function setCity(cityName) {
     weather.city = geo.name;
     // Salva cidade no localStorage
     try {
-      const cfg = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
-      cfg.weatherCity = geo.name;
-      cfg.weatherLat  = geo.lat;
-      cfg.weatherLon  = geo.lon;
-      localStorage.setItem('autoflow_cfg', JSON.stringify(cfg));
+      setCfg({ weatherCity: geo.name, weatherLat: geo.lat, weatherLon: geo.lon });
       log(`Cidade salva: ${geo.name}`, 'ok');
     } catch(e) {}
     log(`Localização: ${geo.name} (${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)})`, 'ok');
@@ -1002,6 +1010,7 @@ function setRelay(relay, state) {
     log(`[sem MQTT] "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'info');
   }
   // Atualiza UI imediatamente — sem aguardar MQTT echo
+  saveRelayState();
   renderRelays();
   renderRooms();
 }
@@ -1128,9 +1137,7 @@ function confirmAddRelay() {
       client.subscribe(relayTopic(r) + '/state', { qos:1 });
     });
   }
-  try { localStorage.setItem('autoflow_cfg', JSON.stringify(
-    Object.assign(JSON.parse(localStorage.getItem('autoflow_cfg')||'{}'), { relayPrefix: RELAY_PREFIX })
-  )); } catch(e) {}
+  setCfg({ relayPrefix: RELAY_PREFIX });
   renderRelays();
   log(`Prefixo: ${RELAY_PREFIX} → out1…out8`, 'ok');
   closeRelayModal();
@@ -1138,7 +1145,7 @@ function confirmAddRelay() {
 function saveRelayState() {
   try {
     localStorage.setItem('autoflow_relays', JSON.stringify(
-      relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled }))
+      relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled, state: r.state }))
     ));
   } catch(e) {}
 }
@@ -1241,7 +1248,14 @@ function saveRooms() {
 }
 
 function loadRooms() {
-  try { rooms = JSON.parse(localStorage.getItem('autoflow_rooms') || '[]'); } catch(e) {}
+  try {
+    rooms = JSON.parse(localStorage.getItem('autoflow_rooms') || '[]');
+    // Restore Date objects
+    rooms.forEach(r => {
+      if (r.data?.lastSeen) r.data.lastSeen = new Date(r.data.lastSeen);
+      if (!r.data) r.data = { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false };
+    });
+  } catch(e) { rooms = []; }
 }
 
 // ── Room modal helpers ────────────────────────────────────────────────────
