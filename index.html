@@ -267,6 +267,16 @@ body::before {
 .room-relay-pill.off { background:var(--bg2); color:var(--muted); border-color:var(--border); }
 /* no data */
 .room-nodata { font-family:var(--mono); font-size:9px; color:var(--muted); padding:4px 0; }
+
+/* Room modal sensor options */
+.rm-sensor-opt {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:14px 10px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:var(--radius); cursor:pointer; text-align:center;
+  transition:all 0.15s; user-select:none;
+}
+.rm-sensor-opt:hover { border-color:var(--border2); }
+.rm-sensor-opt.selected { border-color:var(--accent); background:rgba(0,212,160,0.08); }
 </style>
 </head>
 <body>
@@ -347,24 +357,6 @@ body::before {
             <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="mv-liters">— L</span>
           </div>
           <span class="metric-inline-sub" id="ms-water">caixa d'água</span>
-        </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- Temperatura -->
-      <div class="metric-inline" id="mb-temp">
-        <span class="metric-inline-icon">🌡️</span>
-        <div>
-          <span class="metric-inline-val" id="mv-temp">—<span class="metric-inline-unit">°C</span></span>
-          <span class="metric-inline-sub" id="ms-temp">temp</span>
-        </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- Umidade -->
-      <div class="metric-inline" id="mb-hum">
-        <span class="metric-inline-icon">💨</span>
-        <div>
-          <span class="metric-inline-val" id="mv-hum">—<span class="metric-inline-unit">%</span></span>
-          <span class="metric-inline-sub" id="ms-hum">umidade</span>
         </div>
       </div>
       <!-- timestamp -->
@@ -487,44 +479,51 @@ body::before {
 
 <!-- MODAL AMBIENTE -->
 <div class="modal-overlay" id="room-modal">
-  <div class="modal" style="width:480px">
-    <div class="modal-title">Configurar ambiente</div>
-    <div class="modal-fields">
+  <div class="modal" style="width:440px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title" id="rm-modal-title">Novo ambiente</div>
 
-      <!-- Identificação -->
-      <div style="display:flex;gap:10px;align-items:flex-end">
+    <!-- STEP 1: identificação + sensores -->
+    <div id="rm-step1">
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
         <div class="field" style="flex:0"><label>Ícone</label><input id="rm-room-icon" value="🏠" maxlength="2" style="width:56px"/></div>
-        <div class="field" style="flex:1"><label>Nome do ambiente</label><input id="rm-room-name" placeholder="ex: Sala, Quarto 1, Garagem" /></div>
+        <div class="field" style="flex:1"><label>Nome do ambiente</label><input id="rm-room-name" placeholder="ex: Sala, Quarto 1" /></div>
       </div>
 
-      <div class="field"><label>Prefixo MQTT base</label><input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()" /></div>
-
-      <!-- Sensores -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px">Sensores</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px">
-          <input type="checkbox" id="rm-has-temp" checked style="accent-color:var(--accent)">
-          <span>🌡️ Temperatura / Umidade</span>
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">Sensores deste ambiente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <label class="rm-sensor-opt" id="rm-opt-temp" onclick="toggleSensorOpt('temp')">
+          <span style="font-size:20px">🌡️</span>
+          <span style="font-size:12px;font-weight:600">Temperatura<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Umidade</span></span>
+          <input type="checkbox" id="rm-has-temp" style="display:none">
         </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px">
-          <input type="checkbox" id="rm-has-smoke" checked style="accent-color:var(--accent)">
-          <span>🔥 Fumaça / Gás</span>
+        <label class="rm-sensor-opt" id="rm-opt-smoke" onclick="toggleSensorOpt('smoke')">
+          <span style="font-size:20px">🔥</span>
+          <span style="font-size:12px;font-weight:600">Fumaça<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Gás</span></span>
+          <input type="checkbox" id="rm-has-smoke" style="display:none">
         </label>
       </div>
 
-      <!-- Relés vinculados -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;margin-top:4px">Relés vinculados <span style="opacity:0.5;font-size:9px">(opcional)</span></div>
-      <div id="rm-relay-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+      <!-- MQTT config — aparece quando seleciona sensor -->
+      <div id="rm-mqtt-section" style="display:none">
+        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">Configuração MQTT</div>
+        <div class="field" style="margin-bottom:8px"><label>Prefixo do tópico</label><input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()" /></div>
+        <div style="padding:8px 12px;background:var(--bg3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.9;margin-bottom:4px" id="rm-room-preview">—</div>
+      </div>
 
-      <!-- Preview tópicos -->
-      <div style="padding:8px 12px;background:var(--bg3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.9;margin-top:4px" id="rm-room-preview">
-        {prefixo}/temperatura<br>{prefixo}/fumaca
+      <!-- Relés -->
+      <div style="margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Relés neste ambiente</span>
+          <button class="btn" style="font-size:10px;padding:3px 10px" onclick="addRoomRelayRow()">＋</button>
+        </div>
+        <div id="rm-relay-rows"></div>
       </div>
     </div>
+
     <input type="hidden" id="rm-room-modal-edit-id" value="">
-    <div class="modal-actions">
+    <div class="modal-actions" style="margin-top:16px">
       <button class="btn" onclick="closeRoomModal()">Cancelar</button>
-      <button class="btn primary" onclick="confirmAddRoom()">Salvar</button>
+      <button class="btn primary" onclick="confirmAddRoom()">Salvar ambiente</button>
     </div>
   </div>
 </div>
@@ -1162,43 +1161,114 @@ function loadRooms() {
   try { rooms = JSON.parse(localStorage.getItem('autoflow_rooms') || '[]'); } catch(e) {}
 }
 
+// ── Room modal helpers ────────────────────────────────────────────────────
+
+function toggleSensorOpt(type) {
+  const cb  = document.getElementById(`rm-has-${type}`);
+  const opt = document.getElementById(`rm-opt-${type}`);
+  cb.checked = !cb.checked;
+  opt.classList.toggle('selected', cb.checked);
+  // Mostra seção MQTT se pelo menos um sensor selecionado
+  const anySelected = document.getElementById('rm-has-temp').checked ||
+                      document.getElementById('rm-has-smoke').checked;
+  document.getElementById('rm-mqtt-section').style.setProperty(
+    'display', anySelected ? 'block' : 'none', 'important'
+  );
+  updateRoomPreview();
+}
+
+function updateRoomPreview() {
+  const t     = document.getElementById('rm-room-topic').value.trim() || '{prefixo}';
+  const temp  = document.getElementById('rm-has-temp').checked;
+  const smoke = document.getElementById('rm-has-smoke').checked;
+  const lines = [];
+  if (temp)  lines.push(`${t}/temperatura`);
+  if (smoke) lines.push(`${t}/fumaca`);
+  if (temp || smoke) lines.push(`${t}/status`);
+  document.getElementById('rm-room-preview').innerHTML = lines.length
+    ? lines.map(l => `<span style="color:var(--accent2)">${l}</span>`).join('<br>')
+    : '—';
+}
+
+// Relé rows inside modal
+let rmRelayRows = [];
+
+function addRoomRelayRow(preset) {
+  // Só saídas ativas, excluindo bomba (out1)
+  const available = relays.filter(r => r.enabled && r.id !== 'out1');
+  if (!available.length) {
+    alert('Nenhuma saída ativa disponível. Ative saídas no painel primeiro.');
+    return;
+  }
+  const rowId = 'rmrow_' + Date.now();
+  const row = { id: rowId, relayId: preset?.relayId || available[0].id };
+  rmRelayRows.push(row);
+  renderRmRelayRows();
+}
+
+function removeRmRelayRow(rowId) {
+  rmRelayRows = rmRelayRows.filter(r => r.id !== rowId);
+  renderRmRelayRows();
+}
+
+function renderRmRelayRows() {
+  const container = document.getElementById('rm-relay-rows');
+  if (!container) return;
+  const available = relays.filter(r => r.enabled && r.id !== 'out1');
+  if (!rmRelayRows.length) {
+    container.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0">
+      Nenhum relé adicionado. Clique em ＋ para vincular uma saída.
+    </div>`;
+    return;
+  }
+  container.innerHTML = rmRelayRows.map(row => {
+    const opts = available.map(r =>
+      `<option value="${r.id}" ${r.id===row.relayId?'selected':''}>${r.icon} ${r.name} (${r.id})</option>`
+    ).join('');
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <select onchange="rmRelayRows.find(x=>x.id==='${row.id}').relayId=this.value"
+        style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 6px;height:28px">
+        ${opts}
+      </select>
+      <button onclick="removeRmRelayRow('${row.id}')"
+        style="width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:11px;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+}
+
 function openRoomModal(editId) {
   const r = editId ? rooms.find(x => x.id === editId) : null;
-  document.getElementById('rm-room-name').value  = r ? r.name  : '';
-  document.getElementById('rm-room-icon').value  = r ? r.icon  : '🏠';
-  document.getElementById('rm-room-topic').value = r ? r.topic : '';
-  document.getElementById('rm-has-temp').checked  = r ? r.hasTemp  : true;
-  document.getElementById('rm-has-smoke').checked = r ? r.hasSmoke : true;
-  // Populate relay checkboxes
-  const enabled = relays.filter(x => x.enabled);
-  const checks  = document.getElementById('rm-relay-checks');
-  const linked  = r ? (r.relays || []) : [];
-  checks.innerHTML = enabled.length
-    ? enabled.map(rel => `
-        <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px">
-          <input type="checkbox" value="${rel.id}" ${linked.includes(rel.id)?'checked':''} style="accent-color:var(--accent)">
-          ${rel.icon} ${rel.name}
-        </label>`).join('')
-    : '<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:4px">Nenhum relé ativo ainda.</div>';
+
+  // Reset
+  document.getElementById('rm-room-name').value  = r?.name  || '';
+  document.getElementById('rm-room-icon').value  = r?.icon  || '🏠';
+  document.getElementById('rm-room-topic').value = r?.topic || '';
+  document.getElementById('rm-modal-title').textContent = r ? 'Editar ambiente' : 'Novo ambiente';
   document.getElementById('rm-room-modal-edit-id').value = editId || '';
+
+  // Sensores
+  const hasTemp  = r ? r.hasTemp  : false;
+  const hasSmoke = r ? r.hasSmoke : false;
+  document.getElementById('rm-has-temp').checked  = hasTemp;
+  document.getElementById('rm-has-smoke').checked = hasSmoke;
+  document.getElementById('rm-opt-temp').classList.toggle('selected', hasTemp);
+  document.getElementById('rm-opt-smoke').classList.toggle('selected', hasSmoke);
+
+  const anySelected = hasTemp || hasSmoke;
+  document.getElementById('rm-mqtt-section').style.setProperty(
+    'display', anySelected ? 'block' : 'none', 'important'
+  );
+
+  // Relé rows
+  rmRelayRows = (r?.relays || []).map(rid => ({ id:'rmrow_'+Math.random().toString(36).slice(2), relayId: rid }));
+  renderRmRelayRows();
   updateRoomPreview();
+
   document.getElementById('room-modal').classList.add('open');
 }
 
 function closeRoomModal() {
   document.getElementById('room-modal').classList.remove('open');
-}
-
-function updateRoomPreview() {
-  const t     = document.getElementById('rm-room-topic').value.trim() || '{prefixo}';
-  const temp  = document.getElementById('rm-has-temp')?.checked;
-  const smoke = document.getElementById('rm-has-smoke')?.checked;
-  const lines = [];
-  if (temp)  lines.push(`${t}/temperatura`);
-  if (smoke) lines.push(`${t}/fumaca`);
-  lines.push(`${t}/status`);
-  document.getElementById('rm-room-preview').innerHTML = lines
-    .map(l => `<span style="color:var(--accent2)">${l}</span>`).join('<br>');
 }
 
 function confirmAddRoom() {
@@ -1208,13 +1278,14 @@ function confirmAddRoom() {
   const hasTemp  = document.getElementById('rm-has-temp').checked;
   const hasSmoke = document.getElementById('rm-has-smoke').checked;
   const editId   = document.getElementById('rm-room-modal-edit-id').value;
-  const linkedRelays = [...document.querySelectorAll('#rm-relay-checks input:checked')].map(i => i.value);
+  const linkedRelays = rmRelayRows.map(r => r.relayId);
 
-  if (!name || !topic) { log('Preencha nome e prefixo MQTT', 'warn'); return; }
+  if (!name) { log('Preencha o nome do ambiente', 'warn'); return; }
+  if ((hasTemp || hasSmoke) && !topic) { log('Preencha o prefixo MQTT', 'warn'); return; }
 
   if (editId) {
     const r = rooms.find(x => x.id === editId);
-    if (r) { r.name = name; r.icon = icon; r.topic = topic; r.hasTemp = hasTemp; r.hasSmoke = hasSmoke; r.relays = linkedRelays; }
+    if (r) { Object.assign(r, { name, icon, topic, hasTemp, hasSmoke, relays: linkedRelays }); }
   } else {
     rooms.push({
       id: 'room_' + Date.now(), name, icon, topic, hasTemp, hasSmoke,
@@ -1224,7 +1295,8 @@ function confirmAddRoom() {
   }
   saveRooms();
   renderRooms();
-  if (client && client.connected) subscribeRoom(rooms.find(x => x.topic === topic));
+  const saved = rooms.find(x => x.topic === topic);
+  if (client && client.connected && saved) subscribeRoom(saved);
   log(`Ambiente "${name}" salvo`, 'ok');
   closeRoomModal();
 }
