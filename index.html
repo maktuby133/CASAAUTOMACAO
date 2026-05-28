@@ -154,28 +154,30 @@ body::before {
 .add-relay-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.04); }
 
 /* SCHEDULE */
-.sched-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.sched-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.sched-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; margin-bottom: 10px; padding-right: 2px; }
+.sched-list::-webkit-scrollbar { width: 3px; }
+.sched-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.sched-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; display: flex; align-items: center; gap: 8px; }
 .sched-item:hover { border-color: var(--border2); }
-.sched-time { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--accent); letter-spacing: -0.5px; min-width: 52px; }
+.sched-time { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: -0.5px; min-width: 44px; flex-shrink: 0; }
 .sched-info { flex: 1; }
-.sched-relay { font-size: 12px; font-weight: 600; color: var(--text); }
-.sched-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+.sched-relay { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sched-meta { font-family: var(--mono); font-size: 9px; color: var(--muted); }
 .days-row { display: flex; gap: 3px; margin-top: 6px; }
 .day-chip { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 9px; font-weight: 500; background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
 .day-chip.active { background: rgba(0,212,160,0.15); color: var(--accent); border-color: rgba(0,212,160,0.3); }
 
-.add-sched { border-top: 1px solid var(--border); padding-top: 14px; }
-.add-sched-title { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+.add-sched { border-top: 1px solid var(--border); padding-top: 10px; }
+.add-sched-title { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
 .day-picker { display: flex; gap: 6px; margin-bottom: 12px; }
-.day-pick-btn { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border2); background: var(--bg3); color: var(--muted); font-family: var(--mono); font-size: 10px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.day-pick-btn { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border2); background: var(--bg3); color: var(--muted); font-family: var(--mono); font-size: 9px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .day-pick-btn.sel { background: rgba(0,212,160,0.15); color: var(--accent); border-color: rgba(0,212,160,0.4); }
 .add-sched-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.add-sched-row input[type=time], .add-sched-row input[type=number], .add-sched-row select { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: var(--mono); font-size: 12px; padding: 8px 10px; outline: none; height: 36px; transition: border-color 0.15s; }
+.add-sched-row input[type=time], .add-sched-row input[type=number], .add-sched-row select { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: var(--mono); font-size: 11px; padding: 5px 8px; outline: none; height: 30px; transition: border-color 0.15s; }
 .add-sched-row input[type=time]:focus, .add-sched-row input[type=number]:focus, .add-sched-row select:focus { border-color: var(--accent); }
-.add-sched-row input[type=time] { width: 100px; }
-.add-sched-row input[type=number] { width: 64px; }
-.add-sched-row select { flex: 1; min-width: 140px; }
+.add-sched-row input[type=time] { width: 86px; }
+.add-sched-row input[type=number] { width: 52px; }
+.add-sched-row select { flex: 1; min-width: 100px; }
 .unit-lbl { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
 /* RULES */
@@ -477,7 +479,7 @@ body::before {
             <span id="sched-form-arrow" style="transition:transform 0.2s">▶</span> Novo agendamento
           </div>
           <div id="sched-form" style="display:none">
-            <div class="day-picker" id="day-picker" style="margin-bottom:10px">
+            <div class="day-picker" id="day-picker" style="margin-bottom:8px;gap:4px">
               <button class="day-pick-btn" data-d="0" onclick="toggleDay(this)">D</button>
               <button class="day-pick-btn" data-d="1" onclick="toggleDay(this)">S</button>
               <button class="day-pick-btn" data-d="2" onclick="toggleDay(this)">T</button>
@@ -1238,16 +1240,18 @@ function renderSchedules() {
   }
   el.innerHTML = schedules.map(s => {
     const rel = relays.find(r => r.id === s.relay);
+    const activeDays = dayShort.map((d,i) => s.days.includes(i)
+      ? `<span style="color:var(--accent);font-weight:600">${d}</span>`
+      : `<span style="color:var(--border2)">${d}</span>`
+    ).join('<span style="margin:0 1px"></span>');
     return `<div class="sched-item">
       <div class="sched-time">${s.time}</div>
-      <div class="sched-info">
-        <div class="sched-relay">${rel ? rel.icon + ' ' + rel.name : 'relé removido'}</div>
-        <div class="sched-meta">${s.duration} min</div>
-        <div class="days-row">
-          ${dayShort.map((d, i) => `<div class="day-chip ${s.days.includes(i) ? 'active' : ''}">${d}</div>`).join('')}
-        </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.04em;flex-shrink:0">${s.duration}m</div>
+      <div class="sched-info" style="flex:1;min-width:0">
+        <div class="sched-relay">${rel ? rel.icon + ' ' + rel.name : '—'}</div>
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.06em;margin-top:2px">${activeDays}</div>
       </div>
-      <button class="btn-icon" onclick="removeSchedule('${s.id}')" title="Remover">✕</button>
+      <button class="btn-icon" onclick="removeSchedule('${s.id}')" title="Remover" style="width:20px;height:20px;font-size:10px;flex-shrink:0">✕</button>
     </div>`;
   }).join('');
 }
