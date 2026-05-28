@@ -385,13 +385,17 @@ body::before {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
 
     <!-- COL 1: Meteorologia -->
-    <div class="card" id="weather-card" style="min-height:200px">
+    <div class="card" id="weather-card">
       <div class="card-header"><span class="card-title">Meteorologia</span></div>
-      <div style="text-align:center;padding:24px 0 16px">
+      <div style="text-align:center;padding:18px 0 14px">
         <div style="font-size:28px;margin-bottom:8px">🌍</div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">Defina a cidade para<br>verificar chuva antes de irrigar</div>
-        <div style="display:flex;gap:8px">
-          <input id="city-input" placeholder="Ex: Rio de Janeiro" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;height:34px;min-width:0" onkeydown="if(event.key==='Enter')setCity()">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">
+          Defina a cidade para<br>verificar chuva antes de irrigar
+        </div>
+        <div style="display:flex;gap:6px">
+          <input id="city-input" placeholder="Ex: Rio de Janeiro"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;height:34px;min-width:0"
+            onkeydown="if(event.key==='Enter')setCity()">
           <button class="btn primary" onclick="setCity()" style="height:34px;padding:0 12px;font-size:10px;flex-shrink:0">Buscar</button>
         </div>
       </div>
@@ -652,6 +656,18 @@ document.addEventListener('DOMContentLoaded', () => {
     log('Credenciais salvas encontradas — conectando automaticamente...', 'info');
     setTimeout(connectMQTT, 300);
   }
+
+  // Restaura cidade da meteorologia
+  if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
+    weather.city = saved.weatherCity;
+    weather.lat  = saved.weatherLat;
+    weather.lon  = saved.weatherLon;
+    log(`Clima restaurado: ${saved.weatherCity}`, 'info');
+    fetchWeather().then(() => {
+      if (weatherInterval) clearInterval(weatherInterval);
+      weatherInterval = setInterval(fetchWeather, 10 * 60 * 1000);
+    });
+  }
 });
 
 function connectMQTT() {
@@ -860,37 +876,50 @@ async function fetchWeather() {
 function renderWeatherCard(rainMm, code, prob3h) {
   const card = document.getElementById('weather-card');
   if (!card) return;
-  const blocked = weather.isRaining;
-  const icon = blocked ? '🌧️' : (prob3h >= 40 ? '⛅' : '☀️');
+  const blocked     = weather.isRaining;
   const statusColor = blocked ? 'var(--warn)' : 'var(--accent)';
-  const statusText  = blocked ? 'Irrigação bloqueada' : 'Irrigação liberada';
+  const statusBg    = blocked ? 'rgba(245,158,11,0.1)' : 'rgba(0,212,160,0.08)';
+  const statusText  = blocked ? '🚫 Irrigação bloqueada' : '✅ Irrigação liberada';
+  const mainIcon    = blocked ? '🌧️' : (prob3h >= 40 ? '⛅' : '☀️');
+  const ts          = weather.lastCheck ? weather.lastCheck.toLocaleTimeString('pt-BR') : '--';
+  const warnRain    = rainMm > 0 ? 'var(--warn)' : 'var(--text)';
+  const warnProb    = prob3h >= 70 ? 'var(--warn)' : prob3h >= 40 ? 'var(--warn)' : 'var(--text)';
+
   card.innerHTML = `
-    <div class="card-header">
-      <span class="card-title">Meteorologia externa</span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${weather.lastCheck ? weather.lastCheck.toLocaleTimeString('pt-BR') : '--'}</span>
+    <div class="card-header" style="margin-bottom:10px">
+      <span class="card-title">Meteorologia</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">↻ ${ts}</span>
     </div>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-      <span style="font-size:40px">${icon}</span>
-      <div>
-        <div style="font-size:12px;color:var(--muted);font-family:var(--mono)">${weather.city}</div>
-        <div style="font-size:14px;font-weight:600;margin-top:4px;color:${statusColor}">${statusText}</div>
+
+    <!-- City + icon -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:32px;flex-shrink:0;line-height:1">${mainIcon}</span>
+      <div style="min-width:0;flex:1">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${weather.city}</div>
+        <div style="font-size:11px;font-weight:700;color:${statusColor};padding:3px 8px;background:${statusBg};border-radius:4px;display:inline-block">${statusText}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div class="metric-box ${rainMm > 0 ? 'has-data warn' : 'has-data'}">
-        <div class="metric-label">🌧️ Chuva atual</div>
-        <div class="metric-value">${rainMm.toFixed(1)}<span class="unit">mm</span></div>
-        <div class="metric-sub ${rainMm > 0 ? 'warn' : 'ok'}">${rainMm > 0 ? 'chovendo' : 'sem chuva'}</div>
+
+    <!-- Metrics 2-col -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">🌧 Chuva</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${warnRain}">${rainMm.toFixed(1)}<span style="font-size:9px;font-weight:400;color:var(--muted)"> mm</span></div>
+        <div style="font-family:var(--mono);font-size:8px;color:${warnRain};margin-top:2px">${rainMm>0?'chovendo':'sem chuva'}</div>
       </div>
-      <div class="metric-box has-data ${prob3h >= 70 ? 'warn' : ''}">
-        <div class="metric-label">📊 Prob. próx. 3h</div>
-        <div class="metric-value">${prob3h}<span class="unit">%</span></div>
-        <div class="metric-sub ${prob3h >= 70 ? 'warn' : 'ok'}">${prob3h >= 70 ? 'alta chance' : prob3h >= 40 ? 'moderada' : 'baixa'}</div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">📊 Próx. 3h</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${warnProb}">${prob3h}<span style="font-size:9px;font-weight:400;color:var(--muted)"> %</span></div>
+        <div style="font-family:var(--mono);font-size:8px;color:${warnProb};margin-top:2px">${prob3h>=70?'alta chance':prob3h>=40?'moderada':'baixa'}</div>
       </div>
     </div>
-    <div style="display:flex;gap:8px">
-      <input id="city-input" placeholder="Mudar cidade..." value="" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:34px" onkeydown="if(event.key==='Enter')setCity()">
-      <button class="btn" onclick="setCity()" style="height:34px;padding:0 14px">Buscar</button>
+
+    <!-- City search — always visible, shows current city -->
+    <div style="display:flex;gap:6px;align-items:center">
+      <input id="city-input" placeholder="Mudar cidade..." value=""
+        style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;height:30px;min-width:0"
+        onkeydown="if(event.key==='Enter')setCity()">
+      <button class="btn" onclick="setCity()" style="height:30px;padding:0 10px;font-size:10px;flex-shrink:0">Buscar</button>
     </div>`;
 }
 
@@ -904,6 +933,14 @@ async function setCity(cityName) {
     weather.lat  = geo.lat;
     weather.lon  = geo.lon;
     weather.city = geo.name;
+    // Salva cidade no localStorage
+    try {
+      const cfg = JSON.parse(localStorage.getItem('autoflow_cfg') || '{}');
+      cfg.weatherCity = geo.name;
+      cfg.weatherLat  = geo.lat;
+      cfg.weatherLon  = geo.lon;
+      localStorage.setItem('autoflow_cfg', JSON.stringify(cfg));
+    } catch(e) {}
     log(`Localização: ${geo.name} (${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)})`, 'ok');
     await fetchWeather();
     if (weatherInterval) clearInterval(weatherInterval);
@@ -1544,15 +1581,17 @@ function renderRooms() {
       </div>` : '';
 
     const relayBlock = linkedRelays.length ? `
-      <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;display:flex;flex-wrap:wrap;gap:4px">
+      <div style="border-top:1px solid var(--border);padding-top:7px;margin-top:4px;display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:5px">
         ${linkedRelays.map(rel => `
           <button onclick="setRelay(relays.find(x=>x.id==='${rel.id}'),${!rel.state})"
-            style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);padding:3px 7px;border-radius:4px;cursor:pointer;border:1px solid;transition:all 0.15s;
+            style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+            padding:7px 4px;border-radius:7px;cursor:pointer;border:1px solid;transition:all 0.15s;
             ${rel.state
               ? 'background:rgba(0,212,160,0.12);color:var(--accent);border-color:rgba(0,212,160,0.3)'
               : 'background:var(--bg2);color:var(--muted);border-color:var(--border)'}">
-            ${rel.displayIcon} ${rel.displayLabel}
-            <span style="font-size:7px;opacity:0.7">${rel.state ? '●ON' : '○OFF'}</span>
+            <span style="font-size:18px;line-height:1">${rel.displayIcon}</span>
+            <span style="font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.04em">${rel.state ? 'ON' : 'OFF'}</span>
+            <span style="font-family:var(--mono);font-size:8px;opacity:0.6;white-space:nowrap;overflow:hidden;max-width:64px;text-overflow:ellipsis">${rel.displayLabel}</span>
           </button>`).join('')}
       </div>` : '';
 
