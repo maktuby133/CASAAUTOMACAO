@@ -1113,6 +1113,7 @@ function renderRelays() {
 
 function pickRelay() {
   const available = relays.filter(r => !r.enabled);
+  // Note: this is the "enable new output" picker, not the room relay picker
   if (!available.length) return;
   const opts = available.map(r =>
     `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;font-size:12px;padding:8px 12px" onclick="enableRelay('${r.id}');closePicker()">${r.id.toUpperCase()} <span style="color:var(--muted);font-family:var(--mono);font-size:10px">→ ${relayTopic(r)}</span></button>`
@@ -1375,40 +1376,39 @@ const RELAY_ICONS = [
   { icon:'🔆', label:'LED'        },
 ];
 
-function getUsedRelayIds(exceptRoomId) {
-  // Coleta todos os relay IDs já vinculados a qualquer ambiente
+// Retorna Set de relay IDs usados em TODOS os ambientes (exceto o sendo editado)
+// NÃO inclui rmRelayRows — isso é feito no momento do render de cada row
+function getGlobalUsedRelayIds(exceptRoomId) {
   const used = new Set();
   rooms.forEach(room => {
-    if (room.id === exceptRoomId) return; // ignora o ambiente que está sendo editado
+    if (room.id === exceptRoomId) return;
     (room.relays || []).forEach(rel => {
-      const rid = typeof rel === 'string' ? rel : rel.id;
-      used.add(rid);
+      used.add(typeof rel === 'string' ? rel : rel.id);
     });
   });
-  // Também exclui os que já estão nas rows atuais do modal
-  rmRelayRows.forEach(row => used.add(row.relayId));
   return used;
 }
 
 function addRoomRelayRow(preset) {
-  const editId = document.getElementById('rm-room-modal-edit-id')?.value || '';
-  const used   = getUsedRelayIds(editId);
-  // Remove da used o próprio preset se existir (edição)
-  if (preset?.relayId) used.delete(preset.relayId);
-
-  const available = relays.filter(r => r.enabled && r.id !== 'out1' && !used.has(r.id));
+  const editId     = document.getElementById('rm-room-modal-edit-id')?.value || '';
+  const globalUsed = getGlobalUsedRelayIds(editId);
+  // IDs já nas rows do modal atual
+  const modalUsed  = new Set(rmRelayRows.map(r => r.relayId));
+  // Disponíveis = ativo + não bomba + não usado globalmente + não no modal
+  const available  = relays.filter(r =>
+    r.enabled && r.id !== 'out1' &&
+    !globalUsed.has(r.id) && !modalUsed.has(r.id)
+  );
   if (!available.length) {
-    alert('Todas as saídas disponíveis já foram vinculadas a ambientes.');
+    alert('Todas as saídas disponíveis já foram vinculadas.');
     return;
   }
-  const rowId = 'rmrow_' + Date.now();
-  const row = {
-    id:      rowId,
+  rmRelayRows.push({
+    id:      'rmrow_' + Date.now(),
     relayId: preset?.relayId || available[0].id,
     icon:    preset?.icon    || '💡',
     label:   preset?.label   || 'Iluminação',
-  };
-  rmRelayRows.push(row);
+  });
   renderRmRelayRows();
 }
 
@@ -1439,10 +1439,8 @@ function toggleIconPicker(rowId) {
 function renderRmRelayRows() {
   const container = document.getElementById('rm-relay-rows');
   if (!container) return;
-  const editId = document.getElementById('rm-room-modal-edit-id')?.value || '';
-  // Para cada row, o "available" inclui a saída dela mesma + não usadas
-  const allUsed = getUsedRelayIds(editId);
-  const available = relays.filter(r => r.enabled && r.id !== 'out1');
+  const editId     = document.getElementById('rm-room-modal-edit-id')?.value || '';
+  const globalUsed = getGlobalUsedRelayIds(editId);
 
   if (!rmRelayRows.length) {
     container.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0">
@@ -1452,12 +1450,13 @@ function renderRmRelayRows() {
   }
 
   container.innerHTML = rmRelayRows.map(row => {
-    // For this row: available = not used by other rows OR already this row's selection
-    const rowUsed = new Set(rmRelayRows.filter(x=>x.id!==row.id).map(x=>x.relayId));
-    const opts = available.map(r => {
-      const disabled = rowUsed.has(r.id) ? 'disabled style="opacity:0.4"' : '';
-      return `<option value="${r.id}" ${r.id===row.relayId?'selected':''} ${disabled}>${r.id.toUpperCase()} — ${r.name}</option>`;
-    }).join('');
+    // Para esta row: mostra a saída dela mesma + as não usadas globalmente e não usadas pelas outras rows
+    const otherRowIds = new Set(rmRelayRows.filter(x => x.id !== row.id).map(x => x.relayId));
+    const opts = relays
+      .filter(r => r.enabled && r.id !== 'out1')
+      .filter(r => r.id === row.relayId || (!globalUsed.has(r.id) && !otherRowIds.has(r.id)))
+      .map(r => `<option value="${r.id}" ${r.id===row.relayId?'selected':''}>${r.id.toUpperCase()} — ${r.name}</option>`)
+      .join('');
 
     const iconOpts = RELAY_ICONS.map(o =>
       `<div onclick="setRmRelayIcon('${row.id}','${o.icon}','${o.label}')"
