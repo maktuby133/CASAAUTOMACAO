@@ -818,21 +818,15 @@ function initPWA() {
   document.getElementById('pwa-manifest').href = url;
   document.getElementById('pwa-manifest').rel  = 'manifest';
 
-  // Service worker inline para cache offline
+  // Desregistra todos os Service Workers para evitar cache de versão antiga
   if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'autoflow-v1';
-const ASSETS = ['${window.location.href}'];
-self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))));
-self.addEventListener('fetch', e => e.respondWith(
-  caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-    if (res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-    return res;
-  }).catch(() => caches.match(e.request)))
-));`;
-    const swBlob = new Blob([swCode], {type:'text/javascript'});
-    const swUrl  = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl).catch(() => {});
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    });
+    // Limpa todos os caches do browser
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    }
   }
 }
 
