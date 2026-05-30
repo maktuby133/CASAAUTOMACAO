@@ -374,9 +374,9 @@ body::before {
       <div class="field" style="grid-column:1/-1">
         <label>Senha MQTT</label>
         <div style="display:flex;gap:6px">
-          <input id="cfg-pass" oninput="saveCfgField()" type="text"
+          <input id="cfg-pass" oninput="saveCfgField()" type="password"
             placeholder="sua senha do HiveMQ"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;-webkit-text-security:disc"/>
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;"/>
           <button type="button" onclick="togglePassVis('cfg-pass',this)"
             style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
         </div>
@@ -710,9 +710,9 @@ function saveCfgField() {
 function togglePassVis(fieldId, btn) {
   const el = document.getElementById(fieldId);
   if (!el) return;
-  const hidden = el.style.webkitTextSecurity === 'disc' || el.style.webkitTextSecurity === '';
-  el.style.webkitTextSecurity = hidden ? 'none' : 'disc';
-  btn.textContent = hidden ? '🙈' : '👁';
+  const isHidden = el.type === 'password';
+  el.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁';
 }
 
 function switchBrokerTab(mode) {
@@ -883,10 +883,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = v;
-    // For password-styled text fields, ensure webkit security is applied
-    if (id === 'cfg-pass' || id === 'cfg-local-pass') {
-      el.style.webkitTextSecurity = 'disc';
-    }
   };
   setV('cfg-host',  saved.host);
   setV('cfg-port',  saved.port);
