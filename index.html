@@ -901,6 +901,17 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
 
+  // Persiste valores hardcoded do HTML no localStorage logo no carregamento
+  // (campos como cfg-host e cfg-user têm value fixo mas nunca disparam oninput)
+  {
+    const domHost = document.getElementById('cfg-host')?.value.trim();
+    const domUser = document.getElementById('cfg-user')?.value.trim();
+    const domPort = document.getElementById('cfg-port')?.value.trim();
+    if (domHost && !saved.host) setCfg({ host: domHost });
+    if (domUser && !saved.user) setCfg({ user: domUser });
+    if (domPort && !saved.port) setCfg({ port: domPort });
+  }
+
   // ── 6. Previews dos tópicos ───────────────────────────────────────────
   if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
   if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
@@ -923,11 +934,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
     const s = getCfg();
-    const hasCloud = s.pass && s.host;
+    // host pode estar no DOM (hardcoded) mesmo sem ter sido salvo no localStorage ainda
+    const domHost = document.getElementById('cfg-host')?.value.trim();
+    const effectiveHost = s.host || domHost || '';
+    const hasCloud = s.pass && effectiveHost;
     const hasLocal = s.localHost;
     if (hasCloud || hasLocal) {
       log('Credenciais encontradas — conectando automaticamente...', 'info');
       setTimeout(connectMQTT, 300);
+    } else {
+      log(`Auto-login: host="${effectiveHost}" pass="${s.pass ? '***' : '(vazio)'}" — configure a senha para auto-conectar`, 'sys');
     }
   });
 
@@ -954,14 +970,16 @@ function connectMQTT() {
     if (domVal('cfg-water')) setCfg({ water: domVal('cfg-water') });
     if (domVal('cfg-temp'))  setCfg({ temp:  domVal('cfg-temp') });
   }
-  // Lê 100% do localStorage — funciona mesmo com painel oculto (auto-login)
+  // Lê do localStorage; para campos com value hardcoded no HTML (host/user/port),
+  // usa o DOM como fallback caso o localStorage ainda não tenha sido populado
   const sf = getCfg();
-  const host  = isLocal ? (sf.localHost  || '') : (sf.host  || '');
-  const port  = isLocal ? (parseInt(sf.localPort)  || 9001) : (parseInt(sf.port)  || 8884);
-  const user  = isLocal ? (sf.localUser  || '') : (sf.user  || '');
-  const pass  = isLocal ? (sf.localPass  || '') : (sf.pass  || '');
-  const water = isLocal ? (sf.localWater || '') : (sf.water || '');
-  const temp  = (isLocal ? (sf.localTemp || '') : (sf.temp  || ''))
+  const dv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const host  = isLocal ? (sf.localHost  || '') : (sf.host  || dv('cfg-host') || '');
+  const port  = isLocal ? (parseInt(sf.localPort) || 9001) : (parseInt(sf.port || dv('cfg-port')) || 8884);
+  const user  = isLocal ? (sf.localUser  || '') : (sf.user  || dv('cfg-user') || '');
+  const pass  = isLocal ? (sf.localPass  || '') : (sf.pass  || dv('cfg-pass') || '');
+  const water = isLocal ? (sf.localWater || '') : (sf.water || dv('cfg-water') || '');
+  const temp  = (isLocal ? (sf.localTemp || '') : (sf.temp  || dv('cfg-temp') || ''))
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
