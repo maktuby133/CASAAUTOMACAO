@@ -648,7 +648,6 @@ body::before {
 <script>
 // ============ STATE ============
 let client = null;
-let _ignorePersistRetained = false; // flag: bloqueia sobrescrita do broker logo após salvar
 // 8 saídas fixas — saída 1 = bomba (fixa), 2-8 livres
 // O usuário define o prefixo; tópicos gerados: {prefixo}/out1 … {prefixo}/out8
 let RELAY_PREFIX = 'home/relay';
@@ -752,8 +751,24 @@ function publishPersist() {
 function loadFromBrokerPayload(payload) {
   try {
     const d = JSON.parse(payload);
-    // Relés — restaura direto sem chamar saveRelayState (evita loop)
-    if (d.relays) {
+
+    // ── Ambientes: localStorage é SEMPRE a fonte primária.
+    // Só usa o broker se localStorage estiver vazio (primeiro acesso num novo dispositivo).
+    const localRoomsRaw = localStorage.getItem('autoflow_rooms');
+    const localRooms = localRoomsRaw ? JSON.parse(localRoomsRaw) : [];
+    if (!localRooms.length && d.rooms && d.rooms.length) {
+      rooms = d.rooms.map(r => ({
+        ...r,
+        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
+      }));
+      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+      log('☁ Ambientes restaurados do broker (localStorage vazio)', 'sys');
+    }
+
+    // ── Relés: mesma lógica
+    const localRelaysRaw = localStorage.getItem('autoflow_relays');
+    const localRelays = localRelaysRaw ? JSON.parse(localRelaysRaw) : [];
+    if (!localRelays.length && d.relays) {
       d.relays.forEach(sr => {
         const r = relays.find(x => x.id === sr.id);
         if (r) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; r.state=sr.state||false; }
@@ -762,19 +777,16 @@ function loadFromBrokerPayload(payload) {
         relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
       )); } catch(e) {}
     }
-    // Ambientes — restaura direto sem chamar saveRooms
-    if (d.rooms && d.rooms.length) {
-      rooms = d.rooms.map(r => ({
-        ...r,
-        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
-      }));
-      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+
+    // ── Agendamentos: mesma lógica
+    const localSchedRaw = localStorage.getItem('autoflow_schedules');
+    const localSched = localSchedRaw ? JSON.parse(localSchedRaw) : [];
+    if (!localSched.length && d.schedules && d.schedules.length) {
+      schedules = d.schedules;
     }
-    // Agendamentos
-    if (d.schedules) { schedules = d.schedules; }
-    // Prefixo
+
+    // ── Prefixo e clima sempre aceitos (não têm chave própria no localStorage)
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
-    // Clima
     if (d.weather?.city) {
       weather.city = d.weather.city;
       weather.lat  = d.weather.lat;
@@ -782,7 +794,7 @@ function loadFromBrokerPayload(payload) {
       if (weather.lat) { fetchWeather(); }
     }
     renderRelays(); renderRooms(); renderSchedules();
-    log(`☁ Config carregada do broker (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
+    log(`☁ Config broker recebida (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
   } catch(e) { log('Erro ao carregar config do broker: ' + e.message, 'warn'); }
 }
 
@@ -933,17 +945,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  // Lê sempre do localStorage — garante auto-connect mesmo com painel oculto
-  const s = getCfg();
-  // Sincroniza campos do DOM com localStorage antes de ler (caso usuário tenha editado)
-  const domVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  // Se o campo DOM tem valor (usuário digitou agora), salva antes de ler
-  if (domVal('cfg-pass'))       setCfg({ pass:      domVal('cfg-pass') });
-  if (domVal('cfg-host'))       setCfg({ host:      domVal('cfg-host') });
-  if (domVal('cfg-user'))       setCfg({ user:      domVal('cfg-user') });
-  if (domVal('cfg-water'))      setCfg({ water:     domVal('cfg-water') });
-  if (domVal('cfg-temp'))       setCfg({ temp:      domVal('cfg-temp') });
-  // Relê após sync
+  // Antes de ler, sincroniza campos DOM → localStorage (caso user tenha editado agora)
+  const domVal = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!isLocal) {
+    if (domVal('cfg-host'))  setCfg({ host:  domVal('cfg-host') });
+    if (domVal('cfg-pass'))  setCfg({ pass:  domVal('cfg-pass') });
+    if (domVal('cfg-user'))  setCfg({ user:  domVal('cfg-user') });
+    if (domVal('cfg-water')) setCfg({ water: domVal('cfg-water') });
+    if (domVal('cfg-temp'))  setCfg({ temp:  domVal('cfg-temp') });
+  }
+  // Lê 100% do localStorage — funciona mesmo com painel oculto (auto-login)
   const sf = getCfg();
   const host  = isLocal ? (sf.localHost  || '') : (sf.host  || '');
   const port  = isLocal ? (parseInt(sf.localPort)  || 9001) : (parseInt(sf.port)  || 8884);
@@ -1015,14 +1026,7 @@ function handleMsg(topic, payload, pkt) {
   // Log bruto de TODAS as mensagens
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
   // Config persistida no broker
-  if (topic === PERSIST_TOPIC) {
-    if (_ignorePersistRetained) {
-      log('☁ Retained do broker ignorado (dados locais mais recentes)', 'sys');
-      _ignorePersistRetained = false;
-      return;
-    }
-    loadFromBrokerPayload(payload); return;
-  }
+  if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
   handleRoomMessage(topic, payload);
 
   let data;
@@ -1530,7 +1534,9 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
-  try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+  try {
+    localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
+  } catch(e) {}
 }
 
 function loadRooms() {
@@ -1797,13 +1803,10 @@ function confirmAddRoom() {
     });
   }
   saveRooms();
-  renderRooms();   // renderiza ANTES de publicar para mostrar imediatamente
-  // Flag: ignora o próximo retained do broker (ele ainda não tem o ambiente novo)
-  _ignorePersistRetained = true;
-  setTimeout(() => { _ignorePersistRetained = false; }, 3000);
   publishPersist();
-  const newRoom = rooms.find(x => x.name === name);
-  if (client && client.connected && newRoom) subscribeRoom(newRoom);
+  renderRooms();
+  const saved = rooms.find(x => x.topic === topic);
+  if (client && client.connected && saved) subscribeRoom(saved);
   log(`Ambiente "${name}" salvo`, 'ok');
   closeRoomModal();
 }
@@ -1813,10 +1816,8 @@ function removeRoom(id) {
   if (!r || !confirm(`Remover "${r.name}"?`)) return;
   rooms = rooms.filter(x => x.id !== id);
   saveRooms();
-  renderRooms();
-  _ignorePersistRetained = true;
-  setTimeout(() => { _ignorePersistRetained = false; }, 3000);
   publishPersist();
+  renderRooms();
   log(`Ambiente "${r.name}" removido`, 'sys');
 }
 
