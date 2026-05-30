@@ -371,7 +371,16 @@ body::before {
       <div class="field" style="grid-column:1/-1"><label>Host (broker)</label><input id="cfg-host" oninput="saveCfgField()" value="13efa30a8367496d82053ae1fec856fb.s1.eu.hivemq.cloud" /></div>
       <div class="field"><label>Porta (WSS)</label><input id="cfg-port" oninput="saveCfgField()" value="8884" /></div>
       <div class="field"><label>Usuário MQTT</label><input id="cfg-user" oninput="saveCfgField()" value="esp32-Project" /></div>
-      <div class="field" style="grid-column:1/-1"><label>Senha MQTT</label><input id="cfg-pass" oninput="saveCfgField()" type="password" placeholder="sua senha do HiveMQ" /></div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Senha MQTT</label>
+        <div style="display:flex;gap:6px">
+          <input id="cfg-pass" oninput="saveCfgField()" type="text"
+            placeholder="sua senha do HiveMQ"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;-webkit-text-security:disc"/>
+          <button type="button" onclick="togglePassVis('cfg-pass',this)"
+            style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+        </div>
+      </div>
       <div class="field"><label>Código da caixa d'água</label><input id="cfg-water" oninput="saveCfgField()" placeholder="ex: A1B2C3D4" /></div>
       <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" oninput="saveCfgField()" placeholder="ex: E5F6G7H8" /></div>
     </div>
@@ -683,7 +692,7 @@ function saveCfgField() {
     localHost: document.getElementById('cfg-local-host')?.value.trim(),
     localPort: document.getElementById('cfg-local-port')?.value.trim(),
     localUser: document.getElementById('cfg-local-user')?.value.trim(),
-    localPass: document.getElementById('cfg-local-pass')?.value.trim(),
+    localPass: document.getElementById('cfg-local-pass')?.value || '',
     localWater: document.getElementById('cfg-local-water')?.value.trim(),
     localTemp:  document.getElementById('cfg-local-temp')?.value.trim(),
     brokerMode: 'local',
@@ -696,6 +705,14 @@ function saveCfgField() {
     temp:  document.getElementById('cfg-temp')?.value.trim(),
     brokerMode: 'cloud',
   });
+}
+
+function togglePassVis(fieldId, btn) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  const hidden = el.style.webkitTextSecurity === 'disc' || el.style.webkitTextSecurity === '';
+  el.style.webkitTextSecurity = hidden ? 'none' : 'disc';
+  btn.textContent = hidden ? '🙈' : '👁';
 }
 
 function switchBrokerTab(mode) {
@@ -848,7 +865,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 5. Restaura configurações do broker ───────────────────────────────
   if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
-  const setV = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  const setV = (id, v) => {
+    if (!v) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = v;
+    // For password-styled text fields, ensure webkit security is applied
+    if (id === 'cfg-pass' || id === 'cfg-local-pass') {
+      el.style.webkitTextSecurity = 'disc';
+    }
+  };
   setV('cfg-host',  saved.host);
   setV('cfg-port',  saved.port);
   setV('cfg-user',  saved.user);
