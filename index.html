@@ -919,35 +919,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
 
-  // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
+  // ── 7. Render inicial ───────────────────────────────────────────────
   initPWA();
+  renderRelays();
+  renderRooms();
+  renderSchedules();
 
-  // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
-  requestAnimationFrame(() => {
-    renderRelays();
-    renderRooms();
-    renderSchedules();
-
-    // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
-    const s = getCfg();
-    const _domV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    const effectiveHost = s.host || _domV('cfg-host') || '';
-    const effectivePass = s.pass || _domV('cfg-pass') || '';
-    // Debug visível — remover após confirmar funcionamento
-    log(`[DEBUG] localStorage pass="${s.pass ? s.pass.substring(0,3)+'***' : '(vazio)'}" host="${s.host || '(vazio)'}" domPass="${_domV('cfg-pass') ? '***preenchido***' : '(vazio)'}"`, 'sys');
-    if (effectiveHost) setCfg({ host: effectiveHost });
-    if (effectivePass) setCfg({ pass: effectivePass });
-    if (_domV('cfg-user')) setCfg({ user: _domV('cfg-user') });
-    if (_domV('cfg-port')) setCfg({ port: _domV('cfg-port') });
-    const hasCloud = effectivePass && effectiveHost;
-    const hasLocal = s.localHost;
-    if (hasCloud || hasLocal) {
-      log('Credenciais encontradas — conectando automaticamente...', 'info');
-      setTimeout(connectMQTT, 300);
-    } else {
-      log('Auto-login: sem credenciais no localStorage — conecte manualmente uma vez', 'sys');
-    }
-  });
+  // ── 8. Auto-conecta se tiver credenciais ─────────────────────────────
+  // Lê direto do localStorage — já populado antes dos setV acima
+  const _ac = getCfg();
+  const hasCloud = _ac.pass && _ac.host;
+  const hasLocal = _ac.localHost;
+  if (hasCloud || hasLocal) {
+    log('Credenciais encontradas — conectando automaticamente...', 'info');
+    setTimeout(connectMQTT, 300);
+  } else {
+    log('Auto-login: configure a senha e conecte uma vez para ativar o auto-login', 'sys');
+  }
 
   // ── 9. Restaura clima ─────────────────────────────────────────────────
   if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
