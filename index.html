@@ -823,42 +823,48 @@ function togglePanel(bodyId, arrowId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Restaura e preenche campos
-  let saved = {};
-  saved = getCfg();
+  // ── 1. Carrega TUDO do localStorage de uma vez ────────────────────────
+  const saved = getCfg();
 
-  // MQTT fields
-  if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
-  // Cloud fields
-  if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
-  if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
-  if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
-  if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
-  if (saved.water) document.getElementById('cfg-water').value = saved.water;
-  if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
-  // Local fields
-  if (saved.localHost)  document.getElementById('cfg-local-host')?.setAttribute('value', saved.localHost);
-  if (saved.localPort)  document.getElementById('cfg-local-port')?.setAttribute('value', saved.localPort);
-  if (saved.localUser)  document.getElementById('cfg-local-user')?.setAttribute('value', saved.localUser);
-  if (saved.localWater) document.getElementById('cfg-local-water')?.setAttribute('value', saved.localWater);
-  if (saved.localTemp)  document.getElementById('cfg-local-temp')?.setAttribute('value', saved.localTemp);
-  if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
-
-  // Topic previews
-  if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
-  if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
-
-  // Relay names/icons/enabled
+  // ── 2. Restaura relés PRIMEIRO (antes dos ambientes) ─────────────────
   try {
-    const savedRelays = JSON.parse(localStorage.getItem('autoflow_relays') || '[]');
-    savedRelays.forEach(sr => {
-      const r = relays.find(x => x.id === sr.id);
-      if (r) {
-        if (!r.locked) { r.name = sr.name; r.icon = sr.icon; r.enabled = sr.enabled; }
-        if (sr.state !== undefined) r.state = sr.state;
-      }
+    const sr = JSON.parse(localStorage.getItem('autoflow_relays') || '[]');
+    sr.forEach(s => {
+      const r = relays.find(x => x.id === s.id);
+      if (!r) return;
+      if (!r.locked) { r.name = s.name || r.name; r.icon = s.icon || r.icon; r.enabled = !!s.enabled; }
+      r.state = !!s.state;
     });
   } catch(e) {}
+
+  // ── 3. Restaura agendamentos ─────────────────────────────────────────
+  try {
+    const ss = JSON.parse(localStorage.getItem('autoflow_schedules') || '[]');
+    if (ss.length) schedules = ss;
+  } catch(e) {}
+
+  // ── 4. Restaura ambientes ─────────────────────────────────────────────
+  loadRooms();
+
+  // ── 5. Restaura configurações do broker ───────────────────────────────
+  if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
+  const setV = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  setV('cfg-host',  saved.host);
+  setV('cfg-port',  saved.port);
+  setV('cfg-user',  saved.user);
+  setV('cfg-pass',  saved.pass);
+  setV('cfg-water', saved.water);
+  setV('cfg-temp',  saved.temp);
+  setV('cfg-local-host',  saved.localHost);
+  setV('cfg-local-port',  saved.localPort);
+  setV('cfg-local-user',  saved.localUser);
+  setV('cfg-local-water', saved.localWater);
+  setV('cfg-local-temp',  saved.localTemp);
+  if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
+
+  // ── 6. Previews dos tópicos ───────────────────────────────────────────
+  if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
+  if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
 
   document.getElementById('cfg-water').addEventListener('input', function() {
     document.getElementById('preview-water').textContent = `caixas/agua/${this.value.trim()||'{codigo}'}/dados`;
@@ -867,24 +873,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
 
+  // ── 7. Render inicial ─────────────────────────────────────────────────
   initPWA();
-  loadRooms();
-  renderRooms();
   renderRelays();
+  renderRooms();
   renderSchedules();
 
-  // Auto-conecta se tiver senha salva
-  if (saved.pass) {
-    log('Credenciais salvas encontradas — conectando automaticamente...', 'info');
-    setTimeout(connectMQTT, 300);
+  // ── 8. Auto-conecta se tiver credenciais ─────────────────────────────
+  const hasCloud = saved.pass && saved.host;
+  const hasLocal = saved.localHost;
+  if (hasCloud || hasLocal) {
+    log('Credenciais encontradas — conectando...', 'info');
+    setTimeout(connectMQTT, 400);
   }
 
-  // Restaura cidade da meteorologia
+  // ── 9. Restaura clima ─────────────────────────────────────────────────
   if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
     weather.city = saved.weatherCity;
     weather.lat  = parseFloat(saved.weatherLat);
     weather.lon  = parseFloat(saved.weatherLon);
-    log(`Clima restaurado: ${saved.weatherCity}`, 'info');
     fetchWeather().then(() => {
       if (weatherInterval) clearInterval(weatherInterval);
       weatherInterval = setInterval(fetchWeather, 10 * 60 * 1000);
@@ -1415,6 +1422,7 @@ function addSchedule() {
   schedules.push({ id: 's' + Date.now(), days: [...selectedDays], time: t, duration: dur, relay: rel, active: true });
   selectedDays = [];
   document.querySelectorAll('.day-pick-btn').forEach(b => b.classList.remove('sel'));
+  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
   renderSchedules();
   publishPersist();
   log(`Agendamento: ${t} por ${dur}min`, 'ok');
@@ -1422,6 +1430,7 @@ function addSchedule() {
 
 function removeSchedule(id) {
   schedules = schedules.filter(s => s.id !== id);
+  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
   renderSchedules();
   publishPersist();
   log('Agendamento removido', 'sys');
