@@ -934,16 +934,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
     const s = getCfg();
-    // host pode estar no DOM (hardcoded) mesmo sem ter sido salvo no localStorage ainda
-    const domHost = document.getElementById('cfg-host')?.value.trim();
-    const effectiveHost = s.host || domHost || '';
-    const hasCloud = s.pass && effectiveHost;
+    const _domV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    // Usa DOM como fonte (setV já populou os campos com valores do localStorage)
+    const effectiveHost = s.host || _domV('cfg-host') || '';
+    const effectivePass = s.pass || _domV('cfg-pass') || '';
+    // Persiste no localStorage para próximas sessões
+    if (effectiveHost) setCfg({ host: effectiveHost });
+    if (effectivePass) setCfg({ pass: effectivePass });
+    if (_domV('cfg-user')) setCfg({ user: _domV('cfg-user') });
+    if (_domV('cfg-port')) setCfg({ port: _domV('cfg-port') });
+    const hasCloud = effectivePass && effectiveHost;
     const hasLocal = s.localHost;
     if (hasCloud || hasLocal) {
       log('Credenciais encontradas — conectando automaticamente...', 'info');
       setTimeout(connectMQTT, 300);
     } else {
-      log(`Auto-login: host="${effectiveHost}" pass="${s.pass ? '***' : '(vazio)'}" — configure a senha para auto-conectar`, 'sys');
+      log('Auto-login: senha não encontrada — clique em Configurar e salve a senha uma vez', 'sys');
     }
   });
 
