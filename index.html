@@ -899,19 +899,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
 
-  // ── 7. Render inicial ─────────────────────────────────────────────────
+  // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
   initPWA();
-  renderRelays();
-  renderRooms();
-  renderSchedules();
 
-  // ── 8. Auto-conecta se tiver credenciais ─────────────────────────────
-  const hasCloud = saved.pass && saved.host;
-  const hasLocal = saved.localHost;
-  if (hasCloud || hasLocal) {
-    log('Credenciais encontradas — conectando...', 'info');
-    setTimeout(connectMQTT, 400);
-  }
+  // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
+  requestAnimationFrame(() => {
+    renderRelays();
+    renderRooms();
+    renderSchedules();
+
+    // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
+    const s = getCfg();
+    const hasCloud = s.pass && s.host;
+    const hasLocal = s.localHost;
+    if (hasCloud || hasLocal) {
+      log('Credenciais encontradas — conectando automaticamente...', 'info');
+      setTimeout(connectMQTT, 300);
+    }
+  });
 
   // ── 9. Restaura clima ─────────────────────────────────────────────────
   if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
@@ -927,14 +932,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  const host  = isLocal ? (document.getElementById('cfg-local-host')?.value.trim() || '') : document.getElementById('cfg-host').value.trim();
-  const port  = isLocal ? (parseInt(document.getElementById('cfg-local-port')?.value) || 9001) : (parseInt(document.getElementById('cfg-port').value) || 8884);
-  const user  = isLocal ? (document.getElementById('cfg-local-user')?.value.trim() || '') : document.getElementById('cfg-user').value.trim();
-  const pass  = isLocal ? (document.getElementById('cfg-local-pass')?.value.trim() || '') : document.getElementById('cfg-pass').value.trim();
-  const water = isLocal ? (document.getElementById('cfg-local-water')?.value.trim() || '') : document.getElementById('cfg-water').value.trim();
-  const temp  = isLocal
-    ? (document.getElementById('cfg-local-temp')?.value.trim() || '').toLowerCase().replace(/[^a-z0-9_-]/g, '')
-    : document.getElementById('cfg-temp').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  // Lê do DOM OU do localStorage (fallback para auto-connect confiável)
+  const s = getCfg();
+  const gv = (id, fallback) => {
+    const el = document.getElementById(id);
+    return (el && el.value.trim()) ? el.value.trim() : (fallback || '');
+  };
+  const host  = isLocal ? gv('cfg-local-host', s.localHost) : gv('cfg-host', s.host);
+  const port  = isLocal ? (parseInt(gv('cfg-local-port', s.localPort)) || 9001) : (parseInt(gv('cfg-port', s.port)) || 8884);
+  const user  = isLocal ? gv('cfg-local-user', s.localUser) : gv('cfg-user', s.user);
+  const pass  = isLocal ? gv('cfg-local-pass', s.localPass) : gv('cfg-pass', s.pass);
+  const water = isLocal ? gv('cfg-local-water', s.localWater) : gv('cfg-water', s.water);
+  const temp  = (isLocal ? gv('cfg-local-temp', s.localTemp) : gv('cfg-temp', s.temp))
+    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
   if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
