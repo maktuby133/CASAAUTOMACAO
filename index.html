@@ -648,6 +648,7 @@ body::before {
 <script>
 // ============ STATE ============
 let client = null;
+let _ignorePersistRetained = false; // flag: bloqueia sobrescrita do broker logo após salvar
 // 8 saídas fixas — saída 1 = bomba (fixa), 2-8 livres
 // O usuário define o prefixo; tópicos gerados: {prefixo}/out1 … {prefixo}/out8
 let RELAY_PREFIX = 'home/relay';
@@ -761,23 +762,13 @@ function loadFromBrokerPayload(payload) {
         relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
       )); } catch(e) {}
     }
-    // Ambientes — só sobrescreve se o broker tiver versão mais nova que o localStorage
+    // Ambientes — restaura direto sem chamar saveRooms
     if (d.rooms && d.rooms.length) {
-      const brokerTime = d.savedAt ? new Date(d.savedAt).getTime() : 0;
-      const localCfg   = getCfg();
-      const localTime  = localCfg.roomsSavedAt ? new Date(localCfg.roomsSavedAt).getTime() : 0;
-      if (brokerTime >= localTime) {
-        rooms = d.rooms.map(r => ({
-          ...r,
-          data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
-        }));
-        try {
-          localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
-          setCfg({ roomsSavedAt: d.savedAt }); // mantém timestamp do broker
-        } catch(e) {}
-      } else {
-        log('☁ Broker tem config mais antiga — mantendo ambientes locais', 'sys');
-      }
+      rooms = d.rooms.map(r => ({
+        ...r,
+        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
+      }));
+      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
     }
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
@@ -894,7 +885,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-host',  saved.localHost);
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
-  setV('cfg-local-pass',  saved.localPass);   // ← fix: senha local agora restaurada
   setV('cfg-local-water', saved.localWater);
   setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
@@ -943,18 +933,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  // Lê do DOM OU do localStorage (fallback para auto-connect confiável)
+  // Lê sempre do localStorage — garante auto-connect mesmo com painel oculto
   const s = getCfg();
-  const gv = (id, fallback) => {
-    const el = document.getElementById(id);
-    return (el && el.value.trim()) ? el.value.trim() : (fallback || '');
-  };
-  const host  = isLocal ? gv('cfg-local-host', s.localHost) : gv('cfg-host', s.host);
-  const port  = isLocal ? (parseInt(gv('cfg-local-port', s.localPort)) || 9001) : (parseInt(gv('cfg-port', s.port)) || 8884);
-  const user  = isLocal ? gv('cfg-local-user', s.localUser) : gv('cfg-user', s.user);
-  const pass  = isLocal ? gv('cfg-local-pass', s.localPass) : gv('cfg-pass', s.pass);
-  const water = isLocal ? gv('cfg-local-water', s.localWater) : gv('cfg-water', s.water);
-  const temp  = (isLocal ? gv('cfg-local-temp', s.localTemp) : gv('cfg-temp', s.temp))
+  // Sincroniza campos do DOM com localStorage antes de ler (caso usuário tenha editado)
+  const domVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  // Se o campo DOM tem valor (usuário digitou agora), salva antes de ler
+  if (domVal('cfg-pass'))       setCfg({ pass:      domVal('cfg-pass') });
+  if (domVal('cfg-host'))       setCfg({ host:      domVal('cfg-host') });
+  if (domVal('cfg-user'))       setCfg({ user:      domVal('cfg-user') });
+  if (domVal('cfg-water'))      setCfg({ water:     domVal('cfg-water') });
+  if (domVal('cfg-temp'))       setCfg({ temp:      domVal('cfg-temp') });
+  // Relê após sync
+  const sf = getCfg();
+  const host  = isLocal ? (sf.localHost  || '') : (sf.host  || '');
+  const port  = isLocal ? (parseInt(sf.localPort)  || 9001) : (parseInt(sf.port)  || 8884);
+  const user  = isLocal ? (sf.localUser  || '') : (sf.user  || '');
+  const pass  = isLocal ? (sf.localPass  || '') : (sf.pass  || '');
+  const water = isLocal ? (sf.localWater || '') : (sf.water || '');
+  const temp  = (isLocal ? (sf.localTemp || '') : (sf.temp  || ''))
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
@@ -1019,7 +1015,14 @@ function handleMsg(topic, payload, pkt) {
   // Log bruto de TODAS as mensagens
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
   // Config persistida no broker
-  if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
+  if (topic === PERSIST_TOPIC) {
+    if (_ignorePersistRetained) {
+      log('☁ Retained do broker ignorado (dados locais mais recentes)', 'sys');
+      _ignorePersistRetained = false;
+      return;
+    }
+    loadFromBrokerPayload(payload); return;
+  }
   handleRoomMessage(topic, payload);
 
   let data;
@@ -1527,10 +1530,7 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
-  try {
-    localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
-    setCfg({ roomsSavedAt: new Date().toISOString() }); // timestamp para comparar com broker
-  } catch(e) {}
+  try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
 }
 
 function loadRooms() {
@@ -1797,10 +1797,13 @@ function confirmAddRoom() {
     });
   }
   saveRooms();
+  renderRooms();   // renderiza ANTES de publicar para mostrar imediatamente
+  // Flag: ignora o próximo retained do broker (ele ainda não tem o ambiente novo)
+  _ignorePersistRetained = true;
+  setTimeout(() => { _ignorePersistRetained = false; }, 3000);
   publishPersist();
-  renderRooms();
-  const saved = rooms.find(x => x.topic === topic);
-  if (client && client.connected && saved) subscribeRoom(saved);
+  const newRoom = rooms.find(x => x.name === name);
+  if (client && client.connected && newRoom) subscribeRoom(newRoom);
   log(`Ambiente "${name}" salvo`, 'ok');
   closeRoomModal();
 }
@@ -1810,8 +1813,10 @@ function removeRoom(id) {
   if (!r || !confirm(`Remover "${r.name}"?`)) return;
   rooms = rooms.filter(x => x.id !== id);
   saveRooms();
-  publishPersist();
   renderRooms();
+  _ignorePersistRetained = true;
+  setTimeout(() => { _ignorePersistRetained = false; }, 3000);
+  publishPersist();
   log(`Ambiente "${r.name}" removido`, 'sys');
 }
 
