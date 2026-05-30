@@ -761,13 +761,23 @@ function loadFromBrokerPayload(payload) {
         relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
       )); } catch(e) {}
     }
-    // Ambientes — restaura direto sem chamar saveRooms
+    // Ambientes — só sobrescreve se o broker tiver versão mais nova que o localStorage
     if (d.rooms && d.rooms.length) {
-      rooms = d.rooms.map(r => ({
-        ...r,
-        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
-      }));
-      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+      const brokerTime = d.savedAt ? new Date(d.savedAt).getTime() : 0;
+      const localCfg   = getCfg();
+      const localTime  = localCfg.roomsSavedAt ? new Date(localCfg.roomsSavedAt).getTime() : 0;
+      if (brokerTime >= localTime) {
+        rooms = d.rooms.map(r => ({
+          ...r,
+          data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
+        }));
+        try {
+          localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
+          setCfg({ roomsSavedAt: d.savedAt }); // mantém timestamp do broker
+        } catch(e) {}
+      } else {
+        log('☁ Broker tem config mais antiga — mantendo ambientes locais', 'sys');
+      }
     }
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
@@ -884,6 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-host',  saved.localHost);
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
+  setV('cfg-local-pass',  saved.localPass);   // ← fix: senha local agora restaurada
   setV('cfg-local-water', saved.localWater);
   setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
@@ -1516,7 +1527,10 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
-  try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+  try {
+    localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
+    setCfg({ roomsSavedAt: new Date().toISOString() }); // timestamp para comparar com broker
+  } catch(e) {}
 }
 
 function loadRooms() {
