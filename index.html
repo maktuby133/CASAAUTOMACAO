@@ -6,6 +6,12 @@
 <title>AutoFlow — Painel de Automação</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AutoFlow">
+<meta name="theme-color" content="#0b0e14">
+<link rel="manifest" id="pwa-manifest">
 <style>
 :root {
   --bg: #0b0e14;
@@ -661,7 +667,10 @@ let TOPICS_TEMP  = '';
 let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
 
 // ============ CONFIG ============
-// ── Persistência central ────────────────────────────────────────────────
+// ── Persistência central ─────────────────────────────────────────────────
+let brokerMode = 'cloud'; // 'cloud' | 'local'
+const PERSIST_TOPIC = 'autoflow/config/v1'; // tópico retained no broker
+
 function getCfg() {
   try { return JSON.parse(localStorage.getItem('autoflow_cfg') || '{}'); } catch(e) { return {}; }
 }
@@ -669,14 +678,130 @@ function setCfg(patch) {
   try { localStorage.setItem('autoflow_cfg', JSON.stringify(Object.assign(getCfg(), patch))); } catch(e) {}
 }
 function saveCfgField() {
-  setCfg({
+  const isLocal = brokerMode === 'local';
+  setCfg(isLocal ? {
+    localHost: document.getElementById('cfg-local-host')?.value.trim(),
+    localPort: document.getElementById('cfg-local-port')?.value.trim(),
+    localUser: document.getElementById('cfg-local-user')?.value.trim(),
+    localPass: document.getElementById('cfg-local-pass')?.value.trim(),
+    localWater: document.getElementById('cfg-local-water')?.value.trim(),
+    localTemp:  document.getElementById('cfg-local-temp')?.value.trim(),
+    brokerMode: 'local',
+  } : {
     host:  document.getElementById('cfg-host')?.value.trim(),
     port:  document.getElementById('cfg-port')?.value.trim(),
     user:  document.getElementById('cfg-user')?.value.trim(),
     pass:  document.getElementById('cfg-pass')?.value.trim(),
     water: document.getElementById('cfg-water')?.value.trim(),
     temp:  document.getElementById('cfg-temp')?.value.trim(),
+    brokerMode: 'cloud',
   });
+}
+
+function switchBrokerTab(mode) {
+  brokerMode = mode;
+  document.getElementById('cfg-cloud').style.display = mode === 'cloud' ? '' : 'none';
+  document.getElementById('cfg-local').style.display = mode === 'local' ? '' : 'none';
+  const tc = document.getElementById('tab-cloud');
+  const tl = document.getElementById('tab-local');
+  tc.style.color         = mode==='cloud' ? 'var(--accent)' : 'var(--muted)';
+  tc.style.borderBottom  = mode==='cloud' ? '2px solid var(--accent)' : '2px solid transparent';
+  tl.style.color         = mode==='local' ? 'var(--accent)' : 'var(--muted)';
+  tl.style.borderBottom  = mode==='local' ? '2px solid var(--accent)' : '2px solid transparent';
+  setCfg({ brokerMode: mode });
+}
+
+// ── MQTT persistence — salva toda config no broker com retain ─────────────
+function buildPersistPayload() {
+  return JSON.stringify({
+    relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state })),
+    rooms,
+    schedules,
+    relayPrefix: RELAY_PREFIX,
+    weather: { city: weather.city, lat: weather.lat, lon: weather.lon },
+    savedAt: new Date().toISOString(),
+  });
+}
+
+function publishPersist() {
+  if (!client || !client.connected) return;
+  try {
+    client.publish(PERSIST_TOPIC, buildPersistPayload(), { retain: true, qos: 1 });
+    log('☁ Config salva no broker', 'sys');
+  } catch(e) {}
+}
+
+function loadFromBrokerPayload(payload) {
+  try {
+    const d = JSON.parse(payload);
+    // Relés
+    if (d.relays) {
+      d.relays.forEach(sr => {
+        const r = relays.find(x => x.id === sr.id);
+        if (r) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; r.state=sr.state||false; }
+      });
+      saveRelayState();
+    }
+    // Ambientes
+    if (d.rooms && d.rooms.length) {
+      rooms = d.rooms.map(r => ({
+        ...r,
+        data: r.data || { temp:null,hum:null,smoke:null,smokeRaw:0,lastSeen:null,online:false }
+      }));
+      saveRooms();
+    }
+    // Agendamentos
+    if (d.schedules) { schedules = d.schedules; }
+    // Prefixo
+    if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
+    // Clima
+    if (d.weather?.city) {
+      weather.city = d.weather.city;
+      weather.lat  = d.weather.lat;
+      weather.lon  = d.weather.lon;
+      if (weather.lat) { fetchWeather(); }
+    }
+    renderRelays(); renderRooms(); renderSchedules();
+    log(`☁ Config carregada do broker (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
+  } catch(e) { log('Erro ao carregar config do broker: ' + e.message, 'warn'); }
+}
+
+// ── PWA — gera manifest e registra service worker inline ─────────────────
+function initPWA() {
+  // Manifest dinâmico
+  const manifest = {
+    name: 'AutoFlow — Automação',
+    short_name: 'AutoFlow',
+    start_url: window.location.href,
+    display: 'standalone',
+    background_color: '#0b0e14',
+    theme_color: '#0b0e14',
+    icons: [{
+      src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230b0e14"/><text y=".9em" font-size="80">⚡</text></svg>',
+      sizes: '192x192', type: 'image/svg+xml'
+    }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  document.getElementById('pwa-manifest').href = url;
+  document.getElementById('pwa-manifest').rel  = 'manifest';
+
+  // Service worker inline para cache offline
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'autoflow-v1';
+const ASSETS = ['${window.location.href}'];
+self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))));
+self.addEventListener('fetch', e => e.respondWith(
+  caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+    if (res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+    return res;
+  }).catch(() => caches.match(e.request)))
+));`;
+    const swBlob = new Blob([swCode], {type:'text/javascript'});
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(() => {});
+  }
 }
 
 function toggleConfig() {
@@ -701,12 +826,20 @@ document.addEventListener('DOMContentLoaded', () => {
   saved = getCfg();
 
   // MQTT fields
+  if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
+  // Cloud fields
   if (saved.host)  document.getElementById('cfg-host').value  = saved.host;
   if (saved.port)  document.getElementById('cfg-port').value  = saved.port;
   if (saved.user)  document.getElementById('cfg-user').value  = saved.user;
   if (saved.pass)  document.getElementById('cfg-pass').value  = saved.pass;
   if (saved.water) document.getElementById('cfg-water').value = saved.water;
   if (saved.temp)  document.getElementById('cfg-temp').value  = saved.temp;
+  // Local fields
+  if (saved.localHost)  document.getElementById('cfg-local-host')?.setAttribute('value', saved.localHost);
+  if (saved.localPort)  document.getElementById('cfg-local-port')?.setAttribute('value', saved.localPort);
+  if (saved.localUser)  document.getElementById('cfg-local-user')?.setAttribute('value', saved.localUser);
+  if (saved.localWater) document.getElementById('cfg-local-water')?.setAttribute('value', saved.localWater);
+  if (saved.localTemp)  document.getElementById('cfg-local-temp')?.setAttribute('value', saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
 
   // Topic previews
@@ -732,6 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
 
+  initPWA();
   loadRooms();
   renderRooms();
   renderRelays();
@@ -757,17 +891,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function connectMQTT() {
-  const host  = document.getElementById('cfg-host').value.trim();
-  const port  = parseInt(document.getElementById('cfg-port').value) || 8884;
-  const user  = document.getElementById('cfg-user').value.trim();
-  const pass  = document.getElementById('cfg-pass').value.trim();
-  const water = document.getElementById('cfg-water').value.trim();
-  const temp  = document.getElementById('cfg-temp').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const isLocal = brokerMode === 'local';
+  const host  = isLocal ? (document.getElementById('cfg-local-host')?.value.trim() || '') : document.getElementById('cfg-host').value.trim();
+  const port  = isLocal ? (parseInt(document.getElementById('cfg-local-port')?.value) || 9001) : (parseInt(document.getElementById('cfg-port').value) || 8884);
+  const user  = isLocal ? (document.getElementById('cfg-local-user')?.value.trim() || '') : document.getElementById('cfg-user').value.trim();
+  const pass  = isLocal ? (document.getElementById('cfg-local-pass')?.value.trim() || '') : document.getElementById('cfg-pass').value.trim();
+  const water = isLocal ? (document.getElementById('cfg-local-water')?.value.trim() || '') : document.getElementById('cfg-water').value.trim();
+  const temp  = isLocal
+    ? (document.getElementById('cfg-local-temp')?.value.trim() || '').toLowerCase().replace(/[^a-z0-9_-]/g, '')
+    : document.getElementById('cfg-temp').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
-  if (!pass) { log('Preencha a senha MQTT', 'warn'); return; }
+  if (!host) { log('Preencha o host do broker', 'warn'); return; }
+  if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
-  // Salva no localStorage (merge — preserva weatherCity, relayPrefix etc)
-  setCfg({ host, port, user, pass, water, temp, relayPrefix: RELAY_PREFIX });
+  // Salva no localStorage (merge)
+  setCfg(isLocal
+    ? { localHost:host, localPort:port, localUser:user, localPass:pass, localWater:water, localTemp:temp, brokerMode:'local', relayPrefix:RELAY_PREFIX }
+    : { host, port, user, pass, water, temp, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
+  );
 
   // Define tópicos e device ID
   TEMP_DEVICE_ID = temp;
@@ -812,13 +953,17 @@ function subscribeAll() {
   subs.push('sensors/#');
   relays.filter(r => r.enabled).forEach(r => subs.push(relayTopic(r) + '/state'));
   subs.forEach(t => client.subscribe(t, { qos: 1 }, () => log(`↳ inscrito: ${t}`, 'sys')));
+  // Assina tópico de persistência — carrega config de qualquer dispositivo
+  client.subscribe(PERSIST_TOPIC, { qos: 1 }, () => log(`↳ config: ${PERSIST_TOPIC}`, 'sys'));
   subscribeAllRooms();
 }
 
 // ============ MENSAGENS MQTT ============
 function handleMsg(topic, payload, pkt) {
-  // Log bruto de TODAS as mensagens — ajuda a debugar tópicos inesperados
+  // Log bruto de TODAS as mensagens
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
+  // Config persistida no broker
+  if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
   handleRoomMessage(topic, payload);
 
   let data;
@@ -1215,6 +1360,7 @@ function confirmAddRelay() {
   closeRelayModal();
 }
 function saveRelayState() {
+  publishPersist();
   try {
     localStorage.setItem('autoflow_relays', JSON.stringify(
       relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled, state: r.state }))
@@ -1318,6 +1464,7 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
+  publishPersist();
   try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
 }
 
