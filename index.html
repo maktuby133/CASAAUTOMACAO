@@ -931,10 +931,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
     const s = getCfg();
     const _domV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    // Usa DOM como fonte (setV já populou os campos com valores do localStorage)
     const effectiveHost = s.host || _domV('cfg-host') || '';
     const effectivePass = s.pass || _domV('cfg-pass') || '';
-    // Persiste no localStorage para próximas sessões
+    // Debug visível — remover após confirmar funcionamento
+    log(`[DEBUG] localStorage pass="${s.pass ? s.pass.substring(0,3)+'***' : '(vazio)'}" host="${s.host || '(vazio)'}" domPass="${_domV('cfg-pass') ? '***preenchido***' : '(vazio)'}"`, 'sys');
     if (effectiveHost) setCfg({ host: effectiveHost });
     if (effectivePass) setCfg({ pass: effectivePass });
     if (_domV('cfg-user')) setCfg({ user: _domV('cfg-user') });
@@ -945,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
       log('Credenciais encontradas — conectando automaticamente...', 'info');
       setTimeout(connectMQTT, 300);
     } else {
-      log('Auto-login: senha não encontrada — clique em Configurar e salve a senha uma vez', 'sys');
+      log('Auto-login: sem credenciais no localStorage — conecte manualmente uma vez', 'sys');
     }
   });
 
