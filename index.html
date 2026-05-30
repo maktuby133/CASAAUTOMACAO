@@ -734,21 +734,23 @@ function publishPersist() {
 function loadFromBrokerPayload(payload) {
   try {
     const d = JSON.parse(payload);
-    // Relés
+    // Relés — restaura direto sem chamar saveRelayState (evita loop)
     if (d.relays) {
       d.relays.forEach(sr => {
         const r = relays.find(x => x.id === sr.id);
         if (r) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; r.state=sr.state||false; }
       });
-      saveRelayState();
+      try { localStorage.setItem('autoflow_relays', JSON.stringify(
+        relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
+      )); } catch(e) {}
     }
-    // Ambientes
+    // Ambientes — restaura direto sem chamar saveRooms
     if (d.rooms && d.rooms.length) {
       rooms = d.rooms.map(r => ({
         ...r,
-        data: r.data || { temp:null,hum:null,smoke:null,smokeRaw:0,lastSeen:null,online:false }
+        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
       }));
-      saveRooms();
+      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
     }
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
@@ -1217,6 +1219,7 @@ function setRelay(relay, state) {
   }
   // Atualiza UI imediatamente — sem aguardar MQTT echo
   saveRelayState();
+  publishPersist();
   renderRelays();
   renderRooms();
 }
@@ -1302,6 +1305,7 @@ function enableRelay(id) {
   r.name = name; r.icon = icon; r.enabled = true;
   if (client && client.connected) client.subscribe(relayTopic(r) + '/state', { qos:1 });
   saveRelayState();
+  publishPersist();
   renderRelays();
   log(`${id.toUpperCase()} ativada: "${name}" → ${relayTopic(r)}`, 'ok');
 }
@@ -1314,6 +1318,7 @@ function openEditRelay(id) {
   const icon = prompt('Ícone:', r.icon) || r.icon;
   r.name = name; r.icon = icon;
   saveRelayState();
+  publishPersist();
   renderRelays();
   log(`${id.toUpperCase()} renomeada: "${name}"`, 'sys');
 }
@@ -1325,6 +1330,7 @@ function disableRelay(id) {
   r.enabled = false; r.state = false;
   r.name = `Saída ${id.replace('out','')}`; r.icon = '🔌';
   saveRelayState();
+  publishPersist();
   renderRelays();
   log(`${id.toUpperCase()} removida do painel`, 'sys');
 }
@@ -1360,7 +1366,6 @@ function confirmAddRelay() {
   closeRelayModal();
 }
 function saveRelayState() {
-  publishPersist();
   try {
     localStorage.setItem('autoflow_relays', JSON.stringify(
       relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled, state: r.state }))
@@ -1411,12 +1416,14 @@ function addSchedule() {
   selectedDays = [];
   document.querySelectorAll('.day-pick-btn').forEach(b => b.classList.remove('sel'));
   renderSchedules();
+  publishPersist();
   log(`Agendamento: ${t} por ${dur}min`, 'ok');
 }
 
 function removeSchedule(id) {
   schedules = schedules.filter(s => s.id !== id);
   renderSchedules();
+  publishPersist();
   log('Agendamento removido', 'sys');
 }
 
@@ -1464,7 +1471,6 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
-  publishPersist();
   try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
 }
 
@@ -1732,6 +1738,7 @@ function confirmAddRoom() {
     });
   }
   saveRooms();
+  publishPersist();
   renderRooms();
   const saved = rooms.find(x => x.topic === topic);
   if (client && client.connected && saved) subscribeRoom(saved);
@@ -1744,6 +1751,7 @@ function removeRoom(id) {
   if (!r || !confirm(`Remover "${r.name}"?`)) return;
   rooms = rooms.filter(x => x.id !== id);
   saveRooms();
+  publishPersist();
   renderRooms();
   log(`Ambiente "${r.name}" removido`, 'sys');
 }
