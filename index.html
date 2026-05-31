@@ -449,10 +449,45 @@ body::before {
     </div>
   </div>
 
-  <!-- ROW 3: Caixas d'água + Meteorologia + Irrigação -->
+  <!-- ROW 3: Meteorologia + Caixas d'água + Irrigação -->
   <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
-    <!-- COL 1: Caixas d'água -->
+    <!-- COL 1: Meteorologia completa -->
+    <div class="card" id="weather-card-col">
+      <div class="card-header" style="margin-bottom:10px">
+        <span class="card-title">Meteorologia</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="weather-ts-placeholder"></span>
+      </div>
+      <div id="weather-card-inner">
+        <div style="text-align:center;padding:16px 0 10px">
+          <div style="font-size:32px;margin-bottom:10px">🌍</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.8">
+            Use o campo na barra superior<br>para buscar uma cidade
+          </div>
+          <!-- Grid placeholder igual ao real, mas vazio -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">🌧 Chuva</div>
+              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—<span style="font-size:9px;font-weight:400"> mm</span></div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">📊 Próx. 3h</div>
+              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—<span style="font-size:9px;font-weight:400"> %</span></div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">💨 Vento</div>
+              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—<span style="font-size:9px;font-weight:400"> km/h</span></div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">☀️ Índice UV</div>
+              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 2: Caixas d'água -->
     <div class="card" id="tanks-card">
       <div class="card-header" style="margin-bottom:12px">
         <span class="card-title">Caixas d'água</span>
@@ -464,19 +499,6 @@ body::before {
       <div id="tanks-grid" style="display:flex;flex-direction:column;gap:10px">
         <div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
           Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".
-        </div>
-      </div>
-    </div>
-
-    <!-- COL 2: Meteorologia (full card aqui agora) -->
-    <div class="card" id="weather-card-col">
-      <div class="card-header"><span class="card-title">Meteorologia</span></div>
-      <div id="weather-card-inner">
-        <div style="text-align:center;padding:18px 0 14px">
-          <div style="font-size:28px;margin-bottom:8px">🌍</div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">
-            Use o campo acima<br>para buscar uma cidade
-          </div>
         </div>
       </div>
     </div>
@@ -1359,15 +1381,25 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
   if (wiProb && maxProb) wiProb.textContent = `prob.${maxProb}%`;
   if (wiStat) { wiStat.textContent = blocked ? '🚫 bloqueado' : '✅ liberado'; wiStat.style.color = statusColor; }
 
+  // Umidade separada
+  const humBox = !isNaN(humNow) ? metricBox('💧','Umidade', Math.round(humNow), '%',
+    humNow >= 80 ? 'muito úmido' : humNow >= 60 ? 'úmido' : humNow >= 40 ? 'confortável' : 'seco',
+    humNow >= 80 ? 'var(--accent2)' : 'var(--text)') : '';
+
+  // Sensação térmica destaque extra
+  const feelsBox = !isNaN(feelsLike) ? metricBox('🌡️','Sensação', feelsLike.toFixed(1), '°C',
+    feelsLike > 40 ? 'muito quente' : feelsLike > 35 ? 'quente' : feelsLike < 10 ? 'frio' : 'confortável',
+    feelsLike > 35 ? 'var(--warn)' : 'var(--text)') : '';
+
   card.innerHTML = `
     <div class="card-header" style="margin-bottom:10px">
       <span class="card-title">Meteorologia</span>
       <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">↻ ${ts}</span>
     </div>
 
-    <!-- Cabeçalho: ícone + cidade + status irrigação -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <span style="font-size:36px;flex-shrink:0;line-height:1">${mainIcon}</span>
+    <!-- Cabeçalho: ícone + cidade + status -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:32px;flex-shrink:0;line-height:1">${mainIcon}</span>
       <div style="min-width:0;flex:1">
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">${weather.city}</div>
         <div style="font-size:11px;font-weight:700;color:${statusColor};padding:3px 8px;background:${statusBg};border-radius:4px;display:inline-block">${statusText}</div>
@@ -1376,18 +1408,20 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
 
     <!-- Temperatura destaque -->
     ${!isNaN(tempNow) ? `
-    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-      <span style="font-family:var(--mono);font-size:28px;font-weight:700;color:${warnTemp};letter-spacing:-1px">${tempNow.toFixed(1)}<span style="font-size:14px">°C</span></span>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <span style="font-family:var(--mono);font-size:26px;font-weight:700;color:${warnTemp};letter-spacing:-1px">${tempNow.toFixed(1)}<span style="font-size:13px">°C</span></span>
       ${!isNaN(feelsLike) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">sensação ${feelsLike.toFixed(1)}°C</span>` : ''}
       ${!isNaN(humNow) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);margin-left:auto">💧 ${Math.round(humNow)}%</span>` : ''}
     </div>` : ''}
 
-    <!-- Grid 2x2: chuva, prob, vento, UV (lado a lado) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:0">
-      ${metricBox('🌧', 'Chuva', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
-      ${metricBox('📊', 'Próx. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
-      ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir), warnWind) : ''}
+    <!-- Grid 2×3 com todas as métricas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${metricBox('🌧', 'Chuva agora', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
+      ${metricBox('📊', 'Prob. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
+      ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir) + ' · ' + (windSpd < 20 ? 'fraco' : windSpd < 40 ? 'moderado' : windSpd < 60 ? 'forte' : 'muito forte'), warnWind) : ''}
       ${!isNaN(uvIndex) ? metricBox('☀️', 'Índice UV', uvIndex.toFixed(1), '', uv.txt, uv.col) : ''}
+      ${humBox}
+      ${feelsBox}
     </div>`;
 }
 
