@@ -388,47 +388,47 @@ body::before {
     </div>
   </div>
 
-  <!-- ROW 1: métricas compactas inline -->
+  <!-- ROW 1: métricas compactas inline — agora mostra METEOROLOGIA -->
   <div class="card" style="margin-bottom:16px;padding:12px 18px">
     <div style="display:flex;align-items:center;gap:0;flex-wrap:nowrap">
       <!-- Label + dot -->
       <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;margin-right:18px">
         <div class="dot" id="live-dot"></div>
-        <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Sensores</span>
+        <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Clima</span>
       </div>
-      <!-- Nível + Volume juntos -->
-      <!-- Caixa d'água: ícone SVG + barra de nível + valores -->
-      <div class="metric-inline" id="mb-water" style="gap:10px;padding-right:16px">
-        <!-- Ícone caixa d'água com nível sobreposto -->
-        <div style="position:relative;flex-shrink:0;width:34px;height:38px">
-          <svg viewBox="0 0 34 38" width="34" height="38" xmlns="http://www.w3.org/2000/svg">
-            <!-- Tampa -->
-            <rect x="5" y="0" width="24" height="4" rx="1.5" fill="rgba(255,255,255,0.15)"/>
-            <!-- Corpo da caixa (contorno) -->
-            <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
-            <!-- Nível de água (preenchimento dinâmico) — clip do bottom -->
-            <clipPath id="waterClip">
-              <rect x="3" y="5" width="28" height="28" rx="2"/>
-            </clipPath>
-            <rect id="water-fill" x="3" y="33" width="28" height="0" rx="2" fill="var(--accent)" opacity="0.35" clip-path="url(#waterClip)"/>
-            <rect id="water-fill-top" x="3" y="33" width="28" height="2" rx="1" fill="var(--accent)" opacity="0.7" clip-path="url(#waterClip)"/>
-            <!-- Borda inferior da caixa -->
-            <rect x="2" y="34" width="30" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
-            <!-- Saída (cano) -->
-            <rect x="13" y="35" width="8" height="3" rx="1" fill="rgba(255,255,255,0.15)"/>
-          </svg>
-        </div>
-        <!-- Valores -->
+      <!-- Ícone do tempo -->
+      <div class="metric-inline" id="mb-weather-inline" style="gap:8px;padding-right:16px">
+        <span id="wi-icon-inline" style="font-size:22px;flex-shrink:0">🌍</span>
         <div>
-          <div style="display:flex;align-items:baseline;gap:6px">
-            <span class="metric-inline-val" id="mv-water">—<span class="metric-inline-unit">%</span></span>
-            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="mv-liters">— L</span>
+          <div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap">
+            <span class="metric-inline-val" id="wi-temp-inline">—<span class="metric-inline-unit">°C</span></span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-hum-inline"></span>
           </div>
-          <span class="metric-inline-sub" id="ms-water">caixa d'água</span>
+          <span class="metric-inline-sub" id="wi-city-inline">configure a cidade →</span>
         </div>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- Rain / prob -->
+      <div class="metric-inline" id="mb-rain-inline" style="gap:8px;padding-right:16px">
+        <span style="font-size:16px">🌧</span>
+        <div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="metric-inline-val" id="wi-rain-inline">—<span class="metric-inline-unit">mm</span></span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-prob-inline"></span>
+          </div>
+          <span class="metric-inline-sub" id="wi-status-inline">meteorologia</span>
+        </div>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- Campo de cidade compacto -->
+      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;flex:1;min-width:0">
+        <input id="city-input-inline" placeholder="Mudar cidade..."
+          style="flex:1;min-width:80px;max-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;height:28px"
+          onkeydown="if(event.key==='Enter')setCityInline()">
+        <button class="btn" onclick="setCityInline()" style="height:28px;padding:0 10px;font-size:10px;flex-shrink:0">↵</button>
       </div>
       <!-- timestamp -->
-      <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0">aguardando...</span>
+      <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0;padding-left:10px">aguardando...</span>
     </div>
     <div class="alert-banner" id="alert-banner" style="margin-top:8px;margin-bottom:0"></div>
   </div>
@@ -449,27 +449,39 @@ body::before {
     </div>
   </div>
 
-  <!-- ROW 3: 2 colunas -->
+  <!-- ROW 3: Caixas d'água + Meteorologia + Irrigação -->
   <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
-    <!-- COL 1: Meteorologia -->
-    <div class="card" id="weather-card">
-      <div class="card-header"><span class="card-title">Meteorologia</span></div>
-      <div style="text-align:center;padding:18px 0 14px">
-        <div style="font-size:28px;margin-bottom:8px">🌍</div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">
-          Defina a cidade para<br>verificar chuva antes de irrigar
+    <!-- COL 1: Caixas d'água -->
+    <div class="card" id="tanks-card">
+      <div class="card-header" style="margin-bottom:12px">
+        <span class="card-title">Caixas d'água</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="tanks-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">0 caixas</span>
+          <button class="btn" style="font-size:10px;padding:3px 10px" onclick="openTankModal()" id="btn-add-tank">+ Adicionar</button>
         </div>
-        <div style="display:flex;gap:6px">
-          <input id="city-input" placeholder="Ex: Rio de Janeiro"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;height:34px;min-width:0"
-            onkeydown="if(event.key==='Enter')setCity()">
-          <button class="btn primary" onclick="setCity()" style="height:34px;padding:0 12px;font-size:10px;flex-shrink:0">Buscar</button>
+      </div>
+      <div id="tanks-grid" style="display:flex;flex-direction:column;gap:10px">
+        <div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
+          Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".
         </div>
       </div>
     </div>
 
-    <!-- COL 2: Irrigação programada (card colapsável) -->
+    <!-- COL 2: Meteorologia (full card aqui agora) -->
+    <div class="card" id="weather-card-col">
+      <div class="card-header"><span class="card-title">Meteorologia</span></div>
+      <div id="weather-card-inner">
+        <div style="text-align:center;padding:18px 0 14px">
+          <div style="font-size:28px;margin-bottom:8px">🌍</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+            Use o campo acima<br>para buscar uma cidade
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 3: Irrigação programada (card colapsável) -->
     <div class="card">
       <div class="card-header" style="cursor:pointer;user-select:none" onclick="togglePanel('sched-body','sched-arrow')">
         <span class="card-title">Irrigação programada</span>
@@ -649,6 +661,60 @@ body::before {
 
 <div id="relay-list" style="display:none"></div>
 
+<!-- MODAL CAIXA D'ÁGUA -->
+<div class="modal-overlay" id="tank-modal">
+  <div class="modal" style="width:460px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title" id="tank-modal-title">Nova Caixa d'água</div>
+    <input type="hidden" id="tank-edit-id" value="">
+
+    <!-- Nome da caixa -->
+    <div class="modal-fields">
+      <div class="field">
+        <label>Nome da caixa</label>
+        <input id="tank-name" placeholder="ex: Caixa Principal, Cisterna..." />
+      </div>
+
+      <!-- Sensor da caixa -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Sensor MQTT
+      </div>
+      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+        <div class="field" style="margin-bottom:8px">
+          <label>Código do sensor (water code)</label>
+          <input id="tank-code" placeholder="ex: abc123" oninput="updateTankPreview()" style="font-family:var(--mono);letter-spacing:0.1em"/>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
+            Tópico dados: <span style="color:var(--accent2)" id="tank-topic-preview">caixas/agua/.../dados</span><br>
+            Tópico status: <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Capacidade total (litros)</label>
+          <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
+        </div>
+      </div>
+
+      <!-- Bombas / Relés -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:8px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
+        Bombas / Relés de abastecimento
+        <span style="margin-left:auto;font-size:9px;opacity:0.7">máx. 2</span>
+      </div>
+      <div id="tank-pump-rows" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button id="tank-add-pump-btn" class="add-relay-btn" onclick="addTankPumpRow()" style="margin-top:6px">
+        ＋ Adicionar bomba
+      </button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn" onclick="closeTankModal()">Cancelar</button>
+      <button class="btn primary" onclick="confirmSaveTank()">Salvar caixa</button>
+    </div>
+  </div>
+</div>
+
+<!-- weather-card-col is inline in row-3 -->
+
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
 // ============ STATE ============
@@ -753,6 +819,7 @@ function buildPersistPayload() {
     relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state })),
     rooms,
     schedules,
+    waterTanks: waterTanks.map(t => ({ id:t.id, name:t.name, code:t.code, capacity:t.capacity, pumps:t.pumps })),
     relayPrefix: RELAY_PREFIX,
     weather: { city: weather.city, lat: weather.lat, lon: weather.lon },
     savedAt: new Date().toISOString(),
@@ -808,6 +875,15 @@ function loadFromBrokerPayload(payload) {
 
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
+    // Caixas d'água
+    if (d.waterTanks && d.waterTanks.length) {
+      d.waterTanks.forEach(st => {
+        const existing = waterTanks.find(t => t.id === st.id);
+        if (existing) { existing.name = st.name; existing.code = st.code; existing.capacity = st.capacity; existing.pumps = st.pumps; }
+        else waterTanks.push({ ...st, level:null, liters:null, lastSeen:null, online:false, pumpState:{} });
+      });
+      saveTanks();
+    }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
     // Clima — só atualiza se o broker tiver cidade e o local não tiver
@@ -821,7 +897,7 @@ function loadFromBrokerPayload(payload) {
         });
       }
     }
-    renderRelays(); renderRooms(); renderSchedules();
+    renderRelays(); renderRooms(); renderSchedules(); renderTanks();
     log(`☁ Config carregada do broker (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
   } catch(e) { log('Erro ao carregar config do broker: ' + e.message, 'warn'); }
 }
@@ -939,6 +1015,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 4. Restaura ambientes ─────────────────────────────────────────────
   loadRooms();
 
+  // ── 4b. Restaura caixas d'água ────────────────────────────────────────
+  loadTanks();
+
   // ── 5. Restaura configurações do broker ───────────────────────────────
   if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
   const setV = (id, v) => {
@@ -974,6 +1053,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRelays();
     renderRooms();
     renderSchedules();
+    renderTanks();
 
     // ── 8. Auto-conecta + atualiza botão ────────────────────────────
     updateMainBtn();
@@ -1082,6 +1162,7 @@ function connectMQTT() {
     updateMainBtn();
     subscribeAll();
     startScheduleEngine();
+    subscribeTanks();
   });
   client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
   client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
@@ -1093,6 +1174,8 @@ function subscribeAll() {
   if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
   // Wildcard para capturar retained de temperatura independente de timing
   subs.push('sensors/#');
+  // Caixas d'água cadastradas
+  subs.push('caixas/agua/#');
   relays.filter(r => r.enabled).forEach(r => subs.push(relayTopic(r) + '/state'));
   subs.forEach(t => client.subscribe(t, { qos: 1 }, () => log(`↳ inscrito: ${t}`, 'sys')));
   // Assina tópico de persistência — carrega config de qualquer dispositivo
@@ -1132,32 +1215,14 @@ function handleMsg(topic, payload, pkt) {
 
     if (!isNaN(pct)) {
       liveData.water = pct;
-      document.getElementById('mv-water').innerHTML = `${pct}<span class="metric-inline-unit">%</span>`;
-      // Anima barra SVG da caixa — área interna tem 28px de altura (y5 a y33)
-      const fillH = Math.round((Math.min(pct, 100) / 100) * 28);
-      const fillY = 33 - fillH;
-      const wf  = document.getElementById('water-fill');
-      const wft = document.getElementById('water-fill-top');
-      if (wf)  { wf.setAttribute('y', fillY); wf.setAttribute('height', fillH); }
-      if (wft) { wft.setAttribute('y', Math.max(fillY, 5)); }
       // Cor muda conforme nível
       const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-      if (wf)  wf.setAttribute('fill', col);
-      if (wft) wft.setAttribute('fill', col);
-      const mb = document.getElementById('mb-water');
-      const ms = document.getElementById('ms-water');
-      mb.classList.remove('warn','ok');
-      if (!sensorOK)      { mb.classList.add('warn'); ms.textContent = '⚠ falha sensor'; }
-      else if (pct <= 10) { mb.classList.add('warn'); ms.textContent = '⚠ crítico'; }
-      else if (pct <= 25) { mb.classList.add('warn'); ms.textContent = '⚠ nível baixo'; }
-      else                { mb.classList.add('ok');   ms.textContent = "caixa d'água"; }
       checkRules();
     }
-    if (!isNaN(lit)) {
-      liveData.liters = lit;
-      document.getElementById('mv-liters').textContent = `${lit} L`;
-    }
+    if (!isNaN(lit)) liveData.liters = lit;
     updateLiveBar(topic, data.cached);
+    // Também roteia para o sistema de caixas
+    handleTankMessage(topic, payload, data);
     return;
   }
 
@@ -1168,8 +1233,12 @@ function handleMsg(topic, payload, pkt) {
     } else {
       hideAlert();
     }
+    handleTankMessage(topic, payload, data);
     return;
   }
+
+  // ------ TÓPICOS DAS CAIXAS CADASTRADAS ------
+  handleTankMessage(topic, payload, data);
 
   // ------ TEMPERATURA / GÁS: sensors/{id}/data ------
   // handleRoomMessage já faz o match por ambiente — aqui apenas loga e atualiza live bar
@@ -1253,7 +1322,7 @@ function weatherIcon(code, prob) {
 }
 
 function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike, windSpd, windDir, uvIndex }) {
-  const card = document.getElementById('weather-card');
+  const card = document.getElementById('weather-card-col');
   if (!card) return;
   const blocked     = weather.isRaining;
   const statusColor = blocked ? 'var(--warn)' : 'var(--accent)';
@@ -1273,6 +1342,22 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
       <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${col};line-height:1">${val}<span style="font-size:9px;font-weight:400;color:var(--muted)"> ${unit}</span></div>
       <div style="font-family:var(--mono);font-size:8px;color:${col};margin-top:3px;opacity:0.8">${sub}</div>
     </div>`;
+
+  // Atualiza inline bar também
+  const wiIcon = document.getElementById('wi-icon-inline');
+  const wiTemp = document.getElementById('wi-temp-inline');
+  const wiHum  = document.getElementById('wi-hum-inline');
+  const wiCity = document.getElementById('wi-city-inline');
+  const wiRain = document.getElementById('wi-rain-inline');
+  const wiProb = document.getElementById('wi-prob-inline');
+  const wiStat = document.getElementById('wi-status-inline');
+  if (wiIcon) wiIcon.textContent = mainIcon;
+  if (wiTemp) wiTemp.innerHTML = `${!isNaN(tempNow)?tempNow.toFixed(1):'—'}<span class="metric-inline-unit">°C</span>`;
+  if (wiHum && !isNaN(humNow)) wiHum.textContent = `💧${Math.round(humNow)}%`;
+  if (wiCity) wiCity.textContent = weather.city || 'configure a cidade →';
+  if (wiRain) wiRain.innerHTML = `${rainNow.toFixed(1)}<span class="metric-inline-unit">mm</span>`;
+  if (wiProb && maxProb) wiProb.textContent = `prob.${maxProb}%`;
+  if (wiStat) { wiStat.textContent = blocked ? '🚫 bloqueado' : '✅ liberado'; wiStat.style.color = statusColor; }
 
   card.innerHTML = `
     <div class="card-header" style="margin-bottom:10px">
@@ -1297,25 +1382,22 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
       ${!isNaN(humNow) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);margin-left:auto">💧 ${Math.round(humNow)}%</span>` : ''}
     </div>` : ''}
 
-    <!-- Grid 2x2: chuva, prob, vento, UV -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:10px">
+    <!-- Grid 2x2: chuva, prob, vento, UV (lado a lado) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:0">
       ${metricBox('🌧', 'Chuva', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
       ${metricBox('📊', 'Próx. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
       ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir), warnWind) : ''}
       ${!isNaN(uvIndex) ? metricBox('☀️', 'Índice UV', uvIndex.toFixed(1), '', uv.txt, uv.col) : ''}
-    </div>
-
-    <!-- Busca de cidade -->
-    <div style="display:flex;gap:6px;align-items:center">
-      <input id="city-input" placeholder="Mudar cidade..." value=""
-        style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;height:30px;min-width:0"
-        onkeydown="if(event.key==='Enter')setCity()">
-      <button class="btn" onclick="setCity()" style="height:30px;padding:0 10px;font-size:10px;flex-shrink:0">Buscar</button>
     </div>`;
 }
 
+async function setCityInline() {
+  const input = document.getElementById('city-input-inline');
+  if (input) setCity(input.value.trim());
+}
+
 async function setCity(cityName) {
-  const input = document.getElementById('city-input');
+  const input = document.getElementById('city-input') || document.getElementById('city-input-inline');
   const city  = cityName || (input ? input.value.trim() : '');
   if (!city) return;
   try {
@@ -1336,6 +1418,289 @@ async function setCity(cityName) {
   } catch(e) {
     log('Cidade não encontrada: ' + e.message, 'warn');
   }
+}
+
+// ============ CAIXAS D'ÁGUA ============
+let waterTanks = []; // max 2
+let tankPumpRows = []; // pump rows in modal
+
+function saveTanks() {
+  try { localStorage.setItem('autoflow_tanks', JSON.stringify(waterTanks)); } catch(e) {}
+}
+function loadTanks() {
+  try { waterTanks = JSON.parse(localStorage.getItem('autoflow_tanks') || '[]'); } catch(e) { waterTanks = []; }
+}
+
+function openTankModal(editId) {
+  const t = editId ? waterTanks.find(x => x.id === editId) : null;
+  document.getElementById('tank-edit-id').value = editId || '';
+  document.getElementById('tank-modal-title').textContent = t ? 'Editar caixa' : 'Nova caixa d\'água';
+  document.getElementById('tank-name').value = t?.name || '';
+  document.getElementById('tank-code').value = t?.code || '';
+  document.getElementById('tank-capacity').value = t?.capacity || '';
+  updateTankPreview();
+  // Pump rows
+  tankPumpRows = (t?.pumps || []).map(p => ({
+    id: 'prow_'+Math.random().toString(36).slice(2),
+    relayId: p.relayId || '',
+    triggerOn: p.triggerOn ?? 30,
+    triggerOff: p.triggerOff ?? 100,
+    name: p.name || 'Bomba',
+  }));
+  renderTankPumpRows();
+  document.getElementById('tank-modal').classList.add('open');
+}
+
+function closeTankModal() {
+  document.getElementById('tank-modal').classList.remove('open');
+}
+
+function updateTankPreview() {
+  const code = (document.getElementById('tank-code')?.value.trim()) || '...';
+  const tp = document.getElementById('tank-topic-preview');
+  const sp = document.getElementById('tank-status-preview');
+  if (tp) tp.textContent = `caixas/agua/${code}/dados`;
+  if (sp) sp.textContent = `caixas/agua/${code}/status`;
+}
+
+function addTankPumpRow() {
+  if (tankPumpRows.length >= 2) { alert('Máximo de 2 bombas por caixa.'); return; }
+  const usedIds = new Set(tankPumpRows.map(r => r.relayId));
+  const available = relays.filter(r => r.enabled && !usedIds.has(r.id));
+  tankPumpRows.push({
+    id: 'prow_'+Date.now(),
+    relayId: available[0]?.id || '',
+    triggerOn: 30,
+    triggerOff: 100,
+    name: 'Bomba ' + (tankPumpRows.length + 1),
+  });
+  renderTankPumpRows();
+  const btn = document.getElementById('tank-add-pump-btn');
+  if (btn) btn.style.display = tankPumpRows.length >= 2 ? 'none' : '';
+}
+
+function removeTankPumpRow(rowId) {
+  tankPumpRows = tankPumpRows.filter(r => r.id !== rowId);
+  renderTankPumpRows();
+  const btn = document.getElementById('tank-add-pump-btn');
+  if (btn) btn.style.display = tankPumpRows.length >= 2 ? 'none' : '';
+}
+
+function renderTankPumpRows() {
+  const container = document.getElementById('tank-pump-rows');
+  if (!container) return;
+  const btn = document.getElementById('tank-add-pump-btn');
+  if (btn) btn.style.display = tankPumpRows.length >= 2 ? 'none' : '';
+
+  if (!tankPumpRows.length) {
+    container.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0">Nenhuma bomba configurada.</div>`;
+    return;
+  }
+  container.innerHTML = tankPumpRows.map(row => {
+    const usedIds = new Set(tankPumpRows.filter(x => x.id !== row.id).map(x => x.relayId));
+    const opts = relays.filter(r => r.enabled)
+      .filter(r => r.id === row.relayId || !usedIds.has(r.id))
+      .map(r => `<option value="${r.id}" ${r.id===row.relayId?'selected':''}>${r.icon} ${r.name}</option>`)
+      .join('');
+    return `<div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:16px">🔋</span>
+        <input id="prow-name-${row.id}" value="${row.name}"
+          style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 8px;height:30px;outline:none"
+          placeholder="Nome da bomba" oninput="tankPumpRows.find(x=>x.id==='${row.id}').name=this.value">
+        <select onchange="tankPumpRows.find(x=>x.id==='${row.id}').relayId=this.value"
+          style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 8px;height:30px;outline:none">
+          ${opts || '<option value="">— nenhum relé —</option>'}
+        </select>
+        <button onclick="removeTankPumpRow('${row.id}')" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:11px;flex-shrink:0">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Liga ao atingir ↓</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="prow-on-${row.id}" value="${row.triggerOn}" min="1" max="99"
+              style="width:56px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--warn);font-family:var(--mono);font-size:13px;font-weight:700;padding:4px 8px;height:30px;outline:none"
+              oninput="tankPumpRows.find(x=>x.id==='${row.id}').triggerOn=parseInt(this.value)||30">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">% → ligar bomba</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Desliga ao atingir ↑</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="prow-off-${row.id}" value="${row.triggerOff}" min="2" max="100"
+              style="width:56px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--accent);font-family:var(--mono);font-size:13px;font-weight:700;padding:4px 8px;height:30px;outline:none"
+              oninput="tankPumpRows.find(x=>x.id==='${row.id}').triggerOff=parseInt(this.value)||100">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">% → desligar</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;padding:5px 8px;background:var(--bg2);border-radius:4px">
+        💡 Bomba liga quando nível ≤ <span style="color:var(--warn)">${row.triggerOn}%</span> e desliga ao atingir <span style="color:var(--accent)">${row.triggerOff}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function confirmSaveTank() {
+  const name     = document.getElementById('tank-name').value.trim();
+  const code     = document.getElementById('tank-code').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+  const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
+  const editId   = document.getElementById('tank-edit-id').value;
+
+  if (!name) { log('Preencha o nome da caixa', 'warn'); return; }
+  if (!code) { log('Preencha o código do sensor', 'warn'); return; }
+  if (!editId && waterTanks.length >= 2) { alert('Máximo de 2 caixas de água.'); return; }
+
+  const pumps = tankPumpRows.map(r => ({
+    relayId: r.relayId,
+    name: r.name,
+    triggerOn: r.triggerOn,
+    triggerOff: r.triggerOff,
+  })).filter(p => p.relayId);
+
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
+
+  if (editId) {
+    const idx = waterTanks.findIndex(x => x.id === editId);
+    if (idx >= 0) { const old = waterTanks[idx]; tankData.level = old.level; tankData.liters = old.liters; tankData.lastSeen = old.lastSeen; tankData.online = old.online; waterTanks[idx] = tankData; }
+  } else {
+    waterTanks.push(tankData);
+  }
+  saveTanks();
+  subscribeTanks();
+  renderTanks();
+  log(`Caixa "${name}" salva (sensor: caixas/agua/${code}/dados)`, 'ok');
+  closeTankModal();
+}
+
+function removeTank(id) {
+  const t = waterTanks.find(x => x.id === id);
+  if (!t || !confirm(`Remover "${t.name}"?`)) return;
+  waterTanks = waterTanks.filter(x => x.id !== id);
+  saveTanks();
+  renderTanks();
+  log(`Caixa "${t.name}" removida`, 'sys');
+}
+
+function tankSvg(level, id) {
+  const pct = Math.min(Math.max(level || 0, 0), 100);
+  const fillH = Math.round((pct / 100) * 28);
+  const fillY = 33 - fillH;
+  const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+  return `<svg viewBox="0 0 34 38" width="34" height="38" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="0" width="24" height="4" rx="1.5" fill="rgba(255,255,255,0.15)"/>
+    <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+    <clipPath id="wClip${id}"><rect x="3" y="5" width="28" height="28" rx="2"/></clipPath>
+    <rect x="3" y="${fillY}" width="28" height="${fillH}" rx="2" fill="${col}" opacity="0.35" clip-path="url(#wClip${id})"/>
+    <rect x="3" y="${Math.max(fillY,5)}" width="28" height="2" rx="1" fill="${col}" opacity="0.7" clip-path="url(#wClip${id})"/>
+    <rect x="2" y="34" width="30" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+    <rect x="13" y="35" width="8" height="3" rx="1" fill="rgba(255,255,255,0.15)"/>
+  </svg>`;
+}
+
+function renderTanks() {
+  const grid = document.getElementById('tanks-grid');
+  const cnt  = document.getElementById('tanks-count');
+  const addBtn = document.getElementById('btn-add-tank');
+  if (!grid) return;
+  cnt.textContent = waterTanks.length ? `${waterTanks.length} caixa${waterTanks.length>1?'s':''}` : '0 caixas';
+  if (addBtn) addBtn.style.display = waterTanks.length >= 2 ? 'none' : '';
+
+  if (!waterTanks.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>';
+    return;
+  }
+
+  grid.innerHTML = waterTanks.map(t => {
+    const pct = t.level;
+    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pumpsHtml = t.pumps && t.pumps.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+        ${t.pumps.map(p => {
+          const rel = relays.find(r => r.id === p.relayId);
+          const on  = rel?.state || false;
+          return `<button onclick="setRelay(relays.find(x=>x.id==='${p.relayId}'),${!on})"
+            style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:5px;cursor:pointer;border:1px solid;font-family:var(--mono);font-size:9px;transition:all 0.15s;
+            ${on?'background:rgba(0,212,160,0.12);color:var(--accent);border-color:rgba(0,212,160,0.3)':'background:var(--bg2);color:var(--muted);border-color:var(--border)'}">
+            🔋 ${p.name} <span style="font-weight:700">${on?'ON':'OFF'}</span>
+          </button>`;
+        }).join('')}
+        <div style="width:100%;font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px">
+          ${t.pumps.map(p=>`liga ≤${p.triggerOn}% / desliga ${p.triggerOff}%`).join(' · ')}
+        </div>
+      </div>` : '';
+
+    return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
+      onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
+            <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:5px">
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
+        </div>
+      </div>
+      ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
+      ${pumpsHtml}
+    </div>`;
+  }).join('');
+}
+
+function subscribeTanks() {
+  if (!client || !client.connected) return;
+  waterTanks.forEach(t => {
+    if (!t.code) return;
+    client.subscribe(`caixas/agua/${t.code}/dados`,  {qos:1}, ()=>log(`↳ caixas/agua/${t.code}/dados`,'sys'));
+    client.subscribe(`caixas/agua/${t.code}/status`, {qos:1}, ()=>log(`↳ caixas/agua/${t.code}/status`,'sys'));
+  });
+}
+
+function handleTankMessage(topic, payload, data) {
+  waterTanks.forEach(t => {
+    const dadosTopic  = `caixas/agua/${t.code}/dados`;
+    const statusTopic = `caixas/agua/${t.code}/status`;
+    if (topic === dadosTopic) {
+      const pct  = parseInt(data.percentage);
+      const lit  = parseInt(data.liters);
+      if (!isNaN(pct)) {
+        t.level   = pct;
+        t.lastSeen = new Date().toISOString();
+        // Pump auto-control
+        t.pumps && t.pumps.forEach(p => {
+          if (!p.relayId) return;
+          const rel = relays.find(r => r.id === p.relayId && r.enabled);
+          if (!rel) return;
+          const on = rel.state;
+          if (!on && pct <= p.triggerOn) {
+            log(`💧 "${t.name}" nível ${pct}% ≤ ${p.triggerOn}% → ligando ${p.name}`, 'ok');
+            setRelay(rel, true);
+          } else if (on && pct >= p.triggerOff) {
+            log(`💧 "${t.name}" nível ${pct}% ≥ ${p.triggerOff}% → desligando ${p.name}`, 'info');
+            setRelay(rel, false);
+          }
+        });
+      }
+      if (!isNaN(lit)) t.liters = lit;
+      const sensorOK = data.sensor_ok !== false;
+      if (!sensorOK) showAlert(`⚠ Falha no sensor: ${t.name}`);
+      else if (pct <= 10) showAlert(`⚠ "${t.name}" crítico: ${pct}%`);
+      renderTanks();
+      updateLiveBar(topic, data.cached);
+    }
+    if (topic === statusTopic) {
+      t.online = data.online !== false;
+      if (!t.online) showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
+    }
+  });
 }
 
 // ============ REGRAS AUTOMÁTICAS ============
