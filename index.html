@@ -388,49 +388,88 @@ body::before {
     </div>
   </div>
 
-  <!-- ROW 1: métricas compactas inline — agora mostra METEOROLOGIA -->
-  <div class="card" style="margin-bottom:16px;padding:12px 18px">
-    <div style="display:flex;align-items:center;gap:0;flex-wrap:nowrap">
-      <!-- Label + dot -->
-      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;margin-right:18px">
+  <!-- ROW 1: Meteorologia completa inline -->
+  <div class="card" style="margin-bottom:16px;padding:14px 18px">
+    <!-- Linha superior: dot + cidade + status irrigação + timestamp -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
         <div class="dot" id="live-dot"></div>
         <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Clima</span>
       </div>
-      <!-- Ícone do tempo -->
-      <div class="metric-inline" id="mb-weather-inline" style="gap:8px;padding-right:16px">
-        <span id="wi-icon-inline" style="font-size:22px;flex-shrink:0">🌍</span>
+      <span id="wi-icon-inline" style="font-size:20px;flex-shrink:0">🌍</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="wi-city-inline">configure a cidade →</span>
+      <span id="wi-irrig-status" style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(107,114,128,0.12);color:var(--muted)">meteorologia</span>
+      <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0">aguardando...</span>
+    </div>
+    <!-- Linha de métricas lado a lado -->
+    <div style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap">
+      <!-- Temperatura -->
+      <div class="metric-inline" style="gap:8px;padding-right:16px">
+        <span style="font-size:15px;flex-shrink:0">🌡️</span>
         <div>
-          <div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap">
+          <div style="display:flex;align-items:baseline;gap:4px">
             <span class="metric-inline-val" id="wi-temp-inline">—<span class="metric-inline-unit">°C</span></span>
-            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-hum-inline"></span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-feels-inline"></span>
           </div>
-          <span class="metric-inline-sub" id="wi-city-inline">configure a cidade →</span>
+          <span class="metric-inline-sub">temperatura</span>
         </div>
       </div>
       <div class="metric-inline-sep"></div>
-      <!-- Rain / prob -->
+      <!-- Umidade -->
+      <div class="metric-inline" style="gap:8px;padding-right:16px">
+        <span style="font-size:15px">💧</span>
+        <div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="metric-inline-val" id="wi-hum-inline">—<span class="metric-inline-unit">%</span></span>
+          </div>
+          <span class="metric-inline-sub">umidade</span>
+        </div>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- Chuva -->
       <div class="metric-inline" id="mb-rain-inline" style="gap:8px;padding-right:16px">
-        <span style="font-size:16px">🌧</span>
+        <span style="font-size:15px">🌧</span>
         <div>
           <div style="display:flex;align-items:baseline;gap:4px">
             <span class="metric-inline-val" id="wi-rain-inline">—<span class="metric-inline-unit">mm</span></span>
             <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-prob-inline"></span>
           </div>
-          <span class="metric-inline-sub" id="wi-status-inline">meteorologia</span>
+          <span class="metric-inline-sub" id="wi-status-inline">chuva</span>
         </div>
       </div>
       <div class="metric-inline-sep"></div>
-      <!-- Campo de cidade compacto -->
-      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;flex:1;min-width:0">
+      <!-- Vento -->
+      <div class="metric-inline" style="gap:8px;padding-right:16px">
+        <span style="font-size:15px">💨</span>
+        <div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="metric-inline-val" id="wi-wind-inline">—<span class="metric-inline-unit">km/h</span></span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-winddir-inline"></span>
+          </div>
+          <span class="metric-inline-sub">vento</span>
+        </div>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- UV -->
+      <div class="metric-inline" style="gap:8px;padding-right:16px">
+        <span style="font-size:15px">☀️</span>
+        <div>
+          <div style="display:flex;align-items:baseline;gap:4px">
+            <span class="metric-inline-val" id="wi-uv-inline">—</span>
+          </div>
+          <span class="metric-inline-sub" id="wi-uvlbl-inline">índice UV</span>
+        </div>
+      </div>
+      <div class="metric-inline-sep"></div>
+      <!-- Campo cidade — por último -->
+      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:140px;padding-left:4px">
         <input id="city-input-inline" placeholder="Mudar cidade..."
-          style="flex:1;min-width:80px;max-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;height:28px"
+          style="flex:1;min-width:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;height:28px"
           onkeydown="if(event.key==='Enter')setCityInline()">
         <button class="btn" onclick="setCityInline()" style="height:28px;padding:0 10px;font-size:10px;flex-shrink:0">↵</button>
       </div>
-      <!-- timestamp -->
-      <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0;padding-left:10px">aguardando...</span>
     </div>
-    <div class="alert-banner" id="alert-banner" style="margin-top:8px;margin-bottom:0"></div>
+    <div class="alert-banner" id="alert-banner" style="margin-top:10px;margin-bottom:0"></div>
   </div>
 
   <!-- ROW 2: ambientes -->
@@ -449,45 +488,10 @@ body::before {
     </div>
   </div>
 
-  <!-- ROW 3: Meteorologia + Caixas d'água + Irrigação -->
-  <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+  <!-- ROW 3: Caixas d'água + Irrigação -->
+  <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
 
-    <!-- COL 1: Meteorologia completa -->
-    <div class="card" id="weather-card-col">
-      <div class="card-header" style="margin-bottom:10px">
-        <span class="card-title">Meteorologia</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="weather-ts-placeholder"></span>
-      </div>
-      <div id="weather-card-inner">
-        <div style="text-align:center;padding:16px 0 10px">
-          <div style="font-size:32px;margin-bottom:10px">🌍</div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.8">
-            Use o campo na barra superior<br>para buscar uma cidade
-          </div>
-          <!-- Grid placeholder igual ao real, mas vazio -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left">
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">🌧 Chuva</div>
-              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—<span style="font-size:9px;font-weight:400"> mm</span></div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">📊 Próx. 3h</div>
-              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—<span style="font-size:9px;font-weight:400"> %</span></div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">💨 Vento</div>
-              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—<span style="font-size:9px;font-weight:400"> km/h</span></div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-              <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">☀️ Índice UV</div>
-              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--muted)">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- COL 2: Caixas d'água -->
+    <!-- COL 1: Caixas d'água -->
     <div class="card" id="tanks-card">
       <div class="card-header" style="margin-bottom:12px">
         <span class="card-title">Caixas d'água</span>
@@ -1344,85 +1348,46 @@ function weatherIcon(code, prob) {
 }
 
 function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike, windSpd, windDir, uvIndex }) {
-  const card = document.getElementById('weather-card-col');
-  if (!card) return;
   const blocked     = weather.isRaining;
   const statusColor = blocked ? 'var(--warn)' : 'var(--accent)';
   const statusBg    = blocked ? 'rgba(245,158,11,0.1)' : 'rgba(0,212,160,0.08)';
   const statusText  = blocked ? '🚫 Irrigação bloqueada' : '✅ Irrigação liberada';
   const mainIcon    = weatherIcon(code, maxProb);
   const ts          = weather.lastCheck ? weather.lastCheck.toLocaleTimeString('pt-BR') : '--';
-  const warnRain    = rainNow > 0 ? 'var(--warn)' : 'var(--text)';
-  const warnProb    = maxProb >= 40 ? 'var(--warn)' : 'var(--text)';
-  const warnTemp    = !isNaN(tempNow) && tempNow > 35 ? 'var(--warn)' : 'var(--text)';
   const warnWind    = !isNaN(windSpd) && windSpd > 50 ? 'var(--warn)' : 'var(--text)';
+  const warnTemp    = !isNaN(tempNow) && tempNow > 35 ? 'var(--warn)' : 'var(--text)';
   const uv          = uvLabel(uvIndex);
 
-  const metricBox = (icon, label, val, unit, sub, col='var(--text)') => `
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-      <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">${icon} ${label}</div>
-      <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${col};line-height:1">${val}<span style="font-size:9px;font-weight:400;color:var(--muted)"> ${unit}</span></div>
-      <div style="font-family:var(--mono);font-size:8px;color:${col};margin-top:3px;opacity:0.8">${sub}</div>
-    </div>`;
+  // Atualiza card do topo
+  const wiIcon    = document.getElementById('wi-icon-inline');
+  const wiTemp    = document.getElementById('wi-temp-inline');
+  const wiFeels   = document.getElementById('wi-feels-inline');
+  const wiHum     = document.getElementById('wi-hum-inline');
+  const wiCity    = document.getElementById('wi-city-inline');
+  const wiRain    = document.getElementById('wi-rain-inline');
+  const wiProb    = document.getElementById('wi-prob-inline');
+  const wiStat    = document.getElementById('wi-status-inline');
+  const wiIrrig   = document.getElementById('wi-irrig-status');
+  const wiWind    = document.getElementById('wi-wind-inline');
+  const wiWindDir = document.getElementById('wi-winddir-inline');
+  const wiUV      = document.getElementById('wi-uv-inline');
+  const wiUVLbl   = document.getElementById('wi-uvlbl-inline');
+  const livets    = document.getElementById('live-ts');
 
-  // Atualiza inline bar também
-  const wiIcon = document.getElementById('wi-icon-inline');
-  const wiTemp = document.getElementById('wi-temp-inline');
-  const wiHum  = document.getElementById('wi-hum-inline');
-  const wiCity = document.getElementById('wi-city-inline');
-  const wiRain = document.getElementById('wi-rain-inline');
-  const wiProb = document.getElementById('wi-prob-inline');
-  const wiStat = document.getElementById('wi-status-inline');
-  if (wiIcon) wiIcon.textContent = mainIcon;
-  if (wiTemp) wiTemp.innerHTML = `${!isNaN(tempNow)?tempNow.toFixed(1):'—'}<span class="metric-inline-unit">°C</span>`;
-  if (wiHum && !isNaN(humNow)) wiHum.textContent = `💧${Math.round(humNow)}%`;
-  if (wiCity) wiCity.textContent = weather.city || 'configure a cidade →';
-  if (wiRain) wiRain.innerHTML = `${rainNow.toFixed(1)}<span class="metric-inline-unit">mm</span>`;
-  if (wiProb && maxProb) wiProb.textContent = `prob.${maxProb}%`;
-  if (wiStat) { wiStat.textContent = blocked ? '🚫 bloqueado' : '✅ liberado'; wiStat.style.color = statusColor; }
-
-  // Umidade separada
-  const humBox = !isNaN(humNow) ? metricBox('💧','Umidade', Math.round(humNow), '%',
-    humNow >= 80 ? 'muito úmido' : humNow >= 60 ? 'úmido' : humNow >= 40 ? 'confortável' : 'seco',
-    humNow >= 80 ? 'var(--accent2)' : 'var(--text)') : '';
-
-  // Sensação térmica destaque extra
-  const feelsBox = !isNaN(feelsLike) ? metricBox('🌡️','Sensação', feelsLike.toFixed(1), '°C',
-    feelsLike > 40 ? 'muito quente' : feelsLike > 35 ? 'quente' : feelsLike < 10 ? 'frio' : 'confortável',
-    feelsLike > 35 ? 'var(--warn)' : 'var(--text)') : '';
-
-  card.innerHTML = `
-    <div class="card-header" style="margin-bottom:10px">
-      <span class="card-title">Meteorologia</span>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">↻ ${ts}</span>
-    </div>
-
-    <!-- Cabeçalho: ícone + cidade + status -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="font-size:32px;flex-shrink:0;line-height:1">${mainIcon}</span>
-      <div style="min-width:0;flex:1">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">${weather.city}</div>
-        <div style="font-size:11px;font-weight:700;color:${statusColor};padding:3px 8px;background:${statusBg};border-radius:4px;display:inline-block">${statusText}</div>
-      </div>
-    </div>
-
-    <!-- Temperatura destaque -->
-    ${!isNaN(tempNow) ? `
-    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-      <span style="font-family:var(--mono);font-size:26px;font-weight:700;color:${warnTemp};letter-spacing:-1px">${tempNow.toFixed(1)}<span style="font-size:13px">°C</span></span>
-      ${!isNaN(feelsLike) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">sensação ${feelsLike.toFixed(1)}°C</span>` : ''}
-      ${!isNaN(humNow) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);margin-left:auto">💧 ${Math.round(humNow)}%</span>` : ''}
-    </div>` : ''}
-
-    <!-- Grid 2×3 com todas as métricas -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      ${metricBox('🌧', 'Chuva agora', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
-      ${metricBox('📊', 'Prob. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
-      ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir) + ' · ' + (windSpd < 20 ? 'fraco' : windSpd < 40 ? 'moderado' : windSpd < 60 ? 'forte' : 'muito forte'), warnWind) : ''}
-      ${!isNaN(uvIndex) ? metricBox('☀️', 'Índice UV', uvIndex.toFixed(1), '', uv.txt, uv.col) : ''}
-      ${humBox}
-      ${feelsBox}
-    </div>`;
+  if (wiIcon)    wiIcon.textContent = mainIcon;
+  if (wiTemp)    wiTemp.innerHTML = `${!isNaN(tempNow)?tempNow.toFixed(1):'—'}<span class="metric-inline-unit">°C</span>`;
+  if (wiFeels && !isNaN(feelsLike)) wiFeels.textContent = `sen. ${feelsLike.toFixed(1)}°`;
+  if (wiHum)     wiHum.innerHTML = `${!isNaN(humNow)?Math.round(humNow):'—'}<span class="metric-inline-unit">%</span>`;
+  if (wiCity)    wiCity.textContent = weather.city || 'configure a cidade →';
+  if (wiRain)    wiRain.innerHTML = `${!isNaN(rainNow)?rainNow.toFixed(1):'—'}<span class="metric-inline-unit">mm</span>`;
+  if (wiProb)    wiProb.textContent = maxProb ? `prob.${maxProb}%` : '';
+  if (wiStat)  { wiStat.textContent = rainNow > 0 ? 'chovendo' : 'sem chuva'; wiStat.style.color = rainNow > 0 ? 'var(--warn)' : 'var(--muted)'; }
+  if (wiIrrig) { wiIrrig.textContent = statusText; wiIrrig.style.background = statusBg; wiIrrig.style.color = statusColor; }
+  if (wiWind)    wiWind.innerHTML = `${!isNaN(windSpd)?windSpd.toFixed(1):'—'}<span class="metric-inline-unit">km/h</span>`;
+  if (wiWindDir && !isNaN(windDir)) wiWindDir.textContent = windDirLabel(windDir);
+  if (wiUV)      wiUV.textContent = !isNaN(uvIndex) ? uvIndex.toFixed(1) : '—';
+  if (wiUVLbl && !isNaN(uvIndex)) { wiUVLbl.textContent = uv.txt; wiUVLbl.style.color = uv.col; }
+  if (livets)    livets.textContent = '↻ ' + ts;
 }
 
 async function setCityInline() {
