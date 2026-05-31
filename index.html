@@ -374,20 +374,22 @@ body::before {
       <div class="field" style="grid-column:1/-1">
         <label>Senha MQTT</label>
         <div style="display:flex;gap:6px">
-          <input id="cfg-pass" oninput="saveCfgField()" type="password"
+          <input id="cfg-pass" oninput="saveCfgField()" type="text"
             placeholder="sua senha do HiveMQ"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;"/>
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;-webkit-text-security:disc"/>
           <button type="button" onclick="togglePassVis('cfg-pass',this)"
             style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
         </div>
       </div>
       <div class="field"><label>Código da caixa d'água</label><input id="cfg-water" oninput="saveCfgField()" placeholder="ex: A1B2C3D4" /></div>
       <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" oninput="saveCfgField()" placeholder="ex: E5F6G7H8" /></div>
+      <div class="field"><label>Device ID — Gás</label><input id="cfg-gas" oninput="saveCfgField()" placeholder="ex: F1E2D3C4" /></div>
     </div>
     <div style="margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
         📡 Caixa d'água: <span id="preview-water" style="color:var(--accent2)">caixas/agua/{codigo}/dados</span><br>
-        📡 Temperatura: <span id="preview-temp" style="color:var(--accent2)">sensors/{deviceId}/data</span>
+        📡 Temperatura: <span id="preview-temp" style="color:var(--accent2)">sensors/{deviceId}/data</span><br>
+        📡 Gás: <span id="preview-gas" style="color:var(--accent2)">sensors/{deviceId}/data</span>
       </div>
     </div>
     <div class="config-actions">
@@ -674,6 +676,7 @@ const dayShort = ['D','S','T','Q','Q','S','S'];
 let TOPICS_WATER = { dados: '', status: '' };
 let TOPICS_TEMP  = '';
 let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
+let GAS_DEVICE_ID  = ''; // device ID do sensor de gás
 
 // ============ CONFIG ============
 // ── Persistência central ─────────────────────────────────────────────────
@@ -703,6 +706,7 @@ function saveCfgField() {
     pass:  document.getElementById('cfg-pass')?.value.trim(),
     water: document.getElementById('cfg-water')?.value.trim(),
     temp:  document.getElementById('cfg-temp')?.value.trim(),
+    gas:   document.getElementById('cfg-gas')?.value.trim(),
     brokerMode: 'cloud',
   });
 }
@@ -710,9 +714,9 @@ function saveCfgField() {
 function togglePassVis(fieldId, btn) {
   const el = document.getElementById(fieldId);
   if (!el) return;
-  const isHidden = el.type === 'password';
-  el.type = isHidden ? 'text' : 'password';
-  btn.textContent = isHidden ? '🙈' : '👁';
+  const hidden = el.style.webkitTextSecurity === 'disc' || el.style.webkitTextSecurity === '';
+  el.style.webkitTextSecurity = hidden ? 'none' : 'disc';
+  btn.textContent = hidden ? '🙈' : '👁';
 }
 
 function switchBrokerTab(mode) {
@@ -751,24 +755,8 @@ function publishPersist() {
 function loadFromBrokerPayload(payload) {
   try {
     const d = JSON.parse(payload);
-
-    // ── Ambientes: localStorage é SEMPRE a fonte primária.
-    // Só usa o broker se localStorage estiver vazio (primeiro acesso num novo dispositivo).
-    const localRoomsRaw = localStorage.getItem('autoflow_rooms');
-    const localRooms = localRoomsRaw ? JSON.parse(localRoomsRaw) : [];
-    if (!localRooms.length && d.rooms && d.rooms.length) {
-      rooms = d.rooms.map(r => ({
-        ...r,
-        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
-      }));
-      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
-      log('☁ Ambientes restaurados do broker (localStorage vazio)', 'sys');
-    }
-
-    // ── Relés: mesma lógica
-    const localRelaysRaw = localStorage.getItem('autoflow_relays');
-    const localRelays = localRelaysRaw ? JSON.parse(localRelaysRaw) : [];
-    if (!localRelays.length && d.relays) {
+    // Relés — restaura direto sem chamar saveRelayState (evita loop)
+    if (d.relays) {
       d.relays.forEach(sr => {
         const r = relays.find(x => x.id === sr.id);
         if (r) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; r.state=sr.state||false; }
@@ -777,16 +765,19 @@ function loadFromBrokerPayload(payload) {
         relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
       )); } catch(e) {}
     }
-
-    // ── Agendamentos: mesma lógica
-    const localSchedRaw = localStorage.getItem('autoflow_schedules');
-    const localSched = localSchedRaw ? JSON.parse(localSchedRaw) : [];
-    if (!localSched.length && d.schedules && d.schedules.length) {
-      schedules = d.schedules;
+    // Ambientes — restaura direto sem chamar saveRooms
+    if (d.rooms && d.rooms.length) {
+      rooms = d.rooms.map(r => ({
+        ...r,
+        data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
+      }));
+      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
     }
-
-    // ── Prefixo e clima sempre aceitos (não têm chave própria no localStorage)
+    // Agendamentos
+    if (d.schedules) { schedules = d.schedules; }
+    // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
+    // Clima
     if (d.weather?.city) {
       weather.city = d.weather.city;
       weather.lat  = d.weather.lat;
@@ -794,7 +785,7 @@ function loadFromBrokerPayload(payload) {
       if (weather.lat) { fetchWeather(); }
     }
     renderRelays(); renderRooms(); renderSchedules();
-    log(`☁ Config broker recebida (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
+    log(`☁ Config carregada do broker (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
   } catch(e) { log('Erro ao carregar config do broker: ' + e.message, 'warn'); }
 }
 
@@ -818,15 +809,21 @@ function initPWA() {
   document.getElementById('pwa-manifest').href = url;
   document.getElementById('pwa-manifest').rel  = 'manifest';
 
-  // Desregistra todos os Service Workers para evitar cache de versão antiga
+  // Service worker inline para cache offline
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
-    });
-    // Limpa todos os caches do browser
-    if ('caches' in window) {
-      caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-    }
+    const swCode = `
+const CACHE = 'autoflow-v1';
+const ASSETS = ['${window.location.href}'];
+self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))));
+self.addEventListener('fetch', e => e.respondWith(
+  caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+    if (res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+    return res;
+  }).catch(() => caches.match(e.request)))
+));`;
+    const swBlob = new Blob([swCode], {type:'text/javascript'});
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(() => {});
   }
 }
 
@@ -877,6 +874,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = v;
+    // For password-styled text fields, ensure webkit security is applied
+    if (id === 'cfg-pass' || id === 'cfg-local-pass') {
+      el.style.webkitTextSecurity = 'disc';
+    }
   };
   setV('cfg-host',  saved.host);
   setV('cfg-port',  saved.port);
@@ -884,6 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-pass',  saved.pass);
   setV('cfg-water', saved.water);
   setV('cfg-temp',  saved.temp);
+  setV('cfg-gas',   saved.gas);
   setV('cfg-local-host',  saved.localHost);
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
@@ -891,20 +893,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
 
-  // Persiste valores hardcoded do HTML no localStorage logo no carregamento
-  // (campos como cfg-host e cfg-user têm value fixo mas nunca disparam oninput)
-  {
-    const domHost = document.getElementById('cfg-host')?.value.trim();
-    const domUser = document.getElementById('cfg-user')?.value.trim();
-    const domPort = document.getElementById('cfg-port')?.value.trim();
-    if (domHost && !saved.host) setCfg({ host: domHost });
-    if (domUser && !saved.user) setCfg({ user: domUser });
-    if (domPort && !saved.port) setCfg({ port: domPort });
-  }
-
   // ── 6. Previews dos tópicos ───────────────────────────────────────────
   if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
   if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
+  if (saved.gas)   document.getElementById('preview-gas').textContent   = `sensors/${saved.gas}/data`;
 
   document.getElementById('cfg-water').addEventListener('input', function() {
     document.getElementById('preview-water').textContent = `caixas/agua/${this.value.trim()||'{codigo}'}/dados`;
@@ -912,24 +904,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cfg-temp').addEventListener('input', function() {
     document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
+  document.getElementById('cfg-gas').addEventListener('input', function() {
+    document.getElementById('preview-gas').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
+  });
 
-  // ── 7. Render inicial ───────────────────────────────────────────────
+  // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
   initPWA();
-  renderRelays();
-  renderRooms();
-  renderSchedules();
 
-  // ── 8. Auto-conecta se tiver credenciais ─────────────────────────────
-  // Lê direto do localStorage — já populado antes dos setV acima
-  const _ac = getCfg();
-  const hasCloud = _ac.pass && _ac.host;
-  const hasLocal = _ac.localHost;
-  if (hasCloud || hasLocal) {
-    log('Credenciais encontradas — conectando automaticamente...', 'info');
-    setTimeout(connectMQTT, 300);
-  } else {
-    log('Auto-login: configure a senha e conecte uma vez para ativar o auto-login', 'sys');
-  }
+  // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
+  requestAnimationFrame(() => {
+    renderRelays();
+    renderRooms();
+    renderSchedules();
+
+    // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
+    const s = getCfg();
+    const hasCloud = s.pass && s.host;
+    const hasLocal = s.localHost;
+    if (hasCloud || hasLocal) {
+      log('Credenciais encontradas — conectando automaticamente...', 'info');
+      setTimeout(connectMQTT, 300);
+    }
+  });
 
   // ── 9. Restaura clima ─────────────────────────────────────────────────
   if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
@@ -945,25 +941,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  // Antes de ler, sincroniza campos DOM → localStorage (caso user tenha editado agora)
-  const domVal = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  if (!isLocal) {
-    if (domVal('cfg-host'))  setCfg({ host:  domVal('cfg-host') });
-    if (domVal('cfg-pass'))  setCfg({ pass:  domVal('cfg-pass') });
-    if (domVal('cfg-user'))  setCfg({ user:  domVal('cfg-user') });
-    if (domVal('cfg-water')) setCfg({ water: domVal('cfg-water') });
-    if (domVal('cfg-temp'))  setCfg({ temp:  domVal('cfg-temp') });
-  }
-  // Lê do localStorage; para campos com value hardcoded no HTML (host/user/port),
-  // usa o DOM como fallback caso o localStorage ainda não tenha sido populado
-  const sf = getCfg();
-  const dv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  const host  = isLocal ? (sf.localHost  || '') : (sf.host  || dv('cfg-host') || '');
-  const port  = isLocal ? (parseInt(sf.localPort) || 9001) : (parseInt(sf.port || dv('cfg-port')) || 8884);
-  const user  = isLocal ? (sf.localUser  || '') : (sf.user  || dv('cfg-user') || '');
-  const pass  = isLocal ? (sf.localPass  || '') : (sf.pass  || dv('cfg-pass') || '');
-  const water = isLocal ? (sf.localWater || '') : (sf.water || dv('cfg-water') || '');
-  const temp  = (isLocal ? (sf.localTemp || '') : (sf.temp  || dv('cfg-temp') || ''))
+  // Lê do DOM OU do localStorage (fallback para auto-connect confiável)
+  const s = getCfg();
+  const gv = (id, fallback) => {
+    const el = document.getElementById(id);
+    return (el && el.value.trim()) ? el.value.trim() : (fallback || '');
+  };
+  const host  = isLocal ? gv('cfg-local-host', s.localHost) : gv('cfg-host', s.host);
+  const port  = isLocal ? (parseInt(gv('cfg-local-port', s.localPort)) || 9001) : (parseInt(gv('cfg-port', s.port)) || 8884);
+  const user  = isLocal ? gv('cfg-local-user', s.localUser) : gv('cfg-user', s.user);
+  const pass  = isLocal ? gv('cfg-local-pass', s.localPass) : gv('cfg-pass', s.pass);
+  const water = isLocal ? gv('cfg-local-water', s.localWater) : gv('cfg-water', s.water);
+  const temp  = (isLocal ? gv('cfg-local-temp', s.localTemp) : gv('cfg-temp', s.temp))
+    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const gas   = (gv('cfg-gas', s.gas) || '')
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
@@ -972,11 +963,12 @@ function connectMQTT() {
   // Salva no localStorage (merge)
   setCfg(isLocal
     ? { localHost:host, localPort:port, localUser:user, localPass:pass, localWater:water, localTemp:temp, brokerMode:'local', relayPrefix:RELAY_PREFIX }
-    : { host, port, user, pass, water, temp, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
+    : { host, port, user, pass, water, temp, gas, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
   );
 
-  // Define tópicos e device ID
+  // Define tópicos e device IDs
   TEMP_DEVICE_ID = temp;
+  GAS_DEVICE_ID  = gas;
   if (water) {
     TOPICS_WATER = {
       dados:  `caixas/agua/${water}/dados`,
@@ -1536,9 +1528,7 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
-  try {
-    localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
-  } catch(e) {}
+  try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
 }
 
 function loadRooms() {
