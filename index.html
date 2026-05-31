@@ -573,16 +573,16 @@ body::before {
 
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">Sensores deste ambiente</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-        <label class="rm-sensor-opt" id="rm-opt-temp" onclick="toggleSensorOpt('temp')">
+        <div class="rm-sensor-opt" id="rm-opt-temp" onclick="toggleSensorOpt('temp')" style="cursor:pointer">
           <span style="font-size:20px">🌡️</span>
           <span style="font-size:12px;font-weight:600">Temperatura<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Umidade</span></span>
           <input type="checkbox" id="rm-has-temp" style="display:none">
-        </label>
-        <label class="rm-sensor-opt" id="rm-opt-smoke" onclick="toggleSensorOpt('smoke')">
+        </div>
+        <div class="rm-sensor-opt" id="rm-opt-smoke" onclick="toggleSensorOpt('smoke')" style="cursor:pointer">
           <span style="font-size:20px">🔥</span>
           <span style="font-size:12px;font-weight:600">Fumaça<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Gás</span></span>
           <input type="checkbox" id="rm-has-smoke" style="display:none">
-        </label>
+        </div>
       </div>
 
       <!-- MQTT config — aparece quando seleciona sensor -->
@@ -1594,8 +1594,9 @@ function loadRooms() {
 // ── Room modal helpers ────────────────────────────────────────────────────
 
 function toggleSensorOpt(type) {
-  const cb  = document.getElementById(`rm-has-${type}`);
-  const opt = document.getElementById(`rm-opt-${type}`);
+  const cb  = document.getElementById('rm-has-' + type);
+  const opt = document.getElementById('rm-opt-' + type);
+  // Toggle manualmente — sem label nativo para não disparar duplo
   cb.checked = !cb.checked;
   opt.classList.toggle('selected', cb.checked);
 
@@ -1603,14 +1604,15 @@ function toggleSensorOpt(type) {
   const hasSmoke = document.getElementById('rm-has-smoke').checked;
   const anySelected = hasTemp || hasSmoke;
 
-  document.getElementById('rm-mqtt-section').style.setProperty(
-    'display', anySelected ? 'block' : 'none', 'important'
-  );
-  // Show/hide individual sensor config blocks
+  // Seção MQTT geral
+  const mqtt = document.getElementById('rm-mqtt-section');
+  mqtt.style.display = anySelected ? 'block' : 'none';
+
+  // Blocos individuais de cada sensor
   const tc = document.getElementById('rm-temp-config');
   const sc = document.getElementById('rm-smoke-config');
-  if (tc) tc.style.setProperty('display', hasTemp  ? 'block' : 'none', 'important');
-  if (sc) sc.style.setProperty('display', hasSmoke ? 'block' : 'none', 'important');
+  if (tc) tc.style.display = hasTemp  ? 'block' : 'none';
+  if (sc) sc.style.display = hasSmoke ? 'block' : 'none';
 
   updateRoomPreview();
 }
@@ -1796,11 +1798,11 @@ function openRoomModal(editId) {
   if (document.getElementById('rm-room-topic')) document.getElementById('rm-room-topic').value = r?.topic || '';
 
   const anySelected = hasTemp || hasSmoke;
-  document.getElementById('rm-mqtt-section').style.setProperty('display', anySelected?'block':'none','important');
+  document.getElementById('rm-mqtt-section').style.display = anySelected ? 'block' : 'none';
   const tc = document.getElementById('rm-temp-config');
   const sc = document.getElementById('rm-smoke-config');
-  if (tc) tc.style.setProperty('display', hasTemp  ? 'block':'none','important');
-  if (sc) sc.style.setProperty('display', hasSmoke ? 'block':'none','important');
+  if (tc) tc.style.display = hasTemp  ? 'block' : 'none';
+  if (sc) sc.style.display = hasSmoke ? 'block' : 'none';
 
   // Relé rows
   rmRelayRows = (r?.relays || []).map(rel => ({
