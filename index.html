@@ -975,9 +975,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRooms();
     renderSchedules();
 
-    // ── 8. Atualiza botão conforme credenciais salvas ────────────────
+    // ── 8. Auto-conecta + atualiza botão ────────────────────────────
     updateMainBtn();
-    // Se tiver credenciais, o botão já mostra "⚡ Reconectar" — um clique conecta
+    const s = getCfg();
+    if ((s.host && s.pass) || s.localHost) {
+      log('Credenciais encontradas — conectando...', 'info');
+      connectMQTT();
+    }
   });
 
   // ── 9. Restaura clima e auto-carrega ──────────────────────────────────
