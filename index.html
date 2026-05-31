@@ -383,13 +383,11 @@ body::before {
       </div>
       <div class="field"><label>Código da caixa d'água</label><input id="cfg-water" oninput="saveCfgField()" placeholder="ex: A1B2C3D4" /></div>
       <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" oninput="saveCfgField()" placeholder="ex: E5F6G7H8" /></div>
-      <div class="field"><label>Device ID — Gás</label><input id="cfg-gas" oninput="saveCfgField()" placeholder="ex: F1E2D3C4" /></div>
     </div>
     <div style="margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
         📡 Caixa d'água: <span id="preview-water" style="color:var(--accent2)">caixas/agua/{codigo}/dados</span><br>
-        📡 Temperatura: <span id="preview-temp" style="color:var(--accent2)">sensors/{deviceId}/data</span><br>
-        📡 Gás: <span id="preview-gas" style="color:var(--accent2)">sensors/{deviceId}/data</span>
+        📡 Temperatura: <span id="preview-temp" style="color:var(--accent2)">sensors/{deviceId}/data</span>
       </div>
     </div>
     <div class="config-actions">
@@ -573,16 +571,16 @@ body::before {
 
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">Sensores deste ambiente</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-        <div class="rm-sensor-opt" id="rm-opt-temp" onclick="toggleSensorOpt('temp')" style="cursor:pointer">
+        <label class="rm-sensor-opt" id="rm-opt-temp" onclick="toggleSensorOpt('temp')">
           <span style="font-size:20px">🌡️</span>
           <span style="font-size:12px;font-weight:600">Temperatura<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Umidade</span></span>
           <input type="checkbox" id="rm-has-temp" style="display:none">
-        </div>
-        <div class="rm-sensor-opt" id="rm-opt-smoke" onclick="toggleSensorOpt('smoke')" style="cursor:pointer">
+        </label>
+        <label class="rm-sensor-opt" id="rm-opt-smoke" onclick="toggleSensorOpt('smoke')">
           <span style="font-size:20px">🔥</span>
           <span style="font-size:12px;font-weight:600">Fumaça<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Gás</span></span>
           <input type="checkbox" id="rm-has-smoke" style="display:none">
-        </div>
+        </label>
       </div>
 
       <!-- MQTT config — aparece quando seleciona sensor -->
@@ -610,27 +608,14 @@ body::before {
           </div>
         </div>
 
-        <!-- Sensor de gás/fumaça -->
+        <!-- Sensor de fumaça (tópico livre) -->
         <div id="rm-smoke-config" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-          <div style="font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">🔥 Sensor Gás / Fumaça</div>
-          <div class="field" style="margin-bottom:8px">
-            <label>Device ID <span style="font-weight:400;opacity:0.6">(4 últimos bytes do MAC)</span></label>
-            <input id="rm-gas-id" placeholder="ex: a1b2c3d4" maxlength="16" style="font-family:var(--mono);letter-spacing:0.1em" oninput="updateRoomPreview()"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-              📋 Copie do portal AP do ESP32 (rede Wi-Fi: <b style="color:var(--text)">Sensor-XXXX</b>)<br>
-              Tópico: <span style="color:var(--accent2)" id="rm-smoke-topic-preview">sensors/.../data</span>
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:8px">
-            <label>Senha do dispositivo</label>
-            <input id="rm-gas-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 A mesma senha criada ao configurar o ESP32</div>
-          </div>
+          <div style="font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">🔥 Sensor Fumaça / Gás</div>
           <div class="field">
-            <label>Prefixo do tópico MQTT <span style="font-weight:400;opacity:0.6">(opcional — para alertas)</span></label>
+            <label>Prefixo do tópico MQTT</label>
             <input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()"/>
             <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-              Tópico de alerta: <span style="color:var(--accent2)" id="rm-smoke-alert-preview">casa/sala/gas</span>
+              Tópico gerado: <span style="color:var(--accent2)" id="rm-smoke-topic-preview">casa/sala/fumaca</span>
             </div>
           </div>
         </div>
@@ -689,7 +674,6 @@ const dayShort = ['D','S','T','Q','Q','S','S'];
 let TOPICS_WATER = { dados: '', status: '' };
 let TOPICS_TEMP  = '';
 let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
-let GAS_DEVICE_ID  = ''; // device ID do sensor de gás
 
 // ============ CONFIG ============
 // ── Persistência central ─────────────────────────────────────────────────
@@ -703,40 +687,24 @@ function setCfg(patch) {
   try { localStorage.setItem('autoflow_cfg', JSON.stringify(Object.assign(getCfg(), patch))); } catch(e) {}
 }
 function saveCfgField() {
-  // Lê apenas campos com valor real — nunca sobrescreve chave salva com string vazia
-  const gf = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return undefined;
-    const v = el.value.trim();
-    return v !== '' ? v : undefined;
-  };
-  const gfPass = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return undefined;
-    return el.value !== '' ? el.value : undefined; // senha sem trim
-  };
-
   const isLocal = brokerMode === 'local';
-  const patch = { brokerMode: isLocal ? 'local' : 'cloud' };
-
-  if (isLocal) {
-    const lh = gf('cfg-local-host');  if (lh    !== undefined) patch.localHost  = lh;
-    const lp = gf('cfg-local-port');  if (lp    !== undefined) patch.localPort  = lp;
-    const lu = gf('cfg-local-user');  if (lu    !== undefined) patch.localUser  = lu;
-    const lw = gf('cfg-local-water'); if (lw    !== undefined) patch.localWater = lw;
-    const lt = gf('cfg-local-temp');  if (lt    !== undefined) patch.localTemp  = lt;
-    const lpass = gfPass('cfg-local-pass'); if (lpass !== undefined) patch.localPass = lpass;
-  } else {
-    const h = gf('cfg-host');  if (h    !== undefined) patch.host  = h;
-    const p = gf('cfg-port');  if (p    !== undefined) patch.port  = p;
-    const u = gf('cfg-user');  if (u    !== undefined) patch.user  = u;
-    const w = gf('cfg-water'); if (w    !== undefined) patch.water = w;
-    const t = gf('cfg-temp');  if (t    !== undefined) patch.temp  = t;
-    const g = gf('cfg-gas');   if (g    !== undefined) patch.gas   = g;
-    const pass = gfPass('cfg-pass'); if (pass !== undefined) patch.pass = pass;
-  }
-
-  setCfg(patch);
+  setCfg(isLocal ? {
+    localHost: document.getElementById('cfg-local-host')?.value.trim(),
+    localPort: document.getElementById('cfg-local-port')?.value.trim(),
+    localUser: document.getElementById('cfg-local-user')?.value.trim(),
+    localPass: document.getElementById('cfg-local-pass')?.value || '',
+    localWater: document.getElementById('cfg-local-water')?.value.trim(),
+    localTemp:  document.getElementById('cfg-local-temp')?.value.trim(),
+    brokerMode: 'local',
+  } : {
+    host:  document.getElementById('cfg-host')?.value.trim(),
+    port:  document.getElementById('cfg-port')?.value.trim(),
+    user:  document.getElementById('cfg-user')?.value.trim(),
+    pass:  document.getElementById('cfg-pass')?.value.trim(),
+    water: document.getElementById('cfg-water')?.value.trim(),
+    temp:  document.getElementById('cfg-temp')?.value.trim(),
+    brokerMode: 'cloud',
+  });
 }
 
 function togglePassVis(fieldId, btn) {
@@ -913,7 +881,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-pass',  saved.pass);
   setV('cfg-water', saved.water);
   setV('cfg-temp',  saved.temp);
-  setV('cfg-gas',   saved.gas);
   setV('cfg-local-host',  saved.localHost);
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
@@ -924,16 +891,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 6. Previews dos tópicos ───────────────────────────────────────────
   if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
   if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
-  if (saved.gas)   document.getElementById('preview-gas').textContent   = `sensors/${saved.gas}/data`;
 
   document.getElementById('cfg-water').addEventListener('input', function() {
     document.getElementById('preview-water').textContent = `caixas/agua/${this.value.trim()||'{codigo}'}/dados`;
   });
   document.getElementById('cfg-temp').addEventListener('input', function() {
     document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
-  });
-  document.getElementById('cfg-gas').addEventListener('input', function() {
-    document.getElementById('preview-gas').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
   });
 
   // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
@@ -945,24 +908,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRooms();
     renderSchedules();
 
-    // ── 8. Auto-conecta se tiver credenciais ─────────────────────────
-    // Lê sempre do localStorage (fonte de verdade), nunca do DOM
+    // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
     const s = getCfg();
-    const hasCloud = !!(s.host && s.pass);
-    const hasLocal = !!(s.localHost);
+    const hasCloud = s.pass && s.host;
+    const hasLocal = s.localHost;
     if (hasCloud || hasLocal) {
-      // Preenche campos do DOM com os valores salvos antes de conectar
-      // garante que connectMQTT() encontre os valores no DOM também
-      const fill = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
-      fill('cfg-host',  s.host);  fill('cfg-port',  s.port);
-      fill('cfg-user',  s.user);  fill('cfg-pass',  s.pass);
-      fill('cfg-water', s.water); fill('cfg-temp',  s.temp); fill('cfg-gas', s.gas);
-      fill('cfg-local-host',  s.localHost);
-      fill('cfg-local-port',  s.localPort);
-      fill('cfg-local-user',  s.localUser);
-      fill('cfg-local-pass',  s.localPass);
-      fill('cfg-local-water', s.localWater);
-      fill('cfg-local-temp',  s.localTemp);
       log('Credenciais encontradas — conectando automaticamente...', 'info');
       setTimeout(connectMQTT, 300);
     }
@@ -982,28 +932,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  // Fonte de verdade: localStorage. DOM é apenas confirmação (caso usuário editou sem salvar)
+  // Lê do DOM OU do localStorage (fallback para auto-connect confiável)
   const s = getCfg();
   const gv = (id, fallback) => {
     const el = document.getElementById(id);
-    const domVal = el ? el.value.trim() : '';
-    // Prioriza DOM se tiver valor; caso contrário usa localStorage
-    return domVal !== '' ? domVal : (fallback || '');
-  };
-  // Senha: sem trim (pode ter caracteres especiais)
-  const gvPass = (id, fallback) => {
-    const el = document.getElementById(id);
-    const domVal = el ? el.value : '';
-    return domVal !== '' ? domVal : (fallback || '');
+    return (el && el.value.trim()) ? el.value.trim() : (fallback || '');
   };
   const host  = isLocal ? gv('cfg-local-host', s.localHost) : gv('cfg-host', s.host);
   const port  = isLocal ? (parseInt(gv('cfg-local-port', s.localPort)) || 9001) : (parseInt(gv('cfg-port', s.port)) || 8884);
   const user  = isLocal ? gv('cfg-local-user', s.localUser) : gv('cfg-user', s.user);
-  const pass  = isLocal ? gvPass('cfg-local-pass', s.localPass) : gvPass('cfg-pass', s.pass);
+  const pass  = isLocal ? gv('cfg-local-pass', s.localPass) : gv('cfg-pass', s.pass);
   const water = isLocal ? gv('cfg-local-water', s.localWater) : gv('cfg-water', s.water);
   const temp  = (isLocal ? gv('cfg-local-temp', s.localTemp) : gv('cfg-temp', s.temp))
-    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  const gas   = (gv('cfg-gas', s.gas) || '')
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
@@ -1012,12 +952,11 @@ function connectMQTT() {
   // Salva no localStorage (merge)
   setCfg(isLocal
     ? { localHost:host, localPort:port, localUser:user, localPass:pass, localWater:water, localTemp:temp, brokerMode:'local', relayPrefix:RELAY_PREFIX }
-    : { host, port, user, pass, water, temp, gas, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
+    : { host, port, user, pass, water, temp, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
   );
 
-  // Define tópicos e device IDs
+  // Define tópicos e device ID
   TEMP_DEVICE_ID = temp;
-  GAS_DEVICE_ID  = gas;
   if (water) {
     TOPICS_WATER = {
       dados:  `caixas/agua/${water}/dados`,
@@ -1135,11 +1074,36 @@ function handleMsg(topic, payload, pkt) {
     return;
   }
 
-  // ------ TEMPERATURA / GÁS: sensors/{id}/data ------
-  // handleRoomMessage já faz o match por ambiente — aqui apenas loga e atualiza live bar
+  // ------ TEMPERATURA: sensors/{id}/data ------
+  // Extrai o device ID do tópico recebido e compara com o configurado
   if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
+    const incomingId = topic.split('/')[1];
+    if (!TEMP_DEVICE_ID || incomingId === TEMP_DEVICE_ID) {
+    // payload: { temperature, humidity, heat_index, ... }
+    const t = parseFloat(data.temperature);
+    const h = parseFloat(data.humidity);
+
+    if (!isNaN(t)) {
+      liveData.temp = t;
+      document.getElementById('mv-temp').innerHTML = `${t.toFixed(1)}<span class="metric-inline-unit">°C</span>`;
+      const mb = document.getElementById('mb-temp');
+      const ms = document.getElementById('ms-temp');
+      mb.classList.remove('warn','ok');
+      if (t > 35) { mb.classList.add('warn'); ms.textContent = '⚠ quente'; }
+      else        { mb.classList.add('ok');   ms.textContent = 'temp'; }
+    }
+    if (!isNaN(h)) {
+      liveData.hum = h;
+      document.getElementById('mv-hum').innerHTML = `${Math.round(h)}<span class="metric-inline-unit">%</span>`;
+      const mb = document.getElementById('mb-hum');
+      const ms = document.getElementById('ms-hum');
+      mb.classList.remove('warn','ok');
+      if (h < 30) { mb.classList.add('warn'); ms.textContent = '⚠ seca'; }
+      else        { mb.classList.add('ok');   ms.textContent = 'umidade'; }
+    }
     updateLiveBar(topic, false);
     return;
+    }  // end incomingId match
   }
 }
 
@@ -1163,20 +1127,12 @@ async function geocodeCity(city) {
 async function fetchWeather() {
   if (!weather.lat) return;
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${weather.lat}&longitude=${weather.lon}`
-      + `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,uv_index`
-      + `&hourly=precipitation_probability&forecast_days=1&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${weather.lat}&longitude=${weather.lon}&current=precipitation,rain,weather_code&hourly=precipitation_probability&forecast_days=1&timezone=auto`;
     const r = await fetch(url);
     const d = await r.json();
     const cur = d.current;
-    const rainNow   = parseFloat(cur.precipitation) || 0;
-    const code      = parseInt(cur.weather_code) || 0;
-    const tempNow   = parseFloat(cur.temperature_2m);
-    const humNow    = parseFloat(cur.relative_humidity_2m);
-    const feelsLike = parseFloat(cur.apparent_temperature);
-    const windSpd   = parseFloat(cur.wind_speed_10m);
-    const windDir   = parseFloat(cur.wind_direction_10m);
-    const uvIndex   = parseFloat(cur.uv_index);
+    const rainNow  = parseFloat(cur.precipitation) || 0;
+    const code     = parseInt(cur.weather_code) || 0;
     const rainyCode = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99);
     const now = new Date().getHours();
     const prob3h = (d.hourly?.precipitation_probability || []).slice(now, now + 3);
@@ -1186,57 +1142,24 @@ async function fetchWeather() {
     weather.rainMm     = rainNow;
     weather.lastCheck  = new Date();
 
-    renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike, windSpd, windDir, uvIndex });
-    log(`🌤 Clima ${weather.city}: ${tempNow?.toFixed(1)}°C | vento:${windSpd?.toFixed(1)}km/h | chuva:${rainNow}mm → irrigação ${weather.isRaining ? 'BLOQUEADA 🚫' : 'LIBERADA ✅'}`, weather.isRaining ? 'warn' : 'ok');
+    renderWeatherCard(rainNow, code, maxProb);
+    log(`🌤 Clima ${weather.city}: ${rainNow}mm | prob. 3h: ${maxProb}% → irrigação ${weather.isRaining ? 'BLOQUEADA 🚫' : 'LIBERADA ✅'}`, weather.isRaining ? 'warn' : 'ok');
   } catch(e) {
     log('Erro ao buscar clima: ' + e.message, 'warn');
   }
 }
 
-function windDirLabel(deg) {
-  if (isNaN(deg)) return '—';
-  const dirs = ['N','NE','L','SE','S','SO','O','NO'];
-  return dirs[Math.round(deg / 45) % 8];
-}
-function uvLabel(uv) {
-  if (isNaN(uv)) return { txt:'—', col:'var(--muted)' };
-  if (uv >= 11) return { txt:'Extremo',  col:'var(--danger)' };
-  if (uv >= 8)  return { txt:'Muito alto',col:'var(--danger)' };
-  if (uv >= 6)  return { txt:'Alto',      col:'var(--warn)' };
-  if (uv >= 3)  return { txt:'Moderado',  col:'var(--warn)' };
-  return              { txt:'Baixo',      col:'var(--accent)' };
-}
-function weatherIcon(code, prob) {
-  if (code >= 95) return '⛈️';
-  if (code >= 80) return '🌦️';
-  if (code >= 71) return '🌨️';
-  if (code >= 51) return '🌧️';
-  if (code >= 45) return '🌫️';
-  if (code >= 3)  return prob >= 40 ? '⛅' : '🌤️';
-  return '☀️';
-}
-
-function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike, windSpd, windDir, uvIndex }) {
+function renderWeatherCard(rainMm, code, prob3h) {
   const card = document.getElementById('weather-card');
   if (!card) return;
   const blocked     = weather.isRaining;
   const statusColor = blocked ? 'var(--warn)' : 'var(--accent)';
   const statusBg    = blocked ? 'rgba(245,158,11,0.1)' : 'rgba(0,212,160,0.08)';
   const statusText  = blocked ? '🚫 Irrigação bloqueada' : '✅ Irrigação liberada';
-  const mainIcon    = weatherIcon(code, maxProb);
+  const mainIcon    = blocked ? '🌧️' : (prob3h >= 40 ? '⛅' : '☀️');
   const ts          = weather.lastCheck ? weather.lastCheck.toLocaleTimeString('pt-BR') : '--';
-  const warnRain    = rainNow > 0 ? 'var(--warn)' : 'var(--text)';
-  const warnProb    = maxProb >= 40 ? 'var(--warn)' : 'var(--text)';
-  const warnTemp    = !isNaN(tempNow) && tempNow > 35 ? 'var(--warn)' : 'var(--text)';
-  const warnWind    = !isNaN(windSpd) && windSpd > 50 ? 'var(--warn)' : 'var(--text)';
-  const uv          = uvLabel(uvIndex);
-
-  const metricBox = (icon, label, val, unit, sub, col='var(--text)') => `
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-      <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">${icon} ${label}</div>
-      <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${col};line-height:1">${val}<span style="font-size:9px;font-weight:400;color:var(--muted)"> ${unit}</span></div>
-      <div style="font-family:var(--mono);font-size:8px;color:${col};margin-top:3px;opacity:0.8">${sub}</div>
-    </div>`;
+  const warnRain    = rainMm > 0 ? 'var(--warn)' : 'var(--text)';
+  const warnProb    = prob3h >= 70 ? 'var(--warn)' : prob3h >= 40 ? 'var(--warn)' : 'var(--text)';
 
   card.innerHTML = `
     <div class="card-header" style="margin-bottom:10px">
@@ -1244,32 +1167,30 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
       <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">↻ ${ts}</span>
     </div>
 
-    <!-- Cabeçalho: ícone + cidade + status irrigação -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <span style="font-size:36px;flex-shrink:0;line-height:1">${mainIcon}</span>
+    <!-- City + icon -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:32px;flex-shrink:0;line-height:1">${mainIcon}</span>
       <div style="min-width:0;flex:1">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">${weather.city}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${weather.city}</div>
         <div style="font-size:11px;font-weight:700;color:${statusColor};padding:3px 8px;background:${statusBg};border-radius:4px;display:inline-block">${statusText}</div>
       </div>
     </div>
 
-    <!-- Temperatura destaque -->
-    ${!isNaN(tempNow) ? `
-    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-      <span style="font-family:var(--mono);font-size:28px;font-weight:700;color:${warnTemp};letter-spacing:-1px">${tempNow.toFixed(1)}<span style="font-size:14px">°C</span></span>
-      ${!isNaN(feelsLike) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">sensação ${feelsLike.toFixed(1)}°C</span>` : ''}
-      ${!isNaN(humNow) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);margin-left:auto">💧 ${Math.round(humNow)}%</span>` : ''}
-    </div>` : ''}
-
-    <!-- Grid 2x2: chuva, prob, vento, UV -->
+    <!-- Metrics 2-col -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-      ${metricBox('🌧', 'Chuva', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
-      ${metricBox('📊', 'Próx. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
-      ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir), warnWind) : ''}
-      ${!isNaN(uvIndex) ? metricBox('☀️', 'Índice UV', uvIndex.toFixed(1), '', uv.txt, uv.col) : ''}
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">🌧 Chuva</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${warnRain}">${rainMm.toFixed(1)}<span style="font-size:9px;font-weight:400;color:var(--muted)"> mm</span></div>
+        <div style="font-family:var(--mono);font-size:8px;color:${warnRain};margin-top:2px">${rainMm>0?'chovendo':'sem chuva'}</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">📊 Próx. 3h</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${warnProb}">${prob3h}<span style="font-size:9px;font-weight:400;color:var(--muted)"> %</span></div>
+        <div style="font-family:var(--mono);font-size:8px;color:${warnProb};margin-top:2px">${prob3h>=70?'alta chance':prob3h>=40?'moderada':'baixa'}</div>
+      </div>
     </div>
 
-    <!-- Busca de cidade -->
+    <!-- City search — always visible, shows current city -->
     <div style="display:flex;gap:6px;align-items:center">
       <input id="city-input" placeholder="Mudar cidade..." value=""
         style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;height:30px;min-width:0"
@@ -1612,9 +1533,8 @@ function loadRooms() {
 // ── Room modal helpers ────────────────────────────────────────────────────
 
 function toggleSensorOpt(type) {
-  const cb  = document.getElementById('rm-has-' + type);
-  const opt = document.getElementById('rm-opt-' + type);
-  // Toggle manualmente — sem label nativo para não disparar duplo
+  const cb  = document.getElementById(`rm-has-${type}`);
+  const opt = document.getElementById(`rm-opt-${type}`);
   cb.checked = !cb.checked;
   opt.classList.toggle('selected', cb.checked);
 
@@ -1622,15 +1542,14 @@ function toggleSensorOpt(type) {
   const hasSmoke = document.getElementById('rm-has-smoke').checked;
   const anySelected = hasTemp || hasSmoke;
 
-  // Seção MQTT geral
-  const mqtt = document.getElementById('rm-mqtt-section');
-  mqtt.style.display = anySelected ? 'block' : 'none';
-
-  // Blocos individuais de cada sensor
+  document.getElementById('rm-mqtt-section').style.setProperty(
+    'display', anySelected ? 'block' : 'none', 'important'
+  );
+  // Show/hide individual sensor config blocks
   const tc = document.getElementById('rm-temp-config');
   const sc = document.getElementById('rm-smoke-config');
-  if (tc) tc.style.display = hasTemp  ? 'block' : 'none';
-  if (sc) sc.style.display = hasSmoke ? 'block' : 'none';
+  if (tc) tc.style.setProperty('display', hasTemp  ? 'block' : 'none', 'important');
+  if (sc) sc.style.setProperty('display', hasSmoke ? 'block' : 'none', 'important');
 
   updateRoomPreview();
 }
@@ -1639,22 +1558,18 @@ function updateRoomPreview() {
   const hasTemp  = document.getElementById('rm-has-temp').checked;
   const hasSmoke = document.getElementById('rm-has-smoke').checked;
   const tempId   = (document.getElementById('rm-temp-id')?.value.trim().toLowerCase()) || '{device-id}';
-  const gasId    = (document.getElementById('rm-gas-id')?.value.trim().toLowerCase())  || '{device-id}';
   const smokePfx = (document.getElementById('rm-room-topic')?.value.trim()) || '{prefixo}';
 
   // Update inline previews
   const tPrev = document.getElementById('rm-temp-topic-preview');
   const sPrev = document.getElementById('rm-smoke-topic-preview');
-  const aaPrev = document.getElementById('rm-smoke-alert-preview');
-  if (tPrev)  tPrev.textContent  = `sensors/${tempId}/data`;
-  if (sPrev)  sPrev.textContent  = `sensors/${gasId}/data`;
-  if (aaPrev) aaPrev.textContent = `${smokePfx}/gas`;
+  if (tPrev) tPrev.textContent = `sensors/${tempId}/data`;
+  if (sPrev) sPrev.textContent = `${smokePfx}/fumaca`;
 
   // Summary preview
   const lines = [];
   if (hasTemp)  lines.push(`sensors/${tempId}/data`);
-  if (hasSmoke) lines.push(`sensors/${gasId}/data`);
-  if (hasSmoke && smokePfx !== '{prefixo}') lines.push(`${smokePfx}/gas`);
+  if (hasSmoke) lines.push(`${smokePfx}/fumaca`);
   document.getElementById('rm-room-preview').innerHTML = lines.length
     ? lines.map(l => `<span style="color:var(--accent2)">${l}</span>`).join('<br>')
     : '—';
@@ -1809,18 +1724,16 @@ function openRoomModal(editId) {
   document.getElementById('rm-opt-smoke').classList.toggle('selected', hasSmoke);
 
   // Restore sensor-specific fields
-  if (document.getElementById('rm-temp-id'))    document.getElementById('rm-temp-id').value    = r?.tempDeviceId || '';
+  if (document.getElementById('rm-temp-id'))   document.getElementById('rm-temp-id').value   = r?.tempDeviceId || '';
   if (document.getElementById('rm-temp-pass'))  document.getElementById('rm-temp-pass').value  = r?.tempDevPass  || '';
-  if (document.getElementById('rm-gas-id'))     document.getElementById('rm-gas-id').value     = r?.gasDeviceId  || '';
-  if (document.getElementById('rm-gas-pass'))   document.getElementById('rm-gas-pass').value   = r?.gasDevPass   || '';
   if (document.getElementById('rm-room-topic')) document.getElementById('rm-room-topic').value = r?.topic || '';
 
   const anySelected = hasTemp || hasSmoke;
-  document.getElementById('rm-mqtt-section').style.display = anySelected ? 'block' : 'none';
+  document.getElementById('rm-mqtt-section').style.setProperty('display', anySelected?'block':'none','important');
   const tc = document.getElementById('rm-temp-config');
   const sc = document.getElementById('rm-smoke-config');
-  if (tc) tc.style.display = hasTemp  ? 'block' : 'none';
-  if (sc) sc.style.display = hasSmoke ? 'block' : 'none';
+  if (tc) tc.style.setProperty('display', hasTemp  ? 'block':'none','important');
+  if (sc) sc.style.setProperty('display', hasSmoke ? 'block':'none','important');
 
   // Relé rows
   rmRelayRows = (r?.relays || []).map(rel => ({
@@ -1849,24 +1762,22 @@ function confirmAddRoom() {
   const linkedRelays = rmRelayRows.map(r => ({ id: r.relayId, icon: r.icon, label: r.label }));
 
   const tempDeviceId = document.getElementById('rm-temp-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'') || '';
-  const tempDevPass  = document.getElementById('rm-temp-pass')?.value || '';
-  const gasDeviceId  = document.getElementById('rm-gas-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'') || '';
-  const gasDevPass   = document.getElementById('rm-gas-pass')?.value || '';
+  const tempDevPass  = document.getElementById('rm-temp-pass')?.value.trim() || '';
+  // For temp sensor, topic is sensors/{id}/data; for smoke, use the prefix field
   const smokeTopic   = document.getElementById('rm-room-topic')?.value.trim() || '';
 
   if (!name) { log('Preencha o nome do ambiente', 'warn'); return; }
   if (hasTemp  && !tempDeviceId) { log('Preencha o Device ID do sensor de temperatura', 'warn'); return; }
-  if (hasSmoke && !gasDeviceId)  { log('Preencha o Device ID do sensor de gás', 'warn'); return; }
+  if (hasSmoke && !smokeTopic)   { log('Preencha o prefixo MQTT do sensor de fumaça', 'warn'); return; }
 
   if (editId) {
     const r = rooms.find(x => x.id === editId);
-    if (r) { Object.assign(r, { name, icon, topic: smokeTopic, hasTemp, hasSmoke, tempDeviceId, tempDevPass, gasDeviceId, gasDevPass, relays: linkedRelays }); }
+    if (r) { Object.assign(r, { name, icon, topic: smokeTopic, hasTemp, hasSmoke, tempDeviceId, tempDevPass, relays: linkedRelays }); }
   } else {
     rooms.push({
       id: 'room_' + Date.now(), name, icon,
       topic: smokeTopic, hasTemp, hasSmoke,
       tempDeviceId, tempDevPass,
-      gasDeviceId, gasDevPass,
       relays: linkedRelays,
       data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
     });
@@ -1896,12 +1807,8 @@ function subscribeRoom(room) {
     const t = `sensors/${room.tempDeviceId}/data`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
   }
-  if (room.hasSmoke && room.gasDeviceId) {
-    const t = `sensors/${room.gasDeviceId}/data`;
-    client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
-  }
   if (room.hasSmoke && room.topic) {
-    client.subscribe(room.topic + '/gas', { qos:1 }, () => log(`↳ ${room.topic}/gas`, 'sys'));
+    client.subscribe(room.topic + '/fumaca', { qos:1 }, () => log(`↳ ${room.topic}/fumaca`, 'sys'));
     client.subscribe(room.topic + '/status', { qos:1 });
   }
 }
@@ -1912,7 +1819,7 @@ function subscribeAllRooms() {
 
 function handleRoomMessage(topic, payload) {
   rooms.forEach(room => {
-    // Temperatura: sensors/{tempDeviceId}/data
+    // Match temperature by sensors/{tempDeviceId}/data
     const tempTopic = room.hasTemp && room.tempDeviceId ? `sensors/${room.tempDeviceId}/data` : null;
     if (tempTopic && topic === tempTopic) {
       try {
@@ -1924,45 +1831,21 @@ function handleRoomMessage(topic, payload) {
         renderRooms();
       } catch(e) {}
     }
-    // Gás: sensors/{gasDeviceId}/data
-    const gasTopic = room.hasSmoke && room.gasDeviceId ? `sensors/${room.gasDeviceId}/data` : null;
-    if (gasTopic && topic === gasTopic) {
+    if (topic === room.topic + '/fumaca') {
       try {
-        const d = JSON.parse(payload);
-        // Suporta payloads com gas, ppm, value, percent ou número direto
-        let val = d.gas ?? d.ppm ?? d.value ?? d.percent ?? parseFloat(payload);
+        let val;
+        try { const d = JSON.parse(payload); val = d.value ?? d.ppm ?? d.percent ?? parseFloat(payload); }
+        catch(e) { val = parseFloat(payload); }
         if (!isNaN(val)) {
           room.data.smokeRaw = val;
           room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
           room.data.lastSeen = new Date();
-          if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
-          renderRooms();
-        }
-      } catch(e) {
-        const val = parseFloat(payload);
-        if (!isNaN(val)) {
-          room.data.smokeRaw = val;
-          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
-          room.data.lastSeen = new Date();
-          renderRooms();
-        }
-      }
-    }
-    // Alerta via tópico livre (opcional)
-    if (room.topic && topic === room.topic + '/gas') {
-      try {
-        const d = JSON.parse(payload);
-        let val = d.gas ?? d.ppm ?? d.value ?? d.percent ?? parseFloat(payload);
-        if (!isNaN(val)) {
-          room.data.smokeRaw = val;
-          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
-          room.data.lastSeen = new Date();
-          if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
+          if (room.data.smoke >= 60) log(`🚨 ALARME FUMAÇA — ${room.name}: ${room.data.smoke}%`, 'warn');
           renderRooms();
         }
       } catch(e) {}
     }
-    if (room.topic && topic === room.topic + '/status') {
+    if (topic === room.topic + '/status') {
       try { room.data.online = JSON.parse(payload).online !== false; renderRooms(); } catch(e) {}
     }
   });
