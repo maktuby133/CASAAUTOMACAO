@@ -360,7 +360,7 @@ body::before {
         <div class="dot" id="mqtt-dot"></div>
         <span id="mqtt-label">Desconectado</span>
       </div>
-      <button class="btn" onclick="toggleConfig()">⚙ Configurar</button>
+      <button class="btn" id="cfg-main-btn" onclick="smartConnect()">⚙ Configurar</button>
     </div>
   </div>
 
@@ -864,6 +864,41 @@ self.addEventListener('fetch', e => e.respondWith(
   }
 }
 
+function updateMainBtn() {
+  const btn = document.getElementById('cfg-main-btn');
+  if (!btn) return;
+  const s = getCfg();
+  const connected = window._mqttConnected;
+  if (connected) {
+    btn.textContent = '● Conectado';
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+  } else if (s.host && s.pass) {
+    btn.textContent = '⚡ Reconectar';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  } else {
+    btn.textContent = '⚙ Configurar';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
+function smartConnect() {
+  const s = getCfg();
+  const connected = window._mqttConnected;
+  // Se já conectado → abre config para ver/editar
+  if (connected) { toggleConfig(); return; }
+  // Se tem credenciais salvas → conecta direto, sem abrir painel
+  if (s.host && s.pass) {
+    log('Conectando com credenciais salvas...', 'info');
+    connectMQTT();
+    return;
+  }
+  // Sem credenciais → abre painel para preencher
+  toggleConfig();
+}
+
 function toggleConfig() {
   const p = document.getElementById('cfg-panel');
   if (!p) return;
@@ -940,18 +975,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRooms();
     renderSchedules();
 
-    // ── 8. Auto-conecta se tiver credenciais ─────────────────────────
-    const s = getCfg();
-    console.log('[AutoFlow] getCfg():', JSON.stringify(s));
-    const hasCloud = !!(s.host && s.pass);
-    const hasLocal = !!(s.localHost);
-    console.log('[AutoFlow] hasCloud:', hasCloud, '| hasLocal:', hasLocal);
-    if (hasCloud || hasLocal) {
-      log('Credenciais salvas — conectando automaticamente...', 'info');
-      setTimeout(connectMQTT, 400);
-    } else {
-      log('Nenhuma credencial salva — preencha e conecte manualmente.', 'warn');
-    }
+    // ── 8. Atualiza botão conforme credenciais salvas ────────────────
+    updateMainBtn();
+    // Se tiver credenciais, o botão já mostra "⚡ Reconectar" — um clique conecta
   });
 
   // ── 9. Restaura clima e auto-carrega ──────────────────────────────────
@@ -996,9 +1022,8 @@ function connectMQTT() {
   const gas   = domOrSaved('cfg-gas', s.gas)
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
-  console.log('[AutoFlow] connectMQTT → host:', host, '| pass length:', pass?.length, '| isLocal:', isLocal);
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
-  if (!isLocal && !pass) { log('Preencha a senha MQTT — verifique as configurações', 'warn'); return; }
+  if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
   // Salva ANTES de conectar — garante que próximo reload já tem tudo
   setCfg(isLocal
@@ -1032,14 +1057,16 @@ function connectMQTT() {
   });
 
   client.on('connect', () => {
+    window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
     log('Broker MQTT conectado!', 'ok');
     document.getElementById('cfg-panel').style.setProperty('display','none','important');
+    updateMainBtn();
     subscribeAll();
     startScheduleEngine();
   });
-  client.on('error',   (e) => { setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
-  client.on('offline', ()  => { setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
+  client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
+  client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
   client.on('message', (t, m, pkt) => handleMsg(t, m.toString(), pkt));
 }
 
