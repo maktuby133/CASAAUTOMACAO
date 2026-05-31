@@ -1135,36 +1135,11 @@ function handleMsg(topic, payload, pkt) {
     return;
   }
 
-  // ------ TEMPERATURA: sensors/{id}/data ------
-  // Extrai o device ID do tópico recebido e compara com o configurado
+  // ------ TEMPERATURA / GÁS: sensors/{id}/data ------
+  // handleRoomMessage já faz o match por ambiente — aqui apenas loga e atualiza live bar
   if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
-    const incomingId = topic.split('/')[1];
-    if (!TEMP_DEVICE_ID || incomingId === TEMP_DEVICE_ID) {
-    // payload: { temperature, humidity, heat_index, ... }
-    const t = parseFloat(data.temperature);
-    const h = parseFloat(data.humidity);
-
-    if (!isNaN(t)) {
-      liveData.temp = t;
-      document.getElementById('mv-temp').innerHTML = `${t.toFixed(1)}<span class="metric-inline-unit">°C</span>`;
-      const mb = document.getElementById('mb-temp');
-      const ms = document.getElementById('ms-temp');
-      mb.classList.remove('warn','ok');
-      if (t > 35) { mb.classList.add('warn'); ms.textContent = '⚠ quente'; }
-      else        { mb.classList.add('ok');   ms.textContent = 'temp'; }
-    }
-    if (!isNaN(h)) {
-      liveData.hum = h;
-      document.getElementById('mv-hum').innerHTML = `${Math.round(h)}<span class="metric-inline-unit">%</span>`;
-      const mb = document.getElementById('mb-hum');
-      const ms = document.getElementById('ms-hum');
-      mb.classList.remove('warn','ok');
-      if (h < 30) { mb.classList.add('warn'); ms.textContent = '⚠ seca'; }
-      else        { mb.classList.add('ok');   ms.textContent = 'umidade'; }
-    }
     updateLiveBar(topic, false);
     return;
-    }  // end incomingId match
   }
 }
 
@@ -1188,12 +1163,20 @@ async function geocodeCity(city) {
 async function fetchWeather() {
   if (!weather.lat) return;
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${weather.lat}&longitude=${weather.lon}&current=precipitation,rain,weather_code&hourly=precipitation_probability&forecast_days=1&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${weather.lat}&longitude=${weather.lon}`
+      + `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,uv_index`
+      + `&hourly=precipitation_probability&forecast_days=1&timezone=auto`;
     const r = await fetch(url);
     const d = await r.json();
     const cur = d.current;
-    const rainNow  = parseFloat(cur.precipitation) || 0;
-    const code     = parseInt(cur.weather_code) || 0;
+    const rainNow   = parseFloat(cur.precipitation) || 0;
+    const code      = parseInt(cur.weather_code) || 0;
+    const tempNow   = parseFloat(cur.temperature_2m);
+    const humNow    = parseFloat(cur.relative_humidity_2m);
+    const feelsLike = parseFloat(cur.apparent_temperature);
+    const windSpd   = parseFloat(cur.wind_speed_10m);
+    const windDir   = parseFloat(cur.wind_direction_10m);
+    const uvIndex   = parseFloat(cur.uv_index);
     const rainyCode = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99);
     const now = new Date().getHours();
     const prob3h = (d.hourly?.precipitation_probability || []).slice(now, now + 3);
@@ -1203,24 +1186,57 @@ async function fetchWeather() {
     weather.rainMm     = rainNow;
     weather.lastCheck  = new Date();
 
-    renderWeatherCard(rainNow, code, maxProb);
-    log(`🌤 Clima ${weather.city}: ${rainNow}mm | prob. 3h: ${maxProb}% → irrigação ${weather.isRaining ? 'BLOQUEADA 🚫' : 'LIBERADA ✅'}`, weather.isRaining ? 'warn' : 'ok');
+    renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike, windSpd, windDir, uvIndex });
+    log(`🌤 Clima ${weather.city}: ${tempNow?.toFixed(1)}°C | vento:${windSpd?.toFixed(1)}km/h | chuva:${rainNow}mm → irrigação ${weather.isRaining ? 'BLOQUEADA 🚫' : 'LIBERADA ✅'}`, weather.isRaining ? 'warn' : 'ok');
   } catch(e) {
     log('Erro ao buscar clima: ' + e.message, 'warn');
   }
 }
 
-function renderWeatherCard(rainMm, code, prob3h) {
+function windDirLabel(deg) {
+  if (isNaN(deg)) return '—';
+  const dirs = ['N','NE','L','SE','S','SO','O','NO'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+function uvLabel(uv) {
+  if (isNaN(uv)) return { txt:'—', col:'var(--muted)' };
+  if (uv >= 11) return { txt:'Extremo',  col:'var(--danger)' };
+  if (uv >= 8)  return { txt:'Muito alto',col:'var(--danger)' };
+  if (uv >= 6)  return { txt:'Alto',      col:'var(--warn)' };
+  if (uv >= 3)  return { txt:'Moderado',  col:'var(--warn)' };
+  return              { txt:'Baixo',      col:'var(--accent)' };
+}
+function weatherIcon(code, prob) {
+  if (code >= 95) return '⛈️';
+  if (code >= 80) return '🌦️';
+  if (code >= 71) return '🌨️';
+  if (code >= 51) return '🌧️';
+  if (code >= 45) return '🌫️';
+  if (code >= 3)  return prob >= 40 ? '⛅' : '🌤️';
+  return '☀️';
+}
+
+function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike, windSpd, windDir, uvIndex }) {
   const card = document.getElementById('weather-card');
   if (!card) return;
   const blocked     = weather.isRaining;
   const statusColor = blocked ? 'var(--warn)' : 'var(--accent)';
   const statusBg    = blocked ? 'rgba(245,158,11,0.1)' : 'rgba(0,212,160,0.08)';
   const statusText  = blocked ? '🚫 Irrigação bloqueada' : '✅ Irrigação liberada';
-  const mainIcon    = blocked ? '🌧️' : (prob3h >= 40 ? '⛅' : '☀️');
+  const mainIcon    = weatherIcon(code, maxProb);
   const ts          = weather.lastCheck ? weather.lastCheck.toLocaleTimeString('pt-BR') : '--';
-  const warnRain    = rainMm > 0 ? 'var(--warn)' : 'var(--text)';
-  const warnProb    = prob3h >= 70 ? 'var(--warn)' : prob3h >= 40 ? 'var(--warn)' : 'var(--text)';
+  const warnRain    = rainNow > 0 ? 'var(--warn)' : 'var(--text)';
+  const warnProb    = maxProb >= 40 ? 'var(--warn)' : 'var(--text)';
+  const warnTemp    = !isNaN(tempNow) && tempNow > 35 ? 'var(--warn)' : 'var(--text)';
+  const warnWind    = !isNaN(windSpd) && windSpd > 50 ? 'var(--warn)' : 'var(--text)';
+  const uv          = uvLabel(uvIndex);
+
+  const metricBox = (icon, label, val, unit, sub, col='var(--text)') => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
+      <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">${icon} ${label}</div>
+      <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${col};line-height:1">${val}<span style="font-size:9px;font-weight:400;color:var(--muted)"> ${unit}</span></div>
+      <div style="font-family:var(--mono);font-size:8px;color:${col};margin-top:3px;opacity:0.8">${sub}</div>
+    </div>`;
 
   card.innerHTML = `
     <div class="card-header" style="margin-bottom:10px">
@@ -1228,30 +1244,32 @@ function renderWeatherCard(rainMm, code, prob3h) {
       <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">↻ ${ts}</span>
     </div>
 
-    <!-- City + icon -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="font-size:32px;flex-shrink:0;line-height:1">${mainIcon}</span>
+    <!-- Cabeçalho: ícone + cidade + status irrigação -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:36px;flex-shrink:0;line-height:1">${mainIcon}</span>
       <div style="min-width:0;flex:1">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${weather.city}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">${weather.city}</div>
         <div style="font-size:11px;font-weight:700;color:${statusColor};padding:3px 8px;background:${statusBg};border-radius:4px;display:inline-block">${statusText}</div>
       </div>
     </div>
 
-    <!-- Metrics 2-col -->
+    <!-- Temperatura destaque -->
+    ${!isNaN(tempNow) ? `
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <span style="font-family:var(--mono);font-size:28px;font-weight:700;color:${warnTemp};letter-spacing:-1px">${tempNow.toFixed(1)}<span style="font-size:14px">°C</span></span>
+      ${!isNaN(feelsLike) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">sensação ${feelsLike.toFixed(1)}°C</span>` : ''}
+      ${!isNaN(humNow) ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);margin-left:auto">💧 ${Math.round(humNow)}%</span>` : ''}
+    </div>` : ''}
+
+    <!-- Grid 2x2: chuva, prob, vento, UV -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">🌧 Chuva</div>
-        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${warnRain}">${rainMm.toFixed(1)}<span style="font-size:9px;font-weight:400;color:var(--muted)"> mm</span></div>
-        <div style="font-family:var(--mono);font-size:8px;color:${warnRain};margin-top:2px">${rainMm>0?'chovendo':'sem chuva'}</div>
-      </div>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px">
-        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">📊 Próx. 3h</div>
-        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${warnProb}">${prob3h}<span style="font-size:9px;font-weight:400;color:var(--muted)"> %</span></div>
-        <div style="font-family:var(--mono);font-size:8px;color:${warnProb};margin-top:2px">${prob3h>=70?'alta chance':prob3h>=40?'moderada':'baixa'}</div>
-      </div>
+      ${metricBox('🌧', 'Chuva', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
+      ${metricBox('📊', 'Próx. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
+      ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir), warnWind) : ''}
+      ${!isNaN(uvIndex) ? metricBox('☀️', 'Índice UV', uvIndex.toFixed(1), '', uv.txt, uv.col) : ''}
     </div>
 
-    <!-- City search — always visible, shows current city -->
+    <!-- Busca de cidade -->
     <div style="display:flex;gap:6px;align-items:center">
       <input id="city-input" placeholder="Mudar cidade..." value=""
         style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;height:30px;min-width:0"
