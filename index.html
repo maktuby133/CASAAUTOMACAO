@@ -610,14 +610,27 @@ body::before {
           </div>
         </div>
 
-        <!-- Sensor de fumaça (tópico livre) -->
+        <!-- Sensor de gás/fumaça -->
         <div id="rm-smoke-config" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-          <div style="font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">🔥 Sensor Fumaça / Gás</div>
+          <div style="font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">🔥 Sensor Gás / Fumaça</div>
+          <div class="field" style="margin-bottom:8px">
+            <label>Device ID <span style="font-weight:400;opacity:0.6">(4 últimos bytes do MAC)</span></label>
+            <input id="rm-gas-id" placeholder="ex: a1b2c3d4" maxlength="16" style="font-family:var(--mono);letter-spacing:0.1em" oninput="updateRoomPreview()"/>
+            <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
+              📋 Copie do portal AP do ESP32 (rede Wi-Fi: <b style="color:var(--text)">Sensor-XXXX</b>)<br>
+              Tópico: <span style="color:var(--accent2)" id="rm-smoke-topic-preview">sensors/.../data</span>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:8px">
+            <label>Senha do dispositivo</label>
+            <input id="rm-gas-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 A mesma senha criada ao configurar o ESP32</div>
+          </div>
           <div class="field">
-            <label>Prefixo do tópico MQTT</label>
+            <label>Prefixo do tópico MQTT <span style="font-weight:400;opacity:0.6">(opcional — para alertas)</span></label>
             <input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()"/>
             <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-              Tópico gerado: <span style="color:var(--accent2)" id="rm-smoke-topic-preview">casa/sala/fumaca</span>
+              Tópico de alerta: <span style="color:var(--accent2)" id="rm-smoke-alert-preview">casa/sala/gas</span>
             </div>
           </div>
         </div>
@@ -690,25 +703,40 @@ function setCfg(patch) {
   try { localStorage.setItem('autoflow_cfg', JSON.stringify(Object.assign(getCfg(), patch))); } catch(e) {}
 }
 function saveCfgField() {
+  // Lê apenas campos com valor real — nunca sobrescreve chave salva com string vazia
+  const gf = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return undefined;
+    const v = el.value.trim();
+    return v !== '' ? v : undefined;
+  };
+  const gfPass = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return undefined;
+    return el.value !== '' ? el.value : undefined; // senha sem trim
+  };
+
   const isLocal = brokerMode === 'local';
-  setCfg(isLocal ? {
-    localHost: document.getElementById('cfg-local-host')?.value.trim(),
-    localPort: document.getElementById('cfg-local-port')?.value.trim(),
-    localUser: document.getElementById('cfg-local-user')?.value.trim(),
-    localPass: document.getElementById('cfg-local-pass')?.value || '',
-    localWater: document.getElementById('cfg-local-water')?.value.trim(),
-    localTemp:  document.getElementById('cfg-local-temp')?.value.trim(),
-    brokerMode: 'local',
-  } : {
-    host:  document.getElementById('cfg-host')?.value.trim(),
-    port:  document.getElementById('cfg-port')?.value.trim(),
-    user:  document.getElementById('cfg-user')?.value.trim(),
-    pass:  document.getElementById('cfg-pass')?.value.trim(),
-    water: document.getElementById('cfg-water')?.value.trim(),
-    temp:  document.getElementById('cfg-temp')?.value.trim(),
-    gas:   document.getElementById('cfg-gas')?.value.trim(),
-    brokerMode: 'cloud',
-  });
+  const patch = { brokerMode: isLocal ? 'local' : 'cloud' };
+
+  if (isLocal) {
+    const lh = gf('cfg-local-host');  if (lh    !== undefined) patch.localHost  = lh;
+    const lp = gf('cfg-local-port');  if (lp    !== undefined) patch.localPort  = lp;
+    const lu = gf('cfg-local-user');  if (lu    !== undefined) patch.localUser  = lu;
+    const lw = gf('cfg-local-water'); if (lw    !== undefined) patch.localWater = lw;
+    const lt = gf('cfg-local-temp');  if (lt    !== undefined) patch.localTemp  = lt;
+    const lpass = gfPass('cfg-local-pass'); if (lpass !== undefined) patch.localPass = lpass;
+  } else {
+    const h = gf('cfg-host');  if (h    !== undefined) patch.host  = h;
+    const p = gf('cfg-port');  if (p    !== undefined) patch.port  = p;
+    const u = gf('cfg-user');  if (u    !== undefined) patch.user  = u;
+    const w = gf('cfg-water'); if (w    !== undefined) patch.water = w;
+    const t = gf('cfg-temp');  if (t    !== undefined) patch.temp  = t;
+    const g = gf('cfg-gas');   if (g    !== undefined) patch.gas   = g;
+    const pass = gfPass('cfg-pass'); if (pass !== undefined) patch.pass = pass;
+  }
+
+  setCfg(patch);
 }
 
 function togglePassVis(fieldId, btn) {
@@ -917,11 +945,24 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRooms();
     renderSchedules();
 
-    // ── 8. Auto-conecta se tiver credenciais ───────────────────────────
+    // ── 8. Auto-conecta se tiver credenciais ─────────────────────────
+    // Lê sempre do localStorage (fonte de verdade), nunca do DOM
     const s = getCfg();
-    const hasCloud = s.pass && s.host;
-    const hasLocal = s.localHost;
+    const hasCloud = !!(s.host && s.pass);
+    const hasLocal = !!(s.localHost);
     if (hasCloud || hasLocal) {
+      // Preenche campos do DOM com os valores salvos antes de conectar
+      // garante que connectMQTT() encontre os valores no DOM também
+      const fill = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      fill('cfg-host',  s.host);  fill('cfg-port',  s.port);
+      fill('cfg-user',  s.user);  fill('cfg-pass',  s.pass);
+      fill('cfg-water', s.water); fill('cfg-temp',  s.temp); fill('cfg-gas', s.gas);
+      fill('cfg-local-host',  s.localHost);
+      fill('cfg-local-port',  s.localPort);
+      fill('cfg-local-user',  s.localUser);
+      fill('cfg-local-pass',  s.localPass);
+      fill('cfg-local-water', s.localWater);
+      fill('cfg-local-temp',  s.localTemp);
       log('Credenciais encontradas — conectando automaticamente...', 'info');
       setTimeout(connectMQTT, 300);
     }
@@ -941,16 +982,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  // Lê do DOM OU do localStorage (fallback para auto-connect confiável)
+  // Fonte de verdade: localStorage. DOM é apenas confirmação (caso usuário editou sem salvar)
   const s = getCfg();
   const gv = (id, fallback) => {
     const el = document.getElementById(id);
-    return (el && el.value.trim()) ? el.value.trim() : (fallback || '');
+    const domVal = el ? el.value.trim() : '';
+    // Prioriza DOM se tiver valor; caso contrário usa localStorage
+    return domVal !== '' ? domVal : (fallback || '');
+  };
+  // Senha: sem trim (pode ter caracteres especiais)
+  const gvPass = (id, fallback) => {
+    const el = document.getElementById(id);
+    const domVal = el ? el.value : '';
+    return domVal !== '' ? domVal : (fallback || '');
   };
   const host  = isLocal ? gv('cfg-local-host', s.localHost) : gv('cfg-host', s.host);
   const port  = isLocal ? (parseInt(gv('cfg-local-port', s.localPort)) || 9001) : (parseInt(gv('cfg-port', s.port)) || 8884);
   const user  = isLocal ? gv('cfg-local-user', s.localUser) : gv('cfg-user', s.user);
-  const pass  = isLocal ? gv('cfg-local-pass', s.localPass) : gv('cfg-pass', s.pass);
+  const pass  = isLocal ? gvPass('cfg-local-pass', s.localPass) : gvPass('cfg-pass', s.pass);
   const water = isLocal ? gv('cfg-local-water', s.localWater) : gv('cfg-water', s.water);
   const temp  = (isLocal ? gv('cfg-local-temp', s.localTemp) : gv('cfg-temp', s.temp))
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
@@ -1570,18 +1619,22 @@ function updateRoomPreview() {
   const hasTemp  = document.getElementById('rm-has-temp').checked;
   const hasSmoke = document.getElementById('rm-has-smoke').checked;
   const tempId   = (document.getElementById('rm-temp-id')?.value.trim().toLowerCase()) || '{device-id}';
+  const gasId    = (document.getElementById('rm-gas-id')?.value.trim().toLowerCase())  || '{device-id}';
   const smokePfx = (document.getElementById('rm-room-topic')?.value.trim()) || '{prefixo}';
 
   // Update inline previews
   const tPrev = document.getElementById('rm-temp-topic-preview');
   const sPrev = document.getElementById('rm-smoke-topic-preview');
-  if (tPrev) tPrev.textContent = `sensors/${tempId}/data`;
-  if (sPrev) sPrev.textContent = `${smokePfx}/fumaca`;
+  const aaPrev = document.getElementById('rm-smoke-alert-preview');
+  if (tPrev)  tPrev.textContent  = `sensors/${tempId}/data`;
+  if (sPrev)  sPrev.textContent  = `sensors/${gasId}/data`;
+  if (aaPrev) aaPrev.textContent = `${smokePfx}/gas`;
 
   // Summary preview
   const lines = [];
   if (hasTemp)  lines.push(`sensors/${tempId}/data`);
-  if (hasSmoke) lines.push(`${smokePfx}/fumaca`);
+  if (hasSmoke) lines.push(`sensors/${gasId}/data`);
+  if (hasSmoke && smokePfx !== '{prefixo}') lines.push(`${smokePfx}/gas`);
   document.getElementById('rm-room-preview').innerHTML = lines.length
     ? lines.map(l => `<span style="color:var(--accent2)">${l}</span>`).join('<br>')
     : '—';
@@ -1736,8 +1789,10 @@ function openRoomModal(editId) {
   document.getElementById('rm-opt-smoke').classList.toggle('selected', hasSmoke);
 
   // Restore sensor-specific fields
-  if (document.getElementById('rm-temp-id'))   document.getElementById('rm-temp-id').value   = r?.tempDeviceId || '';
+  if (document.getElementById('rm-temp-id'))    document.getElementById('rm-temp-id').value    = r?.tempDeviceId || '';
   if (document.getElementById('rm-temp-pass'))  document.getElementById('rm-temp-pass').value  = r?.tempDevPass  || '';
+  if (document.getElementById('rm-gas-id'))     document.getElementById('rm-gas-id').value     = r?.gasDeviceId  || '';
+  if (document.getElementById('rm-gas-pass'))   document.getElementById('rm-gas-pass').value   = r?.gasDevPass   || '';
   if (document.getElementById('rm-room-topic')) document.getElementById('rm-room-topic').value = r?.topic || '';
 
   const anySelected = hasTemp || hasSmoke;
@@ -1774,22 +1829,24 @@ function confirmAddRoom() {
   const linkedRelays = rmRelayRows.map(r => ({ id: r.relayId, icon: r.icon, label: r.label }));
 
   const tempDeviceId = document.getElementById('rm-temp-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'') || '';
-  const tempDevPass  = document.getElementById('rm-temp-pass')?.value.trim() || '';
-  // For temp sensor, topic is sensors/{id}/data; for smoke, use the prefix field
+  const tempDevPass  = document.getElementById('rm-temp-pass')?.value || '';
+  const gasDeviceId  = document.getElementById('rm-gas-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'') || '';
+  const gasDevPass   = document.getElementById('rm-gas-pass')?.value || '';
   const smokeTopic   = document.getElementById('rm-room-topic')?.value.trim() || '';
 
   if (!name) { log('Preencha o nome do ambiente', 'warn'); return; }
   if (hasTemp  && !tempDeviceId) { log('Preencha o Device ID do sensor de temperatura', 'warn'); return; }
-  if (hasSmoke && !smokeTopic)   { log('Preencha o prefixo MQTT do sensor de fumaça', 'warn'); return; }
+  if (hasSmoke && !gasDeviceId)  { log('Preencha o Device ID do sensor de gás', 'warn'); return; }
 
   if (editId) {
     const r = rooms.find(x => x.id === editId);
-    if (r) { Object.assign(r, { name, icon, topic: smokeTopic, hasTemp, hasSmoke, tempDeviceId, tempDevPass, relays: linkedRelays }); }
+    if (r) { Object.assign(r, { name, icon, topic: smokeTopic, hasTemp, hasSmoke, tempDeviceId, tempDevPass, gasDeviceId, gasDevPass, relays: linkedRelays }); }
   } else {
     rooms.push({
       id: 'room_' + Date.now(), name, icon,
       topic: smokeTopic, hasTemp, hasSmoke,
       tempDeviceId, tempDevPass,
+      gasDeviceId, gasDevPass,
       relays: linkedRelays,
       data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
     });
@@ -1819,8 +1876,12 @@ function subscribeRoom(room) {
     const t = `sensors/${room.tempDeviceId}/data`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
   }
+  if (room.hasSmoke && room.gasDeviceId) {
+    const t = `sensors/${room.gasDeviceId}/data`;
+    client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
+  }
   if (room.hasSmoke && room.topic) {
-    client.subscribe(room.topic + '/fumaca', { qos:1 }, () => log(`↳ ${room.topic}/fumaca`, 'sys'));
+    client.subscribe(room.topic + '/gas', { qos:1 }, () => log(`↳ ${room.topic}/gas`, 'sys'));
     client.subscribe(room.topic + '/status', { qos:1 });
   }
 }
@@ -1831,7 +1892,7 @@ function subscribeAllRooms() {
 
 function handleRoomMessage(topic, payload) {
   rooms.forEach(room => {
-    // Match temperature by sensors/{tempDeviceId}/data
+    // Temperatura: sensors/{tempDeviceId}/data
     const tempTopic = room.hasTemp && room.tempDeviceId ? `sensors/${room.tempDeviceId}/data` : null;
     if (tempTopic && topic === tempTopic) {
       try {
@@ -1843,21 +1904,45 @@ function handleRoomMessage(topic, payload) {
         renderRooms();
       } catch(e) {}
     }
-    if (topic === room.topic + '/fumaca') {
+    // Gás: sensors/{gasDeviceId}/data
+    const gasTopic = room.hasSmoke && room.gasDeviceId ? `sensors/${room.gasDeviceId}/data` : null;
+    if (gasTopic && topic === gasTopic) {
       try {
-        let val;
-        try { const d = JSON.parse(payload); val = d.value ?? d.ppm ?? d.percent ?? parseFloat(payload); }
-        catch(e) { val = parseFloat(payload); }
+        const d = JSON.parse(payload);
+        // Suporta payloads com gas, ppm, value, percent ou número direto
+        let val = d.gas ?? d.ppm ?? d.value ?? d.percent ?? parseFloat(payload);
         if (!isNaN(val)) {
           room.data.smokeRaw = val;
           room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
           room.data.lastSeen = new Date();
-          if (room.data.smoke >= 60) log(`🚨 ALARME FUMAÇA — ${room.name}: ${room.data.smoke}%`, 'warn');
+          if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
+          renderRooms();
+        }
+      } catch(e) {
+        const val = parseFloat(payload);
+        if (!isNaN(val)) {
+          room.data.smokeRaw = val;
+          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
+          room.data.lastSeen = new Date();
+          renderRooms();
+        }
+      }
+    }
+    // Alerta via tópico livre (opcional)
+    if (room.topic && topic === room.topic + '/gas') {
+      try {
+        const d = JSON.parse(payload);
+        let val = d.gas ?? d.ppm ?? d.value ?? d.percent ?? parseFloat(payload);
+        if (!isNaN(val)) {
+          room.data.smokeRaw = val;
+          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
+          room.data.lastSeen = new Date();
+          if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
           renderRooms();
         }
       } catch(e) {}
     }
-    if (topic === room.topic + '/status') {
+    if (room.topic && topic === room.topic + '/status') {
       try { room.data.online = JSON.parse(payload).online !== false; renderRooms(); } catch(e) {}
     }
   });
