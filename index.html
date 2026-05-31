@@ -941,13 +941,16 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSchedules();
 
     // ── 8. Auto-conecta se tiver credenciais ─────────────────────────
-    // connectMQTT lê direto do localStorage — não precisa preencher DOM
     const s = getCfg();
+    console.log('[AutoFlow] getCfg():', JSON.stringify(s));
     const hasCloud = !!(s.host && s.pass);
     const hasLocal = !!(s.localHost);
+    console.log('[AutoFlow] hasCloud:', hasCloud, '| hasLocal:', hasLocal);
     if (hasCloud || hasLocal) {
       log('Credenciais salvas — conectando automaticamente...', 'info');
       setTimeout(connectMQTT, 400);
+    } else {
+      log('Nenhuma credencial salva — preencha e conecte manualmente.', 'warn');
     }
   });
 
@@ -993,8 +996,9 @@ function connectMQTT() {
   const gas   = domOrSaved('cfg-gas', s.gas)
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
+  console.log('[AutoFlow] connectMQTT → host:', host, '| pass length:', pass?.length, '| isLocal:', isLocal);
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
-  if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
+  if (!isLocal && !pass) { log('Preencha a senha MQTT — verifique as configurações', 'warn'); return; }
 
   // Salva ANTES de conectar — garante que próximo reload já tem tudo
   setCfg(isLocal
