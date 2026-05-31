@@ -708,7 +708,7 @@ body::before {
       <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
         <div class="field" style="margin-bottom:8px">
           <label>Código do sensor (water code)</label>
-          <input id="tank-code" placeholder="ex: abc123" oninput="updateTankPreview()" style="font-family:var(--mono);letter-spacing:0.1em"/>
+          <input id="tank-code" placeholder="ex: E524D0" oninput="updateTankPreview()" style="font-family:var(--mono);letter-spacing:0.1em;text-transform:uppercase"/>
           <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
             Tópico dados: <span style="color:var(--accent2)" id="tank-topic-preview">caixas/agua/.../dados</span><br>
             Tópico status: <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
@@ -717,6 +717,31 @@ body::before {
         <div class="field">
           <label>Capacidade total (litros)</label>
           <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
+        </div>
+      </div>
+
+      <!-- Conexão MQTT da caixa -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Conexão MQTT
+      </div>
+      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+        <div class="field" style="margin:0">
+          <label>Host do broker</label>
+          <input id="tank-host" placeholder="ex: xxxx.s1.eu.hivemq.cloud" style="font-family:var(--mono);font-size:11px"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field" style="margin:0">
+            <label>Usuário MQTT</label>
+            <input id="tank-user" placeholder="ex: monitortemp"/>
+          </div>
+          <div class="field" style="margin:0">
+            <label>Senha MQTT</label>
+            <input id="tank-pass" type="password" placeholder="••••••••"/>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
+          Porta: <strong>8884</strong> (WSS) — usada para conectar ao broker desta caixa
         </div>
       </div>
 
@@ -1043,6 +1068,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 4b. Restaura caixas d'água ────────────────────────────────────────
   loadTanks();
+  renderTanks();
+  // Conecta aos brokers de cada caixa que tiver credenciais salvas
+  setTimeout(() => connectAllTankBrokers(), 500);
 
   // ── 5. Restaura configurações do broker ───────────────────────────────
   if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
@@ -1437,6 +1465,9 @@ function openTankModal(editId) {
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
+  document.getElementById('tank-host').value = t?.mqttHost || '';
+  document.getElementById('tank-user').value = t?.mqttUser || '';
+  document.getElementById('tank-pass').value = t?.mqttPass || '';
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -1542,12 +1573,18 @@ function renderTankPumpRows() {
 
 function confirmSaveTank() {
   const name     = document.getElementById('tank-name').value.trim();
-  const code     = document.getElementById('tank-code').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+  const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
   const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
+  const mqttHost = document.getElementById('tank-host').value.trim();
+  const mqttUser = document.getElementById('tank-user').value.trim();
+  const mqttPass = document.getElementById('tank-pass').value;
   const editId   = document.getElementById('tank-edit-id').value;
 
   if (!name) { log('Preencha o nome da caixa', 'warn'); return; }
   if (!code) { log('Preencha o código do sensor', 'warn'); return; }
+  if (!mqttHost) { log('Preencha o host do broker MQTT', 'warn'); return; }
+  if (!mqttUser) { log('Preencha o usuário MQTT', 'warn'); return; }
+  if (!mqttPass) { log('Preencha a senha MQTT', 'warn'); return; }
   if (!editId && waterTanks.length >= 2) { alert('Máximo de 2 caixas de água.'); return; }
 
   const pumps = tankPumpRows.map(r => ({
@@ -1557,7 +1594,7 @@ function confirmSaveTank() {
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
-  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
   pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
 
   if (editId) {
@@ -1567,7 +1604,10 @@ function confirmSaveTank() {
     waterTanks.push(tankData);
   }
   saveTanks();
-  subscribeTanks();
+
+  // Conecta ao broker desta caixa se ainda não conectado ou se as credenciais mudaram
+  connectTankBroker(tankData);
+
   renderTanks();
   log(`Caixa "${name}" salva (sensor: caixas/agua/${code}/dados)`, 'ok');
   closeTankModal();
@@ -1652,6 +1692,64 @@ function renderTanks() {
       ${pumpsHtml}
     </div>`;
   }).join('');
+}
+
+// Clientes MQTT separados por caixa (broker próprio)
+const tankClients = {}; // tankId → mqtt client
+
+function connectTankBroker(tank) {
+  if (!tank.mqttHost || !tank.mqttUser || !tank.mqttPass || !tank.code) return;
+
+  // Encerra conexão anterior desta caixa se existir
+  if (tankClients[tank.id]) {
+    try { tankClients[tank.id].end(true); } catch(e) {}
+    delete tankClients[tank.id];
+  }
+
+  const url = `wss://${tank.mqttHost}:8884/mqtt`;
+  log(`🔌 Conectando broker da caixa "${tank.name}"...`, 'sys');
+
+  const tc = mqtt.connect(url, {
+    username: tank.mqttUser,
+    password: tank.mqttPass,
+    clientId: 'tank_' + tank.id.slice(-6) + '_' + Math.random().toString(36).slice(2,6),
+    clean: true,
+    connectTimeout: 10000,
+    reconnectPeriod: 10000,
+  });
+
+  tankClients[tank.id] = tc;
+
+  tc.on('connect', () => {
+    log(`✅ Broker da caixa "${tank.name}" conectado!`, 'ok');
+    tc.subscribe(`caixas/agua/${tank.code}/dados`,  { qos: 1 });
+    tc.subscribe(`caixas/agua/${tank.code}/status`, { qos: 1 });
+  });
+
+  tc.on('message', (topic, msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      handleTankMessage(topic, msg.toString(), data);
+      // Atualiza liveData se for a caixa principal (TOPICS_WATER)
+      if (topic === `caixas/agua/${tank.code}/dados`) {
+        const pct = parseInt(data.percentage);
+        const lit = parseInt(data.liters);
+        if (!isNaN(pct)) liveData.water = pct;
+        if (!isNaN(lit)) liveData.liters = lit;
+        updateLiveBar(topic, data.cached);
+        checkRules();
+      }
+    } catch(e) {}
+  });
+
+  tc.on('error',   (e) => log(`❌ Erro broker "${tank.name}": ${e.message}`, 'warn'));
+  tc.on('offline', ()  => log(`⚠ Broker "${tank.name}" offline`, 'warn'));
+}
+
+function connectAllTankBrokers() {
+  waterTanks.forEach(t => {
+    if (t.mqttHost && t.mqttUser && t.mqttPass) connectTankBroker(t);
+  });
 }
 
 function subscribeTanks() {
