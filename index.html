@@ -381,16 +381,6 @@ body::before {
             style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
         </div>
       </div>
-      <div class="field"><label>Código da caixa d'água</label><input id="cfg-water" oninput="saveCfgField()" placeholder="ex: A1B2C3D4" /></div>
-      <div class="field"><label>Device ID — Temperatura</label><input id="cfg-temp" oninput="saveCfgField()" placeholder="ex: E5F6G7H8" /></div>
-      <div class="field"><label>Device ID — Gás</label><input id="cfg-gas" oninput="saveCfgField()" placeholder="ex: F1E2D3C4" /></div>
-    </div>
-    <div style="margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">
-      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
-        📡 Caixa d'água: <span id="preview-water" style="color:var(--accent2)">caixas/agua/{codigo}/dados</span><br>
-        📡 Temperatura: <span id="preview-temp" style="color:var(--accent2)">sensors/{deviceId}/data</span><br>
-        📡 Gás: <span id="preview-gas" style="color:var(--accent2)">sensors/{deviceId}/data</span>
-      </div>
     </div>
     <div class="config-actions">
       <button class="btn primary" onclick="connectMQTT()">Conectar</button>
@@ -727,12 +717,9 @@ function saveCfgField() {
     const lt = gf('cfg-local-temp');  if (lt    !== undefined) patch.localTemp  = lt;
     const lpass = gfPass('cfg-local-pass'); if (lpass !== undefined) patch.localPass = lpass;
   } else {
-    const h = gf('cfg-host');  if (h    !== undefined) patch.host  = h;
-    const p = gf('cfg-port');  if (p    !== undefined) patch.port  = p;
-    const u = gf('cfg-user');  if (u    !== undefined) patch.user  = u;
-    const w = gf('cfg-water'); if (w    !== undefined) patch.water = w;
-    const t = gf('cfg-temp');  if (t    !== undefined) patch.temp  = t;
-    const g = gf('cfg-gas');   if (g    !== undefined) patch.gas   = g;
+    const h = gf('cfg-host');  if (h    !== undefined) patch.host = h;
+    const p = gf('cfg-port');  if (p    !== undefined) patch.port = p;
+    const u = gf('cfg-user');  if (u    !== undefined) patch.user = u;
     const pass = gfPass('cfg-pass'); if (pass !== undefined) patch.pass = pass;
   }
 
@@ -783,6 +770,8 @@ function publishPersist() {
 function loadFromBrokerPayload(payload) {
   try {
     const d = JSON.parse(payload);
+    const brokerTime = d.savedAt ? new Date(d.savedAt).getTime() : 0;
+
     // Relés — restaura direto sem chamar saveRelayState (evita loop)
     if (d.relays) {
       d.relays.forEach(sr => {
@@ -793,24 +782,44 @@ function loadFromBrokerPayload(payload) {
         relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
       )); } catch(e) {}
     }
-    // Ambientes — restaura direto sem chamar saveRooms
-    if (d.rooms && d.rooms.length) {
+
+    // Ambientes — só restaura do broker se ele tiver dados mais recentes
+    // que o localStorage local (evita apagar ambientes criados offline)
+    const localRoomsRaw = localStorage.getItem('autoflow_rooms');
+    const localRooms = localRoomsRaw ? JSON.parse(localRoomsRaw) : [];
+    const localTime  = (() => { try { return parseInt(localStorage.getItem('autoflow_rooms_ts') || '0'); } catch(e) { return 0; } })();
+
+    if (d.rooms && d.rooms.length && brokerTime >= localTime) {
       rooms = d.rooms.map(r => ({
         ...r,
         data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
       }));
-      try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+      try {
+        localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
+        localStorage.setItem('autoflow_rooms_ts', String(brokerTime));
+      } catch(e) {}
+    } else if (localRooms.length && rooms.length === 0) {
+      // Mantém o que está no localStorage
+      rooms = localRooms.map(r => ({
+        ...r,
+        data: r.data || { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
+      }));
     }
+
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
-    // Clima
-    if (d.weather?.city) {
+    // Clima — só atualiza se o broker tiver cidade e o local não tiver
+    if (d.weather?.city && !weather.city) {
       weather.city = d.weather.city;
       weather.lat  = d.weather.lat;
       weather.lon  = d.weather.lon;
-      if (weather.lat) { fetchWeather(); }
+      if (weather.lat && !weatherInterval) {
+        fetchWeather().then(() => {
+          weatherInterval = setInterval(fetchWeather, 10 * 60 * 1000);
+        });
+      }
     }
     renderRelays(); renderRooms(); renderSchedules();
     log(`☁ Config carregada do broker (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
@@ -911,9 +920,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-port',  saved.port);
   setV('cfg-user',  saved.user);
   setV('cfg-pass',  saved.pass);
-  setV('cfg-water', saved.water);
-  setV('cfg-temp',  saved.temp);
-  setV('cfg-gas',   saved.gas);
+
   setV('cfg-local-host',  saved.localHost);
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
@@ -922,20 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
 
-  // ── 6. Previews dos tópicos ───────────────────────────────────────────
-  if (saved.water) document.getElementById('preview-water').textContent = `caixas/agua/${saved.water}/dados`;
-  if (saved.temp)  document.getElementById('preview-temp').textContent  = `sensors/${saved.temp}/data`;
-  if (saved.gas)   document.getElementById('preview-gas').textContent   = `sensors/${saved.gas}/data`;
 
-  document.getElementById('cfg-water').addEventListener('input', function() {
-    document.getElementById('preview-water').textContent = `caixas/agua/${this.value.trim()||'{codigo}'}/dados`;
-  });
-  document.getElementById('cfg-temp').addEventListener('input', function() {
-    document.getElementById('preview-temp').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
-  });
-  document.getElementById('cfg-gas').addEventListener('input', function() {
-    document.getElementById('preview-gas').textContent = `sensors/${this.value.trim()||'{deviceId}'}/data`;
-  });
 
   // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
   initPWA();
@@ -958,11 +952,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── 9. Restaura clima e auto-carrega ──────────────────────────────────
-  if (saved.weatherCity && saved.weatherLat && saved.weatherLon) {
+  const wlat = parseFloat(saved.weatherLat);
+  const wlon = parseFloat(saved.weatherLon);
+  if (saved.weatherCity && !isNaN(wlat) && !isNaN(wlon)) {
     weather.city = saved.weatherCity;
-    weather.lat  = parseFloat(saved.weatherLat);
-    weather.lon  = parseFloat(saved.weatherLon);
-    log(`🌤 Restaurando clima: ${saved.weatherCity}`, 'info');
+    weather.lat  = wlat;
+    weather.lon  = wlon;
+    log(`🌤 Carregando clima: ${saved.weatherCity}`, 'info');
     fetchWeather().then(() => {
       if (weatherInterval) clearInterval(weatherInterval);
       weatherInterval = setInterval(fetchWeather, 10 * 60 * 1000);
@@ -1253,7 +1249,7 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
     </div>` : ''}
 
     <!-- Grid 2x2: chuva, prob, vento, UV -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:10px">
       ${metricBox('🌧', 'Chuva', rainNow.toFixed(1), 'mm', rainNow > 0 ? 'chovendo' : 'sem chuva', warnRain)}
       ${metricBox('📊', 'Próx. 3h', maxProb, '%', maxProb >= 70 ? 'alta chance' : maxProb >= 40 ? 'moderada' : 'baixa', warnProb)}
       ${!isNaN(windSpd) ? metricBox('💨', 'Vento', windSpd.toFixed(1), 'km/h', windDirLabel(windDir), warnWind) : ''}
@@ -1586,7 +1582,10 @@ function log(msg, type = 'sys') {
 let rooms = [];
 
 function saveRooms() {
-  try { localStorage.setItem('autoflow_rooms', JSON.stringify(rooms)); } catch(e) {}
+  try {
+    localStorage.setItem('autoflow_rooms', JSON.stringify(rooms));
+    localStorage.setItem('autoflow_rooms_ts', String(Date.now()));
+  } catch(e) {}
 }
 
 function loadRooms() {
