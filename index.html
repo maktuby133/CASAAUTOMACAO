@@ -1001,35 +1001,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
-  // Fonte de verdade: SEMPRE localStorage — DOM só sobrescreve se tiver valor novo
+
+  // Lê 100% do localStorage — zero dependência do DOM
+  // O DOM só é usado quando o usuário clica em Conectar manualmente (campos visíveis)
   const s = getCfg();
-  const domOrSaved = (id, saved) => {
+
+  // Se o painel estiver visível, prioriza o que está digitado nos campos
+  const panelOpen = document.getElementById('cfg-panel')?.style.display !== 'none'
+    && window.getComputedStyle(document.getElementById('cfg-panel')).display !== 'none';
+
+  const fromDom = (id) => {
+    if (!panelOpen) return '';
     const el = document.getElementById(id);
-    const v = el ? el.value.trim() : '';
-    return v !== '' ? v : (saved || '');
+    return el ? el.value.trim() : '';
   };
-  const domOrSavedPass = (id, saved) => {
+  const fromDomPass = (id) => {
+    if (!panelOpen) return '';
     const el = document.getElementById(id);
-    const v = el ? el.value : '';
-    return v !== '' ? v : (saved || '');
+    return el ? el.value : '';
   };
 
-  const host  = isLocal ? domOrSaved('cfg-local-host', s.localHost) : domOrSaved('cfg-host', s.host);
+  const host  = isLocal
+    ? (fromDom('cfg-local-host') || s.localHost || '')
+    : (fromDom('cfg-host')       || s.host       || '');
   const port  = isLocal
-    ? (parseInt(domOrSaved('cfg-local-port', s.localPort)) || 9001)
-    : (parseInt(domOrSaved('cfg-port',       s.port))      || 8884);
-  const user  = isLocal ? domOrSaved('cfg-local-user',  s.localUser) : domOrSaved('cfg-user',  s.user);
-  const pass  = isLocal ? domOrSavedPass('cfg-local-pass', s.localPass) : domOrSavedPass('cfg-pass', s.pass);
-  const water = isLocal ? domOrSaved('cfg-local-water', s.localWater) : domOrSaved('cfg-water', s.water);
-  const temp  = (isLocal ? domOrSaved('cfg-local-temp', s.localTemp) : domOrSaved('cfg-temp', s.temp))
+    ? (parseInt(fromDom('cfg-local-port') || s.localPort) || 9001)
+    : (parseInt(fromDom('cfg-port')       || s.port)      || 8884);
+  const user  = isLocal
+    ? (fromDom('cfg-local-user') || s.localUser || '')
+    : (fromDom('cfg-user')       || s.user       || '');
+  const pass  = isLocal
+    ? (fromDomPass('cfg-local-pass') || s.localPass || '')
+    : (fromDomPass('cfg-pass')       || s.pass       || '');
+  const water = isLocal
+    ? (fromDom('cfg-local-water') || s.localWater || '')
+    : (s.water || '');
+  const temp  = (isLocal ? (s.localTemp || '') : (s.temp || ''))
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  const gas   = domOrSaved('cfg-gas', s.gas)
-    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
   if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
-  // Salva ANTES de conectar — garante que próximo reload já tem tudo
+  // Salva tudo antes de conectar
   setCfg(isLocal
     ? { localHost:host, localPort:port, localUser:user, localPass:pass, localWater:water, localTemp:temp, brokerMode:'local', relayPrefix:RELAY_PREFIX }
     : { host, port, user, pass, water, temp, gas, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
