@@ -101,6 +101,7 @@ body::before {
 /* ALERT BANNER */
 .alert-banner { display: none; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-family: var(--mono); font-size: 11px; color: var(--warn); line-height: 1.6; }
 .alert-banner.show { display: block; }
+#gas-lock-banner.show { display: flex !important; }
 
 /* METRICS */
 .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -314,8 +315,11 @@ body::before {
 .rooms-scroll { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 8px 9px;
+  border-radius: var(--radius); padding: 8px 10px;
   transition: border-color 0.2s; position:relative; min-width:0;
+  /* Tamanho fixo — conteúdo se ajusta dentro */
+  min-height: 70px; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: space-between;
 }
 .room-card:hover { border-color: var(--border2); }
 .room-card:hover .room-actions { opacity:1 !important; }
@@ -484,6 +488,10 @@ body::before {
       </div>
     </div>
     <div class="alert-banner" id="alert-banner" style="margin-top:10px;margin-bottom:0"></div>
+    <!-- Banner de alerta FIXO de gás — só some quando usuário resetar -->
+    <div class="alert-banner" id="gas-lock-banner"
+      style="margin-top:6px;margin-bottom:0;display:none;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.35);color:var(--danger);animation:pulse-alarm 2s ease-in-out infinite;flex-direction:row;align-items:center;gap:10px">
+    </div>
   </div>
 
   <!-- ROW 2: ambientes -->
@@ -584,6 +592,11 @@ body::before {
           <span class="rule-icon">＋</span>
           <span class="rule-text" style="font-style:italic">Mais regras após integração com hardware</span>
           <span class="rule-badge off">em breve</span>
+        </div>
+        <div class="rule-item">
+          <span class="rule-icon">🔥</span>
+          <span class="rule-text">Se <strong>gás detectado ≥ 30% por 3× ou 5s contínuos</strong> → alerta fixo na tela até usuário resetar</span>
+          <span class="rule-badge active">ativa</span>
         </div>
       </div>
     </div>
@@ -2013,6 +2026,73 @@ function handleTankMessage(topic, payload, data) {
 }
 
 // ============ REGRAS AUTOMÁTICAS ============
+
+// ── Rastreamento de alerta persistente de gás ─────────────────────────────
+const gasAlertCount    = {};  // roomId → nº de detecções acima do limiar
+const gasAlertTimer    = {};  // roomId → timestamp da primeira detecção contínua
+const gasAlertLocked   = {};  // roomId → true quando alerta fixo ativado
+const GAS_DETECT_LIMIT = 3;   // nº de detecções para fixar alerta
+const GAS_TIME_LIMIT   = 5000; // ms contínuos para fixar alerta
+
+function checkGasRule(room, pct) {
+  const id = room.id;
+  const isHigh = pct >= 30; // limiar: atenção ou alarme
+
+  if (isHigh) {
+    // Contador de detecções
+    gasAlertCount[id] = (gasAlertCount[id] || 0) + 1;
+    // Timer contínuo
+    if (!gasAlertTimer[id]) gasAlertTimer[id] = Date.now();
+    const elapsed = Date.now() - gasAlertTimer[id];
+
+    if (!gasAlertLocked[id]) {
+      if (gasAlertCount[id] >= GAS_DETECT_LIMIT || elapsed >= GAS_TIME_LIMIT) {
+        gasAlertLocked[id] = true;
+        showGasLockAlert(room, pct);
+        log(`🚨 ALERTA FIXO GÁS — ${room.name}: ${pct}% (${gasAlertCount[id]}x / ${Math.round(elapsed/1000)}s)`, 'warn');
+      }
+    } else {
+      // Já fixado: atualiza o banner com valor atual
+      showGasLockAlert(room, pct);
+    }
+  } else {
+    // Abaixo do limiar: zera timer contínuo, mas NÃO zera contador nem desbloqueia
+    gasAlertTimer[id] = null;
+    // Se não está bloqueado, pode limpar contador
+    if (!gasAlertLocked[id]) gasAlertCount[id] = 0;
+  }
+  renderRooms(); // atualiza ícone ⚠ no card
+}
+
+function showGasLockAlert(room, pct) {
+  const b = document.getElementById('gas-lock-banner');
+  if (!b) return;
+  const sl = smokeLevel(pct);
+  b.innerHTML = `
+    <span style="font-size:14px">🚨</span>
+    <span style="flex:1"><strong>ALERTA DE GÁS FIXO — ${room.name}</strong><br>
+    Nível: <strong style="color:${sl.color}">${pct}%</strong> · ${sl.label} · Detectado ${gasAlertCount[room.id]}x</span>
+    <button onclick="resetGasAlert('${room.id}')"
+      style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:6px;color:var(--danger);font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;flex-shrink:0;white-space:nowrap">
+      ✕ Resetar alerta
+    </button>`;
+  b.classList.add('show');
+}
+
+function resetGasAlert(roomId) {
+  gasAlertLocked[roomId]  = false;
+  gasAlertCount[roomId]   = 0;
+  gasAlertTimer[roomId]   = null;
+  // Verifica se ainda há outros alertas ativos
+  const stillLocked = rooms.some(r => gasAlertLocked[r.id]);
+  if (!stillLocked) {
+    const b = document.getElementById('gas-lock-banner');
+    if (b) b.classList.remove('show');
+  }
+  renderRooms();
+  log(`Alerta de gás resetado pelo usuário`, 'sys');
+}
+
 function checkRules() {
   // Regra: nível baixo — apenas alerta, não desliga irrigação
   if (liveData.water !== null && liveData.water < 20) {
@@ -2666,6 +2746,7 @@ function handleRoomMessage(topic, payload) {
           room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
           room.data.lastSeen = new Date();
           if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
+          checkGasRule(room, room.data.smoke);
           renderRooms();
         }
       } catch(e) {
@@ -2674,6 +2755,7 @@ function handleRoomMessage(topic, payload) {
           room.data.smokeRaw = val;
           room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
           room.data.lastSeen = new Date();
+          checkGasRule(room, room.data.smoke);
           renderRooms();
         }
       }
@@ -2688,6 +2770,7 @@ function handleRoomMessage(topic, payload) {
           room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
           room.data.lastSeen = new Date();
           if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
+          checkGasRule(room, room.data.smoke);
           renderRooms();
         }
       } catch(e) {}
@@ -2751,14 +2834,17 @@ function renderRooms() {
       }
     }
     if (r.hasSmoke) {
-      if (sensorParts.length) sensorParts.push(`<div style="width:1px;height:18px;background:var(--border);flex-shrink:0"></div>`);
+      if (sensorParts.length) sensorParts.push(`<div style="width:1px;height:16px;background:var(--border);flex-shrink:0"></div>`);
+      const smokeVal = d.smoke !== null ? d.smoke : null;
+      const rawVal   = d.smokeRaw !== null && d.smokeRaw > 100 ? Math.round(d.smokeRaw) : null;
+      const gasLocked = gasAlertLocked[r.id] || false;
       sensorParts.push(`
-        <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:60px">
-          <span style="font-size:10px">🔥</span>
-          <div style="flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;min-width:30px">
-            <div style="height:100%;width:${d.smoke ?? 0}%;background:${sl.color};border-radius:2px;transition:width 0.5s"></div>
-          </div>
-          <span style="font-family:var(--mono);font-size:9px;font-weight:600;color:${sl.color}">${sl.label}</span>
+        <div style="display:flex;align-items:baseline;gap:3px" title="${rawVal !== null ? rawVal + ' ppm' : ''}">
+          <span style="font-size:10px;line-height:1">🔥</span>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:${sl.color};letter-spacing:-0.5px">${smokeVal !== null ? smokeVal : '—'}<span style="font-size:8px;font-weight:400;color:${sl.color};opacity:0.7">%</span></span>
+          ${rawVal !== null ? `<span style="font-family:var(--mono);font-size:8px;color:var(--muted)">${rawVal}p</span>` : ''}
+          <span style="font-family:var(--mono);font-size:8px;font-weight:700;color:${sl.color}">${smokeVal !== null ? sl.label : ''}</span>
+          ${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite" title="Alerta fixo — clique para resetar">⚠</span>` : ''}
         </div>`);
     }
 
