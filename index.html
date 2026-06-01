@@ -315,11 +315,11 @@ body::before {
 .rooms-scroll { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 8px 10px;
+  border-radius: var(--radius); padding: 7px 9px;
   transition: border-color 0.2s; position:relative; min-width:0;
-  /* Tamanho fixo — conteúdo se ajusta dentro */
-  min-height: 70px; box-sizing: border-box;
-  display: flex; flex-direction: column; justify-content: space-between;
+  /* Altura fixa — não cresce com conteúdo */
+  height: 80px; box-sizing: border-box; overflow: hidden;
+  display: flex; flex-direction: column; gap: 3px;
 }
 .room-card:hover { border-color: var(--border2); }
 .room-card:hover .room-actions { opacity:1 !important; }
@@ -327,31 +327,50 @@ body::before {
 .room-card.warn-smoke { border-color:var(--warn); }
 @keyframes pulse-alarm { 0%,100%{border-color:var(--danger)} 50%{border-color:rgba(239,68,68,0.3)} }
 /* header */
-.room-header { display:flex; align-items:center; gap:5px; margin-bottom:6px; }
-.room-icon   { font-size:13px; flex-shrink:0; }
+.room-header { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.room-icon   { font-size:12px; flex-shrink:0; }
 .room-name   { font-size:11px; font-weight:600; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .room-actions{ display:flex; gap:2px; opacity:0; transition:opacity 0.15s; }
 .room-act-btn{ font-size:9px; background:none; border:none; cursor:pointer; color:var(--muted); padding:1px 3px; }
-/* data row: icon · value · sep · icon · value */
-.room-data { display:flex; align-items:center; gap:4px; margin-bottom:4px; flex-wrap:wrap; }
-.room-val  { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); letter-spacing:-0.5px; }
-.room-unit { font-size:8px; color:var(--muted); font-weight:400; }
-.room-sep  { width:1px; height:12px; background:var(--border); flex-shrink:0; }
-/* smoke bar */
-.room-smoke { display:flex; align-items:center; gap:4px; }
-.smoke-bar  { flex:1; height:3px; background:var(--bg2); border-radius:2px; overflow:hidden; min-width:30px; }
-.smoke-fill { height:100%; border-radius:2px; transition:width 0.5s,background 0.3s; }
-.smoke-lbl  { font-family:var(--mono); font-size:8px; font-weight:700; flex-shrink:0; width:38px; text-align:right; }
-/* relay pills */
-.room-relays { display:flex; flex-wrap:wrap; gap:3px; border-top:1px solid var(--border); padding-top:5px; margin-top:4px; }
-.room-relay-pill {
-  font-family:var(--mono); font-size:9px; padding:2px 6px; border-radius:3px;
-  cursor:pointer; border:1px solid; transition:all 0.15s; display:flex; align-items:center; gap:3px;
+/* sensor + relay row: tudo na MESMA linha */
+.room-main-row {
+  display: flex; align-items: center; gap: 5px;
+  flex: 1; overflow: hidden; min-width: 0;
 }
-.room-relay-pill.on  { background:rgba(0,212,160,0.12); color:var(--accent); border-color:rgba(0,212,160,0.3); }
-.room-relay-pill.off { background:var(--bg2); color:var(--muted); border-color:var(--border); }
+.room-sep { width:1px; height:12px; background:var(--border); flex-shrink:0; }
+.room-val  { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--text); letter-spacing:-0.5px; white-space:nowrap; }
+.room-unit { font-size:8px; color:var(--muted); font-weight:400; }
+/* relay toggle switch — físico animado */
+.room-relay-switch {
+  position: relative; display: inline-flex; align-items: center;
+  width: 32px; height: 17px; flex-shrink: 0; cursor: pointer;
+}
+.room-relay-switch input { opacity:0; width:0; height:0; position:absolute; }
+.rrs-track {
+  position: absolute; inset: 0;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 9px; transition: all 0.22s ease;
+}
+.rrs-knob {
+  position: absolute; width: 11px; height: 11px;
+  background: var(--muted); border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), background 0.22s;
+  pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.room-relay-switch input:checked ~ .rrs-track { background: rgba(0,212,160,0.18); border-color: rgba(0,212,160,0.5); }
+.room-relay-switch input:checked ~ .rrs-knob  { transform: translateX(15px); background: var(--accent); box-shadow: 0 0 6px rgba(0,212,160,0.6); }
+/* relay pill wrapper */
+.room-relay-wrap {
+  display: flex; align-items: center; gap: 3px;
+  flex-shrink: 0; white-space: nowrap;
+}
+.room-relay-lbl {
+  font-family: var(--mono); font-size: 8px; color: var(--muted);
+  max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 /* no data */
-.room-nodata { font-family:var(--mono); font-size:9px; color:var(--muted); padding:4px 0; }
+.room-nodata { font-family:var(--mono); font-size:9px; color:var(--muted); padding:2px 0; }
 
 /* Room modal sensor options */
 .rm-sensor-opt {
@@ -820,34 +839,6 @@ body::before {
         </div>
       </div>
 
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--warn);border-radius:2px"></span>
-        Proteção por nível da caixa (opcional)
-      </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:10px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Alerta se caixa ≤</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <input type="number" id="ip-trigger-on" value="30" min="0" max="99"
-                style="width:60px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--warn);font-family:var(--mono);font-size:14px;font-weight:700;padding:4px 8px;height:32px;outline:none">
-              <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">% → aviso</span>
-            </div>
-          </div>
-          <div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Não irriga abaixo de</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <input type="number" id="ip-trigger-off" value="80" min="2" max="100"
-                style="width:60px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--accent);font-family:var(--mono);font-size:14px;font-weight:700;padding:4px 8px;height:32px;outline:none">
-              <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">% completo</span>
-            </div>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);padding:6px 8px;background:var(--bg2);border-radius:4px">
-          💡 Se a caixa estiver muito cheia (≥ campo acima), a irrigação é adiada para não desperdiçar água. Coloque <strong style="color:var(--text)">0</strong> para desabilitar.
-        </div>
-      </div>
-
       <div style="padding:10px 12px;background:rgba(0,212,160,0.04);border:1px solid rgba(0,212,160,0.15);border-radius:var(--radius)">
         <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:600;margin-bottom:4px">📋 Como funciona</div>
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
@@ -893,7 +884,7 @@ const dayShort = ['D','S','T','Q','Q','S','S'];
 
 // ============ BOMBA IRRIGAÇÃO ============
 // Configuração da bomba de irrigação (salva no localStorage)
-let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto', triggerOn: 30, triggerOff: 80 };
+let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto' };
 function saveIrrigPump() {
   try { localStorage.setItem('autoflow_irrig_pump', JSON.stringify(irrigPump)); } catch(e) {}
 }
@@ -950,11 +941,8 @@ function renderIrrigPumpCard() {
 }
 function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
-  // Preenche o modal de configuração da bomba de irrigação
-  document.getElementById('ip-relay-sel').value    = irrigPump.relayId;
-  document.getElementById('ip-pump-name').value    = irrigPump.name;
-  document.getElementById('ip-trigger-on').value   = irrigPump.triggerOn;
-  document.getElementById('ip-trigger-off').value  = irrigPump.triggerOff;
+  document.getElementById('ip-relay-sel').value = irrigPump.relayId;
+  document.getElementById('ip-pump-name').value = irrigPump.name;
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
 function closeIrrigPumpModal() {
@@ -963,8 +951,6 @@ function closeIrrigPumpModal() {
 function saveIrrigPumpModal() {
   irrigPump.relayId    = document.getElementById('ip-relay-sel').value;
   irrigPump.name       = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
-  irrigPump.triggerOn  = parseInt(document.getElementById('ip-trigger-on').value)  || 30;
-  irrigPump.triggerOff = parseInt(document.getElementById('ip-trigger-off').value) || 80;
   saveIrrigPump();
   renderIrrigPumpCard();
   renderRelays(); // atualiza select do agendamento
@@ -2361,10 +2347,6 @@ function startScheduleEngine() {
         log(`⏰ ${hm}: bomba em modo manual — agendamento ignorado`, 'warn');
         return;
       }
-      // Avisa se nível baixo mas não bloqueia (somente se triggerOn configurado)
-      if (irrigPump.triggerOn && liveData.water !== null && liveData.water < irrigPump.triggerOn) {
-        log(`⏰ ${hm}: nível da caixa baixo (${liveData.water}% < ${irrigPump.triggerOn}%) — verifique`, 'warn');
-      }
       // Bloqueia se chovendo ou alta probabilidade de chuva
       if (weather.isRaining) {
         const reason = weather.rainMm > 0.1 ? `chuva: ${weather.rainMm.toFixed(1)}mm` : 'alta prob. de chuva';
@@ -2816,72 +2798,72 @@ function renderRooms() {
       };
     }).filter(Boolean);
 
-    // Sensor data row — horizontal: temp | sep | hum | sep | smoke
-    const sensorParts = [];
-    if (r.hasTemp) {
-      sensorParts.push(`
-        <div style="display:flex;align-items:baseline;gap:3px">
-          <span style="font-size:11px">🌡️</span>
-          <span style="font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:-0.5px;color:var(--text)">${d.temp !== null ? d.temp.toFixed(1) : '—'}<span style="font-size:9px;font-weight:400;color:var(--muted)">°C</span></span>
-        </div>`);
-      if (d.hum !== null) {
-        sensorParts.push(`<div style="width:1px;height:18px;background:var(--border);flex-shrink:0"></div>`);
-        sensorParts.push(`
-          <div style="display:flex;align-items:baseline;gap:2px">
-            <span style="font-size:10px">💧</span>
-            <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--muted)">${Math.round(d.hum)}<span style="font-size:9px;font-weight:400">%</span></span>
+    // ── Monta os itens da linha única: sensores + switches de relé ──────────
+    const rowItems = [];
+
+    if (!d.lastSeen) {
+      rowItems.push(`<span class="room-nodata">aguardando...</span>`);
+    } else {
+      // Temperatura
+      if (r.hasTemp && d.temp !== null) {
+        rowItems.push(`
+          <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0">
+            <span style="font-size:10px;line-height:1">🌡️</span>
+            <span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span>
+          </div>`);
+      }
+      // Umidade
+      if (r.hasTemp && d.hum !== null) {
+        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+        rowItems.push(`
+          <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0">
+            <span style="font-size:9px;line-height:1">💧</span>
+            <span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span>
+          </div>`);
+      }
+      // Gás
+      if (r.hasSmoke) {
+        const smokeVal = d.smoke !== null ? d.smoke : null;
+        const gasLocked = gasAlertLocked[r.id] || false;
+        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+        rowItems.push(`
+          <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0">
+            <span style="font-size:9px;line-height:1">🔥</span>
+            <span class="room-val" style="font-size:12px;color:${sl.color}">${smokeVal !== null ? smokeVal : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>
+            ${smokeVal !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}
+            ${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite">⚠</span>` : ''}
           </div>`);
       }
     }
-    if (r.hasSmoke) {
-      if (sensorParts.length) sensorParts.push(`<div style="width:1px;height:16px;background:var(--border);flex-shrink:0"></div>`);
-      const smokeVal = d.smoke !== null ? d.smoke : null;
-      const rawVal   = d.smokeRaw !== null && d.smokeRaw > 100 ? Math.round(d.smokeRaw) : null;
-      const gasLocked = gasAlertLocked[r.id] || false;
-      sensorParts.push(`
-        <div style="display:flex;align-items:baseline;gap:3px" title="${rawVal !== null ? rawVal + ' ppm' : ''}">
-          <span style="font-size:10px;line-height:1">🔥</span>
-          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:${sl.color};letter-spacing:-0.5px">${smokeVal !== null ? smokeVal : '—'}<span style="font-size:8px;font-weight:400;color:${sl.color};opacity:0.7">%</span></span>
-          ${rawVal !== null ? `<span style="font-family:var(--mono);font-size:8px;color:var(--muted)">${rawVal}p</span>` : ''}
-          <span style="font-family:var(--mono);font-size:8px;font-weight:700;color:${sl.color}">${smokeVal !== null ? sl.label : ''}</span>
-          ${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite" title="Alerta fixo — clique para resetar">⚠</span>` : ''}
+
+    // Relés — toggle switches na mesma linha
+    linkedRelays.forEach(rel => {
+      if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+      rowItems.push(`
+        <div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}">
+          <span style="font-size:12px;line-height:1">${rel.displayIcon}</span>
+          <label class="room-relay-switch">
+            <input type="checkbox" ${rel.state ? 'checked' : ''}
+              onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
+            <div class="rrs-track"></div>
+            <div class="rrs-knob"></div>
+          </label>
         </div>`);
-    }
-
-    const sensorRow = sensorParts.length
-      ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">${sensorParts.join('')}</div>`
-      : '';
-
-    const relayBlock = linkedRelays.length ? `
-      <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">
-        ${linkedRelays.map(rel => `
-          <button onclick="setRelay(relays.find(x=>x.id==='${rel.id}'),${!rel.state})"
-            style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;cursor:pointer;border:1px solid;transition:all 0.15s;
-            ${rel.state
-              ? 'background:rgba(0,212,160,0.12);color:var(--accent);border-color:rgba(0,212,160,0.3)'
-              : 'background:var(--bg2);color:var(--muted);border-color:var(--border)'}">
-            <span style="font-size:14px;line-height:1">${rel.displayIcon}</span>
-            <span style="font-family:var(--mono);font-size:9px;font-weight:600">${rel.state ? 'ON' : 'OFF'}</span>
-            <span style="font-family:var(--mono);font-size:8px;opacity:0.6;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rel.displayLabel}</span>
-          </button>`).join('')}
-      </div>` : '';
-
-    const noData = !d.lastSeen ? '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);padding:4px 0">aguardando dados...</div>' : '';
+    });
 
     return `<div class="room-card ${alarmCls}" id="room-${r.id}">
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        ${d.lastSeen ? `<span style="font-family:var(--mono);font-size:8px;color:var(--muted)">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
-        <div style="display:flex;gap:4px;opacity:0" class="room-actions">
-          <button onclick="openRoomModal('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)" title="Editar">✏</button>
-          <button onclick="removeRoom('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)" title="Remover">✕</button>
+        ${d.lastSeen ? `<span style="font-family:var(--mono);font-size:7px;color:var(--muted);flex-shrink:0">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
+        <div style="display:flex;gap:2px;opacity:0" class="room-actions">
+          <button onclick="openRoomModal('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)">✏</button>
+          <button onclick="removeRoom('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)">✕</button>
         </div>
       </div>
-      <div class="room-sensors">
-        ${noData || sensorRow}
+      <div class="room-main-row">
+        ${rowItems.join('')}
       </div>
-      ${relayBlock}
     </div>`;
   }).join('');
 }
