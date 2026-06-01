@@ -250,15 +250,11 @@ body::before {
   /* Metrics bar — stack on mobile */
   .metric-inline-sep { display: none; }
 
-  /* Ambient rooms — 1 col on mobile */
-  .rooms-scroll { grid-template-columns: 1fr !important; }
+  /* Ambient rooms — 2 col on mobile */
+  .rooms-scroll { grid-template-columns: repeat(2, 1fr) !important; }
 
   /* Row 2 (weather + irrigation) — 1 col */
   .row-2 { grid-template-columns: 1fr !important; }
-
-  /* Row 3 (rules + log) — mantém 2 colunas lado a lado no mobile */
-  .row-3 { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-  .row-3 .card { min-height: 0 !important; height: auto !important; }
 
   /* Cards */
   .card { padding: 12px 14px; }
@@ -287,7 +283,7 @@ body::before {
 ═══════════════════════════════════════ */
 @media (min-width: 769px) and (max-width: 1024px) {
   .app { padding: 0 16px 60px; }
-  .rooms-scroll { grid-template-columns: repeat(2, 1fr) !important; }
+  .rooms-scroll { grid-template-columns: repeat(3, 1fr) !important; }
   .row-2 { grid-template-columns: 1fr 1fr !important; }
 }
 
@@ -312,7 +308,12 @@ body::before {
 .metric-inline.ok .metric-inline-val   { color: var(--accent); }
 
 /* === ROOMS === */
-.rooms-scroll { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
+.rooms-scroll {
+  display:grid; grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 80px; gap:8px;
+}
+.rooms-scroll::-webkit-scrollbar { width: 3px; }
+.rooms-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 7px 9px;
@@ -522,7 +523,8 @@ body::before {
         <button class="btn" style="font-size:10px;padding:4px 10px" onclick="openRoomModal()">+ Adicionar</button>
       </div>
     </div>
-    <div id="rooms-grid" class="rooms-scroll">
+    <!-- grid travado: linhas fixas de 80px + scroll se mais de 2 linhas -->
+    <div id="rooms-grid" class="rooms-scroll" style="max-height:178px;overflow-y:auto;padding-right:2px">
       <div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
         Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
       </div>
@@ -591,7 +593,7 @@ body::before {
   </div>
 
   <!-- ROW 3: regras + log -->
-  <div class="row-3" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  <div class="row-3" style="display:flex;flex-direction:column;gap:14px">
 
     <!-- Regras -->
     <div class="card">
@@ -834,8 +836,32 @@ body::before {
           <label>Saída (relé) que controla a bomba</label>
           <select id="ip-relay-sel" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px"></select>
           <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-            O relé selecionado será acionado pelos agendamentos. Se nenhum relé estiver habilitado, acesse o painel de relés primeiro.
+            O relé selecionado será acionado pelos agendamentos.
           </div>
+        </div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Conexão MQTT da bomba
+      </div>
+      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+        <div class="field" style="margin:0">
+          <label>Host do broker</label>
+          <input id="ip-host" placeholder="ex: xxxx.s1.eu.hivemq.cloud" style="font-family:var(--mono);font-size:11px"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field" style="margin:0">
+            <label>Usuário MQTT</label>
+            <input id="ip-user" placeholder="ex: esp32-Project"/>
+          </div>
+          <div class="field" style="margin:0">
+            <label>Senha MQTT</label>
+            <input id="ip-pass" type="password" placeholder="••••••••"/>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
+          Porta: <strong>8884</strong> (WSS) — mesmo padrão das caixas d'água
         </div>
       </div>
 
@@ -884,7 +910,9 @@ const dayShort = ['D','S','T','Q','Q','S','S'];
 
 // ============ BOMBA IRRIGAÇÃO ============
 // Configuração da bomba de irrigação (salva no localStorage)
-let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto' };
+let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto', mqttHost: '', mqttUser: '', mqttPass: '' };
+let irrigClient = null; // cliente MQTT dedicado para a bomba
+
 function saveIrrigPump() {
   try { localStorage.setItem('autoflow_irrig_pump', JSON.stringify(irrigPump)); } catch(e) {}
 }
@@ -893,6 +921,53 @@ function loadIrrigPump() {
     const s = JSON.parse(localStorage.getItem('autoflow_irrig_pump') || 'null');
     if (s) irrigPump = Object.assign(irrigPump, s);
   } catch(e) {}
+}
+
+function connectIrrigBroker() {
+  if (!irrigPump.mqttHost || !irrigPump.mqttUser || !irrigPump.mqttPass) return;
+  if (irrigClient) { try { irrigClient.end(true); } catch(e) {} irrigClient = null; }
+  const url = `wss://${irrigPump.mqttHost}:8884/mqtt`;
+  log(`🔌 Conectando broker da bomba de irrigação...`, 'sys');
+  irrigClient = mqtt.connect(url, {
+    username: irrigPump.mqttUser,
+    password: irrigPump.mqttPass,
+    clientId: 'irrig_' + Math.random().toString(36).slice(2,8),
+    clean: true, connectTimeout: 10000, reconnectPeriod: 10000,
+  });
+  irrigClient.on('connect', () => {
+    log(`✅ Broker da bomba conectado!`, 'ok');
+    // Assina estado do relé para feedback
+    const rel = relays.find(r => r.id === irrigPump.relayId);
+    if (rel) irrigClient.subscribe(relayTopic(rel) + '/state', { qos:1 });
+  });
+  irrigClient.on('message', (topic, msg) => {
+    const rel = relays.find(r => r.id === irrigPump.relayId);
+    if (rel && topic === relayTopic(rel) + '/state') {
+      rel.state = (msg.toString() === 'ON' || msg.toString() === '1');
+      renderRelays(); renderIrrigPumpCard();
+    }
+  });
+  irrigClient.on('error',   (e) => log(`❌ Broker bomba: ${e.message}`, 'warn'));
+  irrigClient.on('offline', ()  => log(`⚠ Broker bomba offline`, 'warn'));
+}
+
+// Publica ON/OFF no broker próprio da bomba (preferencial) ou no broker principal
+function setIrrigRelay(state) {
+  const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
+  if (!rel) { log('Relé da bomba não habilitado', 'warn'); return; }
+  rel.state = state;
+  const topic = relayTopic(rel);
+  const payload = state ? 'ON' : 'OFF';
+  if (irrigClient && irrigClient.connected) {
+    irrigClient.publish(topic, payload, { retain: true, qos: 1 });
+    log(`💧 Bomba "${irrigPump.name}" → ${payload} (broker próprio)`, 'ok');
+  } else if (client && client.connected) {
+    client.publish(topic, payload, { retain: true, qos: 1 });
+    log(`💧 Bomba "${irrigPump.name}" → ${payload} (broker principal)`, 'ok');
+  } else {
+    log(`[sem MQTT] Bomba "${irrigPump.name}" → ${payload}`, 'info');
+  }
+  saveRelayState(); publishPersist(); renderRelays(); renderIrrigPumpCard();
 }
 function toggleIrrigPumpMode(mode) {
   irrigPump.mode = mode;
@@ -903,7 +978,7 @@ function toggleIrrigPumpMode(mode) {
 function toggleIrrigPumpManual() {
   const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
   if (!rel) { log('Bomba de irrigação não está habilitada nos relés', 'warn'); return; }
-  setRelay(rel, !rel.state);
+  setIrrigRelay(!rel.state);
   renderIrrigPumpCard();
 }
 function renderIrrigPumpCard() {
@@ -934,7 +1009,8 @@ function renderIrrigPumpCard() {
         </div>
         ${rel ? `
         <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">
-          ${isManual ? '🔧 Controle manual' : `⚡ Auto: liga na programação${irrigPump.triggerOn ? ' · para se caixa &lt; '+irrigPump.triggerOn+'%' : ''}`}
+          ${isManual ? '🔧 Controle manual' : '⚡ Auto: liga na programação'}
+          · broker: <span style="color:${irrigClient?.connected ? 'var(--accent)' : irrigPump.mqttHost ? 'var(--warn)' : 'var(--muted)'}">${irrigClient?.connected ? '● online' : irrigPump.mqttHost ? '○ offline' : 'não conf.'}</span>
         </div>` : `<div style="font-family:var(--mono);font-size:8px;color:var(--warn)">⚠ Relé não habilitado</div>`}
       </div>
     </div>`;
@@ -943,17 +1019,27 @@ function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
   document.getElementById('ip-relay-sel').value = irrigPump.relayId;
   document.getElementById('ip-pump-name').value = irrigPump.name;
+  document.getElementById('ip-host').value = irrigPump.mqttHost || '';
+  document.getElementById('ip-user').value = irrigPump.mqttUser || '';
+  document.getElementById('ip-pass').value = irrigPump.mqttPass || '';
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
 function closeIrrigPumpModal() {
   document.getElementById('irrig-pump-modal').classList.remove('open');
 }
 function saveIrrigPumpModal() {
-  irrigPump.relayId    = document.getElementById('ip-relay-sel').value;
-  irrigPump.name       = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
+  irrigPump.relayId   = document.getElementById('ip-relay-sel').value;
+  irrigPump.name      = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
+  irrigPump.mqttHost  = document.getElementById('ip-host').value.trim();
+  irrigPump.mqttUser  = document.getElementById('ip-user').value.trim();
+  irrigPump.mqttPass  = document.getElementById('ip-pass').value;
   saveIrrigPump();
+  // Conecta broker próprio se credenciais foram fornecidas
+  if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
+    connectIrrigBroker();
+  }
   renderIrrigPumpCard();
-  renderRelays(); // atualiza select do agendamento
+  renderRelays();
   log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.relayId}`, 'ok');
   closeIrrigPumpModal();
 }
@@ -1248,6 +1334,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 4c. Restaura bomba de irrigação ──────────────────────────────────
   loadIrrigPump();
+  // Reconecta broker próprio da bomba se credenciais salvas
+  if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
+    connectIrrigBroker();
+  }
 
   // ── 5. Restaura configurações do broker ───────────────────────────────
   if (saved.brokerMode) { brokerMode = saved.brokerMode; switchBrokerTab(saved.brokerMode); }
@@ -2354,10 +2444,19 @@ function startScheduleEngine() {
         return;
       }
       log(`⏰ ${hm} → ligando "${relay.name}" ✅`, 'ok');
-      setRelay(relay, true);
+      // Se for a bomba de irrigação, usa o broker próprio dela
+      if (targetRelayId === irrigPump.relayId) {
+        setIrrigRelay(true);
+      } else {
+        setRelay(relay, true);
+      }
       renderIrrigPumpCard();
       setTimeout(() => {
-        setRelay(relay, false);
+        if (targetRelayId === irrigPump.relayId) {
+          setIrrigRelay(false);
+        } else {
+          setRelay(relay, false);
+        }
         renderIrrigPumpCard();
         log(`⏰ Desligando "${relay.name}" (${s.duration}min)`, 'info');
       }, s.duration * 60000);
