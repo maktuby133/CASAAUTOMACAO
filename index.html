@@ -866,6 +866,11 @@ body::before {
             <input id="ip-pass" type="password" placeholder="••••••••"/>
           </div>
         </div>
+        <div class="field" style="margin:0">
+          <label>Tópico MQTT da bomba</label>
+          <input id="ip-topic" placeholder="ex: irrigacao/relay/bomba" style="font-family:var(--mono);font-size:11px;color:var(--accent2)"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico onde a bomba escuta ON/OFF — separado dos relés dos ambientes</div>
+        </div>
         <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
           Porta: <strong>8884</strong> (WSS) — mesmo padrão das caixas d'água
         </div>
@@ -916,7 +921,7 @@ const dayShort = ['D','S','T','Q','Q','S','S'];
 
 // ============ BOMBA IRRIGAÇÃO ============
 // Configuração da bomba de irrigação (salva no localStorage)
-let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto', mqttHost: '', mqttUser: '', mqttPass: '' };
+let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto', mqttHost: '', mqttUser: '', mqttPass: '', mqttTopic: '' };
 let irrigClient = null; // cliente MQTT dedicado para a bomba
 
 function saveIrrigPump() {
@@ -957,23 +962,23 @@ function connectIrrigBroker() {
   irrigClient.on('offline', ()  => log(`⚠ Broker bomba offline`, 'warn'));
 }
 
-// Publica ON/OFF no broker próprio da bomba (preferencial) ou no broker principal
 function setIrrigRelay(state) {
   const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
   if (!rel) { log('Relé da bomba não habilitado', 'warn'); return; }
   rel.state = state;
-  const topic = relayTopic(rel);
+  // Usa tópico dedicado se configurado; senão tópico isolado por padrão
+  const topic = irrigPump.mqttTopic || `irrigacao/relay/${irrigPump.relayId}`;
   const payload = state ? 'ON' : 'OFF';
   if (irrigClient && irrigClient.connected) {
     irrigClient.publish(topic, payload, { retain: true, qos: 1 });
-    log(`💧 Bomba "${irrigPump.name}" → ${payload} (broker próprio)`, 'ok');
+    log(`💧 Bomba "${irrigPump.name}" → ${payload} [${topic}]`, 'ok');
   } else if (client && client.connected) {
     client.publish(topic, payload, { retain: true, qos: 1 });
-    log(`💧 Bomba "${irrigPump.name}" → ${payload} (broker principal)`, 'ok');
+    log(`💧 Bomba "${irrigPump.name}" → ${payload} [${topic}] (broker principal)`, 'ok');
   } else {
     log(`[sem MQTT] Bomba "${irrigPump.name}" → ${payload}`, 'info');
   }
-  saveRelayState(); publishPersist(); renderRelays(); renderIrrigPumpCard();
+  saveRelayState(); renderRelays(); renderIrrigPumpCard();
 }
 function toggleIrrigPumpMode(mode) {
   irrigPump.mode = mode;
@@ -1025,9 +1030,10 @@ function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
   document.getElementById('ip-relay-sel').value = irrigPump.relayId;
   document.getElementById('ip-pump-name').value = irrigPump.name;
-  document.getElementById('ip-host').value = irrigPump.mqttHost || '';
-  document.getElementById('ip-user').value = irrigPump.mqttUser || '';
-  document.getElementById('ip-pass').value = irrigPump.mqttPass || '';
+  document.getElementById('ip-host').value  = irrigPump.mqttHost  || '';
+  document.getElementById('ip-user').value  = irrigPump.mqttUser  || '';
+  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || '';
+  document.getElementById('ip-topic').value = irrigPump.mqttTopic || '';
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
 function closeIrrigPumpModal() {
@@ -1039,6 +1045,7 @@ function saveIrrigPumpModal() {
   irrigPump.mqttHost  = document.getElementById('ip-host').value.trim();
   irrigPump.mqttUser  = document.getElementById('ip-user').value.trim();
   irrigPump.mqttPass  = document.getElementById('ip-pass').value;
+  irrigPump.mqttTopic = document.getElementById('ip-topic').value.trim();
   saveIrrigPump();
   // Conecta broker próprio se credenciais foram fornecidas
   if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
@@ -1132,7 +1139,7 @@ function switchBrokerTab(mode) {
 // ── MQTT persistence — salva toda config no broker com retain ─────────────
 function buildPersistPayload() {
   return JSON.stringify({
-    relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state })),
+    relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled })), // sem state
     rooms,
     schedules,
     waterTanks: waterTanks.map(t => ({ id:t.id, name:t.name, code:t.code, capacity:t.capacity, pumps:t.pumps })),
@@ -1155,11 +1162,12 @@ function loadFromBrokerPayload(payload) {
     const d = JSON.parse(payload);
     const brokerTime = d.savedAt ? new Date(d.savedAt).getTime() : 0;
 
-    // Relés — restaura direto sem chamar saveRelayState (evita loop)
+    // Relés — restaura apenas configuração (nome, ícone, enabled) — nunca o state
+    // O estado real vem dos tópicos home/relay/outX/state assinados no broker
     if (d.relays) {
       d.relays.forEach(sr => {
         const r = relays.find(x => x.id === sr.id);
-        if (r) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; r.state=sr.state||false; }
+        if (r && !r.locked) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; }
       });
       try { localStorage.setItem('autoflow_relays', JSON.stringify(
         relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
@@ -1751,11 +1759,12 @@ function openTankModal(editId) {
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
-    id: 'prow_'+Math.random().toString(36).slice(2),
-    relayId: p.relayId || '',
-    triggerOn: p.triggerOn ?? 30,
+    id:         'prow_'+Math.random().toString(36).slice(2),
+    relayId:    p.relayId || '',
+    topic:      p.topic   || '',
+    triggerOn:  p.triggerOn  ?? 30,
     triggerOff: p.triggerOff ?? 100,
-    name: p.name || 'Bomba',
+    name:       p.name || 'Bomba',
   }));
   renderTankPumpRows();
   document.getElementById('tank-modal').classList.add('open');
@@ -1824,6 +1833,16 @@ function renderTankPumpRows() {
         </select>
         <button onclick="removeTankPumpRow('${row.id}')" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:11px;flex-shrink:0">✕</button>
       </div>
+      <div style="margin-bottom:8px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Tópico MQTT da bomba</div>
+        <input id="prow-topic-${row.id}" value="${row.topic || ''}"
+          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--accent2);font-family:var(--mono);font-size:11px;padding:4px 8px;height:30px;outline:none;box-sizing:border-box"
+          placeholder="ex: home/relay/out2"
+          oninput="tankPumpRows.find(x=>x.id==='${row.id}').topic=this.value.trim()">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px">
+          Tópico onde a bomba escuta ON/OFF — separado dos relés dos ambientes
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Liga ao atingir ↓</div>
@@ -1868,9 +1887,10 @@ function confirmSaveTank() {
   if (!editId && waterTanks.length >= 2) { alert('Máximo de 2 caixas de água.'); return; }
 
   const pumps = tankPumpRows.map(r => ({
-    relayId: r.relayId,
-    name: r.name,
-    triggerOn: r.triggerOn,
+    relayId:    r.relayId,
+    name:       r.name,
+    topic:      r.topic || '',
+    triggerOn:  r.triggerOn,
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
@@ -2062,14 +2082,16 @@ function connectAllTankBrokers() {
 }
 
 // Publica ON/OFF da bomba da caixa d'água SOMENTE no broker próprio dela
-// Nunca usa client principal — evita acionar relés de ambientes/irrigação
+// Usa o tópico configurado na bomba — completamente isolado dos relés dos ambientes
 function setTankRelay(tank, relayId, state) {
   const tc = tankClients[tank.id];
+  const pump = tank.pumps && tank.pumps.find(p => p.relayId === relayId);
+  // Usa tópico dedicado da bomba se configurado; senão usa padrão isolado por código da caixa
+  const topic = (pump && pump.topic) ? pump.topic : `caixas/agua/${tank.code}/relay/${relayId}`;
   const payload = state ? 'ON' : 'OFF';
-  const topic = `${RELAY_PREFIX}/${relayId}`;
   if (tc && tc.connected) {
     tc.publish(topic, payload, { retain: true, qos: 1 });
-    log(`💧 Bomba "${relayId}" da caixa "${tank.name}" → ${payload} (broker próprio)`, 'ok');
+    log(`💧 Bomba "${pump?.name||relayId}" → ${payload} [${topic}]`, 'ok');
   } else {
     log(`⚠ Sem broker para caixa "${tank.name}" — bomba não acionada`, 'warn');
   }
