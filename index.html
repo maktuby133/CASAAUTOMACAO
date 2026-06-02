@@ -253,6 +253,12 @@ body::before {
   /* Ambient rooms — 2 col on mobile */
   .rooms-scroll { grid-template-columns: repeat(2, 1fr) !important; }
 
+  /* Room card mobile: sensores em cima, relés embaixo */
+  .room-card { height: auto !important; min-height: 72px; }
+  .room-main-row { flex-wrap: wrap; gap: 4px; }
+  .room-main-row .room-relay-wrap { flex-basis: 100%; justify-content: flex-start; border-top: 1px solid var(--border); padding-top: 4px; margin-top: 2px; }
+  .room-main-row .room-sep:has(+ .room-relay-wrap) { display: none; }
+
   /* Row 2 (weather + irrigation) — 1 col */
   .row-2 { grid-template-columns: 1fr !important; }
 
@@ -2584,7 +2590,7 @@ function addRoomRelayRow(preset) {
   const modalUsed  = new Set(rmRelayRows.map(r => r.relayId));
   // Disponíveis = ativo + não bomba + não usado globalmente + não no modal
   const available  = relays.filter(r =>
-    r.enabled && r.id !== 'out1' &&
+    r.enabled &&
     !globalUsed.has(r.id) && !modalUsed.has(r.id)
   );
   if (!available.length) {
