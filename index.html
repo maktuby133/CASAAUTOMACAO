@@ -1383,11 +1383,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTanks();
     renderIrrigPumpCard();
 
-    // ── 8. Auto-conecta + atualiza botão ────────────────────────────
+    // ── 8. Auto-login: conecta se tiver credenciais salvas ──────────────
     updateMainBtn();
     const s = getCfg();
-    if ((s.host && s.pass) || s.localHost) {
-      log('Credenciais encontradas — conectando...', 'info');
+    const hasCloud = !!(s.host && s.pass);
+    const hasLocal = !!(s.localHost);
+    if (hasCloud || hasLocal) {
+      // Garante que o brokerMode correto está ativo antes de conectar
+      if (s.brokerMode) { brokerMode = s.brokerMode; switchBrokerTab(s.brokerMode); }
+      log('🔑 Credenciais encontradas — conectando automaticamente...', 'info');
       connectMQTT();
     }
     // Sempre tenta conectar brokers das caixas d'água (independente do broker principal)
@@ -1952,7 +1956,7 @@ function renderTanks() {
           return `
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
               <!-- Ícone + botão da bomba -->
-              <button onclick="${isManual ? `setRelay(relays.find(x=>x.id==='${p.relayId}'),${!on})` : 'void(0)'}"
+              <button onclick="${isManual ? `(function(){ var rel=relays.find(x=>x.id==='${p.relayId}'); if(rel && rel.id===irrigPump.relayId && irrigClient && irrigClient.connected){ setIrrigRelay(${!on}); } else { setRelay(rel,${!on}); } })()` : 'void(0)'}"
                 class="pump-btn ${on ? 'on' : 'off'}"
                 style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
                 title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático — controle pelo nível'}">
@@ -2205,13 +2209,18 @@ function setRelay(relay, state) {
   if (!relay || !relay.enabled) return;
   relay.state = state;
   const topic = relayTopic(relay);
+  // Se este relé é a bomba de irrigação E ela tem broker próprio conectado,
+  // delega para setIrrigRelay para evitar conflito com a bomba da caixa
+  if (relay.id === irrigPump.relayId && irrigClient && irrigClient.connected) {
+    setIrrigRelay(state);
+    return;
+  }
   if (client && client.connected) {
     client.publish(topic, state ? 'ON' : 'OFF', { retain: true, qos: 1 });
     log(`${relay.id.toUpperCase()} "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'ok');
   } else {
     log(`[sem MQTT] "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'info');
   }
-  // Atualiza UI imediatamente — sem aguardar MQTT echo
   saveRelayState();
   publishPersist();
   renderRelays();
@@ -2584,11 +2593,13 @@ function getGlobalUsedRelayIds(exceptRoomId) {
 }
 
 function addRoomRelayRow(preset) {
+  if (rmRelayRows.length >= 8) {
+    alert('Máximo de 8 relés por ambiente atingido.');
+    return;
+  }
   const editId     = document.getElementById('rm-room-modal-edit-id')?.value || '';
   const globalUsed = getGlobalUsedRelayIds(editId);
-  // IDs já nas rows do modal atual
   const modalUsed  = new Set(rmRelayRows.map(r => r.relayId));
-  // Disponíveis = ativo + não bomba + não usado globalmente + não no modal
   const available  = relays.filter(r =>
     r.enabled &&
     !globalUsed.has(r.id) && !modalUsed.has(r.id)
