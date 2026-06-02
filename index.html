@@ -1956,7 +1956,7 @@ function renderTanks() {
           return `
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
               <!-- Ícone + botão da bomba -->
-              <button onclick="${isManual ? `(function(){ var rel=relays.find(x=>x.id==='${p.relayId}'); if(rel && rel.id===irrigPump.relayId && irrigClient && irrigClient.connected){ setIrrigRelay(${!on}); } else { setRelay(rel,${!on}); } })()` : 'void(0)'}"
+              <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
                 class="pump-btn ${on ? 'on' : 'off'}"
                 style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
                 title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático — controle pelo nível'}">
@@ -2061,6 +2061,23 @@ function connectAllTankBrokers() {
   });
 }
 
+// Publica ON/OFF da bomba da caixa d'água SOMENTE no broker próprio dela
+// Nunca usa client principal — evita acionar relés de ambientes/irrigação
+function setTankRelay(tank, relayId, state) {
+  const tc = tankClients[tank.id];
+  const payload = state ? 'ON' : 'OFF';
+  const topic = `${RELAY_PREFIX}/${relayId}`;
+  if (tc && tc.connected) {
+    tc.publish(topic, payload, { retain: true, qos: 1 });
+    log(`💧 Bomba "${relayId}" da caixa "${tank.name}" → ${payload} (broker próprio)`, 'ok');
+  } else {
+    log(`⚠ Sem broker para caixa "${tank.name}" — bomba não acionada`, 'warn');
+  }
+  // Atualiza estado local e UI sem tocar no broker principal
+  const rel = relays.find(r => r.id === relayId);
+  if (rel) { rel.state = state; saveRelayState(); renderTanks(); renderRelays(); }
+}
+
 function subscribeTanks() {
   if (!client || !client.connected) return;
   waterTanks.forEach(t => {
@@ -2084,16 +2101,16 @@ function handleTankMessage(topic, payload, data) {
         t.pumps && t.pumps.forEach(p => {
           if (!p.relayId) return;
           const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
-          if (mode !== 'auto') return; // modo manual: não interfere
+          if (mode !== 'auto') return;
           const rel = relays.find(r => r.id === p.relayId && r.enabled);
           if (!rel) return;
           const on = rel.state;
           if (!on && pct <= p.triggerOn) {
             log(`💧 "${t.name}" nível ${pct}% ≤ ${p.triggerOn}% → ligando ${p.name}`, 'ok');
-            setRelay(rel, true);
+            setTankRelay(t, p.relayId, true);
           } else if (on && pct >= p.triggerOff) {
             log(`💧 "${t.name}" nível ${pct}% ≥ ${p.triggerOff}% → desligando ${p.name}`, 'info');
-            setRelay(rel, false);
+            setTankRelay(t, p.relayId, false);
           }
         });
       }
@@ -2205,16 +2222,11 @@ function setConnStatus(cls, txt) {
 }
 
 // ============ RELAYS ============
+// Publica ON/OFF de relé comum (ambientes) via broker principal
 function setRelay(relay, state) {
   if (!relay || !relay.enabled) return;
   relay.state = state;
   const topic = relayTopic(relay);
-  // Se este relé é a bomba de irrigação E ela tem broker próprio conectado,
-  // delega para setIrrigRelay para evitar conflito com a bomba da caixa
-  if (relay.id === irrigPump.relayId && irrigClient && irrigClient.connected) {
-    setIrrigRelay(state);
-    return;
-  }
   if (client && client.connected) {
     client.publish(topic, state ? 'ON' : 'OFF', { retain: true, qos: 1 });
     log(`${relay.id.toUpperCase()} "${relay.name}" → ${state ? 'LIGADO' : 'DESLIGADO'}`, 'ok');
