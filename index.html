@@ -1518,7 +1518,10 @@ function subscribeAll() {
   subs.push('sensors/#');
   // Caixas d'água cadastradas
   subs.push('caixas/agua/#');
-  relays.filter(r => r.enabled).forEach(r => subs.push(relayTopic(r) + '/state'));
+  // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
+  const tankRelayIds = new Set(waterTanks.flatMap(t => (t.pumps||[]).map(p => p.relayId)));
+  relays.filter(r => r.enabled && r.id !== irrigPump.relayId && !tankRelayIds.has(r.id))
+        .forEach(r => subs.push(relayTopic(r) + '/state'));
   subs.forEach(t => client.subscribe(t, { qos: 1 }, () => log(`↳ inscrito: ${t}`, 'sys')));
   // Assina tópico de persistência — carrega config de qualquer dispositivo
   client.subscribe(PERSIST_TOPIC, { qos: 1 }, () => log(`↳ config: ${PERSIST_TOPIC}`, 'sys'));
@@ -1535,11 +1538,17 @@ function handleMsg(topic, payload, pkt) {
 
   let data;
   try { data = JSON.parse(payload); } catch(e) {
-    // payload simples ON/OFF para relés
+    // payload simples ON/OFF — atualiza estado APENAS de relés dos ambientes
+    // Relés da caixa d'água e irrigação têm tópicos próprios e não devem ser
+    // atualizados via este handler (evita acionamento cruzado)
+    const tankRelayIds  = new Set(waterTanks.flatMap(t => (t.pumps||[]).map(p => p.relayId)));
+    const irrigRelayId  = irrigPump.relayId;
     relays.forEach(r => {
+      if (tankRelayIds.has(r.id) || r.id === irrigRelayId) return; // ignora bombas
       if (topic === relayTopic(r) + '/state') {
         r.state = (payload === 'ON' || payload === '1');
         renderRelays();
+        renderRooms();
       }
     });
     return;
@@ -2344,7 +2353,11 @@ function enableRelay(id) {
   if (!name) return;
   const icon = prompt('Ícone (emoji):', '🔌') || '🔌';
   r.name = name; r.icon = icon; r.enabled = true;
-  if (client && client.connected) client.subscribe(relayTopic(r) + '/state', { qos:1 });
+  // Só assina /state no broker principal se não for bomba de caixa ou irrigação
+  const tankRelayIds = new Set(waterTanks.flatMap(t => (t.pumps||[]).map(p => p.relayId)));
+  if (client && client.connected && r.id !== irrigPump.relayId && !tankRelayIds.has(r.id)) {
+    client.subscribe(relayTopic(r) + '/state', { qos:1 });
+  }
   saveRelayState();
   publishPersist();
   renderRelays();
