@@ -270,14 +270,7 @@ body::before {
   .metric-inline-val  { font-size: 12px !important; letter-spacing: 0; }
   .metric-inline-unit { font-size: 8px !important; }
   .metric-inline-sub  { font-size: 8px !important; margin-top: 1px; letter-spacing: 0.04em; }
-  .weather-city-row {
-    grid-column: 1 / -1 !important;
-    margin-top: 0 !important;
-    padding-left: 0 !important;
-    min-width: 0 !important;
-    flex: unset !important;
-  }
-  .weather-city-row input { font-size: 11px; }
+  .weather-city-row { display: none !important; }
   #wi-irrig-status { font-size: 9px !important; padding: 2px 6px !important; }
   #wi-city-inline  { font-size: 10px !important; }
   #live-ts         { font-size: 9px !important; }
@@ -308,7 +301,7 @@ body::before {
     flex-shrink: 0;
     margin-bottom: 0 !important;
     min-width: 0;
-    max-width: 42% !important;
+    max-width: 52% !important;
   }
   .room-icon { font-size: 14px !important; flex-shrink: 0; }
   .room-name {
@@ -327,9 +320,25 @@ body::before {
     margin: 0 7px;
     flex-shrink: 0;
   }
-  /* Timestamp e botões de edição: escondidos no mobile */
+  /* Timestamp: escondido no mobile */
   .room-header > span:last-of-type { display: none; }
-  .room-actions { display: none !important; }
+  /* Botões de ação: sempre visíveis no mobile (touch não tem hover) */
+  .room-actions {
+    display: flex !important;
+    opacity: 1 !important;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .room-actions button {
+    font-size: 11px !important;
+    padding: 2px 4px !important;
+    background: var(--bg2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    color: var(--muted) !important;
+    cursor: pointer;
+    line-height: 1;
+  }
   /* Dados: ocupa o restante da linha */
   .room-main-row { flex: 1; min-width: 0; flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: hidden !important; }
   .room-val  { font-size: 12px !important; }
@@ -514,7 +523,7 @@ body::before {
 
   <!-- ROW 1: Meteorologia completa inline -->
   <div class="card" style="margin-bottom:16px;padding:14px 18px">
-    <!-- Linha superior: dot + cidade + status irrigação + timestamp -->
+    <!-- Linha superior: dot + cidade + status irrigação + timestamp + botão + -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
         <div class="dot" id="live-dot"></div>
@@ -524,6 +533,8 @@ body::before {
       <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="wi-city-inline">configure a cidade →</span>
       <span id="wi-irrig-status" style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(107,114,128,0.12);color:var(--muted)">meteorologia</span>
       <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0">aguardando...</span>
+      <button onclick="openCityModal()" title="Adicionar / mudar cidade"
+        style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--accent);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
     </div>
     <!-- Linha de métricas lado a lado -->
     <div class="weather-metrics-row" style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap">
@@ -583,14 +594,6 @@ body::before {
           </div>
           <span class="metric-inline-sub" id="wi-uvlbl-inline">índice UV</span>
         </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- Campo cidade — por último -->
-      <div class="weather-city-row" style="display:flex;align-items:center;gap:6px;flex:1;min-width:140px;padding-left:4px">
-        <input id="city-input-inline" placeholder="Mudar cidade..."
-          style="flex:1;min-width:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;height:28px"
-          onkeydown="if(event.key==='Enter')setCityInline()">
-        <button class="btn" onclick="setCityInline()" style="height:28px;padding:0 10px;font-size:10px;flex-shrink:0">↵</button>
       </div>
     </div>
     <div class="alert-banner" id="alert-banner" style="margin-top:10px;margin-bottom:0"></div>
@@ -981,6 +984,29 @@ body::before {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+
+<!-- MODAL CIDADE -->
+<div class="modal-overlay" id="city-modal">
+  <div class="modal" style="width:360px">
+    <div class="modal-title">🌍 Cidade para meteorologia</div>
+    <div class="modal-fields">
+      <div class="field">
+        <label>Nome da cidade</label>
+        <input id="city-modal-input" placeholder="ex: São Paulo, Curitiba, Miami..."
+          onkeydown="if(event.key==='Enter')confirmCityModal()"
+          style="font-family:var(--mono);font-size:13px"/>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7;padding:8px 10px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">
+        💡 Digite o nome em português ou inglês.<br>
+        Ex: <strong style="color:var(--text)">São Paulo</strong>, <strong style="color:var(--text)">Rio de Janeiro</strong>, <strong style="color:var(--text)">London</strong>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCityModal()">Cancelar</button>
+      <button class="btn primary" onclick="confirmCityModal()">Confirmar</button>
+    </div>
+  </div>
+</div>
 <script>
 // ============ STATE ============
 let client = null;
@@ -1804,6 +1830,31 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
 async function setCityInline() {
   const input = document.getElementById('city-input-inline');
   if (input) setCity(input.value.trim());
+}
+
+function openCityModal() {
+  const modal = document.getElementById('city-modal');
+  if (!modal) return;
+  // pré-preenche com a cidade atual se houver
+  const inp = document.getElementById('city-modal-input');
+  if (inp) {
+    const cur = document.getElementById('wi-city-inline');
+    inp.value = (cur && cur.textContent !== 'configure a cidade →') ? cur.textContent : '';
+  }
+  modal.classList.add('open');
+  setTimeout(() => { document.getElementById('city-modal-input')?.focus(); }, 100);
+}
+
+function closeCityModal() {
+  document.getElementById('city-modal')?.classList.remove('open');
+}
+
+async function confirmCityModal() {
+  const inp = document.getElementById('city-modal-input');
+  const city = inp ? inp.value.trim() : '';
+  if (!city) return;
+  closeCityModal();
+  await setCity(city);
 }
 
 async function setCity(cityName) {
