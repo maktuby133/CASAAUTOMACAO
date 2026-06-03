@@ -285,17 +285,40 @@ body::before {
     max-height: none !important;
     overflow-y: visible !important;
   }
-  /* Card: altura automática, tudo visível */
+  /* Card: tudo numa linha só — ícone + nome + sensores + relés */
   .room-card {
     height: auto !important;
     min-height: unset !important;
     overflow: visible !important;
     padding: 8px 10px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
   }
-  .room-header { margin-bottom: 4px; }
-  .room-name   { font-size: 12px !important; }
-  /* Sensores e relés na MESMA linha, sem quebra */
-  .room-main-row { flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: visible !important; }
+  /* Header vira coluna esquerda: ícone em cima do nome */
+  .room-header {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    flex-shrink: 0;
+    margin-bottom: 0 !important;
+    width: 38px;
+  }
+  .room-icon { font-size: 16px !important; }
+  .room-name {
+    font-size: 9px !important;
+    white-space: normal !important;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 38px;
+  }
+  /* Timestamp e botões de edição — esconde no mobile para economizar espaço */
+  .room-header > span:last-of-type { display: none; }
+  .room-actions { display: none !important; }
+  /* Linha de dados ocupa o restante */
+  .room-main-row { flex: 1; flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: visible !important; }
   .room-val  { font-size: 12px !important; }
   .room-unit { font-size: 8px !important; }
   /* Relé inline: sem quebra, sem borda separadora */
