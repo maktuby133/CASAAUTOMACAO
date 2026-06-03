@@ -285,43 +285,51 @@ body::before {
     max-height: none !important;
     overflow-y: visible !important;
   }
-  /* Card: tudo numa linha só — ícone + nome + sensores + relés */
+  /* Card mobile: NOME — ÍCONE — DADOS — BOTÃO, linha única */
   .room-card {
     height: auto !important;
     min-height: unset !important;
     overflow: visible !important;
-    padding: 8px 10px !important;
+    padding: 7px 10px !important;
     flex-direction: row !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 0 !important;
   }
-  /* Header vira coluna esquerda: ícone em cima do nome */
+  /* Nome: flex-start, sem quebra, trunca com ... */
   .room-header {
-    flex-direction: column !important;
+    flex-direction: row !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 2px !important;
+    gap: 5px !important;
     flex-shrink: 0;
     margin-bottom: 0 !important;
-    width: 38px;
+    min-width: 0;
+    max-width: 42% !important;
   }
-  .room-icon { font-size: 16px !important; }
+  .room-icon { font-size: 14px !important; flex-shrink: 0; }
   .room-name {
-    font-size: 9px !important;
-    white-space: normal !important;
-    word-break: break-word;
-    text-align: center;
-    line-height: 1.2;
-    max-width: 38px;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: none !important;
   }
-  /* Timestamp e botões de edição — esconde no mobile para economizar espaço */
+  /* Separador entre nome e dados */
+  .room-header::after {
+    content: '';
+    display: inline-block;
+    width: 1px; height: 14px;
+    background: var(--border);
+    margin: 0 7px;
+    flex-shrink: 0;
+  }
+  /* Timestamp e botões de edição: esconde */
   .room-header > span:last-of-type { display: none; }
   .room-actions { display: none !important; }
-  /* Linha de dados ocupa o restante */
-  .room-main-row { flex: 1; flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: visible !important; }
+  /* Dados: ocupa o restante */
+  .room-main-row { flex: 1; min-width: 0; flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: hidden !important; }
   .room-val  { font-size: 12px !important; }
   .room-unit { font-size: 8px !important; }
-  /* Relé inline: sem quebra, sem borda separadora */
+  /* Toggle do relé: inline, sem quebra */
   .room-main-row .room-relay-wrap {
     flex-basis: auto !important;
     border-top: none !important;
@@ -331,7 +339,7 @@ body::before {
     flex-shrink: 0;
   }
   .room-main-row .room-relay-wrap > span { font-size: 11px !important; }
-  .room-main-row .room-sep:has(+ .room-relay-wrap) { display: block !important; }
+  .room-main-row .room-sep { display: block !important; }
 
   /* Campo cidade — linha inteira dentro do grid */
   .weather-city-row {
