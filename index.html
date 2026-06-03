@@ -290,24 +290,25 @@ body::before {
     height: auto !important;
     min-height: unset !important;
     overflow: visible !important;
-    padding: 9px 11px !important;
+    padding: 8px 10px !important;
   }
-  .room-header { margin-bottom: 5px; }
+  .room-header { margin-bottom: 4px; }
   .room-name   { font-size: 12px !important; }
-  /* Sensores ficam na linha normal */
-  .room-main-row { flex-wrap: wrap; gap: 6px; align-items: center; }
-  .room-val  { font-size: 13px !important; }
-  .room-unit { font-size: 9px !important; }
-  /* Cada relé em linha própria, separado dos sensores */
+  /* Sensores e relés na MESMA linha, sem quebra */
+  .room-main-row { flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: visible !important; }
+  .room-val  { font-size: 12px !important; }
+  .room-unit { font-size: 8px !important; }
+  /* Relé inline: sem quebra, sem borda separadora */
   .room-main-row .room-relay-wrap {
-    flex-basis: 100%;
-    justify-content: flex-start;
-    border-top: 1px solid var(--border);
-    padding-top: 5px;
-    margin-top: 3px;
-    gap: 6px;
+    flex-basis: auto !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    gap: 3px !important;
+    flex-shrink: 0;
   }
-  .room-main-row .room-sep:has(+ .room-relay-wrap) { display: none; }
+  .room-main-row .room-relay-wrap > span { font-size: 11px !important; }
+  .room-main-row .room-sep:has(+ .room-relay-wrap) { display: block !important; }
 
   /* Campo cidade — linha inteira dentro do grid */
   .weather-city-row {
