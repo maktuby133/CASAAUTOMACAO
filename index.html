@@ -247,10 +247,10 @@ body::before {
   /* Config panel */
   .config-grid { grid-template-columns: 1fr !important; }
 
-  /* Separadores verticais — esconde no mobile */
+  /* Separadores verticais */
   .metric-inline-sep { display: none; }
 
-  /* ── Meteorologia mobile: grade 3 colunas compacta ── */
+  /* ── Meteorologia: grade 3 colunas compacta ── */
   .weather-metrics-row {
     display: grid !important;
     grid-template-columns: 1fr 1fr 1fr !important;
@@ -270,22 +270,27 @@ body::before {
   .metric-inline-val  { font-size: 12px !important; letter-spacing: 0; }
   .metric-inline-unit { font-size: 8px !important; }
   .metric-inline-sub  { font-size: 8px !important; margin-top: 1px; letter-spacing: 0.04em; }
-  /* Campo cidade — linha separada abaixo da grade */
-  .weather-city-row { margin-top: 8px !important; }
-  /* Cabeçalho clima */
+  .weather-city-row {
+    grid-column: 1 / -1 !important;
+    margin-top: 0 !important;
+    padding-left: 0 !important;
+    min-width: 0 !important;
+    flex: unset !important;
+  }
+  .weather-city-row input { font-size: 11px; }
   #wi-irrig-status { font-size: 9px !important; padding: 2px 6px !important; }
   #wi-city-inline  { font-size: 10px !important; }
   #live-ts         { font-size: 9px !important; }
   #wi-icon-inline  { font-size: 16px !important; }
 
-  /* Ambientes: 1 por linha no mobile */
+  /* ── Ambientes: 1 por linha, tudo horizontal ── */
   .rooms-scroll {
     grid-template-columns: 1fr !important;
     grid-auto-rows: auto !important;
     max-height: none !important;
     overflow-y: visible !important;
   }
-  /* Card mobile: NOME — ÍCONE — DADOS — BOTÃO, linha única */
+  /* Card: NOME — ÍCONE — DADOS — BOTÃO numa só linha */
   .room-card {
     height: auto !important;
     min-height: unset !important;
@@ -295,7 +300,7 @@ body::before {
     align-items: center !important;
     gap: 0 !important;
   }
-  /* Nome: flex-start, sem quebra, trunca com ... */
+  /* Header (ícone + nome) à esquerda, linha horizontal */
   .room-header {
     flex-direction: row !important;
     align-items: center !important;
@@ -313,7 +318,7 @@ body::before {
     text-overflow: ellipsis !important;
     max-width: none !important;
   }
-  /* Separador entre nome e dados */
+  /* Separador vertical entre header e dados */
   .room-header::after {
     content: '';
     display: inline-block;
@@ -322,14 +327,14 @@ body::before {
     margin: 0 7px;
     flex-shrink: 0;
   }
-  /* Timestamp e botões de edição: esconde */
+  /* Timestamp e botões de edição: escondidos no mobile */
   .room-header > span:last-of-type { display: none; }
   .room-actions { display: none !important; }
-  /* Dados: ocupa o restante */
+  /* Dados: ocupa o restante da linha */
   .room-main-row { flex: 1; min-width: 0; flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: hidden !important; }
   .room-val  { font-size: 12px !important; }
   .room-unit { font-size: 8px !important; }
-  /* Toggle do relé: inline, sem quebra */
+  /* Toggle do relé inline, sem quebra */
   .room-main-row .room-relay-wrap {
     flex-basis: auto !important;
     border-top: none !important;
@@ -340,16 +345,6 @@ body::before {
   }
   .room-main-row .room-relay-wrap > span { font-size: 11px !important; }
   .room-main-row .room-sep { display: block !important; }
-
-  /* Campo cidade — linha inteira dentro do grid */
-  .weather-city-row {
-    grid-column: 1 / -1 !important;
-    margin-top: 0 !important;
-    padding-left: 0 !important;
-    min-width: 0 !important;
-    flex: unset !important;
-  }
-  .weather-city-row input { font-size: 11px; }
 
   /* Row 2 (water + irrigation) — 1 col */
   .row-2 { grid-template-columns: 1fr !important; }
@@ -611,7 +606,7 @@ body::before {
       <span class="card-title">Ambientes</span>
       <div style="display:flex;align-items:center;gap:8px">
         <span id="rooms-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">nenhum ambiente</span>
-        <button class="btn" style="font-size:10px;padding:4px 10px" onclick="openRoomModal()">+ Adicionar</button>
+        <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
       </div>
     </div>
     <!-- grid travado: linhas fixas de 80px + scroll se mais de 2 linhas -->
@@ -819,9 +814,16 @@ body::before {
     </div>
 
     <input type="hidden" id="rm-room-modal-edit-id" value="">
-    <div class="modal-actions" style="margin-top:16px">
-      <button class="btn" onclick="closeRoomModal()">Cancelar</button>
-      <button class="btn primary" onclick="confirmAddRoom()">Salvar ambiente</button>
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between">
+      <button id="rm-delete-btn" class="btn"
+        style="display:none;color:var(--danger);border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07);align-items:center;gap:5px"
+        onclick="deleteRoomFromModal()">
+        🗑 Excluir
+      </button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn" onclick="closeRoomModal()">Cancelar</button>
+        <button class="btn primary" onclick="confirmAddRoom()">Salvar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2871,11 +2873,46 @@ function openRoomModal(editId) {
   renderRmRelayRows();
   updateRoomPreview();
 
+  // Mostra botão excluir só no modo edição
+  const delBtn = document.getElementById('rm-delete-btn');
+  if (delBtn) { delBtn.style.display = editId ? 'flex' : 'none'; delBtn.dataset.confirm = ''; delBtn.innerHTML = '🗑 Excluir'; delBtn.style.background='rgba(239,68,68,0.07)'; delBtn.style.borderColor='rgba(239,68,68,0.35)'; }
+
   document.getElementById('room-modal').classList.add('open');
 }
 
 function closeRoomModal() {
   document.getElementById('room-modal').classList.remove('open');
+}
+
+function deleteRoomFromModal() {
+  const editId = document.getElementById('rm-room-modal-edit-id').value;
+  if (!editId) return;
+  const r = rooms.find(x => x.id === editId);
+  if (!r) return;
+  const delBtn = document.getElementById('rm-delete-btn');
+  if (delBtn.dataset.confirm !== '1') {
+    // Primeiro toque: pede confirmação
+    delBtn.dataset.confirm = '1';
+    delBtn.innerHTML = '⚠ Confirmar exclusão';
+    delBtn.style.background = 'rgba(239,68,68,0.2)';
+    delBtn.style.borderColor = 'var(--danger)';
+    setTimeout(() => {
+      if (delBtn.dataset.confirm === '1') {
+        delBtn.dataset.confirm = '';
+        delBtn.innerHTML = '🗑 Excluir';
+        delBtn.style.background = 'rgba(239,68,68,0.07)';
+        delBtn.style.borderColor = 'rgba(239,68,68,0.35)';
+      }
+    }, 3000);
+    return;
+  }
+  // Segundo toque: exclui
+  rooms = rooms.filter(x => x.id !== editId);
+  saveRooms();
+  publishPersist();
+  renderRooms();
+  log(`Ambiente "${r.name}" removido`, 'sys');
+  closeRoomModal();
 }
 
 function confirmAddRoom() {
@@ -2920,13 +2957,8 @@ function confirmAddRoom() {
 }
 
 function removeRoom(id) {
-  const r = rooms.find(x => x.id === id);
-  if (!r || !confirm(`Remover "${r.name}"?`)) return;
-  rooms = rooms.filter(x => x.id !== id);
-  saveRooms();
-  publishPersist();
-  renderRooms();
-  log(`Ambiente "${r.name}" removido`, 'sys');
+  // Abre o modal de edição onde o usuário pode excluir com confirmação
+  openRoomModal(id);
 }
 
 function subscribeRoom(room) {
