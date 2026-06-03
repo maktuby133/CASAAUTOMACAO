@@ -247,19 +247,79 @@ body::before {
   /* Config panel */
   .config-grid { grid-template-columns: 1fr !important; }
 
-  /* Metrics bar — stack on mobile */
+  /* Separadores verticais — esconde no mobile */
   .metric-inline-sep { display: none; }
 
-  /* Ambient rooms — 2 col on mobile */
-  .rooms-scroll { grid-template-columns: repeat(2, 1fr) !important; }
+  /* ── Meteorologia mobile: grade 3 colunas compacta ── */
+  .weather-metrics-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 7px 6px !important;
+    flex-wrap: unset !important;
+  }
+  .metric-inline {
+    padding: 6px 7px !important;
+    gap: 5px !important;
+    background: var(--bg3);
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    align-items: center;
+    flex-direction: row;
+  }
+  .metric-inline > span:first-child { font-size: 12px !important; }
+  .metric-inline-val  { font-size: 12px !important; letter-spacing: 0; }
+  .metric-inline-unit { font-size: 8px !important; }
+  .metric-inline-sub  { font-size: 8px !important; margin-top: 1px; letter-spacing: 0.04em; }
+  /* Campo cidade — linha separada abaixo da grade */
+  .weather-city-row { margin-top: 8px !important; }
+  /* Cabeçalho clima */
+  #wi-irrig-status { font-size: 9px !important; padding: 2px 6px !important; }
+  #wi-city-inline  { font-size: 10px !important; }
+  #live-ts         { font-size: 9px !important; }
+  #wi-icon-inline  { font-size: 16px !important; }
 
-  /* Room card mobile: sensores em cima, relés embaixo */
-  .room-card { height: auto !important; min-height: 72px; }
-  .room-main-row { flex-wrap: wrap; gap: 4px; }
-  .room-main-row .room-relay-wrap { flex-basis: 100%; justify-content: flex-start; border-top: 1px solid var(--border); padding-top: 4px; margin-top: 2px; }
+  /* Ambientes: 1 por linha no mobile */
+  .rooms-scroll {
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+  /* Card: altura automática, tudo visível */
+  .room-card {
+    height: auto !important;
+    min-height: unset !important;
+    overflow: visible !important;
+    padding: 9px 11px !important;
+  }
+  .room-header { margin-bottom: 5px; }
+  .room-name   { font-size: 12px !important; }
+  /* Sensores ficam na linha normal */
+  .room-main-row { flex-wrap: wrap; gap: 6px; align-items: center; }
+  .room-val  { font-size: 13px !important; }
+  .room-unit { font-size: 9px !important; }
+  /* Cada relé em linha própria, separado dos sensores */
+  .room-main-row .room-relay-wrap {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    border-top: 1px solid var(--border);
+    padding-top: 5px;
+    margin-top: 3px;
+    gap: 6px;
+  }
   .room-main-row .room-sep:has(+ .room-relay-wrap) { display: none; }
 
-  /* Row 2 (weather + irrigation) — 1 col */
+  /* Campo cidade — linha inteira dentro do grid */
+  .weather-city-row {
+    grid-column: 1 / -1 !important;
+    margin-top: 0 !important;
+    padding-left: 0 !important;
+    min-width: 0 !important;
+    flex: unset !important;
+  }
+  .weather-city-row input { font-size: 11px; }
+
+  /* Row 2 (water + irrigation) — 1 col */
   .row-2 { grid-template-columns: 1fr !important; }
 
   /* Cards */
@@ -270,18 +330,11 @@ body::before {
   .sched-item { flex-wrap: wrap; gap: 8px; }
   .add-sched-row { flex-wrap: wrap; }
 
-  /* Relay pills in rooms — 2 cols on small */
-  .room-relay-grid { grid-template-columns: repeat(2, 1fr) !important; }
-
   /* Modal */
   .modal { width: 95vw !important; padding: 18px 16px !important; }
 
   /* Log */
   .log-box { max-height: 100px; }
-
-  /* Water metric bar */
-  .metric-inline { padding-right: 10px; }
-  .metric-inline-val { font-size: 15px; }
 }
 
 /* ═══════════════════════════════════════
@@ -446,7 +499,7 @@ body::before {
       <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0">aguardando...</span>
     </div>
     <!-- Linha de métricas lado a lado -->
-    <div style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap">
+    <div class="weather-metrics-row" style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap">
       <!-- Temperatura -->
       <div class="metric-inline" style="gap:8px;padding-right:16px">
         <span style="font-size:15px;flex-shrink:0">🌡️</span>
@@ -506,7 +559,7 @@ body::before {
       </div>
       <div class="metric-inline-sep"></div>
       <!-- Campo cidade — por último -->
-      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:140px;padding-left:4px">
+      <div class="weather-city-row" style="display:flex;align-items:center;gap:6px;flex:1;min-width:140px;padding-left:4px">
         <input id="city-input-inline" placeholder="Mudar cidade..."
           style="flex:1;min-width:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;height:28px"
           onkeydown="if(event.key==='Enter')setCityInline()">
@@ -1602,7 +1655,6 @@ function handleMsg(topic, payload, pkt) {
 function updateLiveBar(topic, cached) {
   document.getElementById('live-dot').className = 'dot on';
   document.getElementById('live-ts').textContent = new Date().toLocaleTimeString('pt-BR');
-  log(`↓ ${topic}${cached?' [retained]':''}`, 'sys');
 }
 
 // ============ METEOROLOGIA — Open-Meteo ============
@@ -2705,7 +2757,7 @@ function renderRmRelayRows() {
     // Para esta row: mostra a saída dela mesma + as não usadas globalmente e não usadas pelas outras rows
     const otherRowIds = new Set(rmRelayRows.filter(x => x.id !== row.id).map(x => x.relayId));
     const opts = relays
-      .filter(r => r.enabled && r.id !== 'out1')
+      .filter(r => r.enabled && !r.locked)
       .filter(r => r.id === row.relayId || (!globalUsed.has(r.id) && !otherRowIds.has(r.id)))
       .map(r => `<option value="${r.id}" ${r.id===row.relayId?'selected':''}>${r.id.toUpperCase()} — ${r.name}</option>`)
       .join('');
@@ -2829,7 +2881,7 @@ function confirmAddRoom() {
   saveRooms();
   publishPersist();
   renderRooms();
-  const saved = rooms.find(x => x.topic === topic);
+  const saved = editId ? rooms.find(x => x.id === editId) : rooms[rooms.length - 1];
   if (client && client.connected && saved) subscribeRoom(saved);
   log(`Ambiente "${name}" salvo`, 'ok');
   closeRoomModal();
