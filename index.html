@@ -44,12 +44,18 @@ body::before {
 .app { position: relative; z-index: 1; max-width: 100%; margin: 0; padding: 0 20px 60px; }
 
 /* TOPBAR */
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
-.logo { display: flex; align-items: baseline; gap: 10px; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 12px 0 12px; border-bottom: 1px solid var(--border); margin-bottom: 18px; flex-wrap: nowrap; }
+.logo { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
 .logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
 .logo-text span { color: var(--accent); }
 .logo-tag { font-family: var(--mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border2); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+.topbar-weather { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+.topbar-weather-item { display: flex; align-items: baseline; gap: 2px; font-family: var(--mono); font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+.topbar-weather-val { font-weight: 700; color: var(--text); }
+.topbar-weather-unit { font-size: 9px; color: var(--muted); }
+.topbar-weather-city { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex-shrink: 1; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .conn-status { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
 .dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
@@ -237,10 +243,15 @@ body::before {
   .app { padding: 0 12px 80px; }
 
   /* Topbar */
-  .topbar { padding: 12px 0 10px; flex-wrap: nowrap; }
+  .topbar { padding: 10px 0 10px; gap: 8px; }
   .logo-tag { display: none; }
   .logo-text { font-size: 17px; }
-  .topbar-right { gap: 8px; }
+  .topbar-sep { display: none; }
+  /* No mobile, esconde itens menos prioritários do clima */
+  #mb-rain-inline, .topbar-weather-item:nth-child(n+4) { display: none !important; }
+  .topbar-weather-city { max-width: 70px; }
+  #wi-irrig-status { display: none; }
+  .topbar-right { gap: 6px; }
   .conn-status span { display: none; }
   .btn { font-size: 10px; padding: 6px 10px; }
 
@@ -488,13 +499,74 @@ body::before {
       <span class="logo-text">Auto<span>Flow</span></span>
       <span class="logo-tag">v1.0</span>
     </div>
+
+    <div class="topbar-sep"></div>
+
+    <!-- Clima inline na topbar -->
+    <div class="topbar-weather" id="topbar-weather">
+      <span id="wi-icon-inline" style="font-size:16px;flex-shrink:0">🌍</span>
+      <span class="topbar-weather-city" id="wi-city-inline">configure →</span>
+      <span id="wi-irrig-status" style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(107,114,128,0.12);color:var(--muted);flex-shrink:0">clima</span>
+
+      <!-- Temp -->
+      <span class="topbar-sep" style="height:14px"></span>
+      <span class="topbar-weather-item" title="Temperatura">
+        🌡️ <span class="topbar-weather-val" id="wi-temp-inline">—</span><span class="topbar-weather-unit">°C</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-feels-inline"></span>
+      </span>
+
+      <!-- Umidade -->
+      <span class="topbar-weather-item" title="Umidade">
+        💧<span class="topbar-weather-val" id="wi-hum-inline">—</span><span class="topbar-weather-unit">%</span>
+      </span>
+
+      <!-- Chuva -->
+      <span class="topbar-weather-item" id="mb-rain-inline" title="Chuva">
+        🌧<span class="topbar-weather-val" id="wi-rain-inline">—</span><span class="topbar-weather-unit">mm</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-prob-inline"></span>
+      </span>
+
+      <!-- Vento -->
+      <span class="topbar-weather-item" title="Vento">
+        💨<span class="topbar-weather-val" id="wi-wind-inline">—</span><span class="topbar-weather-unit">km/h</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-winddir-inline"></span>
+      </span>
+
+      <!-- UV -->
+      <span class="topbar-weather-item" title="Índice UV">
+        ☀️<span class="topbar-weather-val" id="wi-uv-inline">—</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:1px" id="wi-uvlbl-inline">UV</span>
+      </span>
+
+      <span id="live-ts" style="font-family:var(--mono);font-size:9px;color:var(--muted);flex-shrink:0;display:none">aguardando...</span>
+      <span id="wi-status-inline" style="display:none"></span>
+    </div>
+
     <div class="topbar-right">
+      <!-- Dot de clima -->
+      <div class="dot" id="live-dot" title="Clima ao vivo"></div>
+
+      <!-- Botão + para mudar local do clima -->
+      <button onclick="openCityModal()" title="Mudar cidade do clima"
+        style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--accent);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
+
+      <!-- Status MQTT -->
       <div class="conn-status">
         <div class="dot" id="mqtt-dot"></div>
-        <span id="mqtt-label">Desconectado</span>
+        <span id="mqtt-label" style="display:none">Desconectado</span>
       </div>
-      <button class="btn" id="cfg-main-btn" onclick="smartConnect()">⚙ Configurar</button>
+
+      <!-- Botão Configuração / Login -->
+      <button class="btn" id="cfg-main-btn" onclick="smartConnect()" style="display:flex;align-items:center;gap:5px;padding:7px 12px">
+        <span style="font-size:13px">⚙</span>
+      </button>
     </div>
+  </div>
+
+  <!-- Alertas de clima (movidos para fora do card deletado) -->
+  <div class="alert-banner" id="alert-banner" style="margin-bottom:10px"></div>
+  <div class="alert-banner" id="gas-lock-banner"
+    style="margin-bottom:8px;display:none;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.35);color:var(--danger);animation:pulse-alarm 2s ease-in-out infinite;flex-direction:row;align-items:center;gap:10px">
   </div>
 
   <!-- MQTT CONFIG DROPDOWN -->
@@ -517,92 +589,11 @@ body::before {
     </div>
     <div class="config-actions">
       <button class="btn primary" onclick="connectMQTT()">Conectar</button>
-      <button class="btn" onclick="applyBrokerToAll()" title="Propaga host, usuário e senha para caixas d'água e bomba de irrigação" style="display:flex;align-items:center;gap:5px">🔗 Usar em todos</button>
+      <button class="btn" onclick="applyBrokerToAll()" title="Propaga host, usuário e senha para caixas e bomba de irrigação" style="display:flex;align-items:center;gap:5px">🔗 Usar em todos</button>
       <button class="btn" onclick="toggleConfig()">Fechar</button>
     </div>
   </div>
 
-  <!-- ROW 1: Meteorologia completa inline -->
-  <div class="card" style="margin-bottom:16px;padding:14px 18px">
-    <!-- Linha superior: dot + cidade + status irrigação + timestamp + botão + -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
-        <div class="dot" id="live-dot"></div>
-        <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Clima</span>
-      </div>
-      <span id="wi-icon-inline" style="font-size:20px;flex-shrink:0">🌍</span>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="wi-city-inline">configure a cidade →</span>
-      <span id="wi-irrig-status" style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(107,114,128,0.12);color:var(--muted)">meteorologia</span>
-      <span id="live-ts" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0">aguardando...</span>
-      <button onclick="openCityModal()" title="Adicionar / mudar cidade"
-        style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--accent);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
-    </div>
-    <!-- Linha de métricas lado a lado -->
-    <div class="weather-metrics-row" style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap">
-      <!-- Temperatura -->
-      <div class="metric-inline" style="gap:8px;padding-right:16px">
-        <span style="font-size:15px;flex-shrink:0">🌡️</span>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:4px">
-            <span class="metric-inline-val" id="wi-temp-inline">—<span class="metric-inline-unit">°C</span></span>
-            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-feels-inline"></span>
-          </div>
-          <span class="metric-inline-sub">temperatura</span>
-        </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- Umidade -->
-      <div class="metric-inline" style="gap:8px;padding-right:16px">
-        <span style="font-size:15px">💧</span>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:4px">
-            <span class="metric-inline-val" id="wi-hum-inline">—<span class="metric-inline-unit">%</span></span>
-          </div>
-          <span class="metric-inline-sub">umidade</span>
-        </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- Chuva -->
-      <div class="metric-inline" id="mb-rain-inline" style="gap:8px;padding-right:16px">
-        <span style="font-size:15px">🌧</span>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:4px">
-            <span class="metric-inline-val" id="wi-rain-inline">—<span class="metric-inline-unit">mm</span></span>
-            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-prob-inline"></span>
-          </div>
-          <span class="metric-inline-sub" id="wi-status-inline">chuva</span>
-        </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- Vento -->
-      <div class="metric-inline" style="gap:8px;padding-right:16px">
-        <span style="font-size:15px">💨</span>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:4px">
-            <span class="metric-inline-val" id="wi-wind-inline">—<span class="metric-inline-unit">km/h</span></span>
-            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="wi-winddir-inline"></span>
-          </div>
-          <span class="metric-inline-sub">vento</span>
-        </div>
-      </div>
-      <div class="metric-inline-sep"></div>
-      <!-- UV -->
-      <div class="metric-inline" style="gap:8px;padding-right:16px">
-        <span style="font-size:15px">☀️</span>
-        <div>
-          <div style="display:flex;align-items:baseline;gap:4px">
-            <span class="metric-inline-val" id="wi-uv-inline">—</span>
-          </div>
-          <span class="metric-inline-sub" id="wi-uvlbl-inline">índice UV</span>
-        </div>
-      </div>
-    </div>
-    <div class="alert-banner" id="alert-banner" style="margin-top:10px;margin-bottom:0"></div>
-    <!-- Banner de alerta FIXO de gás — só some quando usuário resetar -->
-    <div class="alert-banner" id="gas-lock-banner"
-      style="margin-top:6px;margin-bottom:0;display:none;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.35);color:var(--danger);animation:pulse-alarm 2s ease-in-out infinite;flex-direction:row;align-items:center;gap:10px">
-    </div>
-  </div>
 
   <!-- ROW 2: ambientes -->
   <div class="card" style="margin-bottom:14px">
@@ -1391,15 +1382,15 @@ function updateMainBtn() {
   const s = getCfg();
   const connected = window._mqttConnected;
   if (connected) {
-    btn.textContent = '● Conectado';
+    btn.innerHTML = '<span style="font-size:13px">⚙</span>';
     btn.style.color = 'var(--accent)';
     btn.style.borderColor = 'var(--accent)';
   } else if (s.host && s.pass) {
-    btn.textContent = '⚡ Reconectar';
-    btn.style.color = '';
-    btn.style.borderColor = '';
+    btn.innerHTML = '<span style="font-size:13px">⚙</span>';
+    btn.style.color = 'var(--warn)';
+    btn.style.borderColor = 'var(--warn)';
   } else {
-    btn.textContent = '⚙ Configurar';
+    btn.innerHTML = '<span style="font-size:13px">⚙</span>';
     btn.style.color = '';
     btn.style.borderColor = '';
   }
@@ -1817,15 +1808,15 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
   const livets    = document.getElementById('live-ts');
 
   if (wiIcon)    wiIcon.textContent = mainIcon;
-  if (wiTemp)    wiTemp.innerHTML = `${!isNaN(tempNow)?tempNow.toFixed(1):'—'}<span class="metric-inline-unit">°C</span>`;
+  if (wiTemp)    wiTemp.textContent = !isNaN(tempNow)?tempNow.toFixed(1):'—';
   if (wiFeels && !isNaN(feelsLike)) wiFeels.textContent = `sen. ${feelsLike.toFixed(1)}°`;
-  if (wiHum)     wiHum.innerHTML = `${!isNaN(humNow)?Math.round(humNow):'—'}<span class="metric-inline-unit">%</span>`;
-  if (wiCity)    wiCity.textContent = weather.city || 'configure a cidade →';
-  if (wiRain)    wiRain.innerHTML = `${!isNaN(rainNow)?rainNow.toFixed(1):'—'}<span class="metric-inline-unit">mm</span>`;
+  if (wiHum)     wiHum.textContent = !isNaN(humNow)?Math.round(humNow):'—';
+  if (wiCity)    wiCity.textContent = weather.city || 'configure →';
+  if (wiRain)    wiRain.textContent = !isNaN(rainNow)?rainNow.toFixed(1):'—';
   if (wiProb)    wiProb.textContent = maxProb ? `prob.${maxProb}%` : '';
   if (wiStat)  { wiStat.textContent = rainNow > 0 ? 'chovendo' : 'sem chuva'; wiStat.style.color = rainNow > 0 ? 'var(--warn)' : 'var(--muted)'; }
   if (wiIrrig) { wiIrrig.textContent = statusText; wiIrrig.style.background = statusBg; wiIrrig.style.color = statusColor; }
-  if (wiWind)    wiWind.innerHTML = `${!isNaN(windSpd)?windSpd.toFixed(1):'—'}<span class="metric-inline-unit">km/h</span>`;
+  if (wiWind)    wiWind.textContent = !isNaN(windSpd)?windSpd.toFixed(1):'—';
   if (wiWindDir && !isNaN(windDir)) wiWindDir.textContent = windDirLabel(windDir);
   if (wiUV)      wiUV.textContent = !isNaN(uvIndex) ? uvIndex.toFixed(1) : '—';
   if (wiUVLbl && !isNaN(uvIndex)) { wiUVLbl.textContent = uv.txt; wiUVLbl.style.color = uv.col; }
@@ -1844,7 +1835,7 @@ function openCityModal() {
   const inp = document.getElementById('city-modal-input');
   if (inp) {
     const cur = document.getElementById('wi-city-inline');
-    inp.value = (cur && cur.textContent !== 'configure a cidade →') ? cur.textContent : '';
+    inp.value = (cur && cur.textContent !== 'configure →') ? cur.textContent : '';
   }
   modal.classList.add('open');
   setTimeout(() => { document.getElementById('city-modal-input')?.focus(); }, 100);
