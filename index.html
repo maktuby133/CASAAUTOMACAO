@@ -51,10 +51,10 @@ body::before {
 .logo-tag { font-family: var(--mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border2); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
 .topbar-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
 .topbar-weather { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
-.topbar-weather-item { display: flex; align-items: baseline; gap: 2px; font-family: var(--mono); font-size: 11px; white-space: nowrap; flex-shrink: 0; }
-.topbar-weather-val { font-weight: 700; color: var(--text); }
-.topbar-weather-unit { font-size: 9px; color: var(--muted); }
-.topbar-weather-city { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex-shrink: 1; }
+.topbar-weather-item { display: flex; align-items: baseline; gap: 2px; font-family: var(--mono); font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+.topbar-weather-val { font-weight: 700; color: var(--text); font-size: 14px; }
+.topbar-weather-unit { font-size: 10px; color: var(--muted); }
+.topbar-weather-city { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex-shrink: 1; }
 .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .conn-status { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
@@ -254,6 +254,7 @@ body::before {
   .topbar-right { gap: 6px; }
   .conn-status span { display: none; }
   .btn { font-size: 10px; padding: 6px 10px; }
+  .cfg-btn-lbl, .login-btn-lbl { display: none; }
 
   /* Config panel */
   .config-grid { grid-template-columns: 1fr !important; }
@@ -556,9 +557,16 @@ body::before {
         <span id="mqtt-label" style="display:none">Desconectado</span>
       </div>
 
-      <!-- Botão Configuração / Login -->
-      <button class="btn" id="cfg-main-btn" onclick="smartConnect()" style="display:flex;align-items:center;gap:5px;padding:7px 12px">
-        <span style="font-size:13px">⚙</span>
+      <!-- Botão Broker / Configuração MQTT -->
+      <button class="btn" id="cfg-main-btn" onclick="smartConnect()" title="Configurar Broker MQTT"
+        style="display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px">
+        <span style="font-size:12px">📡</span><span class="cfg-btn-lbl">Broker</span>
+      </button>
+
+      <!-- Botão Login -->
+      <button class="btn" id="login-btn" onclick="openLoginModal()" title="Login / Conta"
+        style="display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px">
+        <span style="font-size:12px">👤</span><span class="login-btn-lbl" id="login-btn-lbl">Login</span>
       </button>
     </div>
   </div>
@@ -571,7 +579,10 @@ body::before {
 
   <!-- MQTT CONFIG DROPDOWN -->
   <div id="cfg-panel" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:20px">
-    <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>Conexão MQTT — HiveMQ</div>
+    <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+      Broker MQTT — usado por todos os dispositivos
+    </div>
     <div class="config-grid">
       <div class="field" style="grid-column:1/-1"><label>Host (broker)</label><input id="cfg-host" oninput="saveCfgField()" value="13efa30a8367496d82053ae1fec856fb.s1.eu.hivemq.cloud" /></div>
       <div class="field"><label>Porta (WSS)</label><input id="cfg-port" oninput="saveCfgField()" value="8884" /></div>
@@ -585,11 +596,13 @@ body::before {
           <button type="button" onclick="togglePassVis('cfg-pass',this)"
             style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
         </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:5px">
+          💡 Este broker será usado automaticamente por caixas d'água e bomba de irrigação.
+        </div>
       </div>
     </div>
     <div class="config-actions">
       <button class="btn primary" onclick="connectMQTT()">Conectar</button>
-      <button class="btn" onclick="applyBrokerToAll()" title="Propaga host, usuário e senha para caixas e bomba de irrigação" style="display:flex;align-items:center;gap:5px">🔗 Usar em todos</button>
       <button class="btn" onclick="toggleConfig()">Fechar</button>
     </div>
   </div>
@@ -826,6 +839,55 @@ body::before {
 
 <div id="relay-list" style="display:none"></div>
 
+<!-- MODAL LOGIN -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-title" id="login-modal-title" style="display:flex;align-items:center;gap:8px">
+      <span>👤</span> <span id="login-modal-heading">Entrar no AutoFlow</span>
+    </div>
+
+    <!-- Estado: não logado → formulário de login/cadastro -->
+    <div id="login-form-wrap">
+      <div class="modal-fields">
+        <div class="field">
+          <label>Usuário</label>
+          <input id="login-username" placeholder="seu usuário" autocomplete="username"/>
+        </div>
+        <div class="field">
+          <label>Senha <span style="font-weight:400;opacity:0.6;font-size:9px">(padrão: senha do broker MQTT)</span></label>
+          <div style="display:flex;gap:6px">
+            <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"
+              style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s"/>
+            <button type="button" onclick="togglePassVis('login-password',this)"
+              style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+          </div>
+        </div>
+        <div id="login-msg" style="display:none;font-family:var(--mono);font-size:11px;padding:8px 10px;border-radius:6px;margin-top:2px"></div>
+      </div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <button class="btn" onclick="switchLoginMode()" id="login-switch-btn" style="font-size:10px;color:var(--muted)">Criar conta</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="closeLoginModal()">Cancelar</button>
+          <button class="btn primary" id="login-action-btn" onclick="doLogin()">Entrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado: logado → perfil -->
+    <div id="login-profile-wrap" style="display:none">
+      <div style="text-align:center;padding:16px 0 20px">
+        <div style="font-size:40px;margin-bottom:10px">👤</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text)" id="profile-username-lbl"></div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:4px">● Sessão ativa</div>
+      </div>
+      <div class="modal-actions" style="justify-content:center;gap:12px">
+        <button class="btn" onclick="closeLoginModal()">Fechar</button>
+        <button class="btn" onclick="doLogout()" style="color:var(--danger);border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07)">Sair</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CAIXA D'ÁGUA -->
 <div class="modal-overlay" id="tank-modal">
   <div class="modal" style="width:460px;max-height:90vh;overflow-y:auto">
@@ -856,31 +918,6 @@ body::before {
         <div class="field">
           <label>Capacidade total (litros)</label>
           <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
-        </div>
-      </div>
-
-      <!-- Conexão MQTT da caixa -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-        Conexão MQTT
-      </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
-        <div class="field" style="margin:0">
-          <label>Host do broker</label>
-          <input id="tank-host" placeholder="ex: xxxx.s1.eu.hivemq.cloud" style="font-family:var(--mono);font-size:11px"/>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="field" style="margin:0">
-            <label>Usuário MQTT</label>
-            <input id="tank-user" placeholder="ex: monitortemp"/>
-          </div>
-          <div class="field" style="margin:0">
-            <label>Senha MQTT</label>
-            <input id="tank-pass" type="password" placeholder="••••••••"/>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
-          Porta: <strong>8884</strong> (WSS) — usada para conectar ao broker desta caixa
         </div>
       </div>
 
@@ -1382,17 +1419,17 @@ function updateMainBtn() {
   const s = getCfg();
   const connected = window._mqttConnected;
   if (connected) {
-    btn.innerHTML = '<span style="font-size:13px">⚙</span>';
     btn.style.color = 'var(--accent)';
-    btn.style.borderColor = 'var(--accent)';
+    btn.style.borderColor = 'rgba(0,212,160,0.4)';
+    btn.style.background = 'rgba(0,212,160,0.06)';
   } else if (s.host && s.pass) {
-    btn.innerHTML = '<span style="font-size:13px">⚙</span>';
     btn.style.color = 'var(--warn)';
-    btn.style.borderColor = 'var(--warn)';
+    btn.style.borderColor = 'rgba(245,158,11,0.4)';
+    btn.style.background = '';
   } else {
-    btn.innerHTML = '<span style="font-size:13px">⚙</span>';
     btn.style.color = '';
     btn.style.borderColor = '';
+    btn.style.background = '';
   }
 }
 
@@ -1528,6 +1565,9 @@ document.addEventListener('DOMContentLoaded', () => {
       weatherInterval = setInterval(fetchWeather, 10 * 60 * 1000);
     }).catch(e => log('Erro ao restaurar clima: ' + e.message, 'warn'));
   }
+
+  // Restaura sessão de login
+  setTimeout(_updateLoginBtn, 0);
 });
 
 function connectMQTT() {
@@ -1611,6 +1651,11 @@ function connectMQTT() {
     log('Broker MQTT conectado!', 'ok');
     document.getElementById('cfg-panel').style.setProperty('display','none','important');
     updateMainBtn();
+    // Propaga broker para todas as caixas e bomba automaticamente
+    waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
+    saveTanks();
+    irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
+    saveIrrigPump();
     subscribeAll();
     startScheduleEngine();
     subscribeTanks();
@@ -1898,9 +1943,6 @@ function openTankModal(editId) {
   const _gh = document.getElementById('cfg-host')?.value || '';
   const _gu = document.getElementById('cfg-user')?.value || '';
   const _gp = document.getElementById('cfg-pass')?.value || '';
-  document.getElementById('tank-host').value = t?.mqttHost || _gh;
-  document.getElementById('tank-user').value = t?.mqttUser || _gu;
-  document.getElementById('tank-pass').value = t?.mqttPass || _gp;
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -2019,16 +2061,17 @@ function confirmSaveTank() {
   const name     = document.getElementById('tank-name').value.trim();
   const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
   const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
-  const mqttHost = document.getElementById('tank-host').value.trim();
-  const mqttUser = document.getElementById('tank-user').value.trim();
-  const mqttPass = document.getElementById('tank-pass').value;
   const editId   = document.getElementById('tank-edit-id').value;
+
+  // Usa o broker global (configurado no painel principal)
+  const s = getCfg();
+  const mqttHost = s.host || '';
+  const mqttUser = s.user || '';
+  const mqttPass = s.pass || '';
 
   if (!name) { log('Preencha o nome da caixa', 'warn'); return; }
   if (!code) { log('Preencha o código do sensor', 'warn'); return; }
-  if (!mqttHost) { log('Preencha o host do broker MQTT', 'warn'); return; }
-  if (!mqttUser) { log('Preencha o usuário MQTT', 'warn'); return; }
-  if (!mqttPass) { log('Preencha a senha MQTT', 'warn'); return; }
+  if (!mqttHost) { log('Configure o broker MQTT global primeiro (botão Broker na topbar)', 'warn'); return; }
   if (!editId && waterTanks.length >= 2) { alert('Máximo de 2 caixas de água.'); return; }
 
   const pumps = tankPumpRows.map(r => ({
@@ -3253,6 +3296,143 @@ function applyBrokerToAll() {
   saveIrrigPump();
   log('Broker "' + host + '" aplicado em ' + waterTanks.length + ' caixa(s) + bomba de irrigacao.', 'ok');
 }
+
+// ============ LOGIN / AUTENTICAÇÃO LOCAL ============
+// Login simples com armazenamento local — senha padrão = senha do broker MQTT
+
+function _loginKey() { return 'autoflow_users'; }
+function _sessionKey() { return 'autoflow_session'; }
+
+function _getUsers() {
+  try { return JSON.parse(localStorage.getItem(_loginKey()) || '{}'); } catch(e) { return {}; }
+}
+function _saveUsers(u) { localStorage.setItem(_loginKey(), JSON.stringify(u)); }
+function _getSession() {
+  try { return JSON.parse(localStorage.getItem(_sessionKey()) || 'null'); } catch(e) { return null; }
+}
+function _saveSession(s) { localStorage.setItem(_sessionKey(), JSON.stringify(s)); }
+function _clearSession() { localStorage.removeItem(_sessionKey()); }
+
+// Modo do modal: 'login' ou 'register'
+let _loginMode = 'login';
+
+function openLoginModal() {
+  _loginMode = 'login';
+  _refreshLoginModal();
+  document.getElementById('login-modal').classList.add('open');
+  setTimeout(() => document.getElementById('login-username')?.focus(), 120);
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.remove('open');
+  document.getElementById('login-msg').style.display = 'none';
+}
+
+function switchLoginMode() {
+  _loginMode = _loginMode === 'login' ? 'register' : 'login';
+  _refreshLoginModal();
+}
+
+function _refreshLoginModal() {
+  const session = _getSession();
+  const formWrap = document.getElementById('login-form-wrap');
+  const profileWrap = document.getElementById('login-profile-wrap');
+
+  if (session) {
+    formWrap.style.display = 'none';
+    profileWrap.style.display = '';
+    document.getElementById('profile-username-lbl').textContent = session.username;
+    document.getElementById('login-modal-heading').textContent = 'Minha conta';
+    return;
+  }
+
+  formWrap.style.display = '';
+  profileWrap.style.display = 'none';
+  const isReg = _loginMode === 'register';
+  document.getElementById('login-modal-heading').textContent = isReg ? 'Criar conta' : 'Entrar no AutoFlow';
+  document.getElementById('login-action-btn').textContent = isReg ? 'Criar conta' : 'Entrar';
+  document.getElementById('login-action-btn').onclick = isReg ? doRegister : doLogin;
+  document.getElementById('login-switch-btn').textContent = isReg ? '← Já tenho conta' : 'Criar conta';
+  document.getElementById('login-msg').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+function _showLoginMsg(msg, type) {
+  const el = document.getElementById('login-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? 'rgba(0,212,160,0.1)' : 'rgba(239,68,68,0.1)';
+  el.style.color = type === 'ok' ? 'var(--accent)' : 'var(--danger)';
+  el.style.border = type === 'ok' ? '1px solid rgba(0,212,160,0.25)' : '1px solid rgba(239,68,68,0.25)';
+}
+
+function doLogin() {
+  const user = document.getElementById('login-username').value.trim();
+  const pass = document.getElementById('login-password').value;
+  if (!user || !pass) { _showLoginMsg('Preencha usuário e senha.', 'err'); return; }
+  const users = _getUsers();
+  if (!users[user]) { _showLoginMsg('Usuário não encontrado. Crie uma conta.', 'err'); return; }
+  if (users[user] !== pass) { _showLoginMsg('Senha incorreta.', 'err'); return; }
+  _saveSession({ username: user });
+  _updateLoginBtn();
+  log(`👤 Login: ${user}`, 'ok');
+  closeLoginModal();
+}
+
+function doRegister() {
+  const user = document.getElementById('login-username').value.trim();
+  const pass = document.getElementById('login-password').value;
+  if (!user || !pass) { _showLoginMsg('Preencha usuário e senha.', 'err'); return; }
+  if (user.length < 3) { _showLoginMsg('Usuário deve ter ao menos 3 caracteres.', 'err'); return; }
+  if (pass.length < 4) { _showLoginMsg('Senha deve ter ao menos 4 caracteres.', 'err'); return; }
+
+  // Dica: se senha bater com a do broker, mostra aviso positivo
+  const brokerPass = document.getElementById('cfg-pass')?.value || getCfg().pass || '';
+
+  const users = _getUsers();
+  if (users[user]) { _showLoginMsg('Usuário já existe.', 'err'); return; }
+  users[user] = pass;
+  _saveUsers(users);
+  _saveSession({ username: user });
+  _updateLoginBtn();
+  log(`👤 Conta criada: ${user}`, 'ok');
+  if (brokerPass && pass === brokerPass) {
+    _showLoginMsg('✓ Conta criada! Senha igual ao broker MQTT.', 'ok');
+    setTimeout(closeLoginModal, 1400);
+  } else {
+    closeLoginModal();
+  }
+}
+
+function doLogout() {
+  const session = _getSession();
+  if (session) log(`👤 Logout: ${session.username}`, 'sys');
+  _clearSession();
+  _updateLoginBtn();
+  closeLoginModal();
+}
+
+function _updateLoginBtn() {
+  const session = _getSession();
+  const btn = document.getElementById('login-btn');
+  const lbl = document.getElementById('login-btn-lbl');
+  if (!btn) return;
+  if (session) {
+    lbl.textContent = session.username;
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'rgba(0,212,160,0.4)';
+    btn.style.background = 'rgba(0,212,160,0.06)';
+  } else {
+    lbl.textContent = 'Login';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    btn.style.background = '';
+  }
+}
+
+// Ao carregar, restaura sessão
+document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { once: false });
 
 </script>
 </body>
