@@ -612,12 +612,13 @@ body::before {
         <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
       </div>
     </div>
-    <!-- grid travado: linhas fixas de 80px + scroll se mais de 2 linhas -->
     <div id="rooms-grid" class="rooms-scroll" style="max-height:178px;overflow-y:auto;padding-right:2px">
       <div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
         Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
       </div>
     </div>
+    <!-- Lista de ambientes adicionados (chips) -->
+    <div id="rooms-list" style="display:none;flex-wrap:wrap;gap:6px;margin-top:10px"></div>
   </div>
 
   <!-- ROW 3: Caixas d'água + Irrigação -->
@@ -3108,7 +3109,49 @@ function renderRooms() {
 
   if (!rooms.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente. Clique em "+ Adicionar".</div>';
+    const listEl = document.getElementById('rooms-list');
+    if (listEl) { listEl.style.display = 'none'; listEl.innerHTML = ''; }
     return;
+  }
+
+  // Renderiza chips abaixo do grid
+  const list = document.getElementById('rooms-list');
+  if (list) {
+    list.style.display = rooms.length ? 'flex' : 'none';
+    list.innerHTML = rooms.map(r => {
+      const d = r.data;
+      const isAlarm = r.hasSmoke && d.smoke >= 60;
+      const isWarn  = r.hasSmoke && d.smoke >= 30 && d.smoke < 60;
+      const chipColor = isAlarm ? 'var(--danger)' : isWarn ? 'var(--warn)' : 'var(--border2)';
+      const textColor = isAlarm ? 'var(--danger)' : isWarn ? 'var(--warn)' : 'var(--text)';
+
+      let info = '';
+      if (d.lastSeen) {
+        if (r.hasTemp && d.temp !== null) info += `${d.temp.toFixed(1)}°`;
+        if (r.hasTemp && d.hum !== null)  info += ` ${Math.round(d.hum)}%`;
+        if (r.hasSmoke && d.smoke !== null) info += ` 🔥${d.smoke}%`;
+      }
+
+      return `<div style="
+          display:inline-flex;align-items:center;gap:5px;
+          padding:4px 8px 4px 10px;border-radius:20px;
+          border:1px solid ${chipColor};background:var(--bg2);
+          font-family:var(--mono);font-size:11px;color:${textColor};
+          white-space:nowrap;cursor:default;transition:border-color 0.2s">
+        <span style="font-size:13px">${r.icon}</span>
+        <span>${r.name}</span>
+        ${info ? `<span style="font-size:10px;color:var(--muted);padding:0 2px">${info.trim()}</span>` : ''}
+        <button onclick="removeRoom('${r.id}')"
+          title="Excluir ${r.name}"
+          style="display:inline-flex;align-items:center;justify-content:center;
+                 width:16px;height:16px;border-radius:50%;border:none;
+                 background:var(--bg3);color:var(--muted);
+                 font-size:9px;cursor:pointer;line-height:1;padding:0;
+                 margin-left:1px;flex-shrink:0;transition:all 0.15s"
+          onmouseover="this.style.background='rgba(239,68,68,0.15)';this.style.color='var(--danger)'"
+          onmouseout="this.style.background='var(--bg3)';this.style.color='var(--muted)'">✕</button>
+      </div>`;
+    }).join('');
   }
 
   grid.innerHTML = rooms.map(r => {
