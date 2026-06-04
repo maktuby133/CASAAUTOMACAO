@@ -577,35 +577,7 @@ body::before {
     style="margin-bottom:8px;display:none;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.35);color:var(--danger);animation:pulse-alarm 2s ease-in-out infinite;flex-direction:row;align-items:center;gap:10px">
   </div>
 
-  <!-- MQTT CONFIG DROPDOWN -->
-  <div id="cfg-panel" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:20px">
-    <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px">
-      <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-      Broker MQTT — usado por todos os dispositivos
-    </div>
-    <div class="config-grid">
-      <div class="field" style="grid-column:1/-1"><label>Host (broker)</label><input id="cfg-host" oninput="saveCfgField()" value="13efa30a8367496d82053ae1fec856fb.s1.eu.hivemq.cloud" /></div>
-      <div class="field"><label>Porta (WSS)</label><input id="cfg-port" oninput="saveCfgField()" value="8884" /></div>
-      <div class="field"><label>Usuário MQTT</label><input id="cfg-user" oninput="saveCfgField()" value="esp32-Project" /></div>
-      <div class="field" style="grid-column:1/-1">
-        <label>Senha MQTT</label>
-        <div style="display:flex;gap:6px">
-          <input id="cfg-pass" oninput="saveCfgField()" type="text"
-            placeholder="sua senha do HiveMQ"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;-webkit-text-security:disc"/>
-          <button type="button" onclick="togglePassVis('cfg-pass',this)"
-            style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
-        </div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:5px">
-          💡 Este broker será usado automaticamente por caixas d'água e bomba de irrigação.
-        </div>
-      </div>
-    </div>
-    <div class="config-actions">
-      <button class="btn primary" onclick="connectMQTT()">Conectar</button>
-      <button class="btn" onclick="toggleConfig()">Fechar</button>
-    </div>
-  </div>
+
 
 
   <!-- ROW 2: ambientes -->
@@ -838,6 +810,56 @@ body::before {
 </div>
 
 <div id="relay-list" style="display:none"></div>
+
+<!-- hidden stub so JS refs to cfg-panel don't crash -->
+<div id="cfg-panel" style="display:none"></div>
+
+<!-- MODAL BROKER MQTT -->
+<div class="modal-overlay" id="broker-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+      <span>📡</span> Configuração do Broker MQTT
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:16px;padding:8px 10px;background:var(--bg3);border-radius:6px;line-height:1.7">
+      Este broker será usado por <strong style="color:var(--text)">todos os dispositivos</strong> — caixas d'água, bomba de irrigação e relés.
+    </div>
+    <div class="modal-fields">
+      <div class="field" style="grid-column:1/-1">
+        <label>Host (broker)</label>
+        <input id="cfg-host" oninput="saveCfgField()" placeholder="ex: xxxx.s1.eu.hivemq.cloud"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>Porta (WSS)</label>
+          <input id="cfg-port" oninput="saveCfgField()" value="8884"/>
+        </div>
+        <div class="field">
+          <label>Usuário MQTT</label>
+          <input id="cfg-user" oninput="saveCfgField()" placeholder="ex: esp32-Project"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Senha MQTT</label>
+        <div style="display:flex;gap:6px">
+          <input id="cfg-pass" oninput="saveCfgField()" type="text"
+            placeholder="sua senha do HiveMQ"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s;-webkit-text-security:disc"/>
+          <button type="button" onclick="togglePassVis('cfg-pass',this)"
+            style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+        </div>
+      </div>
+      <!-- Status atual -->
+      <div id="broker-status-row" style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);padding:6px 0">
+        <div class="dot" id="broker-modal-dot"></div>
+        <span id="broker-modal-status">Desconectado</span>
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn" onclick="closeBrokerModal()">Fechar</button>
+      <button class="btn primary" onclick="connectMQTT()" id="broker-connect-btn">Conectar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL LOGIN -->
 <div class="modal-overlay" id="login-modal">
@@ -1433,26 +1455,41 @@ function updateMainBtn() {
   }
 }
 
-function smartConnect() {
+function openBrokerModal() {
+  // Pre-fill fields from saved config
   const s = getCfg();
-  const connected = window._mqttConnected;
-  // Se já conectado → abre config para ver/editar
-  if (connected) { toggleConfig(); return; }
-  // Se tem credenciais salvas → conecta direto, sem abrir painel
-  if (s.host && s.pass) {
-    log('Conectando com credenciais salvas...', 'info');
-    connectMQTT();
-    return;
+  const setV = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  setV('cfg-host', s.host);
+  setV('cfg-port', s.port || '8884');
+  setV('cfg-user', s.user);
+  setV('cfg-pass', s.pass);
+
+  // Update status dot
+  const dot = document.getElementById('broker-modal-dot');
+  const lbl = document.getElementById('broker-modal-status');
+  if (dot && lbl) {
+    if (window._mqttConnected) {
+      dot.className = 'dot on'; lbl.textContent = 'Conectado'; lbl.style.color = 'var(--accent)';
+      document.getElementById('broker-connect-btn').textContent = 'Reconectar';
+    } else {
+      dot.className = 'dot'; lbl.textContent = 'Desconectado'; lbl.style.color = '';
+      document.getElementById('broker-connect-btn').textContent = 'Conectar';
+    }
   }
-  // Sem credenciais → abre painel para preencher
-  toggleConfig();
+  document.getElementById('broker-modal').classList.add('open');
+  setTimeout(() => document.getElementById('cfg-host')?.focus(), 120);
+}
+
+function closeBrokerModal() {
+  document.getElementById('broker-modal').classList.remove('open');
+}
+
+function smartConnect() {
+  openBrokerModal();
 }
 
 function toggleConfig() {
-  const p = document.getElementById('cfg-panel');
-  if (!p) return;
-  const isHidden = window.getComputedStyle(p).display === 'none';
-  p.style.setProperty('display', isHidden ? 'block' : 'none', 'important');
+  openBrokerModal();
 }
 
 function togglePanel(bodyId, arrowId) {
@@ -1649,7 +1686,8 @@ function connectMQTT() {
     window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
     log('Broker MQTT conectado!', 'ok');
-    document.getElementById('cfg-panel').style.setProperty('display','none','important');
+    try { document.getElementById('cfg-panel').style.setProperty('display','none','important'); } catch(e){}
+    closeBrokerModal();
     updateMainBtn();
     // Propaga broker para todas as caixas e bomba automaticamente
     waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
