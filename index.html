@@ -517,6 +517,7 @@ body::before {
     </div>
     <div class="config-actions">
       <button class="btn primary" onclick="connectMQTT()">Conectar</button>
+      <button class="btn" onclick="applyBrokerToAll()" title="Propaga host, usuário e senha para caixas d'água e bomba de irrigação" style="display:flex;align-items:center;gap:5px">🔗 Usar em todos</button>
       <button class="btn" onclick="toggleConfig()">Fechar</button>
     </div>
   </div>
@@ -1144,9 +1145,12 @@ function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
   document.getElementById('ip-relay-sel').value = irrigPump.relayId;
   document.getElementById('ip-pump-name').value = irrigPump.name;
-  document.getElementById('ip-host').value  = irrigPump.mqttHost  || '';
-  document.getElementById('ip-user').value  = irrigPump.mqttUser  || '';
-  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || '';
+  const _ih = document.getElementById('cfg-host')?.value || '';
+  const _iu = document.getElementById('cfg-user')?.value || '';
+  const _ip = document.getElementById('cfg-pass')?.value || '';
+  document.getElementById('ip-host').value  = irrigPump.mqttHost  || _ih;
+  document.getElementById('ip-user').value  = irrigPump.mqttUser  || _iu;
+  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || _ip;
   document.getElementById('ip-topic').value = irrigPump.mqttTopic || '';
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
@@ -1900,9 +1904,12 @@ function openTankModal(editId) {
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
-  document.getElementById('tank-host').value = t?.mqttHost || '';
-  document.getElementById('tank-user').value = t?.mqttUser || '';
-  document.getElementById('tank-pass').value = t?.mqttPass || '';
+  const _gh = document.getElementById('cfg-host')?.value || '';
+  const _gu = document.getElementById('cfg-user')?.value || '';
+  const _gp = document.getElementById('cfg-pass')?.value || '';
+  document.getElementById('tank-host').value = t?.mqttHost || _gh;
+  document.getElementById('tank-user').value = t?.mqttUser || _gu;
+  document.getElementById('tank-pass').value = t?.mqttPass || _gp;
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -3241,6 +3248,20 @@ function renderRooms() {
   }).join('');
 }
 
+
+
+// ============ BROKER GLOBAL PARA TODOS ============
+function applyBrokerToAll() {
+  const host = document.getElementById('cfg-host')?.value.trim() || '';
+  const user = document.getElementById('cfg-user')?.value.trim() || '';
+  const pass = document.getElementById('cfg-pass')?.value || '';
+  if (!host || !user) { log('Preencha host e usuario do broker antes.', 'warn'); return; }
+  waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
+  saveTanks();
+  irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
+  saveIrrigPump();
+  log('Broker "' + host + '" aplicado em ' + waterTanks.length + ' caixa(s) + bomba de irrigacao.', 'ok');
+}
 
 </script>
 </body>
