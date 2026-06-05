@@ -952,58 +952,83 @@ body::before {
 
 <!-- MODAL BOMBA IRRIGAÇÃO -->
 <div class="modal-overlay" id="irrig-pump-modal">
-  <div class="modal" style="width:420px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">⚙ Configurar Bomba de Irrigação</div>
+  <div class="modal" style="width:460px;max-height:92vh;overflow-y:auto">
+    <div class="modal-title">💧 Bomba de Irrigação</div>
     <div class="modal-fields">
 
-      <div class="field">
-        <label>Nome da bomba</label>
-        <input id="ip-pump-name" value="Bomba de irrigação" placeholder="ex: Bomba principal"/>
-      </div>
-
+      <!-- ── Identificação ── -->
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
-        Relé associado
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Identificação
       </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:2px">
         <div class="field" style="margin:0">
-          <label>Saída (relé) que controla a bomba</label>
-          <select id="ip-relay-sel" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px"></select>
-          <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-            O relé selecionado será acionado pelos agendamentos.
-          </div>
+          <label>Nome da bomba</label>
+          <input id="ip-pump-name" placeholder="ex: Bomba principal"/>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Saída (relé)</label>
+          <select id="ip-relay-sel" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:38px"></select>
         </div>
       </div>
 
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+      <!-- ── Dispositivo ── -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:12px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
         Dispositivo MQTT
+        <span style="font-size:9px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">— broker do painel principal é usado automaticamente</span>
       </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
         <div class="field" style="margin:0">
-          <label>Prefixo do tópico</label>
-          <input id="ip-prefix" placeholder="ex: irrigacao/relay" style="font-family:var(--mono);font-size:11px" oninput="updateIrrigPumpPreview()"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico: <span style="color:var(--accent2)" id="ip-topic-preview">prefixo/out1</span></div>
+          <label>Código do dispositivo</label>
+          <input id="ip-prefix" placeholder="ex: bomba01" style="font-family:var(--mono);letter-spacing:0.08em" oninput="updateIrrigPumpPreview()"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico: <span style="color:var(--accent2)" id="ip-topic-preview">—</span></div>
         </div>
         <div class="field" style="margin:0">
           <label>Senha do dispositivo</label>
-          <input id="ip-device-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">🔑 A mesma senha criada ao configurar o ESP32</div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
-          🔗 Broker: o host/usuário do painel principal são usados automaticamente.
+          <input id="ip-device-pass" type="password" placeholder="••••••••"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">🔑 Senha do portal AP do ESP32</div>
         </div>
       </div>
 
-      <div style="padding:10px 12px;background:rgba(0,212,160,0.04);border:1px solid rgba(0,212,160,0.15);border-radius:var(--radius)">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:600;margin-bottom:4px">📋 Como funciona</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
-          • <strong style="color:var(--text)">Modo AUTO</strong>: bomba liga/desliga conforme agendamentos<br>
-          • <strong style="color:var(--text)">Modo MANUAL</strong>: você controla manualmente o botão<br>
-          • Chuva detectada ou prevista ≥ 70% → irrigação bloqueada 🌧️<br>
-          • Configure os horários no painel "Novo agendamento" acima
+      <!-- ── Agendamentos ── -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:12px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--warn);border-radius:2px"></span>
+        Agendamentos
+      </div>
+      <div id="ip-sched-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
+
+      <!-- form novo agendamento -->
+      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">+ Novo agendamento</div>
+        <!-- Dias da semana -->
+        <div style="display:flex;gap:4px;margin-bottom:10px" id="ip-day-picker">
+          <button class="day-pick-btn" data-d="0" onclick="ipToggleDay(this)">Dom</button>
+          <button class="day-pick-btn" data-d="1" onclick="ipToggleDay(this)">Seg</button>
+          <button class="day-pick-btn" data-d="2" onclick="ipToggleDay(this)">Ter</button>
+          <button class="day-pick-btn" data-d="3" onclick="ipToggleDay(this)">Qua</button>
+          <button class="day-pick-btn" data-d="4" onclick="ipToggleDay(this)">Qui</button>
+          <button class="day-pick-btn" data-d="5" onclick="ipToggleDay(this)">Sex</button>
+          <button class="day-pick-btn" data-d="6" onclick="ipToggleDay(this)">Sáb</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Horário</span>
+            <input type="time" id="ip-sched-time" value="06:00"
+              style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none;height:32px;width:94px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Duração</span>
+            <div style="display:flex;align-items:center;gap:5px">
+              <input type="number" id="ip-sched-dur" value="15" min="1" max="120"
+                style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none;height:32px;width:58px">
+              <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
+            </div>
+          </div>
+          <button class="btn primary" style="margin-top:14px;padding:5px 14px;font-size:10px" onclick="ipAddSchedule()">+ Adicionar</button>
         </div>
       </div>
+
     </div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn" onclick="closeIrrigPumpModal()">Cancelar</button>
@@ -1077,10 +1102,14 @@ function loadIrrigPump() {
 }
 
 function connectIrrigBroker() {
-  if (!irrigPump.mqttHost || !irrigPump.mqttUser || !irrigPump.mqttPass) return;
+  if (!irrigPump.mqttHost) return;
   if (irrigClient) { try { irrigClient.end(true); } catch(e) {} irrigClient = null; }
-  const url = `wss://${irrigPump.mqttHost}:8884/mqtt`;
-  log(`🔌 Conectando broker da bomba de irrigação...`, 'sys');
+  const s       = getCfg();
+  const isLocal = (s.brokerMode === 'local');
+  const port    = isLocal ? (s.localPort || 9001) : 8884;
+  const proto   = isLocal ? 'ws' : 'wss';
+  const url     = `${proto}://${irrigPump.mqttHost}:${port}/mqtt`;
+  log(`🔌 Conectando broker da bomba (${proto})...`, 'sys');
   irrigClient = mqtt.connect(url, {
     username: irrigPump.mqttUser,
     password: irrigPump.mqttPass,
@@ -1089,7 +1118,6 @@ function connectIrrigBroker() {
   });
   irrigClient.on('connect', () => {
     log(`✅ Broker da bomba conectado!`, 'ok');
-    // Assina estado do relé para feedback
     const rel = relays.find(r => r.id === irrigPump.relayId);
     if (rel) irrigClient.subscribe(relayTopic(rel) + '/state', { qos:1 });
   });
@@ -1101,7 +1129,7 @@ function connectIrrigBroker() {
     }
   });
   irrigClient.on('error',   (e) => log(`❌ Broker bomba: ${e.message}`, 'warn'));
-  irrigClient.on('offline', ()  => log(`⚠ Broker bomba offline`, 'warn'));
+  irrigClient.on('offline', ()  => { log(`⚠ Broker bomba offline`, 'warn'); renderIrrigPumpCard(); });
 }
 
 function setIrrigRelay(state) {
@@ -1175,36 +1203,82 @@ function renderIrrigPumpCard() {
 }
 function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
-  document.getElementById('ip-relay-sel').value = irrigPump.relayId;
-  document.getElementById('ip-pump-name').value = irrigPump.name;
-  document.getElementById('ip-prefix').value     = irrigPump.mqttPrefix || 'irrigacao/relay';
-  document.getElementById('ip-device-pass').value = irrigPump.devicePass || '';
+  document.getElementById('ip-relay-sel').value    = irrigPump.relayId;
+  document.getElementById('ip-pump-name').value    = irrigPump.name;
+  document.getElementById('ip-prefix').value       = irrigPump.deviceCode || '';
+  document.getElementById('ip-device-pass').value  = irrigPump.devicePass || '';
+  // Limpa dias selecionados no picker
+  document.querySelectorAll('#ip-day-picker .day-pick-btn').forEach(b => b.classList.remove('sel'));
   updateIrrigPumpPreview();
+  ipRenderSchedules();
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
 function closeIrrigPumpModal() {
   document.getElementById('irrig-pump-modal').classList.remove('open');
 }
+
+let _ipDays = []; // dias selecionados no picker do modal
+function ipToggleDay(btn) {
+  const d = parseInt(btn.dataset.d);
+  btn.classList.toggle('sel');
+  _ipDays = [...document.querySelectorAll('#ip-day-picker .day-pick-btn.sel')].map(b => parseInt(b.dataset.d));
+}
+function ipAddSchedule() {
+  if (!_ipDays.length) { log('Selecione ao menos um dia', 'warn'); return; }
+  const t   = document.getElementById('ip-sched-time').value;
+  const dur = parseInt(document.getElementById('ip-sched-dur').value) || 15;
+  schedules.push({ id: 's'+Date.now(), days:[..._ipDays], time:t, duration:dur, relay: irrigPump.relayId, active:true });
+  _ipDays = [];
+  document.querySelectorAll('#ip-day-picker .day-pick-btn').forEach(b => b.classList.remove('sel'));
+  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
+  renderSchedules();
+  ipRenderSchedules();
+  publishPersist();
+  log(`Agendamento bomba: ${t} por ${dur}min`, 'ok');
+}
+function ipRenderSchedules() {
+  const el = document.getElementById('ip-sched-list');
+  if (!el) return;
+  const mine = schedules.filter(s => s.relay === irrigPump.relayId);
+  if (!mine.length) {
+    el.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0">Nenhum agendamento ainda.</div>`;
+    return;
+  }
+  const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  el.innerHTML = mine.map(s => `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px">
+      <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);min-width:44px">${s.time}</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">${s.duration}min</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--muted);flex:1">${s.days.map(d=>dayNames[d]).join(', ')}</span>
+      <button onclick="ipRemoveSchedule('${s.id}')"
+        style="width:20px;height:20px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:10px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+function ipRemoveSchedule(id) {
+  schedules = schedules.filter(s => s.id !== id);
+  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
+  renderSchedules();
+  ipRenderSchedules();
+  publishPersist();
+}
+
 function saveIrrigPumpModal() {
   irrigPump.relayId    = document.getElementById('ip-relay-sel').value;
   irrigPump.name       = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
-  irrigPump.mqttPrefix = document.getElementById('ip-prefix').value.trim() || 'irrigacao/relay';
+  irrigPump.deviceCode = document.getElementById('ip-prefix').value.trim();
   irrigPump.devicePass = document.getElementById('ip-device-pass').value;
-  // Tópico derivado do prefixo + relayId
+  irrigPump.mqttPrefix = irrigPump.deviceCode ? `irrigacao/${irrigPump.deviceCode}` : 'irrigacao/relay';
   irrigPump.mqttTopic  = `${irrigPump.mqttPrefix}/${irrigPump.relayId}`;
-  // Credenciais de conexão: broker global + senha do dispositivo
+  // Credenciais: broker global + senha do dispositivo
   const s = getCfg();
   irrigPump.mqttHost = s.host || s.localHost || '';
   irrigPump.mqttUser = s.user || s.localUser || '';
-  irrigPump.mqttPass = irrigPump.devicePass || s.pass || '';
+  irrigPump.mqttPass = irrigPump.devicePass || s.pass || s.localPass || '';
   saveIrrigPump();
-  // Conecta/reconecta broker próprio
-  if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
-    connectIrrigBroker();
-  }
+  if (irrigPump.mqttHost) connectIrrigBroker();
   renderIrrigPumpCard();
   renderRelays();
-  log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.mqttTopic}`, 'ok');
+  log(`Bomba "${irrigPump.name}" salva → ${irrigPump.mqttTopic}`, 'ok');
   closeIrrigPumpModal();
 }
 function populateIrrigPumpRelaySelect() {
@@ -1622,7 +1696,7 @@ function connectMQTT() {
   setConnStatus('connecting', 'Conectando...');
   log(`Conectando a ${host}`, 'info');
 
-  client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
+  client = mqtt.connect(`${isLocal ? 'ws' : 'wss'}://${host}:${port}/mqtt`, {
     username: user,
     password: pass,
     clientId: 'autoflow_' + Math.random().toString(36).substr(2, 8),
@@ -1915,22 +1989,25 @@ function closeTankModal() {
   document.getElementById('tank-modal').classList.remove('open');
 }
 
+function updateIrrigPumpPreview() {
+  const code    = (document.getElementById('ip-prefix')?.value.trim()) || '';
+  const relayId = document.getElementById('ip-relay-sel')?.value || irrigPump.relayId || 'out1';
+  const prefix  = code ? `irrigacao/${code}` : 'irrigacao/relay';
+  const el = document.getElementById('ip-topic-preview');
+  if (el) el.textContent = `${prefix}/${relayId}`;
+}
 function updateTankPreview() {
   const code   = (document.getElementById('tank-code')?.value.trim())   || '...';
   const prefix = (document.getElementById('tank-prefix')?.value.trim()) || 'caixas/agua';
-  const tp  = document.getElementById('tank-topic-preview');
-  const sp  = document.getElementById('tank-status-preview');
-  const pp  = document.getElementById('tank-prefix-preview');
+  const tp = document.getElementById('tank-topic-preview');
+  const sp = document.getElementById('tank-status-preview');
+  const pp = document.getElementById('tank-prefix-preview');
   if (tp) tp.textContent = `${prefix}/${code}/dados`;
   if (sp) sp.textContent = `${prefix}/${code}/status`;
   if (pp) pp.textContent = `${prefix}/código/dados`;
 }
-function updateIrrigPumpPreview() {
-  const prefix = (document.getElementById('ip-prefix')?.value.trim()) || 'irrigacao/relay';
-  const relayId = irrigPump.relayId || 'out1';
-  const el = document.getElementById('ip-topic-preview');
-  if (el) el.textContent = `${prefix}/${relayId}`;
-}
+
+
 
 function addTankPumpRow() {
   if (tankPumpRows.length >= 2) { alert('Máximo de 2 bombas por caixa.'); return; }
@@ -2187,8 +2264,12 @@ function connectTankBroker(tank) {
     delete tankClients[tank.id];
   }
 
-  const url = `wss://${tank.mqttHost}:8884/mqtt`;
-  log(`🔌 Conectando broker da caixa "${tank.name}"...`, 'sys');
+  const s2      = getCfg();
+  const isLocal = (s2.brokerMode === 'local');
+  const port    = isLocal ? (s2.localPort || 9001) : 8884;
+  const proto   = isLocal ? 'ws' : 'wss';
+  const url = `${proto}://${tank.mqttHost}:${port}/mqtt`;
+  log(`🔌 Conectando broker da caixa "${tank.name}" (${proto})...`, 'sys');
 
   const tc = mqtt.connect(url, {
     username: tank.mqttUser,
@@ -2634,36 +2715,54 @@ function removeSchedule(id) {
   log('Agendamento removido', 'sys');
 }
 
+let _schedEngineRunning = false;
+let _schedLastFired = {}; // schedId → 'YYYY-MM-DD HH:MM' do último disparo
+
 function startScheduleEngine() {
+  if (_schedEngineRunning) return; // nunca inicia dois loops
+  _schedEngineRunning = true;
+  log('Motor de agendamentos iniciado (verifica a cada 10s)', 'info');
+
   setInterval(() => {
     const now = new Date();
     const dow = now.getDay();
-    const hm  = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const hm  = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()} ${hm}`;
+
     schedules.filter(s => s.active && s.days.includes(dow) && s.time === hm).forEach(s => {
-      // Usa o relayId configurado no agendamento; se for a bomba de irrigação, verifica modo
+      const fireKey = `${s.id}_${key}`;
+      if (_schedLastFired[fireKey]) return; // já disparou neste minuto
+      _schedLastFired[fireKey] = true;
+      // Limpa entradas velhas para não crescer indefinidamente
+      if (Object.keys(_schedLastFired).length > 200) {
+        const keep = Object.keys(_schedLastFired).slice(-100);
+        _schedLastFired = Object.fromEntries(keep.map(k => [k, true]));
+      }
+
       const targetRelayId = s.relay || irrigPump.relayId;
       const relay = relays.find(r => r.id === targetRelayId && r.enabled);
-      if (!relay) return;
+      if (!relay) { log(`⏰ ${hm}: relé do agendamento não habilitado`, 'warn'); return; }
 
-      // Se o relé for o da bomba de irrigação e estiver em modo manual, não interfere
+      // Bomba em modo manual → não interfere
       if (targetRelayId === irrigPump.relayId && irrigPump.mode === 'manual') {
         log(`⏰ ${hm}: bomba em modo manual — agendamento ignorado`, 'warn');
         return;
       }
-      // Bloqueia se chovendo ou alta probabilidade de chuva
+      // Bloqueia se chovendo
       if (weather.isRaining) {
         const reason = weather.rainMm > 0.1 ? `chuva: ${weather.rainMm.toFixed(1)}mm` : 'alta prob. de chuva';
         log(`⏰ ${hm}: clima desfavorável (${reason}) — irrigação bloqueada 🌧️`, 'warn');
         return;
       }
-      log(`⏰ ${hm} → ligando "${relay.name}" ✅`, 'ok');
-      // Se for a bomba de irrigação, usa o broker próprio dela
+
+      log(`⏰ ${hm} → ligando "${relay.name}" por ${s.duration}min ✅`, 'ok');
       if (targetRelayId === irrigPump.relayId) {
         setIrrigRelay(true);
       } else {
         setRelay(relay, true);
       }
       renderIrrigPumpCard();
+
       setTimeout(() => {
         if (targetRelayId === irrigPump.relayId) {
           setIrrigRelay(false);
@@ -2671,11 +2770,10 @@ function startScheduleEngine() {
           setRelay(relay, false);
         }
         renderIrrigPumpCard();
-        log(`⏰ Desligando "${relay.name}" (${s.duration}min)`, 'info');
+        log(`⏰ "${relay.name}" desligada após ${s.duration}min`, 'info');
       }, s.duration * 60000);
     });
-  }, 30000);
-  log('Motor de agendamentos iniciado (verifica a cada 30s)', 'info');
+  }, 10000); // verifica a cada 10 segundos
 }
 
 // ============ LOG ============
