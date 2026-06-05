@@ -901,12 +901,24 @@ body::before {
         <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
       </div>
 
-      <!-- Info broker global -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius)">
-        <span style="font-size:16px">🔗</span>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
-          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — esta caixa usará automaticamente<br>
-          as credenciais MQTT configuradas no painel principal.
+      <!-- Credenciais do dispositivo -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:8px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Dispositivo MQTT
+      </div>
+      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+        <div class="field" style="margin:0">
+          <label>Prefixo do tópico</label>
+          <input id="tank-prefix" placeholder="ex: caixas/agua" style="font-family:var(--mono);font-size:11px" oninput="updateTankPreview()"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Base dos tópicos: <span style="color:var(--accent2)" id="tank-prefix-preview">prefixo/código/dados</span></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Senha do dispositivo</label>
+          <input id="tank-device-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">🔑 A mesma senha criada ao configurar o ESP32</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
+          🔗 Broker: o host/usuário configurados no painel principal são usados automaticamente.
         </div>
       </div>
 
@@ -958,38 +970,21 @@ body::before {
 
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-        Conexão MQTT da bomba
-      </div>
-      <!-- Info broker global -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius);margin-bottom:4px">
-        <span style="font-size:16px">🔗</span>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
-          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — usa as credenciais MQTT<br>
-          do painel principal. Preencha abaixo apenas se usar broker diferente.
-        </div>
+        Dispositivo MQTT
       </div>
       <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
         <div class="field" style="margin:0">
-          <label>Host do broker</label>
-          <input id="ip-host" placeholder="ex: xxxx.s1.eu.hivemq.cloud" style="font-family:var(--mono);font-size:11px"/>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="field" style="margin:0">
-            <label>Usuário MQTT</label>
-            <input id="ip-user" placeholder="ex: esp32-Project"/>
-          </div>
-          <div class="field" style="margin:0">
-            <label>Senha MQTT</label>
-            <input id="ip-pass" type="password" placeholder="••••••••"/>
-          </div>
+          <label>Prefixo do tópico</label>
+          <input id="ip-prefix" placeholder="ex: irrigacao/relay" style="font-family:var(--mono);font-size:11px" oninput="updateIrrigPumpPreview()"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico: <span style="color:var(--accent2)" id="ip-topic-preview">prefixo/out1</span></div>
         </div>
         <div class="field" style="margin:0">
-          <label>Tópico MQTT da bomba</label>
-          <input id="ip-topic" placeholder="ex: irrigacao/relay/bomba" style="font-family:var(--mono);font-size:11px;color:var(--accent2)"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico onde a bomba escuta ON/OFF — separado dos relés dos ambientes</div>
+          <label>Senha do dispositivo</label>
+          <input id="ip-device-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">🔑 A mesma senha criada ao configurar o ESP32</div>
         </div>
         <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
-          Porta: <strong>8884</strong> (WSS) — mesmo padrão das caixas d'água
+          🔗 Broker: o host/usuário do painel principal são usados automaticamente.
         </div>
       </div>
 
@@ -1056,7 +1051,7 @@ let schedules = [
   {id:'s2', days:[0,2,4,6], time:'18:30', duration:15, relay:'out1', active:true},
 ];
 let selectedDays = [];
-let liveData = {water:null, temp:null, hum:null, liters:null, distance:null};
+let liveData = {water:null, temp:null, hum:null, liters:null};
 const dayShort = ['D','S','T','Q','Q','S','S'];
 
 // ============ BOMBA IRRIGAÇÃO ============
@@ -1170,31 +1165,34 @@ function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
   document.getElementById('ip-relay-sel').value = irrigPump.relayId;
   document.getElementById('ip-pump-name').value = irrigPump.name;
-  const _cfg = getCfg();
-  document.getElementById('ip-host').value  = irrigPump.mqttHost  || _cfg.host || '';
-  document.getElementById('ip-user').value  = irrigPump.mqttUser  || _cfg.user || '';
-  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || _cfg.pass || '';
-  document.getElementById('ip-topic').value = irrigPump.mqttTopic || '';
+  document.getElementById('ip-prefix').value     = irrigPump.mqttPrefix || 'irrigacao/relay';
+  document.getElementById('ip-device-pass').value = irrigPump.devicePass || '';
+  updateIrrigPumpPreview();
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
 function closeIrrigPumpModal() {
   document.getElementById('irrig-pump-modal').classList.remove('open');
 }
 function saveIrrigPumpModal() {
-  irrigPump.relayId   = document.getElementById('ip-relay-sel').value;
-  irrigPump.name      = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
-  irrigPump.mqttHost  = document.getElementById('ip-host').value.trim();
-  irrigPump.mqttUser  = document.getElementById('ip-user').value.trim();
-  irrigPump.mqttPass  = document.getElementById('ip-pass').value;
-  irrigPump.mqttTopic = document.getElementById('ip-topic').value.trim();
+  irrigPump.relayId    = document.getElementById('ip-relay-sel').value;
+  irrigPump.name       = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
+  irrigPump.mqttPrefix = document.getElementById('ip-prefix').value.trim() || 'irrigacao/relay';
+  irrigPump.devicePass = document.getElementById('ip-device-pass').value;
+  // Tópico derivado do prefixo + relayId
+  irrigPump.mqttTopic  = `${irrigPump.mqttPrefix}/${irrigPump.relayId}`;
+  // Credenciais de conexão: broker global + senha do dispositivo
+  const s = getCfg();
+  irrigPump.mqttHost = s.host || s.localHost || '';
+  irrigPump.mqttUser = s.user || s.localUser || '';
+  irrigPump.mqttPass = irrigPump.devicePass || s.pass || '';
   saveIrrigPump();
-  // Conecta broker próprio se credenciais foram fornecidas
+  // Conecta/reconecta broker próprio
   if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
     connectIrrigBroker();
   }
   renderIrrigPumpCard();
   renderRelays();
-  log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.relayId}`, 'ok');
+  log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.mqttTopic}`, 'ok');
   closeIrrigPumpModal();
 }
 function populateIrrigPumpRelaySelect() {
@@ -1204,12 +1202,6 @@ function populateIrrigPumpRelaySelect() {
     `<option value="${r.id}" ${r.id===irrigPump.relayId?'selected':''}>${r.icon} ${r.name}</option>`
   ).join('');
 }
-
-// ============ TÓPICOS ============
-let TOPICS_WATER = { dados: '', status: '' };
-let TOPICS_TEMP  = '';
-let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
-let GAS_DEVICE_ID  = ''; // device ID do sensor de gás
 
 // ============ CONFIG ============
 // ── Persistência central ─────────────────────────────────────────────────
@@ -1243,8 +1235,6 @@ function saveCfgField() {
     const lh = gf('cfg-local-host');  if (lh    !== undefined) patch.localHost  = lh;
     const lp = gf('cfg-local-port');  if (lp    !== undefined) patch.localPort  = lp;
     const lu = gf('cfg-local-user');  if (lu    !== undefined) patch.localUser  = lu;
-    const lw = gf('cfg-local-water'); if (lw    !== undefined) patch.localWater = lw;
-    const lt = gf('cfg-local-temp');  if (lt    !== undefined) patch.localTemp  = lt;
     const lpass = gfPass('cfg-local-pass'); if (lpass !== undefined) patch.localPass = lpass;
   } else {
     const h = gf('cfg-host');  if (h    !== undefined) patch.host = h;
@@ -1523,8 +1513,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
   setV('cfg-local-pass',  saved.localPass);
-  setV('cfg-local-water', saved.localWater);
-  setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
 
 
@@ -1607,37 +1595,20 @@ function connectMQTT() {
   const pass  = isLocal
     ? (fromDomPass('cfg-local-pass') || s.localPass || '')
     : (fromDomPass('cfg-pass')       || s.pass       || '');
-  const water = isLocal
-    ? (fromDom('cfg-local-water') || s.localWater || '')
-    : (s.water || '');
-  const temp  = (isLocal ? (s.localTemp || '') : (s.temp || ''))
-    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
   if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
-  // Salva tudo antes de conectar
+  // Salva credenciais do broker
   setCfg(isLocal
-    ? { localHost:host, localPort:port, localUser:user, localPass:pass, localWater:water, localTemp:temp, brokerMode:'local', relayPrefix:RELAY_PREFIX }
-    : { host, port, user, pass, water, temp, gas, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
+    ? { localHost:host, localPort:port, localUser:user, localPass:pass, brokerMode:'local', relayPrefix:RELAY_PREFIX }
+    : { host, port, user, pass, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
   );
-
-  // Define tópicos e device IDs
-  TEMP_DEVICE_ID = temp;
-  GAS_DEVICE_ID  = gas;
-  if (water) {
-    TOPICS_WATER = {
-      dados:  `caixas/agua/${water}/dados`,
-      status: `caixas/agua/${water}/status`,
-    };
-  }
-  TOPICS_TEMP = temp ? `sensors/${temp}/data` : '';
 
   if (client) { try { client.end(true); } catch(e) {} }
 
   setConnStatus('connecting', 'Conectando...');
-  log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
+  log(`Conectando a ${host}`, 'info');
 
   client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
     username: user,
@@ -1655,10 +1626,14 @@ function connectMQTT() {
     try { document.getElementById('cfg-panel').style.setProperty('display','none','important'); } catch(e){}
     closeBrokerModal();
     updateMainBtn();
-    // Propaga broker para todas as caixas e bomba automaticamente
-    waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
+    // Propaga broker (host/user) para caixas e bomba; preserva senha do dispositivo de cada um
+    waterTanks.forEach(t => {
+      t.mqttHost = host; t.mqttUser = user;
+      if (!t.devicePass) t.mqttPass = pass;
+    });
     saveTanks();
-    irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
+    irrigPump.mqttHost = host; irrigPump.mqttUser = user;
+    if (!irrigPump.devicePass) irrigPump.mqttPass = pass;
     saveIrrigPump();
     subscribeAll();
     startScheduleEngine();
@@ -1671,11 +1646,11 @@ function connectMQTT() {
 
 function subscribeAll() {
   const subs = [];
-  if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
-  // Wildcard para capturar retained de temperatura independente de timing
+  // Wildcard genérico para sensores de ambiente
   subs.push('sensors/#');
-  // Caixas d'água cadastradas
-  subs.push('caixas/agua/#');
+  // Wildcards para prefixos dinâmicos das caixas d'água cadastradas
+  const prefixes = new Set(waterTanks.map(t => t.devicePrefix || 'caixas/agua'));
+  prefixes.forEach(p => subs.push(`${p}/#`));
   // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
   const tankRelayIds = new Set(waterTanks.flatMap(t => (t.pumps||[]).map(p => p.relayId)));
   relays.filter(r => r.enabled && r.id !== irrigPump.relayId && !tankRelayIds.has(r.id))
@@ -1711,46 +1686,10 @@ function handleMsg(topic, payload, pkt) {
     });
     return;
   }
-
-
-
-  // ------ CAIXA D'ÁGUA: caixas/agua/{code}/dados ------
-  if (topic === TOPICS_WATER.dados) {
-    // payload: { percentage, liters, distance, level, bat_percent, bat_voltage, lora_rssi, signal_quality, sensor_ok, cached, ... }
-    const pct  = parseInt(data.percentage);
-    const lit  = parseInt(data.liters);
-    const dist = parseFloat(data.distance);
-    const sensorOK = data.sensor_ok !== false;
-
-    if (!isNaN(pct)) {
-      liveData.water = pct;
-      // Cor muda conforme nível
-      const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-      checkRules();
-    }
-    if (!isNaN(lit)) liveData.liters = lit;
-    updateLiveBar(topic, data.cached);
-    // Também roteia para o sistema de caixas
-    handleTankMessage(topic, payload, data);
-    return;
-  }
-
-  // ------ STATUS DA CAIXA: caixas/agua/{code}/status ------
-  if (topic === TOPICS_WATER.status) {
-    if (data.online === false) {
-      showAlert('⚠ Receptor offline — verifique energia e WiFi do ESP32 receptor.');
-    } else {
-      hideAlert();
-    }
-    handleTankMessage(topic, payload, data);
-    return;
-  }
-
-  // ------ TÓPICOS DAS CAIXAS CADASTRADAS ------
+  // ------ TÓPICOS DAS CAIXAS CADASTRADAS + TEMPERATURA/GÁS ------
   handleTankMessage(topic, payload, data);
 
-  // ------ TEMPERATURA / GÁS: sensors/{id}/data ------
-  // handleRoomMessage já faz o match por ambiente — aqui apenas loga e atualiza live bar
+  // handleRoomMessage já faz o match por ambiente — aqui apenas atualiza live bar
   if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
     updateLiveBar(topic, false);
     return;
@@ -1944,6 +1883,8 @@ function openTankModal(editId) {
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
+  document.getElementById('tank-prefix').value = t?.devicePrefix || 'caixas/agua';
+  document.getElementById('tank-device-pass').value = t?.devicePass || '';
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -1963,11 +1904,20 @@ function closeTankModal() {
 }
 
 function updateTankPreview() {
-  const code = (document.getElementById('tank-code')?.value.trim()) || '...';
-  const tp = document.getElementById('tank-topic-preview');
-  const sp = document.getElementById('tank-status-preview');
-  if (tp) tp.textContent = `caixas/agua/${code}/dados`;
-  if (sp) sp.textContent = `caixas/agua/${code}/status`;
+  const code   = (document.getElementById('tank-code')?.value.trim())   || '...';
+  const prefix = (document.getElementById('tank-prefix')?.value.trim()) || 'caixas/agua';
+  const tp  = document.getElementById('tank-topic-preview');
+  const sp  = document.getElementById('tank-status-preview');
+  const pp  = document.getElementById('tank-prefix-preview');
+  if (tp) tp.textContent = `${prefix}/${code}/dados`;
+  if (sp) sp.textContent = `${prefix}/${code}/status`;
+  if (pp) pp.textContent = `${prefix}/código/dados`;
+}
+function updateIrrigPumpPreview() {
+  const prefix = (document.getElementById('ip-prefix')?.value.trim()) || 'irrigacao/relay';
+  const relayId = irrigPump.relayId || 'out1';
+  const el = document.getElementById('ip-topic-preview');
+  if (el) el.textContent = `${prefix}/${relayId}`;
 }
 
 function addTankPumpRow() {
@@ -2059,16 +2009,18 @@ function renderTankPumpRows() {
 }
 
 function confirmSaveTank() {
-  const name     = document.getElementById('tank-name').value.trim();
-  const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
-  const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
-  const editId   = document.getElementById('tank-edit-id').value;
+  const name         = document.getElementById('tank-name').value.trim();
+  const code         = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+  const capacity     = parseInt(document.getElementById('tank-capacity').value) || 0;
+  const devicePrefix = document.getElementById('tank-prefix').value.trim() || 'caixas/agua';
+  const devicePass   = document.getElementById('tank-device-pass').value;
+  const editId       = document.getElementById('tank-edit-id').value;
 
-  // Usa o broker global (configurado no painel principal)
+  // Usa o broker global (host + usuário); senha do dispositivo vem do campo próprio
   const s = getCfg();
-  const mqttHost = s.host || '';
-  const mqttUser = s.user || '';
-  const mqttPass = s.pass || '';
+  const mqttHost = s.host || s.localHost || '';
+  const mqttUser = s.user || s.localUser || '';
+  const mqttPass = devicePass || s.pass || '';
 
   if (!name) { log('Preencha o nome da caixa', 'warn'); return; }
   if (!code) { log('Preencha o código do sensor', 'warn'); return; }
@@ -2083,7 +2035,7 @@ function confirmSaveTank() {
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
-  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, devicePrefix, devicePass, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
   pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
 
   if (editId) {
@@ -2098,7 +2050,7 @@ function confirmSaveTank() {
   connectTankBroker(tankData);
 
   renderTanks();
-  log(`Caixa "${name}" salva (sensor: caixas/agua/${code}/dados)`, 'ok');
+  log(`Caixa "${name}" salva (${devicePrefix}/${code}/dados)`, 'ok');
   closeTankModal();
 }
 
@@ -2239,15 +2191,16 @@ function connectTankBroker(tank) {
 
   tc.on('connect', () => {
     log(`✅ Broker da caixa "${tank.name}" conectado!`, 'ok');
-    tc.subscribe(`caixas/agua/${tank.code}/dados`,  { qos: 1 });
-    tc.subscribe(`caixas/agua/${tank.code}/status`, { qos: 1 });
+    const prefix = tank.devicePrefix || 'caixas/agua';
+    tc.subscribe(`${prefix}/${tank.code}/dados`,  { qos: 1 });
+    tc.subscribe(`${prefix}/${tank.code}/status`, { qos: 1 });
   });
 
   tc.on('message', (topic, msg) => {
     try {
       const data = JSON.parse(msg.toString());
       handleTankMessage(topic, msg.toString(), data);
-      // Atualiza liveData se for a caixa principal (TOPICS_WATER)
+      // Atualiza liveData se for a caixa desta tank
       if (topic === `caixas/agua/${tank.code}/dados`) {
         const pct = parseInt(data.percentage);
         const lit = parseInt(data.liters);
@@ -2298,15 +2251,17 @@ function subscribeTanks() {
   if (!client || !client.connected) return;
   waterTanks.forEach(t => {
     if (!t.code) return;
-    client.subscribe(`caixas/agua/${t.code}/dados`,  {qos:1}, ()=>log(`↳ caixas/agua/${t.code}/dados`,'sys'));
-    client.subscribe(`caixas/agua/${t.code}/status`, {qos:1}, ()=>log(`↳ caixas/agua/${t.code}/status`,'sys'));
+    const prefix = t.devicePrefix || 'caixas/agua';
+    client.subscribe(`${prefix}/${t.code}/dados`,  {qos:1}, ()=>log(`↳ ${prefix}/${t.code}/dados`,'sys'));
+    client.subscribe(`${prefix}/${t.code}/status`, {qos:1}, ()=>log(`↳ ${prefix}/${t.code}/status`,'sys'));
   });
 }
 
 function handleTankMessage(topic, payload, data) {
   waterTanks.forEach(t => {
-    const dadosTopic  = `caixas/agua/${t.code}/dados`;
-    const statusTopic = `caixas/agua/${t.code}/status`;
+    const prefix      = t.devicePrefix || 'caixas/agua';
+    const dadosTopic  = `${prefix}/${t.code}/dados`;
+    const statusTopic = `${prefix}/${t.code}/status`;
     if (topic === dadosTopic) {
       const pct  = parseInt(data.percentage);
       const lit  = parseInt(data.liters);
@@ -3246,13 +3201,20 @@ function renderRooms() {
 
 // ============ BROKER GLOBAL PARA TODOS ============
 function applyBrokerToAll() {
-  const host = document.getElementById('cfg-host')?.value.trim() || '';
-  const user = document.getElementById('cfg-user')?.value.trim() || '';
-  const pass = document.getElementById('cfg-pass')?.value || '';
+  const host = document.getElementById('cfg-host')?.value.trim() || getCfg().host || '';
+  const user = document.getElementById('cfg-user')?.value.trim() || getCfg().user || '';
   if (!host || !user) { log('Preencha host e usuario do broker antes.', 'warn'); return; }
-  waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
+  // Atualiza apenas host e usuário; senha do dispositivo permanece a configurada em cada um
+  waterTanks.forEach(t => {
+    t.mqttHost = host;
+    t.mqttUser = user;
+    // Mantém mqttPass do dispositivo se já definida, caso contrário usa broker global
+    if (!t.devicePass) t.mqttPass = getCfg().pass || '';
+  });
   saveTanks();
-  irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
+  irrigPump.mqttHost = host;
+  irrigPump.mqttUser = user;
+  if (!irrigPump.devicePass) irrigPump.mqttPass = getCfg().pass || '';
   saveIrrigPump();
   log('Broker "' + host + '" aplicado em ' + waterTanks.length + ' caixa(s) + bomba de irrigacao.', 'ok');
 }
