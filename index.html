@@ -1138,6 +1138,9 @@ function renderIrrigPumpCard() {
       <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
         <span style="display:inline-block;width:3px;height:10px;background:var(--accent2);border-radius:2px"></span>
         Bomba de irrigação
+        ${on ? `<img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif?updatedAt=1763679473260"
+          style="width:22px;height:22px;object-fit:contain;border-radius:4px;flex-shrink:0"
+          title="Irrigação ativa" alt="irrigando">` : ''}
         <button onclick="openIrrigPumpModal()" style="margin-left:auto;font-size:9px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;padding:1px 6px">⚙ config</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
