@@ -574,15 +574,16 @@ body::before {
     </div>
 
     <!-- COL 3: Irrigação programada (card colapsável) -->
-    <div class="card">
+    <div class="card" style="position:relative">
       <div class="card-header" style="cursor:pointer;user-select:none" onclick="togglePanel('sched-body','sched-arrow')">
         <span class="card-title">Irrigação programada</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span id="sched-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">0 agendamentos</span>
+          <button class="btn" style="font-size:10px;padding:3px 10px" onclick="event.stopPropagation();openIrrigPumpModal()">+ Dispositivo</button>
           <span id="sched-arrow" style="color:var(--muted);font-size:12px;transition:transform 0.2s">▼</span>
         </div>
       </div>
-      <div id="sched-body">
+      <div id="sched-body" style="position:relative">
         <div class="sched-list" id="sched-list"></div>
         <!-- form adicionar -->
         <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px" id="sched-form-wrap">
@@ -610,6 +611,12 @@ body::before {
         </div>
         <!-- Bloco da bomba de irrigação -->
         <div id="irrig-pump-block"></div>
+        <!-- GIF animado — aparece no canto inferior direito quando bomba está ON -->
+        <div id="irrig-gif-wrap" style="display:none;position:absolute;bottom:0;right:0;pointer-events:none">
+          <img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif?updatedAt=1763679473260"
+            style="width:52px;height:52px;object-fit:contain;border-radius:6px;opacity:0.92"
+            title="Irrigação ativa" alt="irrigando">
+        </div>
       </div>
     </div>
 
@@ -1133,14 +1140,16 @@ function renderIrrigPumpCard() {
   const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
   const on  = rel?.state || false;
   const isManual = irrigPump.mode === 'manual';
+
+  // Mostra/esconde GIF no canto inferior direito do card
+  const gifWrap = document.getElementById('irrig-gif-wrap');
+  if (gifWrap) gifWrap.style.display = on ? 'block' : 'none';
+
   el.innerHTML = `
     <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px">
       <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
         <span style="display:inline-block;width:3px;height:10px;background:var(--accent2);border-radius:2px"></span>
         Bomba de irrigação
-        ${on ? `<img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif?updatedAt=1763679473260"
-          style="width:22px;height:22px;object-fit:contain;border-radius:4px;flex-shrink:0"
-          title="Irrigação ativa" alt="irrigando">` : ''}
         <button onclick="openIrrigPumpModal()" style="margin-left:auto;font-size:9px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;padding:1px 6px">⚙ config</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
