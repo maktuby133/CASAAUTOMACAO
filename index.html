@@ -895,6 +895,21 @@ body::before {
         </div>
       </div>
 
+      <!-- Capacidade -->
+      <div class="field" style="margin-top:6px">
+        <label>Capacidade total (litros)</label>
+        <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
+      </div>
+
+      <!-- Info broker global -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius)">
+        <span style="font-size:16px">🔗</span>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
+          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — esta caixa usará automaticamente<br>
+          as credenciais MQTT configuradas no painel principal.
+        </div>
+      </div>
+
       <!-- Bombas / Relés -->
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:8px 0 6px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
@@ -944,6 +959,14 @@ body::before {
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
         Conexão MQTT da bomba
+      </div>
+      <!-- Info broker global -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius);margin-bottom:4px">
+        <span style="font-size:16px">🔗</span>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
+          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — usa as credenciais MQTT<br>
+          do painel principal. Preencha abaixo apenas se usar broker diferente.
+        </div>
       </div>
       <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
         <div class="field" style="margin:0">
@@ -1147,12 +1170,10 @@ function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
   document.getElementById('ip-relay-sel').value = irrigPump.relayId;
   document.getElementById('ip-pump-name').value = irrigPump.name;
-  const _ih = document.getElementById('cfg-host')?.value || '';
-  const _iu = document.getElementById('cfg-user')?.value || '';
-  const _ip = document.getElementById('cfg-pass')?.value || '';
-  document.getElementById('ip-host').value  = irrigPump.mqttHost  || _ih;
-  document.getElementById('ip-user').value  = irrigPump.mqttUser  || _iu;
-  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || _ip;
+  const _cfg = getCfg();
+  document.getElementById('ip-host').value  = irrigPump.mqttHost  || _cfg.host || '';
+  document.getElementById('ip-user').value  = irrigPump.mqttUser  || _cfg.user || '';
+  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || _cfg.pass || '';
   document.getElementById('ip-topic').value = irrigPump.mqttTopic || '';
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
@@ -1245,14 +1266,7 @@ function togglePassVis(fieldId, btn) {
 
 function switchBrokerTab(mode) {
   brokerMode = mode;
-  document.getElementById('cfg-cloud').style.display = mode === 'cloud' ? '' : 'none';
-  document.getElementById('cfg-local').style.display = mode === 'local' ? '' : 'none';
-  const tc = document.getElementById('tab-cloud');
-  const tl = document.getElementById('tab-local');
-  tc.style.color         = mode==='cloud' ? 'var(--accent)' : 'var(--muted)';
-  tc.style.borderBottom  = mode==='cloud' ? '2px solid var(--accent)' : '2px solid transparent';
-  tl.style.color         = mode==='local' ? 'var(--accent)' : 'var(--muted)';
-  tl.style.borderBottom  = mode==='local' ? '2px solid var(--accent)' : '2px solid transparent';
+  // elementos removidos na versão atual — sem ação
   setCfg({ brokerMode: mode });
 }
 
@@ -1859,7 +1873,7 @@ function renderWeatherCard({ rainNow, code, maxProb, tempNow, humNow, feelsLike,
 }
 
 async function setCityInline() {
-  const input = document.getElementById('city-input-inline');
+  const input = document.getElementById('city-input-inline') || document.getElementById('city-input');
   if (input) setCity(input.value.trim());
 }
 
@@ -1930,9 +1944,6 @@ function openTankModal(editId) {
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
-  const _gh = document.getElementById('cfg-host')?.value || '';
-  const _gu = document.getElementById('cfg-user')?.value || '';
-  const _gp = document.getElementById('cfg-pass')?.value || '';
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -2515,7 +2526,7 @@ function pickRelay() {
 }
 
 function closePicker() {
-  const el = document.getElementById('picker-overlay');
+  const el = document.getElementById('picker-overlay'); if(!el) return;
   if (el) el.remove();
 }
 
@@ -2563,23 +2574,23 @@ function disableRelay(id) {
 }
 
 function openRelayModal() {
-  document.getElementById('rm-prefix').value = RELAY_PREFIX;
+  if (document.getElementById('rm-prefix')) document.getElementById('rm-prefix').value = RELAY_PREFIX;
   updatePrefixPreview();
-  document.getElementById('relay-modal').classList.add('open');
+  if(document.getElementById('relay-modal')) document.getElementById('relay-modal').classList.add('open');
 }
 
 function updatePrefixPreview() {
-  const p = document.getElementById('rm-prefix').value.trim() || 'home/relay';
+  const p = document.getElementById('rm-prefix')?.value.trim() || 'home/relay';
   const preview = document.getElementById('rm-preview');
   if (!preview) return;
   preview.innerHTML = Array.from({length:8}, (_,i) =>
     `<span style="color:var(--accent2)">${p}/out${i+1}</span>${i===0?' <span style="color:var(--accent);font-size:9px">← bomba (fixa)</span>':''}`
   ).join('<br>');
 }
-function closeRelayModal() { document.getElementById('relay-modal').classList.remove('open'); }
+function closeRelayModal() { document.getElementById('relay-modal')?.classList.remove('open'); }
 
 function confirmAddRelay() {
-  const prefix = document.getElementById('rm-prefix').value.trim();
+  const prefix = document.getElementById('rm-prefix')?.value.trim() || '';
   if (!prefix) { log('Preencha o prefixo', 'warn'); return; }
   RELAY_PREFIX = prefix;
   if (client && client.connected) {
