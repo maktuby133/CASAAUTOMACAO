@@ -240,149 +240,106 @@ body::before {
    MOBILE — até 768px
 ═══════════════════════════════════════ */
 @media (max-width: 768px) {
-  .app { padding: 0 12px 80px; }
+  .app { padding: 0 10px 80px; }
 
-  /* Topbar */
-  .topbar { padding: 10px 0 10px; gap: 8px; }
+  /* ── Topbar ── */
+  .topbar { padding: 10px 0; gap: 6px; flex-wrap: nowrap; }
   .logo-tag { display: none; }
-  .logo-text { font-size: 17px; }
+  .logo-text { font-size: 16px; flex-shrink: 0; }
   .topbar-sep { display: none; }
-  /* No mobile, esconde itens menos prioritários do clima */
-  #mb-rain-inline, .topbar-weather-item:nth-child(n+4) { display: none !important; }
-  .topbar-weather-city { max-width: 70px; }
-  #wi-irrig-status { display: none; }
-  .topbar-right { gap: 6px; }
-  .conn-status span { display: none; }
-  .btn { font-size: 10px; padding: 6px 10px; }
+  /* Clima: só ícone + temp no mobile */
+  .topbar-weather { gap: 5px; }
+  .topbar-weather-city,
+  #wi-irrig-status,
+  #mb-rain-inline,
+  #wi-hum-inline-wrap,
+  .topbar-weather-item:not(:first-of-type) { display: none !important; }
+  /* Mostrar só temp */
+  .topbar-weather-item:first-of-type { display: flex !important; }
+  .topbar-weather-val { font-size: 13px; }
+  .topbar-right { gap: 5px; flex-shrink: 0; }
+  .conn-status { display: none; }
   .cfg-btn-lbl, .login-btn-lbl { display: none; }
+  #cfg-main-btn, #login-btn { padding: 6px 9px !important; min-width: 34px; }
 
-  /* Config panel */
+  /* ── Config panel ── */
   .config-grid { grid-template-columns: 1fr !important; }
 
-  /* Separadores verticais */
-  .metric-inline-sep { display: none; }
+  /* ── Cards ── */
+  .card { padding: 10px 12px; }
+  .card-header { margin-bottom: 8px; }
+  .card-title { font-size: 10px; }
 
-  /* ── Meteorologia: grade 3 colunas compacta ── */
-  .weather-metrics-row {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 7px 6px !important;
-    flex-wrap: unset !important;
-  }
-  .metric-inline {
-    padding: 6px 7px !important;
-    gap: 5px !important;
-    background: var(--bg3);
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    align-items: center;
-    flex-direction: row;
-  }
-  .metric-inline > span:first-child { font-size: 12px !important; }
-  .metric-inline-val  { font-size: 12px !important; letter-spacing: 0; }
-  .metric-inline-unit { font-size: 8px !important; }
-  .metric-inline-sub  { font-size: 8px !important; margin-top: 1px; letter-spacing: 0.04em; }
-  .weather-city-row { display: none !important; }
-  #wi-irrig-status { font-size: 9px !important; padding: 2px 6px !important; }
-  #wi-city-inline  { font-size: 10px !important; }
-  #live-ts         { font-size: 9px !important; }
-  #wi-icon-inline  { font-size: 16px !important; }
-
-  /* ── Ambientes: 1 por linha, tudo horizontal ── */
+  /* ── Ambientes: lista vertical, cada card em linha horizontal ── */
   .rooms-scroll {
-    grid-template-columns: 1fr !important;
-    grid-auto-rows: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
     max-height: none !important;
     overflow-y: visible !important;
+    gap: 6px !important;
   }
-  /* Card: NOME — ÍCONE — DADOS — BOTÃO numa só linha */
   .room-card {
     height: auto !important;
-    min-height: unset !important;
+    min-height: 44px !important;
     overflow: visible !important;
-    padding: 7px 10px !important;
+    padding: 8px 28px 8px 10px !important;
     flex-direction: row !important;
     align-items: center !important;
-    gap: 0 !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
   }
-  /* Header (ícone + nome) à esquerda, linha horizontal */
+  .room-del-btn {
+    opacity: 1 !important;   /* sempre visível no touch */
+    width: 20px !important; height: 20px !important;
+    top: 50% !important; transform: translateY(-50%);
+    right: 5px !important; font-size: 11px !important;
+    background: var(--bg2) !important;
+    border: 1px solid var(--border) !important;
+  }
   .room-header {
+    flex-shrink: 0 !important;
     flex-direction: row !important;
     align-items: center !important;
     gap: 5px !important;
-    flex-shrink: 0;
     margin-bottom: 0 !important;
-    min-width: 0;
-    max-width: 52% !important;
+    max-width: 45% !important;
+    padding-right: 0 !important;
   }
-  .room-icon { font-size: 14px !important; flex-shrink: 0; }
-  .room-name {
-    font-size: 11px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: none !important;
-  }
-  /* Separador vertical entre header e dados */
+  .room-icon { font-size: 15px !important; }
+  .room-name { font-size: 12px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  .room-ts { display: none !important; }
+  /* Separador vertical entre nome e dados */
   .room-header::after {
-    content: '';
-    display: inline-block;
-    width: 1px; height: 14px;
+    content: ''; display: inline-block;
+    width: 1px; height: 16px;
     background: var(--border);
-    margin: 0 7px;
-    flex-shrink: 0;
+    margin: 0 6px; flex-shrink: 0;
   }
-  /* Timestamp: escondido no mobile */
-  .room-header > span:last-of-type { display: none; }
-  /* Botões de ação: sempre visíveis no mobile (touch não tem hover) */
-  .room-actions {
-    display: flex !important;
-    opacity: 1 !important;
-    gap: 2px;
-    flex-shrink: 0;
+  .room-main-row {
+    flex: 1 !important; min-width: 0 !important;
+    flex-wrap: nowrap !important; gap: 5px !important;
+    align-items: center !important; overflow: hidden !important;
   }
-  .room-actions button {
-    font-size: 11px !important;
-    padding: 2px 4px !important;
-    background: var(--bg2) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-    color: var(--muted) !important;
-    cursor: pointer;
-    line-height: 1;
-  }
-  /* Dados: ocupa o restante da linha */
-  .room-main-row { flex: 1; min-width: 0; flex-wrap: nowrap !important; gap: 4px !important; align-items: center; overflow: hidden !important; }
-  .room-val  { font-size: 12px !important; }
-  .room-unit { font-size: 8px !important; }
-  /* Toggle do relé inline, sem quebra */
-  .room-main-row .room-relay-wrap {
-    flex-basis: auto !important;
-    border-top: none !important;
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-    gap: 3px !important;
-    flex-shrink: 0;
-  }
-  .room-main-row .room-relay-wrap > span { font-size: 11px !important; }
-  .room-main-row .room-sep { display: block !important; }
+  .room-val  { font-size: 13px !important; }
+  .room-unit { font-size: 9px !important; }
+  .room-relay-wrap { flex-shrink: 0 !important; gap: 3px !important; }
 
-  /* Row 2 (water + irrigation) — 1 col */
+  /* ── Row 2 (caixas + irrigação) — 1 coluna ── */
   .row-2 { grid-template-columns: 1fr !important; }
 
-  /* Cards */
-  .card { padding: 12px 14px; }
-  .card-header { margin-bottom: 10px; }
+  /* ── Modal ── */
+  .modal { width: 95vw !important; max-width: 95vw !important; padding: 16px !important; }
+  .modal-title { font-size: 14px !important; }
 
-  /* Schedule */
-  .sched-item { flex-wrap: wrap; gap: 8px; }
+  /* ── Schedule ── */
+  .sched-item { flex-wrap: wrap; gap: 6px; }
   .add-sched-row { flex-wrap: wrap; }
 
-  /* Modal */
-  .modal { width: 95vw !important; padding: 18px 16px !important; }
+  /* ── Log ── */
+  .log-box { max-height: 90px; }
 
-  /* Log */
-  .log-box { max-height: 100px; }
+  /* ── Separadores inline ── */
+  .metric-inline-sep { display: none; }
 }
 
 /* ═══════════════════════════════════════
@@ -425,22 +382,31 @@ body::before {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 7px 9px;
   transition: border-color 0.2s; position:relative; min-width:0;
-  /* Altura fixa — não cresce com conteúdo */
   height: 80px; box-sizing: border-box; overflow: hidden;
   display: flex; flex-direction: column; gap: 3px;
 }
 .room-card:hover { border-color: var(--border2); }
-.room-card:hover .room-actions { opacity:1 !important; }
+.room-card:hover .room-del-btn { opacity: 1; }
 .room-card.alarm { border-color:var(--danger); background:rgba(239,68,68,0.05); animation:pulse-alarm 1.5s ease-in-out infinite; }
 .room-card.warn-smoke { border-color:var(--warn); }
 @keyframes pulse-alarm { 0%,100%{border-color:var(--danger)} 50%{border-color:rgba(239,68,68,0.3)} }
+/* botão ✕ absoluto no canto superior direito */
+.room-del-btn {
+  position: absolute; top: 4px; right: 4px;
+  width: 16px; height: 16px; border-radius: 4px;
+  border: none; background: transparent; color: var(--muted);
+  font-size: 9px; cursor: pointer; line-height: 1; padding: 0;
+  opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.room-del-btn:hover { background: rgba(239,68,68,0.15); color: var(--danger); opacity: 1 !important; }
 /* header */
-.room-header { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.room-header { display:flex; align-items:center; gap:4px; flex-shrink:0; padding-right:14px; }
 .room-icon   { font-size:12px; flex-shrink:0; }
 .room-name   { font-size:11px; font-weight:600; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.room-actions{ display:flex; gap:2px; opacity:0; transition:opacity 0.15s; }
-.room-act-btn{ font-size:9px; background:none; border:none; cursor:pointer; color:var(--muted); padding:1px 3px; }
-/* sensor + relay row: tudo na MESMA linha */
+.room-ts     { font-family:var(--mono); font-size:7px; color:var(--muted); flex-shrink:0; }
+/* sensor + relay row */
 .room-main-row {
   display: flex; align-items: center; gap: 5px;
   flex: 1; overflow: hidden; min-width: 0;
@@ -448,7 +414,7 @@ body::before {
 .room-sep { width:1px; height:12px; background:var(--border); flex-shrink:0; }
 .room-val  { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--text); letter-spacing:-0.5px; white-space:nowrap; }
 .room-unit { font-size:8px; color:var(--muted); font-weight:400; }
-/* relay toggle switch — físico animado */
+/* relay toggle switch */
 .room-relay-switch {
   position: relative; display: inline-flex; align-items: center;
   width: 32px; height: 17px; flex-shrink: 0; cursor: pointer;
@@ -468,16 +434,8 @@ body::before {
 }
 .room-relay-switch input:checked ~ .rrs-track { background: rgba(0,212,160,0.18); border-color: rgba(0,212,160,0.5); }
 .room-relay-switch input:checked ~ .rrs-knob  { transform: translateX(15px); background: var(--accent); box-shadow: 0 0 6px rgba(0,212,160,0.6); }
-/* relay pill wrapper */
-.room-relay-wrap {
-  display: flex; align-items: center; gap: 3px;
-  flex-shrink: 0; white-space: nowrap;
-}
-.room-relay-lbl {
-  font-family: var(--mono); font-size: 8px; color: var(--muted);
-  max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-/* no data */
+.room-relay-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; white-space: nowrap; }
+.room-relay-lbl { font-family: var(--mono); font-size: 8px; color: var(--muted); max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .room-nodata { font-family:var(--mono); font-size:9px; color:var(--muted); padding:2px 0; }
 
 /* Room modal sensor options */
@@ -594,8 +552,6 @@ body::before {
         Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
       </div>
     </div>
-    <!-- Lista de ambientes adicionados (chips) -->
-    <div id="rooms-list" style="display:none;flex-wrap:wrap;gap:6px;margin-top:10px"></div>
   </div>
 
   <!-- ROW 3: Caixas d'água + Irrigação -->
@@ -936,10 +892,6 @@ body::before {
             Tópico dados: <span style="color:var(--accent2)" id="tank-topic-preview">caixas/agua/.../dados</span><br>
             Tópico status: <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
           </div>
-        </div>
-        <div class="field">
-          <label>Capacidade total (litros)</label>
-          <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
         </div>
       </div>
 
@@ -2195,8 +2147,7 @@ function renderTanks() {
     const pumpsHtml = t.pumps && t.pumps.length ? `
       <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
         ${t.pumps.map(p => {
-          const rel  = relays.find(r => r.id === p.relayId);
-          const on   = rel?.state || false;
+          const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
           const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
           const isManual = mode === 'manual';
           return `
@@ -2310,20 +2261,26 @@ function connectAllTankBrokers() {
 // Publica ON/OFF da bomba da caixa d'água SOMENTE no broker próprio dela
 // Usa o tópico configurado na bomba — completamente isolado dos relés dos ambientes
 function setTankRelay(tank, relayId, state) {
-  const tc = tankClients[tank.id];
+  const tc = tankClients[tank.id] || (client && client.connected ? client : null);
   const pump = tank.pumps && tank.pumps.find(p => p.relayId === relayId);
-  // Usa tópico dedicado da bomba se configurado; senão usa padrão isolado por código da caixa
+  // Tópico dedicado da bomba — NUNCA usa o tópico padrão dos relés de ambiente
   const topic = (pump && pump.topic) ? pump.topic : `caixas/agua/${tank.code}/relay/${relayId}`;
   const payload = state ? 'ON' : 'OFF';
-  if (tc && tc.connected) {
-    tc.publish(topic, payload, { retain: true, qos: 1 });
+  const brokerToUse = tankClients[tank.id] && tankClients[tank.id].connected
+    ? tankClients[tank.id]
+    : (client && client.connected ? client : null);
+  if (brokerToUse) {
+    brokerToUse.publish(topic, payload, { retain: true, qos: 1 });
     log(`💧 Bomba "${pump?.name||relayId}" → ${payload} [${topic}]`, 'ok');
   } else {
     log(`⚠ Sem broker para caixa "${tank.name}" — bomba não acionada`, 'warn');
   }
-  // Atualiza estado local e UI sem tocar no broker principal
-  const rel = relays.find(r => r.id === relayId);
-  if (rel) { rel.state = state; saveRelayState(); renderTanks(); renderRelays(); }
+  // Atualiza estado local APENAS desta bomba — não toca nos relés dos ambientes/irrigação
+  if (!tank.pumpState) tank.pumpState = {};
+  tank.pumpState[relayId] = state;
+  saveTanks();
+  renderTanks();
+  // NÃO chama renderRelays() nem saveRelayState() — isolado do broker principal
 }
 
 function subscribeTanks() {
@@ -2350,9 +2307,8 @@ function handleTankMessage(topic, payload, data) {
           if (!p.relayId) return;
           const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
           if (mode !== 'auto') return;
-          const rel = relays.find(r => r.id === p.relayId && r.enabled);
-          if (!rel) return;
-          const on = rel.state;
+          if (!t.pumpState) t.pumpState = {};
+          const on = t.pumpState[p.relayId] || false;
           if (!on && pct <= p.triggerOn) {
             log(`💧 "${t.name}" nível ${pct}% ≤ ${p.triggerOn}% → ligando ${p.name}`, 'ok');
             setTankRelay(t, p.relayId, true);
@@ -3188,49 +3144,7 @@ function renderRooms() {
 
   if (!rooms.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente. Clique em "+ Adicionar".</div>';
-    const listEl = document.getElementById('rooms-list');
-    if (listEl) { listEl.style.display = 'none'; listEl.innerHTML = ''; }
     return;
-  }
-
-  // Renderiza chips abaixo do grid
-  const list = document.getElementById('rooms-list');
-  if (list) {
-    list.style.display = rooms.length ? 'flex' : 'none';
-    list.innerHTML = rooms.map(r => {
-      const d = r.data;
-      const isAlarm = r.hasSmoke && d.smoke >= 60;
-      const isWarn  = r.hasSmoke && d.smoke >= 30 && d.smoke < 60;
-      const chipColor = isAlarm ? 'var(--danger)' : isWarn ? 'var(--warn)' : 'var(--border2)';
-      const textColor = isAlarm ? 'var(--danger)' : isWarn ? 'var(--warn)' : 'var(--text)';
-
-      let info = '';
-      if (d.lastSeen) {
-        if (r.hasTemp && d.temp !== null) info += `${d.temp.toFixed(1)}°`;
-        if (r.hasTemp && d.hum !== null)  info += ` ${Math.round(d.hum)}%`;
-        if (r.hasSmoke && d.smoke !== null) info += ` 🔥${d.smoke}%`;
-      }
-
-      return `<div style="
-          display:inline-flex;align-items:center;gap:5px;
-          padding:4px 8px 4px 10px;border-radius:20px;
-          border:1px solid ${chipColor};background:var(--bg2);
-          font-family:var(--mono);font-size:11px;color:${textColor};
-          white-space:nowrap;cursor:default;transition:border-color 0.2s">
-        <span style="font-size:13px">${r.icon}</span>
-        <span>${r.name}</span>
-        ${info ? `<span style="font-size:10px;color:var(--muted);padding:0 2px">${info.trim()}</span>` : ''}
-        <button onclick="removeRoom('${r.id}')"
-          title="Excluir ${r.name}"
-          style="display:inline-flex;align-items:center;justify-content:center;
-                 width:16px;height:16px;border-radius:50%;border:none;
-                 background:var(--bg3);color:var(--muted);
-                 font-size:9px;cursor:pointer;line-height:1;padding:0;
-                 margin-left:1px;flex-shrink:0;transition:all 0.15s"
-          onmouseover="this.style.background='rgba(239,68,68,0.15)';this.style.color='var(--danger)'"
-          onmouseout="this.style.background='var(--bg3)';this.style.color='var(--muted)'">✕</button>
-      </div>`;
-    }).join('');
   }
 
   grid.innerHTML = rooms.map(r => {
@@ -3304,14 +3218,11 @@ function renderRooms() {
     });
 
     return `<div class="room-card ${alarmCls}" id="room-${r.id}">
+      <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        ${d.lastSeen ? `<span style="font-family:var(--mono);font-size:7px;color:var(--muted);flex-shrink:0">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
-        <div style="display:flex;gap:2px;opacity:0" class="room-actions">
-          <button onclick="openRoomModal('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)">✏</button>
-          <button onclick="removeRoom('${r.id}')" style="font-size:10px;background:none;border:none;cursor:pointer;color:var(--muted)">✕</button>
-        </div>
+        ${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
       </div>
       <div class="room-main-row">
         ${rowItems.join('')}
