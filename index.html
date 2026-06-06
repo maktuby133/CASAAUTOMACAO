@@ -574,16 +574,15 @@ body::before {
     </div>
 
     <!-- COL 3: Irrigação programada (card colapsável) -->
-    <div class="card" style="position:relative">
+    <div class="card">
       <div class="card-header" style="cursor:pointer;user-select:none" onclick="togglePanel('sched-body','sched-arrow')">
         <span class="card-title">Irrigação programada</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span id="sched-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">0 agendamentos</span>
-          <button class="btn" style="font-size:10px;padding:3px 10px" onclick="event.stopPropagation();openIrrigPumpModal()">+ Dispositivo</button>
           <span id="sched-arrow" style="color:var(--muted);font-size:12px;transition:transform 0.2s">▼</span>
         </div>
       </div>
-      <div id="sched-body" style="position:relative">
+      <div id="sched-body">
         <div class="sched-list" id="sched-list"></div>
         <!-- form adicionar -->
         <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px" id="sched-form-wrap">
@@ -611,12 +610,6 @@ body::before {
         </div>
         <!-- Bloco da bomba de irrigação -->
         <div id="irrig-pump-block"></div>
-        <!-- GIF animado — aparece no canto inferior direito quando bomba está ON -->
-        <div id="irrig-gif-wrap" style="display:none;position:absolute;bottom:0;right:0;pointer-events:none">
-          <img src="https://ik.imagekit.io/o7q7lmyva/rega-automatica.gif?updatedAt=1763679473260"
-            style="width:52px;height:52px;object-fit:contain;border-radius:6px;opacity:0.92"
-            title="Irrigação ativa" alt="irrigando">
-        </div>
       </div>
     </div>
 
@@ -672,89 +665,71 @@ body::before {
   <div class="modal" style="width:440px;max-height:90vh;overflow-y:auto">
     <div class="modal-title" id="rm-modal-title">Novo ambiente</div>
 
-    <!-- STEP 1: identificação + sensores -->
     <div id="rm-step1">
-      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
+      <!-- Nome + ícone -->
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px">
         <div class="field" style="flex:0"><label>Ícone</label><input id="rm-room-icon" value="🏠" maxlength="2" style="width:56px"/></div>
         <div class="field" style="flex:1"><label>Nome do ambiente</label><input id="rm-room-name" placeholder="ex: Sala, Quarto 1" /></div>
       </div>
 
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">Sensores deste ambiente</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <!-- Device ID unificado -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Dispositivo AmbientWatch (ESP32)
+      </div>
+      <div style="padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px">
+        <div class="field" style="margin-bottom:8px">
+          <label>Device ID <span style="font-weight:400;opacity:0.6;font-size:9px">(6 dígitos hex do MAC — exibido no portal AP)</span></label>
+          <input id="rm-device-id" placeholder="ex: e524d0" maxlength="12"
+            style="font-family:var(--mono);letter-spacing:0.12em;text-transform:lowercase"
+            oninput="updateRoomPreview()"/>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.8">
+            📶 Conecte ao Wi-Fi <b style="color:var(--text)">Sensor-XXXXXX</b> para ver o ID<br>
+            📥 <span style="color:var(--accent2)" id="rm-temp-topic-preview">sensors/.../data</span><br>
+            🔥 <span style="color:var(--accent2)" id="rm-smoke-topic-preview">sensors/.../gas</span><br>
+            💡 <span style="color:var(--accent2)" id="rm-lamp-topic-preview">sensors/.../lamp/set</span>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Senha do dispositivo</label>
+          <div style="display:flex;gap:6px">
+            <input id="rm-temp-pass" type="password" placeholder="Senha criada no portal AP do ESP32"
+              style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
+            <button type="button" onclick="togglePassVis('rm-temp-pass',this)"
+              style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 Usada para autenticar comandos enviados a este ESP32</div>
+        </div>
+      </div>
+
+      <!-- Capacidades do dispositivo -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">Capacidades do dispositivo</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
         <div class="rm-sensor-opt" id="rm-opt-temp" onclick="toggleSensorOpt('temp')" style="cursor:pointer">
-          <span style="font-size:20px">🌡️</span>
-          <span style="font-size:12px;font-weight:600">Temperatura<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Umidade</span></span>
+          <span style="font-size:18px">🌡️</span>
+          <span style="font-size:11px;font-weight:600;text-align:center">Temp<br><span style="font-weight:400;font-size:9px;color:var(--muted)">Umidade</span></span>
           <input type="checkbox" id="rm-has-temp" style="display:none">
         </div>
         <div class="rm-sensor-opt" id="rm-opt-smoke" onclick="toggleSensorOpt('smoke')" style="cursor:pointer">
-          <span style="font-size:20px">🔥</span>
-          <span style="font-size:12px;font-weight:600">Fumaça<br><span style="font-weight:400;font-size:10px;color:var(--muted)">+ Gás</span></span>
+          <span style="font-size:18px">🔥</span>
+          <span style="font-size:11px;font-weight:600;text-align:center">Gás<br><span style="font-weight:400;font-size:9px;color:var(--muted)">MQ-2</span></span>
           <input type="checkbox" id="rm-has-smoke" style="display:none">
         </div>
+        <div class="rm-sensor-opt" id="rm-opt-lamp" onclick="toggleSensorOpt('lamp')" style="cursor:pointer">
+          <span style="font-size:18px">💡</span>
+          <span style="font-size:11px;font-weight:600;text-align:center">Relé<br><span style="font-weight:400;font-size:9px;color:var(--muted)">Lâmpada</span></span>
+          <input type="checkbox" id="rm-has-lamp" style="display:none">
+        </div>
       </div>
 
-      <!-- MQTT config — aparece quando seleciona sensor -->
-      <div id="rm-mqtt-section" style="display:none">
-        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px">
-          <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-          Configuração MQTT
-        </div>
+      <!-- Preview tópicos -->
+      <div style="padding:8px 12px;background:var(--bg3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:2" id="rm-room-preview">Digite o Device ID para ver os tópicos</div>
 
-        <!-- Sensor de temperatura (AmbientWatch) -->
-        <div id="rm-temp-config" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-          <div style="font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">🌡️ Sensor Temperatura / Umidade</div>
-          <div class="field" style="margin-bottom:8px">
-            <label>Device ID <span style="font-weight:400;opacity:0.6">(4 últimos bytes do MAC)</span></label>
-            <input id="rm-temp-id" placeholder="ex: a1b2c3d4" maxlength="16" style="font-family:var(--mono);letter-spacing:0.1em" oninput="updateRoomPreview()"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-              📋 Copie do portal AP do ESP32 (rede Wi-Fi: <b style="color:var(--text)">Sensor-XXXX</b>)<br>
-              Tópico: <span style="color:var(--accent2)" id="rm-temp-topic-preview">sensors/.../data</span>
-            </div>
-          </div>
-          <div class="field">
-            <label>Senha do dispositivo</label>
-            <input id="rm-temp-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 A mesma senha criada ao configurar o ESP32</div>
-          </div>
-        </div>
-
-        <!-- Sensor de gás/fumaça -->
-        <div id="rm-smoke-config" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-          <div style="font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">🔥 Sensor Gás / Fumaça</div>
-          <div class="field" style="margin-bottom:8px">
-            <label>Device ID <span style="font-weight:400;opacity:0.6">(4 últimos bytes do MAC)</span></label>
-            <input id="rm-gas-id" placeholder="ex: a1b2c3d4" maxlength="16" style="font-family:var(--mono);letter-spacing:0.1em" oninput="updateRoomPreview()"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-              📋 Copie do portal AP do ESP32 (rede Wi-Fi: <b style="color:var(--text)">Sensor-XXXX</b>)<br>
-              Tópico: <span style="color:var(--accent2)" id="rm-smoke-topic-preview">sensors/.../data</span>
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:8px">
-            <label>Senha do dispositivo</label>
-            <input id="rm-gas-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 A mesma senha criada ao configurar o ESP32</div>
-          </div>
-          <div class="field">
-            <label>Prefixo do tópico MQTT <span style="font-weight:400;opacity:0.6">(opcional — para alertas)</span></label>
-            <input id="rm-room-topic" placeholder="ex: casa/sala" oninput="updateRoomPreview()"/>
-            <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-              Tópico de alerta: <span style="color:var(--accent2)" id="rm-smoke-alert-preview">casa/sala/gas</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview geral -->
-        <div style="padding:8px 12px;background:var(--bg3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:2" id="rm-room-preview">—</div>
-      </div>
-
-      <!-- Relés -->
-      <div style="margin-top:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Relés neste ambiente</span>
-          <button class="btn" style="font-size:10px;padding:3px 10px" onclick="addRoomRelayRow()">＋</button>
-        </div>
-        <div id="rm-relay-rows"></div>
-      </div>
+      <!-- campos ocultos de compatibilidade -->
+      <input type="hidden" id="rm-gas-id"/>
+      <input type="hidden" id="rm-gas-pass"/>
+      <input type="hidden" id="rm-room-topic"/>
+      <input type="hidden" id="rm-temp-id"/>
     </div>
 
     <input type="hidden" id="rm-room-modal-edit-id" value="">
@@ -908,24 +883,12 @@ body::before {
         <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
       </div>
 
-      <!-- Credenciais do dispositivo -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:8px 0 6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-        Dispositivo MQTT
-      </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
-        <div class="field" style="margin:0">
-          <label>Prefixo do tópico</label>
-          <input id="tank-prefix" placeholder="ex: caixas/agua" style="font-family:var(--mono);font-size:11px" oninput="updateTankPreview()"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Base dos tópicos: <span style="color:var(--accent2)" id="tank-prefix-preview">prefixo/código/dados</span></div>
-        </div>
-        <div class="field" style="margin:0">
-          <label>Senha do dispositivo</label>
-          <input id="tank-device-pass" type="password" placeholder="Senha definida no portal AP do ESP32"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">🔑 A mesma senha criada ao configurar o ESP32</div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
-          🔗 Broker: o host/usuário configurados no painel principal são usados automaticamente.
+      <!-- Info broker global -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius)">
+        <span style="font-size:16px">🔗</span>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
+          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — esta caixa usará automaticamente<br>
+          as credenciais MQTT configuradas no painel principal.
         </div>
       </div>
 
@@ -952,83 +915,75 @@ body::before {
 
 <!-- MODAL BOMBA IRRIGAÇÃO -->
 <div class="modal-overlay" id="irrig-pump-modal">
-  <div class="modal" style="width:460px;max-height:92vh;overflow-y:auto">
-    <div class="modal-title">💧 Bomba de Irrigação</div>
+  <div class="modal" style="width:420px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">⚙ Configurar Bomba de Irrigação</div>
     <div class="modal-fields">
 
-      <!-- ── Identificação ── -->
+      <div class="field">
+        <label>Nome da bomba</label>
+        <input id="ip-pump-name" value="Bomba de irrigação" placeholder="ex: Bomba principal"/>
+      </div>
+
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-        Identificação
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:2px">
-        <div class="field" style="margin:0">
-          <label>Nome da bomba</label>
-          <input id="ip-pump-name" placeholder="ex: Bomba principal"/>
-        </div>
-        <div class="field" style="margin:0">
-          <label>Saída (relé)</label>
-          <select id="ip-relay-sel" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:38px"></select>
-        </div>
-      </div>
-
-      <!-- ── Dispositivo ── -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:12px 0 6px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
-        Dispositivo MQTT
-        <span style="font-size:9px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">— broker do painel principal é usado automaticamente</span>
+        Relé associado
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-        <div class="field" style="margin:0">
-          <label>Código do dispositivo</label>
-          <input id="ip-prefix" placeholder="ex: bomba01" style="font-family:var(--mono);letter-spacing:0.08em" oninput="updateIrrigPumpPreview()"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico: <span style="color:var(--accent2)" id="ip-topic-preview">—</span></div>
-        </div>
-        <div class="field" style="margin:0">
-          <label>Senha do dispositivo</label>
-          <input id="ip-device-pass" type="password" placeholder="••••••••"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">🔑 Senha do portal AP do ESP32</div>
-        </div>
-      </div>
-
-      <!-- ── Agendamentos ── -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:12px 0 6px;display:flex;align-items:center;gap:8px">
-        <span style="display:inline-block;width:3px;height:12px;background:var(--warn);border-radius:2px"></span>
-        Agendamentos
-      </div>
-      <div id="ip-sched-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
-
-      <!-- form novo agendamento -->
       <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
-        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px">+ Novo agendamento</div>
-        <!-- Dias da semana -->
-        <div style="display:flex;gap:4px;margin-bottom:10px" id="ip-day-picker">
-          <button class="day-pick-btn" data-d="0" onclick="ipToggleDay(this)">Dom</button>
-          <button class="day-pick-btn" data-d="1" onclick="ipToggleDay(this)">Seg</button>
-          <button class="day-pick-btn" data-d="2" onclick="ipToggleDay(this)">Ter</button>
-          <button class="day-pick-btn" data-d="3" onclick="ipToggleDay(this)">Qua</button>
-          <button class="day-pick-btn" data-d="4" onclick="ipToggleDay(this)">Qui</button>
-          <button class="day-pick-btn" data-d="5" onclick="ipToggleDay(this)">Sex</button>
-          <button class="day-pick-btn" data-d="6" onclick="ipToggleDay(this)">Sáb</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;flex-direction:column;gap:3px">
-            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Horário</span>
-            <input type="time" id="ip-sched-time" value="06:00"
-              style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none;height:32px;width:94px">
+        <div class="field" style="margin:0">
+          <label>Saída (relé) que controla a bomba</label>
+          <select id="ip-relay-sel" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px"></select>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
+            O relé selecionado será acionado pelos agendamentos.
           </div>
-          <div style="display:flex;flex-direction:column;gap:3px">
-            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Duração</span>
-            <div style="display:flex;align-items:center;gap:5px">
-              <input type="number" id="ip-sched-dur" value="15" min="1" max="120"
-                style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none;height:32px;width:58px">
-              <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
-            </div>
-          </div>
-          <button class="btn primary" style="margin-top:14px;padding:5px 14px;font-size:10px" onclick="ipAddSchedule()">+ Adicionar</button>
         </div>
       </div>
 
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+        Conexão MQTT da bomba
+      </div>
+      <!-- Info broker global -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius);margin-bottom:4px">
+        <span style="font-size:16px">🔗</span>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
+          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — usa as credenciais MQTT<br>
+          do painel principal. Preencha abaixo apenas se usar broker diferente.
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+        <div class="field" style="margin:0">
+          <label>Host do broker</label>
+          <input id="ip-host" placeholder="ex: xxxx.s1.eu.hivemq.cloud" style="font-family:var(--mono);font-size:11px"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field" style="margin:0">
+            <label>Usuário MQTT</label>
+            <input id="ip-user" placeholder="ex: esp32-Project"/>
+          </div>
+          <div class="field" style="margin:0">
+            <label>Senha MQTT</label>
+            <input id="ip-pass" type="password" placeholder="••••••••"/>
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Tópico MQTT da bomba</label>
+          <input id="ip-topic" placeholder="ex: irrigacao/relay/bomba" style="font-family:var(--mono);font-size:11px;color:var(--accent2)"/>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico onde a bomba escuta ON/OFF — separado dos relés dos ambientes</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
+          Porta: <strong>8884</strong> (WSS) — mesmo padrão das caixas d'água
+        </div>
+      </div>
+
+      <div style="padding:10px 12px;background:rgba(0,212,160,0.04);border:1px solid rgba(0,212,160,0.15);border-radius:var(--radius)">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:600;margin-bottom:4px">📋 Como funciona</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+          • <strong style="color:var(--text)">Modo AUTO</strong>: bomba liga/desliga conforme agendamentos<br>
+          • <strong style="color:var(--text)">Modo MANUAL</strong>: você controla manualmente o botão<br>
+          • Chuva detectada ou prevista ≥ 70% → irrigação bloqueada 🌧️<br>
+          • Configure os horários no painel "Novo agendamento" acima
+        </div>
+      </div>
     </div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn" onclick="closeIrrigPumpModal()">Cancelar</button>
@@ -1083,7 +1038,7 @@ let schedules = [
   {id:'s2', days:[0,2,4,6], time:'18:30', duration:15, relay:'out1', active:true},
 ];
 let selectedDays = [];
-let liveData = {water:null, temp:null, hum:null, liters:null};
+let liveData = {water:null, temp:null, hum:null, liters:null, distance:null};
 const dayShort = ['D','S','T','Q','Q','S','S'];
 
 // ============ BOMBA IRRIGAÇÃO ============
@@ -1102,14 +1057,10 @@ function loadIrrigPump() {
 }
 
 function connectIrrigBroker() {
-  if (!irrigPump.mqttHost) return;
+  if (!irrigPump.mqttHost || !irrigPump.mqttUser || !irrigPump.mqttPass) return;
   if (irrigClient) { try { irrigClient.end(true); } catch(e) {} irrigClient = null; }
-  const s       = getCfg();
-  const isLocal = (s.brokerMode === 'local');
-  const port    = isLocal ? (s.localPort || 9001) : 8884;
-  const proto   = isLocal ? 'ws' : 'wss';
-  const url     = `${proto}://${irrigPump.mqttHost}:${port}/mqtt`;
-  log(`🔌 Conectando broker da bomba (${proto})...`, 'sys');
+  const url = `wss://${irrigPump.mqttHost}:8884/mqtt`;
+  log(`🔌 Conectando broker da bomba de irrigação...`, 'sys');
   irrigClient = mqtt.connect(url, {
     username: irrigPump.mqttUser,
     password: irrigPump.mqttPass,
@@ -1118,6 +1069,7 @@ function connectIrrigBroker() {
   });
   irrigClient.on('connect', () => {
     log(`✅ Broker da bomba conectado!`, 'ok');
+    // Assina estado do relé para feedback
     const rel = relays.find(r => r.id === irrigPump.relayId);
     if (rel) irrigClient.subscribe(relayTopic(rel) + '/state', { qos:1 });
   });
@@ -1129,7 +1081,7 @@ function connectIrrigBroker() {
     }
   });
   irrigClient.on('error',   (e) => log(`❌ Broker bomba: ${e.message}`, 'warn'));
-  irrigClient.on('offline', ()  => { log(`⚠ Broker bomba offline`, 'warn'); renderIrrigPumpCard(); });
+  irrigClient.on('offline', ()  => log(`⚠ Broker bomba offline`, 'warn'));
 }
 
 function setIrrigRelay(state) {
@@ -1168,11 +1120,6 @@ function renderIrrigPumpCard() {
   const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
   const on  = rel?.state || false;
   const isManual = irrigPump.mode === 'manual';
-
-  // Mostra/esconde GIF no canto inferior direito do card
-  const gifWrap = document.getElementById('irrig-gif-wrap');
-  if (gifWrap) gifWrap.style.display = on ? 'block' : 'none';
-
   el.innerHTML = `
     <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px">
       <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
@@ -1203,82 +1150,33 @@ function renderIrrigPumpCard() {
 }
 function openIrrigPumpModal() {
   populateIrrigPumpRelaySelect();
-  document.getElementById('ip-relay-sel').value    = irrigPump.relayId;
-  document.getElementById('ip-pump-name').value    = irrigPump.name;
-  document.getElementById('ip-prefix').value       = irrigPump.deviceCode || '';
-  document.getElementById('ip-device-pass').value  = irrigPump.devicePass || '';
-  // Limpa dias selecionados no picker
-  document.querySelectorAll('#ip-day-picker .day-pick-btn').forEach(b => b.classList.remove('sel'));
-  updateIrrigPumpPreview();
-  ipRenderSchedules();
+  document.getElementById('ip-relay-sel').value = irrigPump.relayId;
+  document.getElementById('ip-pump-name').value = irrigPump.name;
+  const _cfg = getCfg();
+  document.getElementById('ip-host').value  = irrigPump.mqttHost  || _cfg.host || '';
+  document.getElementById('ip-user').value  = irrigPump.mqttUser  || _cfg.user || '';
+  document.getElementById('ip-pass').value  = irrigPump.mqttPass  || _cfg.pass || '';
+  document.getElementById('ip-topic').value = irrigPump.mqttTopic || '';
   document.getElementById('irrig-pump-modal').classList.add('open');
 }
 function closeIrrigPumpModal() {
   document.getElementById('irrig-pump-modal').classList.remove('open');
 }
-
-let _ipDays = []; // dias selecionados no picker do modal
-function ipToggleDay(btn) {
-  const d = parseInt(btn.dataset.d);
-  btn.classList.toggle('sel');
-  _ipDays = [...document.querySelectorAll('#ip-day-picker .day-pick-btn.sel')].map(b => parseInt(b.dataset.d));
-}
-function ipAddSchedule() {
-  if (!_ipDays.length) { log('Selecione ao menos um dia', 'warn'); return; }
-  const t   = document.getElementById('ip-sched-time').value;
-  const dur = parseInt(document.getElementById('ip-sched-dur').value) || 15;
-  schedules.push({ id: 's'+Date.now(), days:[..._ipDays], time:t, duration:dur, relay: irrigPump.relayId, active:true });
-  _ipDays = [];
-  document.querySelectorAll('#ip-day-picker .day-pick-btn').forEach(b => b.classList.remove('sel'));
-  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
-  renderSchedules();
-  ipRenderSchedules();
-  publishPersist();
-  log(`Agendamento bomba: ${t} por ${dur}min`, 'ok');
-}
-function ipRenderSchedules() {
-  const el = document.getElementById('ip-sched-list');
-  if (!el) return;
-  const mine = schedules.filter(s => s.relay === irrigPump.relayId);
-  if (!mine.length) {
-    el.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 0">Nenhum agendamento ainda.</div>`;
-    return;
-  }
-  const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  el.innerHTML = mine.map(s => `
-    <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px">
-      <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);min-width:44px">${s.time}</span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">${s.duration}min</span>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--muted);flex:1">${s.days.map(d=>dayNames[d]).join(', ')}</span>
-      <button onclick="ipRemoveSchedule('${s.id}')"
-        style="width:20px;height:20px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:10px;flex-shrink:0">✕</button>
-    </div>`).join('');
-}
-function ipRemoveSchedule(id) {
-  schedules = schedules.filter(s => s.id !== id);
-  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
-  renderSchedules();
-  ipRenderSchedules();
-  publishPersist();
-}
-
 function saveIrrigPumpModal() {
-  irrigPump.relayId    = document.getElementById('ip-relay-sel').value;
-  irrigPump.name       = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
-  irrigPump.deviceCode = document.getElementById('ip-prefix').value.trim();
-  irrigPump.devicePass = document.getElementById('ip-device-pass').value;
-  irrigPump.mqttPrefix = irrigPump.deviceCode ? `irrigacao/${irrigPump.deviceCode}` : 'irrigacao/relay';
-  irrigPump.mqttTopic  = `${irrigPump.mqttPrefix}/${irrigPump.relayId}`;
-  // Credenciais: broker global + senha do dispositivo
-  const s = getCfg();
-  irrigPump.mqttHost = s.host || s.localHost || '';
-  irrigPump.mqttUser = s.user || s.localUser || '';
-  irrigPump.mqttPass = irrigPump.devicePass || s.pass || s.localPass || '';
+  irrigPump.relayId   = document.getElementById('ip-relay-sel').value;
+  irrigPump.name      = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
+  irrigPump.mqttHost  = document.getElementById('ip-host').value.trim();
+  irrigPump.mqttUser  = document.getElementById('ip-user').value.trim();
+  irrigPump.mqttPass  = document.getElementById('ip-pass').value;
+  irrigPump.mqttTopic = document.getElementById('ip-topic').value.trim();
   saveIrrigPump();
-  if (irrigPump.mqttHost) connectIrrigBroker();
+  // Conecta broker próprio se credenciais foram fornecidas
+  if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
+    connectIrrigBroker();
+  }
   renderIrrigPumpCard();
   renderRelays();
-  log(`Bomba "${irrigPump.name}" salva → ${irrigPump.mqttTopic}`, 'ok');
+  log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.relayId}`, 'ok');
   closeIrrigPumpModal();
 }
 function populateIrrigPumpRelaySelect() {
@@ -1288,6 +1186,12 @@ function populateIrrigPumpRelaySelect() {
     `<option value="${r.id}" ${r.id===irrigPump.relayId?'selected':''}>${r.icon} ${r.name}</option>`
   ).join('');
 }
+
+// ============ TÓPICOS ============
+let TOPICS_WATER = { dados: '', status: '' };
+let TOPICS_TEMP  = '';
+let TEMP_DEVICE_ID = ''; // guarda o device ID limpo para comparação
+let GAS_DEVICE_ID  = ''; // device ID do sensor de gás
 
 // ============ CONFIG ============
 // ── Persistência central ─────────────────────────────────────────────────
@@ -1321,6 +1225,8 @@ function saveCfgField() {
     const lh = gf('cfg-local-host');  if (lh    !== undefined) patch.localHost  = lh;
     const lp = gf('cfg-local-port');  if (lp    !== undefined) patch.localPort  = lp;
     const lu = gf('cfg-local-user');  if (lu    !== undefined) patch.localUser  = lu;
+    const lw = gf('cfg-local-water'); if (lw    !== undefined) patch.localWater = lw;
+    const lt = gf('cfg-local-temp');  if (lt    !== undefined) patch.localTemp  = lt;
     const lpass = gfPass('cfg-local-pass'); if (lpass !== undefined) patch.localPass = lpass;
   } else {
     const h = gf('cfg-host');  if (h    !== undefined) patch.host = h;
@@ -1599,6 +1505,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-port',  saved.localPort);
   setV('cfg-local-user',  saved.localUser);
   setV('cfg-local-pass',  saved.localPass);
+  setV('cfg-local-water', saved.localWater);
+  setV('cfg-local-temp',  saved.localTemp);
   if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
 
 
@@ -1681,22 +1589,39 @@ function connectMQTT() {
   const pass  = isLocal
     ? (fromDomPass('cfg-local-pass') || s.localPass || '')
     : (fromDomPass('cfg-pass')       || s.pass       || '');
+  const water = isLocal
+    ? (fromDom('cfg-local-water') || s.localWater || '')
+    : (s.water || '');
+  const temp  = (isLocal ? (s.localTemp || '') : (s.temp || ''))
+    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
   if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
-  // Salva credenciais do broker
+  // Salva tudo antes de conectar
   setCfg(isLocal
-    ? { localHost:host, localPort:port, localUser:user, localPass:pass, brokerMode:'local', relayPrefix:RELAY_PREFIX }
-    : { host, port, user, pass, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
+    ? { localHost:host, localPort:port, localUser:user, localPass:pass, localWater:water, localTemp:temp, brokerMode:'local', relayPrefix:RELAY_PREFIX }
+    : { host, port, user, pass, water, temp, gas, relayPrefix:RELAY_PREFIX, brokerMode:'cloud' }
   );
+
+  // Define tópicos e device IDs
+  TEMP_DEVICE_ID = temp;
+  GAS_DEVICE_ID  = gas;
+  if (water) {
+    TOPICS_WATER = {
+      dados:  `caixas/agua/${water}/dados`,
+      status: `caixas/agua/${water}/status`,
+    };
+  }
+  TOPICS_TEMP = temp ? `sensors/${temp}/data` : '';
 
   if (client) { try { client.end(true); } catch(e) {} }
 
   setConnStatus('connecting', 'Conectando...');
-  log(`Conectando a ${host}`, 'info');
+  log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
 
-  client = mqtt.connect(`${isLocal ? 'ws' : 'wss'}://${host}:${port}/mqtt`, {
+  client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
     username: user,
     password: pass,
     clientId: 'autoflow_' + Math.random().toString(36).substr(2, 8),
@@ -1712,14 +1637,10 @@ function connectMQTT() {
     try { document.getElementById('cfg-panel').style.setProperty('display','none','important'); } catch(e){}
     closeBrokerModal();
     updateMainBtn();
-    // Propaga broker (host/user) para caixas e bomba; preserva senha do dispositivo de cada um
-    waterTanks.forEach(t => {
-      t.mqttHost = host; t.mqttUser = user;
-      if (!t.devicePass) t.mqttPass = pass;
-    });
+    // Propaga broker para todas as caixas e bomba automaticamente
+    waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
     saveTanks();
-    irrigPump.mqttHost = host; irrigPump.mqttUser = user;
-    if (!irrigPump.devicePass) irrigPump.mqttPass = pass;
+    irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
     saveIrrigPump();
     subscribeAll();
     startScheduleEngine();
@@ -1732,11 +1653,11 @@ function connectMQTT() {
 
 function subscribeAll() {
   const subs = [];
-  // Wildcard genérico para sensores de ambiente
+  if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
+  // Wildcard para capturar retained de temperatura independente de timing
   subs.push('sensors/#');
-  // Wildcards para prefixos dinâmicos das caixas d'água cadastradas
-  const prefixes = new Set(waterTanks.map(t => t.devicePrefix || 'caixas/agua'));
-  prefixes.forEach(p => subs.push(`${p}/#`));
+  // Caixas d'água cadastradas
+  subs.push('caixas/agua/#');
   // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
   const tankRelayIds = new Set(waterTanks.flatMap(t => (t.pumps||[]).map(p => p.relayId)));
   relays.filter(r => r.enabled && r.id !== irrigPump.relayId && !tankRelayIds.has(r.id))
@@ -1772,11 +1693,47 @@ function handleMsg(topic, payload, pkt) {
     });
     return;
   }
-  // ------ TÓPICOS DAS CAIXAS CADASTRADAS + TEMPERATURA/GÁS ------
+
+
+
+  // ------ CAIXA D'ÁGUA: caixas/agua/{code}/dados ------
+  if (topic === TOPICS_WATER.dados) {
+    // payload: { percentage, liters, distance, level, bat_percent, bat_voltage, lora_rssi, signal_quality, sensor_ok, cached, ... }
+    const pct  = parseInt(data.percentage);
+    const lit  = parseInt(data.liters);
+    const dist = parseFloat(data.distance);
+    const sensorOK = data.sensor_ok !== false;
+
+    if (!isNaN(pct)) {
+      liveData.water = pct;
+      // Cor muda conforme nível
+      const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+      checkRules();
+    }
+    if (!isNaN(lit)) liveData.liters = lit;
+    updateLiveBar(topic, data.cached);
+    // Também roteia para o sistema de caixas
+    handleTankMessage(topic, payload, data);
+    return;
+  }
+
+  // ------ STATUS DA CAIXA: caixas/agua/{code}/status ------
+  if (topic === TOPICS_WATER.status) {
+    if (data.online === false) {
+      showAlert('⚠ Receptor offline — verifique energia e WiFi do ESP32 receptor.');
+    } else {
+      hideAlert();
+    }
+    handleTankMessage(topic, payload, data);
+    return;
+  }
+
+  // ------ TÓPICOS DAS CAIXAS CADASTRADAS ------
   handleTankMessage(topic, payload, data);
 
-  // handleRoomMessage já faz o match por ambiente — aqui apenas atualiza live bar
-  if (topic.startsWith('sensors/') && topic.endsWith('/data')) {
+  // ------ TEMPERATURA / GÁS / LAMP: sensors/{id}/data + /gas ------
+  if (topic.startsWith('sensors/') && (topic.endsWith('/data') || topic.endsWith('/gas'))) {
+    handleRoomMessage(topic, payload);
     updateLiveBar(topic, false);
     return;
   }
@@ -1969,8 +1926,6 @@ function openTankModal(editId) {
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
-  document.getElementById('tank-prefix').value = t?.devicePrefix || 'caixas/agua';
-  document.getElementById('tank-device-pass').value = t?.devicePass || '';
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -1989,25 +1944,13 @@ function closeTankModal() {
   document.getElementById('tank-modal').classList.remove('open');
 }
 
-function updateIrrigPumpPreview() {
-  const code    = (document.getElementById('ip-prefix')?.value.trim()) || '';
-  const relayId = document.getElementById('ip-relay-sel')?.value || irrigPump.relayId || 'out1';
-  const prefix  = code ? `irrigacao/${code}` : 'irrigacao/relay';
-  const el = document.getElementById('ip-topic-preview');
-  if (el) el.textContent = `${prefix}/${relayId}`;
-}
 function updateTankPreview() {
-  const code   = (document.getElementById('tank-code')?.value.trim())   || '...';
-  const prefix = (document.getElementById('tank-prefix')?.value.trim()) || 'caixas/agua';
+  const code = (document.getElementById('tank-code')?.value.trim()) || '...';
   const tp = document.getElementById('tank-topic-preview');
   const sp = document.getElementById('tank-status-preview');
-  const pp = document.getElementById('tank-prefix-preview');
-  if (tp) tp.textContent = `${prefix}/${code}/dados`;
-  if (sp) sp.textContent = `${prefix}/${code}/status`;
-  if (pp) pp.textContent = `${prefix}/código/dados`;
+  if (tp) tp.textContent = `caixas/agua/${code}/dados`;
+  if (sp) sp.textContent = `caixas/agua/${code}/status`;
 }
-
-
 
 function addTankPumpRow() {
   if (tankPumpRows.length >= 2) { alert('Máximo de 2 bombas por caixa.'); return; }
@@ -2098,18 +2041,16 @@ function renderTankPumpRows() {
 }
 
 function confirmSaveTank() {
-  const name         = document.getElementById('tank-name').value.trim();
-  const code         = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
-  const capacity     = parseInt(document.getElementById('tank-capacity').value) || 0;
-  const devicePrefix = document.getElementById('tank-prefix').value.trim() || 'caixas/agua';
-  const devicePass   = document.getElementById('tank-device-pass').value;
-  const editId       = document.getElementById('tank-edit-id').value;
+  const name     = document.getElementById('tank-name').value.trim();
+  const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+  const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
+  const editId   = document.getElementById('tank-edit-id').value;
 
-  // Usa o broker global (host + usuário); senha do dispositivo vem do campo próprio
+  // Usa o broker global (configurado no painel principal)
   const s = getCfg();
-  const mqttHost = s.host || s.localHost || '';
-  const mqttUser = s.user || s.localUser || '';
-  const mqttPass = devicePass || s.pass || '';
+  const mqttHost = s.host || '';
+  const mqttUser = s.user || '';
+  const mqttPass = s.pass || '';
 
   if (!name) { log('Preencha o nome da caixa', 'warn'); return; }
   if (!code) { log('Preencha o código do sensor', 'warn'); return; }
@@ -2124,7 +2065,7 @@ function confirmSaveTank() {
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
-  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, devicePrefix, devicePass, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
   pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
 
   if (editId) {
@@ -2139,7 +2080,7 @@ function confirmSaveTank() {
   connectTankBroker(tankData);
 
   renderTanks();
-  log(`Caixa "${name}" salva (${devicePrefix}/${code}/dados)`, 'ok');
+  log(`Caixa "${name}" salva (sensor: caixas/agua/${code}/dados)`, 'ok');
   closeTankModal();
 }
 
@@ -2264,12 +2205,8 @@ function connectTankBroker(tank) {
     delete tankClients[tank.id];
   }
 
-  const s2      = getCfg();
-  const isLocal = (s2.brokerMode === 'local');
-  const port    = isLocal ? (s2.localPort || 9001) : 8884;
-  const proto   = isLocal ? 'ws' : 'wss';
-  const url = `${proto}://${tank.mqttHost}:${port}/mqtt`;
-  log(`🔌 Conectando broker da caixa "${tank.name}" (${proto})...`, 'sys');
+  const url = `wss://${tank.mqttHost}:8884/mqtt`;
+  log(`🔌 Conectando broker da caixa "${tank.name}"...`, 'sys');
 
   const tc = mqtt.connect(url, {
     username: tank.mqttUser,
@@ -2284,16 +2221,15 @@ function connectTankBroker(tank) {
 
   tc.on('connect', () => {
     log(`✅ Broker da caixa "${tank.name}" conectado!`, 'ok');
-    const prefix = tank.devicePrefix || 'caixas/agua';
-    tc.subscribe(`${prefix}/${tank.code}/dados`,  { qos: 1 });
-    tc.subscribe(`${prefix}/${tank.code}/status`, { qos: 1 });
+    tc.subscribe(`caixas/agua/${tank.code}/dados`,  { qos: 1 });
+    tc.subscribe(`caixas/agua/${tank.code}/status`, { qos: 1 });
   });
 
   tc.on('message', (topic, msg) => {
     try {
       const data = JSON.parse(msg.toString());
       handleTankMessage(topic, msg.toString(), data);
-      // Atualiza liveData se for a caixa desta tank
+      // Atualiza liveData se for a caixa principal (TOPICS_WATER)
       if (topic === `caixas/agua/${tank.code}/dados`) {
         const pct = parseInt(data.percentage);
         const lit = parseInt(data.liters);
@@ -2344,17 +2280,15 @@ function subscribeTanks() {
   if (!client || !client.connected) return;
   waterTanks.forEach(t => {
     if (!t.code) return;
-    const prefix = t.devicePrefix || 'caixas/agua';
-    client.subscribe(`${prefix}/${t.code}/dados`,  {qos:1}, ()=>log(`↳ ${prefix}/${t.code}/dados`,'sys'));
-    client.subscribe(`${prefix}/${t.code}/status`, {qos:1}, ()=>log(`↳ ${prefix}/${t.code}/status`,'sys'));
+    client.subscribe(`caixas/agua/${t.code}/dados`,  {qos:1}, ()=>log(`↳ caixas/agua/${t.code}/dados`,'sys'));
+    client.subscribe(`caixas/agua/${t.code}/status`, {qos:1}, ()=>log(`↳ caixas/agua/${t.code}/status`,'sys'));
   });
 }
 
 function handleTankMessage(topic, payload, data) {
   waterTanks.forEach(t => {
-    const prefix      = t.devicePrefix || 'caixas/agua';
-    const dadosTopic  = `${prefix}/${t.code}/dados`;
-    const statusTopic = `${prefix}/${t.code}/status`;
+    const dadosTopic  = `caixas/agua/${t.code}/dados`;
+    const statusTopic = `caixas/agua/${t.code}/status`;
     if (topic === dadosTopic) {
       const pct  = parseInt(data.percentage);
       const lit  = parseInt(data.liters);
@@ -2715,54 +2649,36 @@ function removeSchedule(id) {
   log('Agendamento removido', 'sys');
 }
 
-let _schedEngineRunning = false;
-let _schedLastFired = {}; // schedId → 'YYYY-MM-DD HH:MM' do último disparo
-
 function startScheduleEngine() {
-  if (_schedEngineRunning) return; // nunca inicia dois loops
-  _schedEngineRunning = true;
-  log('Motor de agendamentos iniciado (verifica a cada 10s)', 'info');
-
   setInterval(() => {
     const now = new Date();
     const dow = now.getDay();
-    const hm  = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()} ${hm}`;
-
+    const hm  = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     schedules.filter(s => s.active && s.days.includes(dow) && s.time === hm).forEach(s => {
-      const fireKey = `${s.id}_${key}`;
-      if (_schedLastFired[fireKey]) return; // já disparou neste minuto
-      _schedLastFired[fireKey] = true;
-      // Limpa entradas velhas para não crescer indefinidamente
-      if (Object.keys(_schedLastFired).length > 200) {
-        const keep = Object.keys(_schedLastFired).slice(-100);
-        _schedLastFired = Object.fromEntries(keep.map(k => [k, true]));
-      }
-
+      // Usa o relayId configurado no agendamento; se for a bomba de irrigação, verifica modo
       const targetRelayId = s.relay || irrigPump.relayId;
       const relay = relays.find(r => r.id === targetRelayId && r.enabled);
-      if (!relay) { log(`⏰ ${hm}: relé do agendamento não habilitado`, 'warn'); return; }
+      if (!relay) return;
 
-      // Bomba em modo manual → não interfere
+      // Se o relé for o da bomba de irrigação e estiver em modo manual, não interfere
       if (targetRelayId === irrigPump.relayId && irrigPump.mode === 'manual') {
         log(`⏰ ${hm}: bomba em modo manual — agendamento ignorado`, 'warn');
         return;
       }
-      // Bloqueia se chovendo
+      // Bloqueia se chovendo ou alta probabilidade de chuva
       if (weather.isRaining) {
         const reason = weather.rainMm > 0.1 ? `chuva: ${weather.rainMm.toFixed(1)}mm` : 'alta prob. de chuva';
         log(`⏰ ${hm}: clima desfavorável (${reason}) — irrigação bloqueada 🌧️`, 'warn');
         return;
       }
-
-      log(`⏰ ${hm} → ligando "${relay.name}" por ${s.duration}min ✅`, 'ok');
+      log(`⏰ ${hm} → ligando "${relay.name}" ✅`, 'ok');
+      // Se for a bomba de irrigação, usa o broker próprio dela
       if (targetRelayId === irrigPump.relayId) {
         setIrrigRelay(true);
       } else {
         setRelay(relay, true);
       }
       renderIrrigPumpCard();
-
       setTimeout(() => {
         if (targetRelayId === irrigPump.relayId) {
           setIrrigRelay(false);
@@ -2770,10 +2686,11 @@ function startScheduleEngine() {
           setRelay(relay, false);
         }
         renderIrrigPumpCard();
-        log(`⏰ "${relay.name}" desligada após ${s.duration}min`, 'info');
+        log(`⏰ Desligando "${relay.name}" (${s.duration}min)`, 'info');
       }, s.duration * 60000);
     });
-  }, 10000); // verifica a cada 10 segundos
+  }, 30000);
+  log('Motor de agendamentos iniciado (verifica a cada 30s)', 'info');
 }
 
 // ============ LOG ============
@@ -2816,50 +2733,36 @@ function loadRooms() {
 function toggleSensorOpt(type) {
   const cb  = document.getElementById('rm-has-' + type);
   const opt = document.getElementById('rm-opt-' + type);
-  // Toggle manualmente — sem label nativo para não disparar duplo
+  if (!cb || !opt) return;
   cb.checked = !cb.checked;
   opt.classList.toggle('selected', cb.checked);
-
-  const hasTemp  = document.getElementById('rm-has-temp').checked;
-  const hasSmoke = document.getElementById('rm-has-smoke').checked;
-  const anySelected = hasTemp || hasSmoke;
-
-  // Seção MQTT geral
-  const mqtt = document.getElementById('rm-mqtt-section');
-  mqtt.style.display = anySelected ? 'block' : 'none';
-
-  // Blocos individuais de cada sensor
-  const tc = document.getElementById('rm-temp-config');
-  const sc = document.getElementById('rm-smoke-config');
-  if (tc) tc.style.display = hasTemp  ? 'block' : 'none';
-  if (sc) sc.style.display = hasSmoke ? 'block' : 'none';
-
   updateRoomPreview();
 }
 
 function updateRoomPreview() {
-  const hasTemp  = document.getElementById('rm-has-temp').checked;
-  const hasSmoke = document.getElementById('rm-has-smoke').checked;
-  const tempId   = (document.getElementById('rm-temp-id')?.value.trim().toLowerCase()) || '{device-id}';
-  const gasId    = (document.getElementById('rm-gas-id')?.value.trim().toLowerCase())  || '{device-id}';
-  const smokePfx = (document.getElementById('rm-room-topic')?.value.trim()) || '{prefixo}';
+  const devId    = (document.getElementById('rm-device-id')?.value.trim().toLowerCase()) || '';
+  const displayId = devId || '{id}';
+  const hasTemp  = document.getElementById('rm-has-temp')?.checked;
+  const hasSmoke = document.getElementById('rm-has-smoke')?.checked;
+  const hasLamp  = document.getElementById('rm-has-lamp')?.checked;
 
-  // Update inline previews
   const tPrev = document.getElementById('rm-temp-topic-preview');
   const sPrev = document.getElementById('rm-smoke-topic-preview');
-  const aaPrev = document.getElementById('rm-smoke-alert-preview');
-  if (tPrev)  tPrev.textContent  = `sensors/${tempId}/data`;
-  if (sPrev)  sPrev.textContent  = `sensors/${gasId}/data`;
-  if (aaPrev) aaPrev.textContent = `${smokePfx}/gas`;
+  const lPrev = document.getElementById('rm-lamp-topic-preview');
+  if (tPrev) tPrev.textContent = `sensors/${displayId}/data`;
+  if (sPrev) sPrev.textContent = `sensors/${displayId}/gas`;
+  if (lPrev) lPrev.textContent = `sensors/${displayId}/lamp/set`;
 
-  // Summary preview
+  // Sync hidden compat fields
+  if (document.getElementById('rm-temp-id'))  document.getElementById('rm-temp-id').value  = devId;
+  if (document.getElementById('rm-gas-id'))   document.getElementById('rm-gas-id').value   = devId;
+
   const lines = [];
-  if (hasTemp)  lines.push(`sensors/${tempId}/data`);
-  if (hasSmoke) lines.push(`sensors/${gasId}/data`);
-  if (hasSmoke && smokePfx !== '{prefixo}') lines.push(`${smokePfx}/gas`);
-  document.getElementById('rm-room-preview').innerHTML = lines.length
-    ? lines.map(l => `<span style="color:var(--accent2)">${l}</span>`).join('<br>')
-    : '—';
+  if (hasTemp)  lines.push(`<span style="color:var(--accent2)">📡 sensors/${displayId}/data</span>  temp + umidade`);
+  if (hasSmoke) lines.push(`<span style="color:var(--accent2)">🔥 sensors/${displayId}/gas</span>   MQ-2 raw + alerta`);
+  if (hasLamp)  lines.push(`<span style="color:var(--accent2)">💡 sensors/${displayId}/lamp/set</span>  → on/off`);
+  const p = document.getElementById('rm-room-preview');
+  if (p) p.innerHTML = lines.length ? lines.join('<br>') : 'Selecione pelo menos uma capacidade';
 }
 
 // Relé rows inside modal
@@ -2997,46 +2900,32 @@ function renderRmRelayRows() {
 function openRoomModal(editId) {
   const r = editId ? rooms.find(x => x.id === editId) : null;
 
-  // Reset
-  document.getElementById('rm-room-name').value  = r?.name  || '';
-  document.getElementById('rm-room-icon').value  = r?.icon  || '🏠';
-  document.getElementById('rm-room-topic').value = r?.topic || '';
+  document.getElementById('rm-room-name').value = r?.name || '';
+  document.getElementById('rm-room-icon').value = r?.icon || '🏠';
   document.getElementById('rm-modal-title').textContent = r ? 'Editar ambiente' : 'Novo ambiente';
   document.getElementById('rm-room-modal-edit-id').value = editId || '';
 
-  // Sensores
-  const hasTemp  = r ? r.hasTemp  : false;
-  const hasSmoke = r ? r.hasSmoke : false;
+  // Device ID unificado — usa tempDeviceId ou deviceId conforme o que foi salvo
+  const devId = r?.deviceId || r?.tempDeviceId || r?.gasDeviceId || '';
+  if (document.getElementById('rm-device-id')) document.getElementById('rm-device-id').value = devId;
+  if (document.getElementById('rm-temp-pass')) document.getElementById('rm-temp-pass').value = r?.tempDevPass || r?.devPass || '';
+
+  // Capacidades
+  const hasTemp  = r ? (r.hasTemp  ?? true) : true;
+  const hasSmoke = r ? (r.hasSmoke ?? true) : true;
+  const hasLamp  = r ? (r.hasLamp  ?? true) : true;
   document.getElementById('rm-has-temp').checked  = hasTemp;
   document.getElementById('rm-has-smoke').checked = hasSmoke;
+  if (document.getElementById('rm-has-lamp')) document.getElementById('rm-has-lamp').checked = hasLamp;
   document.getElementById('rm-opt-temp').classList.toggle('selected', hasTemp);
   document.getElementById('rm-opt-smoke').classList.toggle('selected', hasSmoke);
+  document.getElementById('rm-opt-lamp')?.classList.toggle('selected', hasLamp);
 
-  // Restore sensor-specific fields
-  if (document.getElementById('rm-temp-id'))    document.getElementById('rm-temp-id').value    = r?.tempDeviceId || '';
-  if (document.getElementById('rm-temp-pass'))  document.getElementById('rm-temp-pass').value  = r?.tempDevPass  || '';
-  if (document.getElementById('rm-gas-id'))     document.getElementById('rm-gas-id').value     = r?.gasDeviceId  || '';
-  if (document.getElementById('rm-gas-pass'))   document.getElementById('rm-gas-pass').value   = r?.gasDevPass   || '';
-  if (document.getElementById('rm-room-topic')) document.getElementById('rm-room-topic').value = r?.topic || '';
-
-  const anySelected = hasTemp || hasSmoke;
-  document.getElementById('rm-mqtt-section').style.display = anySelected ? 'block' : 'none';
-  const tc = document.getElementById('rm-temp-config');
-  const sc = document.getElementById('rm-smoke-config');
-  if (tc) tc.style.display = hasTemp  ? 'block' : 'none';
-  if (sc) sc.style.display = hasSmoke ? 'block' : 'none';
-
-  // Relé rows
-  rmRelayRows = (r?.relays || []).map(rel => ({
-    id: 'rmrow_'+Math.random().toString(36).slice(2),
-    relayId: typeof rel === 'string' ? rel : rel.id,
-    icon:  (typeof rel === 'object' && rel.icon)  || '💡',
-    label: (typeof rel === 'object' && rel.label) || 'Iluminação',
-  }));
+  // Relé rows (sem uso para AmbientWatch — relé é do próprio dispositivo)
+  rmRelayRows = [];
   renderRmRelayRows();
   updateRoomPreview();
 
-  // Mostra botão excluir só no modo edição
   const delBtn = document.getElementById('rm-delete-btn');
   if (delBtn) { delBtn.style.display = editId ? 'flex' : 'none'; delBtn.dataset.confirm = ''; delBtn.innerHTML = '🗑 Excluir'; delBtn.style.background='rgba(239,68,68,0.07)'; delBtn.style.borderColor='rgba(239,68,68,0.35)'; }
 
@@ -3079,43 +2968,52 @@ function deleteRoomFromModal() {
 }
 
 function confirmAddRoom() {
-  const name     = document.getElementById('rm-room-name').value.trim();
-  const icon     = document.getElementById('rm-room-icon').value.trim() || '🏠';
-  const topic    = document.getElementById('rm-room-topic').value.trim();
-  const hasTemp  = document.getElementById('rm-has-temp').checked;
-  const hasSmoke = document.getElementById('rm-has-smoke').checked;
-  const editId   = document.getElementById('rm-room-modal-edit-id').value;
-  const linkedRelays = rmRelayRows.map(r => ({ id: r.relayId, icon: r.icon, label: r.label }));
+  const name    = document.getElementById('rm-room-name').value.trim();
+  const icon    = document.getElementById('rm-room-icon').value.trim() || '🏠';
+  const editId  = document.getElementById('rm-room-modal-edit-id').value;
+  const hasTemp  = document.getElementById('rm-has-temp')?.checked ?? true;
+  const hasSmoke = document.getElementById('rm-has-smoke')?.checked ?? true;
+  const hasLamp  = document.getElementById('rm-has-lamp')?.checked ?? true;
 
-  const tempDeviceId = document.getElementById('rm-temp-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'') || '';
-  const tempDevPass  = document.getElementById('rm-temp-pass')?.value || '';
-  const gasDeviceId  = document.getElementById('rm-gas-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'') || '';
-  const gasDevPass   = document.getElementById('rm-gas-pass')?.value || '';
-  const smokeTopic   = document.getElementById('rm-room-topic')?.value.trim() || '';
+  // Device ID unificado — um ESP32 serve temp + gás + relé
+  const deviceId = (document.getElementById('rm-device-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'')) || '';
+  const devPass  = document.getElementById('rm-temp-pass')?.value || '';
 
   if (!name) { log('Preencha o nome do ambiente', 'warn'); return; }
-  if (hasTemp  && !tempDeviceId) { log('Preencha o Device ID do sensor de temperatura', 'warn'); return; }
-  if (hasSmoke && !gasDeviceId)  { log('Preencha o Device ID do sensor de gás', 'warn'); return; }
+  if (!deviceId) { log('Preencha o Device ID do ESP32', 'warn'); return; }
+  if (!hasTemp && !hasSmoke && !hasLamp) { log('Selecione pelo menos uma capacidade', 'warn'); return; }
+
+  // Campos de compatibilidade preenchidos automaticamente
+  const roomData = {
+    name, icon, hasTemp, hasSmoke, hasLamp,
+    deviceId,
+    tempDeviceId: deviceId, tempDevPass: devPass,
+    gasDeviceId:  deviceId, gasDevPass:  devPass,
+    devPass,
+    topic: '',
+    relays: [], // relé é do próprio ESP32
+    data: { temp:null, hum:null, smoke:null, smokeRaw:0, lamp:false, gasAlert:false, lastSeen:null, online:false }
+  };
 
   if (editId) {
     const r = rooms.find(x => x.id === editId);
-    if (r) { Object.assign(r, { name, icon, topic: smokeTopic, hasTemp, hasSmoke, tempDeviceId, tempDevPass, gasDeviceId, gasDevPass, relays: linkedRelays }); }
+    if (r) {
+      // preserva dados ao vivo
+      const live = r.data;
+      Object.assign(r, roomData);
+      r.id = editId;
+      r.data = live || roomData.data;
+    }
   } else {
-    rooms.push({
-      id: 'room_' + Date.now(), name, icon,
-      topic: smokeTopic, hasTemp, hasSmoke,
-      tempDeviceId, tempDevPass,
-      gasDeviceId, gasDevPass,
-      relays: linkedRelays,
-      data: { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false }
-    });
+    roomData.id = 'room_' + Date.now();
+    rooms.push(roomData);
   }
   saveRooms();
   publishPersist();
   renderRooms();
   const saved = editId ? rooms.find(x => x.id === editId) : rooms[rooms.length - 1];
   if (client && client.connected && saved) subscribeRoom(saved);
-  log(`Ambiente "${name}" salvo`, 'ok');
+  log(`Ambiente "${name}" salvo — ESP32: ${deviceId}`, 'ok');
   closeRoomModal();
 }
 
@@ -3126,17 +3024,17 @@ function removeRoom(id) {
 
 function subscribeRoom(room) {
   if (!room || !client || !client.connected) return;
-  if (room.hasTemp && room.tempDeviceId) {
-    const t = `sensors/${room.tempDeviceId}/data`;
+  const devId = room.deviceId || room.tempDeviceId || '';
+  if (!devId) return;
+  // sensors/{id}/data — temperatura + umidade
+  if (room.hasTemp) {
+    const t = `sensors/${devId}/data`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
   }
-  if (room.hasSmoke && room.gasDeviceId) {
-    const t = `sensors/${room.gasDeviceId}/data`;
+  // sensors/{id}/gas — MQ-2 raw + gas_alert + lamp state
+  if (room.hasSmoke || room.hasLamp) {
+    const t = `sensors/${devId}/gas`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
-  }
-  if (room.hasSmoke && room.topic) {
-    client.subscribe(room.topic + '/gas', { qos:1 }, () => log(`↳ ${room.topic}/gas`, 'sys'));
-    client.subscribe(room.topic + '/status', { qos:1 });
   }
 }
 
@@ -3146,63 +3044,66 @@ function subscribeAllRooms() {
 
 function handleRoomMessage(topic, payload) {
   rooms.forEach(room => {
-    // Temperatura: sensors/{tempDeviceId}/data
-    const tempTopic = room.hasTemp && room.tempDeviceId ? `sensors/${room.tempDeviceId}/data` : null;
-    if (tempTopic && topic === tempTopic) {
+    const devId = room.deviceId || room.tempDeviceId || '';
+    if (!devId) return;
+
+    // ── sensors/{id}/data → temperatura + umidade ────────────────
+    if (room.hasTemp && topic === `sensors/${devId}/data`) {
       try {
         const d = JSON.parse(payload);
-        room.data.temp     = d.temperature ?? d.temperatura ?? null;
-        room.data.hum      = d.humidity    ?? d.umidade    ?? null;
+        if (!d.sensor_error) {
+          room.data.temp     = d.temperature ?? d.temperatura ?? null;
+          room.data.hum      = d.humidity    ?? d.umidade    ?? null;
+          room.data.lastSeen = new Date();
+          room.data.online   = true;
+          renderRooms();
+        }
+      } catch(e) {}
+      return;
+    }
+
+    // ── sensors/{id}/gas → MQ-2 raw + gas_alert + lamp state ─────
+    // Payload: { device_id, gas_raw, gas_alert, lamp }
+    if (topic === `sensors/${devId}/gas`) {
+      try {
+        const d = JSON.parse(payload);
         room.data.lastSeen = new Date();
         room.data.online   = true;
+
+        if (room.hasSmoke && d.gas_raw !== undefined) {
+          const raw  = parseInt(d.gas_raw) || 0;
+          const pct  = Math.min(Math.round((raw / 4095) * 100), 100);
+          room.data.smokeRaw  = raw;
+          room.data.smoke     = pct;
+          room.data.gasAlert  = !!d.gas_alert;
+          if (d.gas_alert) {
+            log(`🚨 ALARME GÁS — ${room.name}: raw=${raw} (${pct}%)`, 'warn');
+            checkGasRule(room, pct);
+          }
+        }
+
+        if (room.hasLamp && d.lamp !== undefined) {
+          room.data.lamp = !!d.lamp;
+        }
+
         renderRooms();
       } catch(e) {}
-    }
-    // Gás: sensors/{gasDeviceId}/data
-    const gasTopic = room.hasSmoke && room.gasDeviceId ? `sensors/${room.gasDeviceId}/data` : null;
-    if (gasTopic && topic === gasTopic) {
-      try {
-        const d = JSON.parse(payload);
-        // Suporta payloads com gas, ppm, value, percent ou número direto
-        let val = d.gas ?? d.ppm ?? d.value ?? d.percent ?? parseFloat(payload);
-        if (!isNaN(val)) {
-          room.data.smokeRaw = val;
-          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
-          room.data.lastSeen = new Date();
-          if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
-          checkGasRule(room, room.data.smoke);
-          renderRooms();
-        }
-      } catch(e) {
-        const val = parseFloat(payload);
-        if (!isNaN(val)) {
-          room.data.smokeRaw = val;
-          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
-          room.data.lastSeen = new Date();
-          checkGasRule(room, room.data.smoke);
-          renderRooms();
-        }
-      }
-    }
-    // Alerta via tópico livre (opcional)
-    if (room.topic && topic === room.topic + '/gas') {
-      try {
-        const d = JSON.parse(payload);
-        let val = d.gas ?? d.ppm ?? d.value ?? d.percent ?? parseFloat(payload);
-        if (!isNaN(val)) {
-          room.data.smokeRaw = val;
-          room.data.smoke    = val > 100 ? Math.min(Math.round(val / 10.23), 100) : Math.round(val);
-          room.data.lastSeen = new Date();
-          if (room.data.smoke >= 60) log(`🚨 ALARME GÁS — ${room.name}: ${room.data.smoke}%`, 'warn');
-          checkGasRule(room, room.data.smoke);
-          renderRooms();
-        }
-      } catch(e) {}
-    }
-    if (room.topic && topic === room.topic + '/status') {
-      try { room.data.online = JSON.parse(payload).online !== false; renderRooms(); } catch(e) {}
+      return;
     }
   });
+}
+
+// ── Controla lâmpada do AmbientWatch via MQTT ───────────────────────
+function setRoomLamp(room, state) {
+  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
+  const devId = room.deviceId || room.tempDeviceId || '';
+  if (!devId) return;
+  const topic   = `sensors/${devId}/lamp/set`;
+  const payload = JSON.stringify({ lamp: state });
+  client.publish(topic, payload, { qos: 1, retain: false });
+  room.data.lamp = state; // optimistic update
+  renderRooms();
+  log(`💡 ${room.name} → lâmpada ${state ? 'ON' : 'OFF'}`, state ? 'ok' : 'sys');
 }
 
 function smokeLevel(pct) {
@@ -3278,7 +3179,23 @@ function renderRooms() {
       }
     }
 
-    // Relés — toggle switches na mesma linha
+    // Relé nativo do AmbientWatch — toggle da lâmpada embutida
+    if (r.hasLamp) {
+      if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+      const lampOn = d.lamp === true;
+      rowItems.push(`
+        <div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
+          <span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span>
+          <label class="room-relay-switch">
+            <input type="checkbox" ${lampOn ? 'checked' : ''}
+              onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
+            <div class="rrs-track"></div>
+            <div class="rrs-knob"></div>
+          </label>
+        </div>`);
+    }
+
+    // Relés globais vinculados (se houver — retrocompatibilidade)
     linkedRelays.forEach(rel => {
       if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
       rowItems.push(`
@@ -3311,20 +3228,13 @@ function renderRooms() {
 
 // ============ BROKER GLOBAL PARA TODOS ============
 function applyBrokerToAll() {
-  const host = document.getElementById('cfg-host')?.value.trim() || getCfg().host || '';
-  const user = document.getElementById('cfg-user')?.value.trim() || getCfg().user || '';
+  const host = document.getElementById('cfg-host')?.value.trim() || '';
+  const user = document.getElementById('cfg-user')?.value.trim() || '';
+  const pass = document.getElementById('cfg-pass')?.value || '';
   if (!host || !user) { log('Preencha host e usuario do broker antes.', 'warn'); return; }
-  // Atualiza apenas host e usuário; senha do dispositivo permanece a configurada em cada um
-  waterTanks.forEach(t => {
-    t.mqttHost = host;
-    t.mqttUser = user;
-    // Mantém mqttPass do dispositivo se já definida, caso contrário usa broker global
-    if (!t.devicePass) t.mqttPass = getCfg().pass || '';
-  });
+  waterTanks.forEach(t => { t.mqttHost = host; t.mqttUser = user; t.mqttPass = pass; });
   saveTanks();
-  irrigPump.mqttHost = host;
-  irrigPump.mqttUser = user;
-  if (!irrigPump.devicePass) irrigPump.mqttPass = getCfg().pass || '';
+  irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
   saveIrrigPump();
   log('Broker "' + host + '" aplicado em ' + waterTanks.length + ' caixa(s) + bomba de irrigacao.', 'ok');
 }
