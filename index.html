@@ -251,6 +251,10 @@ body::before {
 /* widget cards no panel */
 .w-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 14px; animation: fadeIn 0.3s ease both; transition: border-color 0.2s; }
 .w-card:hover { border-color: var(--border2); }
+/* Evita re-animação ao atualizar conteúdo interno do card */
+.w-card.patched { animation: none !important; }
+/* Transição suave para elementos atualizados inline */
+.gate-dot, .alarm-dot, .alarm-indicator span, .meter-bar-fill { transition: all 0.3s ease; }
 .w-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .w-card-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .w-card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
@@ -3680,15 +3684,62 @@ function loadWidgets() {
 }
 
 // ── RENDER DO PAINEL ──────────────────────────────────────────────
+// renderWidgetPanel: só reconstrói cards que não existem ainda.
+// Para atualizar conteúdo interno sem piscar, use patchWidgetCard(w).
 function renderWidgetPanel() {
   const panel = document.getElementById('widget-panel');
   if (!panel) return;
-  panel.innerHTML = '';
-  if (!widgets.length) return;
-  widgets.forEach(w => {
-    const el = buildWidgetCard(w);
-    if (el) panel.appendChild(el);
+
+  // Remove cards de widgets excluídos
+  [...panel.children].forEach(el => {
+    const wid = el.id ? el.id.replace('wcard-', '') : null;
+    if (wid && !widgets.find(w => w.id === wid)) el.remove();
   });
+
+  // Adiciona/atualiza cards na ordem correta
+  widgets.forEach((w, i) => {
+    const existing = document.getElementById('wcard-' + w.id);
+    if (!existing) {
+      // Card novo: cria do zero com animação
+      const el = buildWidgetCard(w);
+      if (!el) return;
+      const ref = panel.children[i];
+      if (ref) panel.insertBefore(el, ref);
+      else panel.appendChild(el);
+    } else {
+      // Card existente: patch cirúrgico (sem recriar o elemento raiz)
+      patchWidgetCard(w, existing);
+    }
+  });
+}
+
+// patchWidgetCard: atualiza apenas o conteúdo interno de um card já existente,
+// sem remover/recriar o elemento raiz — evita piscadas e perda de foco.
+function patchWidgetCard(w, wrap) {
+  if (!wrap) wrap = document.getElementById('wcard-' + w.id);
+  if (!wrap) return;
+
+  // Marca como patched para suprimir re-animação CSS
+  wrap.classList.add('patched');
+
+  // Substitui tudo abaixo do header (primeiro filho) sem tocar no próprio card
+  const header = wrap.querySelector('.w-card-header');
+  // Remove nós que não são o header
+  [...wrap.children].forEach(ch => { if (ch !== header) ch.remove(); });
+
+  // Injeta o novo body como fragment
+  const tmp = document.createElement('div');
+  switch (w.type) {
+    case 'ambiente':   tmp.innerHTML = renderWidgetAmbiente(w);  break;
+    case 'caixa_agua': tmp.innerHTML = renderWidgetCaixaAgua(w); break;
+    case 'irrigacao':  tmp.innerHTML = renderWidgetIrrigacao(w); break;
+    case 'portao':     tmp.innerHTML = renderWidgetPortao(w);    break;
+    case 'rele':       tmp.innerHTML = renderWidgetRele(w);      break;
+    case 'alarme':     tmp.innerHTML = renderWidgetAlarme(w);    break;
+    case 'medidor':    tmp.innerHTML = renderWidgetMedidor(w);   break;
+    default: return;
+  }
+  while (tmp.firstChild) wrap.appendChild(tmp.firstChild);
 }
 
 function buildWidgetCard(w) {
@@ -3717,132 +3768,130 @@ function buildWidgetCard(w) {
 
 // ── RENDERS POR TIPO ──────────────────────────────────────────────
 
-function renderWidgetAmbiente(w) {
-  // Header do card com botão + Ambiente
-  const cnt = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
-  // Grid dos rooms — replica renderRooms inline
-  let gridHtml;
+function renderWidgetAmbienteGrid(w) {
   if (!rooms.length) {
-    gridHtml = `<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.</div>`;
-  } else {
-    gridHtml = rooms.map(r => {
-      const d  = r.data || { temp:null, hum:null, smoke:null, lamp:false, lastSeen:null };
-      const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
-      const alarmCls = d.smoke >= 60 ? 'alarm' : d.smoke >= 30 ? 'warn-smoke' : '';
-      const linkedRelays = (r.relays || []).map(rel => {
-        const rid  = typeof rel === 'string' ? rel : rel.id;
-        const rObj = relays.find(x => x.id === rid);
-        if (!rObj) return null;
-        return { ...rObj, displayIcon: (typeof rel === 'object' && rel.icon) || rObj.icon, displayLabel: (typeof rel === 'object' && rel.label) || rObj.name };
-      }).filter(Boolean);
-      const rowItems = [];
-      if (!d.lastSeen) {
-        rowItems.push(`<span class="room-nodata">aguardando...</span>`);
-      } else {
-        if (r.hasTemp && d.temp !== null)
-          rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:10px;line-height:1">🌡️</span><span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span></div>`);
-        if (r.hasTemp && d.hum !== null) {
-          if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-          rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></div>`);
-        }
-        if (r.hasSmoke) {
-          const smokeVal = d.smoke !== null ? d.smoke : null;
-          const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
-          if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-          rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="font-size:12px;color:${sl.color}">${smokeVal !== null ? smokeVal : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${smokeVal !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite">⚠</span>` : ''}</div>`);
-        }
-      }
-      if (r.hasLamp) {
-        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-        const lampOn = d.lamp === true;
-        rowItems.push(`<div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}"><span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span><label class="room-relay-switch"><input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)"><div class="rrs-track"></div><div class="rrs-knob"></div></label></div>`);
-      }
-      linkedRelays.forEach(rel => {
-        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-        rowItems.push(`<div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}"><span style="font-size:12px;line-height:1">${rel.displayIcon}</span><label class="room-relay-switch"><input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)"><div class="rrs-track"></div><div class="rrs-knob"></div></label></div>`);
-      });
-      return `<div class="room-card ${alarmCls}" id="room-${r.id}">
-        <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
-        <div class="room-header"><span class="room-icon">${r.icon}</span><span class="room-name">${r.name}</span>${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}</div>
-        <div class="room-main-row">${rowItems.join('')}</div>
-      </div>`;
-    }).join('');
+    return `<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente cadastrado. Clique em "+ Ambiente" para começar.</div>`;
   }
+  return rooms.map(r => {
+    const d  = r.data || { temp:null, hum:null, smoke:null, lamp:false, lastSeen:null };
+    const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
+    const alarmCls = d.smoke >= 60 ? 'alarm' : d.smoke >= 30 ? 'warn-smoke' : '';
+    const linkedRelays = (r.relays || []).map(rel => {
+      const rid  = typeof rel === 'string' ? rel : rel.id;
+      const rObj = relays.find(x => x.id === rid);
+      if (!rObj) return null;
+      return { ...rObj, displayIcon: (typeof rel === 'object' && rel.icon) || rObj.icon, displayLabel: (typeof rel === 'object' && rel.label) || rObj.name };
+    }).filter(Boolean);
+    const rowItems = [];
+    if (!d.lastSeen) {
+      rowItems.push(`<span class="room-nodata">aguardando...</span>`);
+    } else {
+      if (r.hasTemp && d.temp !== null)
+        rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:10px;line-height:1">🌡️</span><span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span></div>`);
+      if (r.hasTemp && d.hum !== null) {
+        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+        rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></div>`);
+      }
+      if (r.hasSmoke) {
+        const smokeVal = d.smoke !== null ? d.smoke : null;
+        const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
+        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+        rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="font-size:12px;color:${sl.color}">${smokeVal !== null ? smokeVal : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${smokeVal !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite">⚠</span>` : ''}</div>`);
+      }
+    }
+    if (r.hasLamp) {
+      if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+      const lampOn = d.lamp === true;
+      rowItems.push(`<div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}"><span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span><label class="room-relay-switch"><input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)"><div class="rrs-track"></div><div class="rrs-knob"></div></label></div>`);
+    }
+    linkedRelays.forEach(rel => {
+      if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
+      rowItems.push(`<div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}"><span style="font-size:12px;line-height:1">${rel.displayIcon}</span><label class="room-relay-switch"><input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)"><div class="rrs-track"></div><div class="rrs-knob"></div></label></div>`);
+    });
+    return `<div class="room-card ${alarmCls}" id="room-${r.id}">
+      <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
+      <div class="room-header"><span class="room-icon">${r.icon}</span><span class="room-name">${r.name}</span>${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}</div>
+      <div class="room-main-row">${rowItems.join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderWidgetAmbiente(w) {
+  const cnt = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${cnt}</span>
       <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
     </div>
-    <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="max-height:220px;overflow-y:auto;padding-right:2px">${gridHtml}</div>`;
+    <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="max-height:220px;overflow-y:auto;padding-right:2px">${renderWidgetAmbienteGrid(w)}</div>`;
+}
+
+function renderWidgetCaixaAguaGrid(w) {
+  if (!waterTanks.length) {
+    return `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>`;
+  }
+  return waterTanks.map(t => {
+    const pct = t.level;
+    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pumpsHtml = t.pumps && t.pumps.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
+        ${t.pumps.map(p => {
+          const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
+          const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
+          const isManual = mode === 'manual';
+          return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
+              class="pump-btn ${on ? 'on' : 'off'}"
+              style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
+              title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático'}">
+              <span class="pump-icon">⚙</span>
+              <span style="font-size:11px">${p.name || 'Bomba'}</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${on?'rgba(0,212,160,0.2)':'rgba(255,255,255,0.05)'}">${on ? '● ON' : '○ OFF'}</span>
+            </button>
+            <div class="pump-mode-toggle">
+              <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','auto')">AUTO</button>
+              <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','manual')">MAN</button>
+            </div>
+          </div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${isManual ? '🔧 Controle manual ativado' : `⚡ Auto: liga ≤${p.triggerOn}% / desliga ≥${p.triggerOff}%`}</div>`;
+        }).join('')}
+      </div>` : '';
+    return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
+      onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
+            <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:5px">
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
+        </div>
+      </div>
+      ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
+      ${pumpsHtml}
+    </div>`;
+  }).join('');
 }
 
 function renderWidgetCaixaAgua(w) {
-  // Reusa completamente o HTML que renderTanks geraria, mas dentro do widget
   let addBtnHtml = '';
   if (waterTanks.length < 2) {
     addBtnHtml = `<button class="btn" style="font-size:10px;padding:3px 10px" onclick="openTankModal()">+ Adicionar</button>`;
   }
   const cnt = waterTanks.length ? `${waterTanks.length} caixa${waterTanks.length > 1 ? 's' : ''}` : '0 caixas';
-
-  let tanksHtml;
-  if (!waterTanks.length) {
-    tanksHtml = `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>`;
-  } else {
-    tanksHtml = waterTanks.map(t => {
-      const pct = t.level;
-      const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-      const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
-      const pumpsHtml = t.pumps && t.pumps.length ? `
-        <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
-          ${t.pumps.map(p => {
-            const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
-            const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
-            const isManual = mode === 'manual';
-            return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
-                class="pump-btn ${on ? 'on' : 'off'}"
-                style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
-                title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático'}">
-                <span class="pump-icon">⚙</span>
-                <span style="font-size:11px">${p.name || 'Bomba'}</span>
-                <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${on?'rgba(0,212,160,0.2)':'rgba(255,255,255,0.05)'}">${on ? '● ON' : '○ OFF'}</span>
-              </button>
-              <div class="pump-mode-toggle">
-                <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','auto')">AUTO</button>
-                <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','manual')">MAN</button>
-              </div>
-            </div>
-            <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${isManual ? '🔧 Controle manual ativado' : `⚡ Auto: liga ≤${p.triggerOn}% / desliga ≥${p.triggerOff}%`}</div>`;
-          }).join('')}
-        </div>` : '';
-      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
-        onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
-              <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
-              <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
-            </div>
-            <div style="display:flex;align-items:baseline;gap:5px">
-              <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
-              ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
-            </div>
-            <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
-          </div>
-        </div>
-        ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
-        ${pumpsHtml}
-      </div>`;
-    }).join('');
-  }
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${cnt}</span>
       <div style="display:flex;gap:6px;align-items:center">${addBtnHtml}</div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px" id="tanks-grid-w${w.id}">${tanksHtml}</div>`;
+    <div style="display:flex;flex-direction:column;gap:10px" id="tanks-grid-w${w.id}">${renderWidgetCaixaAguaGrid(w)}</div>`;
 }
 
 function renderWidgetIrrigacao(w) {
@@ -3898,30 +3947,41 @@ function renderWidgetPortao(w) {
   const stateKey = 'wg_state_' + w.id;
   const st = window[stateKey] || 'desconhecido';
   const dotCls = st === 'aberto' ? 'open' : st === 'fechado' ? 'closed' : '';
+  const stColor = st === 'aberto' ? 'var(--warn)' : st === 'fechado' ? 'var(--green)' : 'var(--muted)';
   const stLabel = st === 'aberto' ? '🔴 Aberto' : st === 'fechado' ? '🟢 Fechado' : '⚪ Desconhecido';
+  const lastTs = window['wg_ts_' + w.id] || null;
   return `
     <button class="gate-btn" id="gate-btn-${w.id}" onclick="triggerGatePulse('${w.id}')">
       🚗 Acionar ${w.name}
     </button>
-    <div class="gate-status">
+    <div class="gate-status" style="margin-top:10px">
       <div class="gate-dot ${dotCls}" id="gate-dot-${w.id}"></div>
-      <span style="color:var(--muted)" id="gate-lbl-${w.id}">${stLabel}</span>
-    </div>`;
+      <span style="color:${stColor};font-weight:600" id="gate-lbl-${w.id}">${stLabel}</span>
+      ${lastTs ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto">${lastTs}</span>` : `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto" id="gate-ts-${w.id}">aguardando...</span>`}
+    </div>
+    ${w.stateTopic ? `<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.stateTopic}">📶 ${w.stateTopic}</div>` : ''}`;
 }
 
 function renderWidgetRele(w) {
   const relay = relays.find(r => r.id === w.relayId);
   const isOn = relay ? relay.state : false;
   const stColor = isOn ? 'var(--accent)' : 'var(--muted)';
-  const stLabel = isOn ? 'LIGADO' : 'DESLIGADO';
+  const bgColor = isOn ? 'rgba(0,212,160,0.06)' : 'var(--bg3)';
+  const borderColor = isOn ? 'rgba(0,212,160,0.3)' : 'var(--border)';
+  const stIcon = isOn ? '🟢' : '⚪';
   return `
-    <div class="w-relay-row">
-      <div>
-        <div class="w-relay-name">${w.icon || '⚡'} ${relay ? relay.name : w.name}</div>
-        <div class="w-relay-state" style="color:${stColor};margin-top:4px">${stLabel}</div>
+    <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:var(--radius);padding:14px 16px;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
+          ${w.icon || '⚡'} ${relay ? relay.name : w.name}
+        </div>
+        <div style="font-family:var(--mono);font-size:11px;color:${stColor};display:flex;align-items:center;gap:5px">
+          ${stIcon} <span>${isOn ? 'LIGADO' : 'DESLIGADO'}</span>
+          ${!relay ? `<span style="font-size:9px;color:var(--danger);margin-left:6px">⚠ Relé não encontrado</span>` : ''}
+        </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleWidgetRelay('${w.id}', this.checked)">
+      <label class="toggle" style="transform:scale(1.2);transform-origin:right center;flex-shrink:0">
+        <input type="checkbox" ${isOn ? 'checked' : ''} ${!relay ? 'disabled' : ''} onchange="toggleWidgetRelay('${w.id}', this.checked)">
         <div class="toggle-track"></div>
         <div class="toggle-knob"></div>
       </label>
@@ -3931,15 +3991,31 @@ function renderWidgetRele(w) {
 function renderWidgetAlarme(w) {
   const triggered = window['wa_trig_' + w.id] || false;
   const sirenOn   = window['wa_siren_' + w.id] || false;
+  const armed     = window['wa_armed_' + w.id] !== false; // default armed
+  const bgColor = triggered ? 'rgba(239,68,68,0.06)' : 'var(--bg3)';
+  const borderColor = triggered ? 'rgba(239,68,68,0.3)' : 'var(--border)';
   return `
-    <div class="alarm-row">
-      <div class="alarm-indicator">
-        <div class="alarm-dot ${triggered ? 'triggered' : 'ok'}" id="alarm-dot-${w.id}"></div>
-        <span id="alarm-lbl-${w.id}" style="color:${triggered ? 'var(--danger)' : 'var(--green)'}">${triggered ? 'ALARME ATIVO' : 'Normal'}</span>
+    <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:var(--radius);padding:14px 16px;transition:all 0.3s">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="alarm-indicator">
+          <div class="alarm-dot ${triggered ? 'triggered' : 'ok'}" id="alarm-dot-${w.id}"></div>
+          <span id="alarm-lbl-${w.id}" style="color:${triggered ? 'var(--danger)' : 'var(--green)'};font-weight:700">${triggered ? '⚠ ALARME ATIVO' : '✓ Normal'}</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="alarm-siren-btn ${sirenOn ? 'on' : ''}" id="alarm-siren-${w.id}" onclick="toggleWidgetSiren('${w.id}')" title="Ativar/desativar sirene">
+            🔔 Sirene ${sirenOn ? 'ON' : 'OFF'}
+          </button>
+        </div>
       </div>
-      <button class="alarm-siren-btn ${sirenOn ? 'on' : ''}" id="alarm-siren-${w.id}" onclick="toggleWidgetSiren('${w.id}')">
-        🔔 Sirene ${sirenOn ? 'ON' : 'OFF'}
-      </button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="window['wa_armed_'+'${w.id}']=${!armed};this.closest('.w-card').querySelector('#alarm-arm-${w.id}').textContent=!${armed}?'🔒 Armado':'🔓 Desarmado';this.textContent=!${armed}?'Desarmar':'Armar';this.style.color=!${armed}?'var(--warn)':'var(--muted)'"
+          id="alarm-arm-btn-${w.id}"
+          style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:${armed?'var(--warn)':'var(--muted)'};cursor:pointer;transition:all 0.15s">
+          ${armed ? 'Desarmar' : 'Armar'}
+        </button>
+        <span id="alarm-arm-${w.id}" style="font-family:var(--mono);font-size:10px;color:${armed?'var(--warn)':'var(--muted)'}">${armed ? '🔒 Armado' : '🔓 Desarmado'}</span>
+        ${w.sensorTopic ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.sensorTopic}">${w.sensorTopic}</span>` : ''}
+      </div>
     </div>`;
 }
 
@@ -3948,11 +4024,26 @@ function renderWidgetMedidor(w) {
   const disp = val != null ? parseFloat(val).toFixed(w.decimals != null ? w.decimals : 1) : '--';
   const max  = w.max || 100;
   const pct  = val != null ? Math.min(100, Math.max(0, (parseFloat(val) / max) * 100)) : 0;
+  // Color based on percentage
+  const barColor = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
+  const topicShort = w.topic ? (w.topic.length > 35 ? '…' + w.topic.slice(-33) : w.topic) : 'aguardando...';
   return `
     <div>
-      <div class="meter-value">${disp}<span class="meter-unit">${w.unit || ''}</span></div>
-      <div class="meter-sub" id="meter-sub-${w.id}">${w.topic || 'aguardando...'}</div>
-      <div class="meter-bar"><div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pct}%"></div></div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
+        <div class="meter-value" id="meter-val-${w.id}">${disp}<span class="meter-unit">${w.unit || ''}</span></div>
+        ${val != null ? `<span style="font-family:var(--mono);font-size:11px;color:${barColor}">${pct.toFixed(0)}%</span>` : ''}
+      </div>
+      <div class="meter-bar" style="margin-bottom:8px">
+        <div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="meter-sub" id="meter-sub-${w.id}" title="${w.topic || ''}">${topicShort}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="meter-ts-${w.id}"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--muted)">
+        <span>0 ${w.unit || ''}</span>
+        <span>${max} ${w.unit || ''}</span>
+      </div>
     </div>`;
 }
 
@@ -4009,7 +4100,9 @@ function wAddSchedule(wid) {
   schedules.push({ id: 's' + Date.now(), days, time: t, duration: dur, relay: rel, active: true });
   wSelectedDays[wid] = new Set();
   try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
-  renderWidgetPanel();
+  // Patch cirúrgico: atualiza apenas este widget sem piscar
+  const w = widgets.find(x => x.id === wid);
+  if (w) patchWidgetCard(w);
   publishPersist();
   log(`Agendamento: ${t} por ${dur}min`, 'ok');
 }
@@ -4020,16 +4113,19 @@ const _origRenderTanks = renderTanks;
 
 
 function handleWidgetMessage(topic, payload) {
-  let needsRerender = false;
   widgets.forEach(w => {
     // Portão — atualiza indicador de estado diretamente no DOM
     if (w.type === 'portao' && w.stateTopic && topic === w.stateTopic) {
       const st = payload.toLowerCase().includes('open') || payload === '1' || payload.toLowerCase() === 'on' ? 'aberto' : 'fechado';
       window['wg_state_' + w.id] = st;
+      const ts = new Date().toLocaleTimeString('pt-BR');
+      window['wg_ts_' + w.id] = ts;
       const dot = document.getElementById('gate-dot-' + w.id);
       const lbl = document.getElementById('gate-lbl-' + w.id);
+      const tsEl = document.getElementById('gate-ts-' + w.id);
       if (dot) dot.className = 'gate-dot ' + (st === 'aberto' ? 'open' : 'closed');
-      if (lbl) lbl.textContent = st === 'aberto' ? '🔴 Aberto' : '🟢 Fechado';
+      if (lbl) { lbl.textContent = st === 'aberto' ? '🔴 Aberto' : '🟢 Fechado'; lbl.style.color = st === 'aberto' ? 'var(--warn)' : 'var(--green)'; }
+      if (tsEl) tsEl.textContent = ts;
     }
     // Alarme — atualiza indicador diretamente
     if (w.type === 'alarme' && w.sensorTopic && topic === w.sensorTopic) {
@@ -4048,15 +4144,33 @@ function handleWidgetMessage(topic, payload) {
       const max = w.max || 100;
       const pct = Math.min(100, Math.max(0, (val / max) * 100));
       const disp = val.toFixed(w.decimals != null ? w.decimals : 1);
+      const barColor = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
       const meterEl = document.querySelector(`#wcard-${w.id} .meter-value`);
       const barEl   = document.getElementById('meter-bar-' + w.id);
+      const tsEl    = document.getElementById('meter-ts-' + w.id);
       if (meterEl) meterEl.innerHTML = `${disp}<span class="meter-unit">${w.unit || ''}</span>`;
-      if (barEl)   barEl.style.width = pct + '%';
+      if (barEl)   { barEl.style.width = pct + '%'; barEl.style.background = barColor; }
+      if (tsEl)    tsEl.textContent = new Date().toLocaleTimeString('pt-BR');
     }
-    // Ambiente e Caixa d'água — rerenderiza o widget completo
-    if (w.type === 'ambiente' || w.type === 'caixa_agua') needsRerender = true;
+    // Ambiente — patch cirúrgico apenas no grid de ambientes deste widget
+    if (w.type === 'ambiente') {
+      const grid = document.getElementById('rooms-grid-w' + w.id);
+      if (grid) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderWidgetAmbienteGrid(w);
+        grid.innerHTML = tmp.innerHTML;
+      }
+    }
+    // Caixa d'água — patch cirúrgico apenas no grid de tanques deste widget
+    if (w.type === 'caixa_agua') {
+      const grid = document.getElementById('tanks-grid-w' + w.id);
+      if (grid) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderWidgetCaixaAguaGrid(w);
+        grid.innerHTML = tmp.innerHTML;
+      }
+    }
   });
-  if (needsRerender) renderWidgetPanel();
 }
 
 // ── SUBSCRIÇÃO dos tópicos dos widgets ───────────────────────────
