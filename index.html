@@ -235,8 +235,65 @@ body::before {
 .modal-fields { display: flex; flex-direction: column; gap: 12px; }
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
 
+/* ══ WIDGET SYSTEM ══ */
+.widget-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.widget-type-opt {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 16px 10px; background: var(--bg3);
+  border: 1px solid var(--border2); border-radius: var(--radius-lg);
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.widget-type-opt:hover { border-color: var(--accent); background: rgba(0,212,160,0.05); }
+.wt-icon { font-size: 26px; line-height: 1; }
+.wt-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.wt-sub { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
 
-/* ═══════════════════════════════════════
+/* widget cards no panel */
+.w-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 14px; animation: fadeIn 0.3s ease both; transition: border-color 0.2s; }
+.w-card:hover { border-color: var(--border2); }
+.w-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.w-card-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.w-card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+.w-edit-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 12px; padding: 3px 8px; font-family: var(--mono); transition: all 0.15s; }
+.w-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* portão */
+.gate-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border-radius: var(--radius); border: 1.5px solid var(--border2); background: var(--bg3); color: var(--text); font-family: var(--mono); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.gate-btn:hover { border-color: var(--accent); background: rgba(0,212,160,0.06); color: var(--accent); }
+.gate-btn.pulsing { animation: gate-pulse 0.6s ease; }
+@keyframes gate-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(0.96)} }
+.gate-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-family: var(--mono); font-size: 11px; }
+.gate-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+.gate-dot.open { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+.gate-dot.closed { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* relé genérico */
+.w-relay-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+.w-relay-name { font-size: 13px; font-weight: 600; }
+.w-relay-state { font-family: var(--mono); font-size: 10px; }
+
+/* alarme */
+.alarm-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+.alarm-indicator { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.alarm-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+.alarm-dot.triggered { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: pulse-dot 0.8s ease infinite; }
+.alarm-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.alarm-siren-btn { font-family: var(--mono); font-size: 10px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.alarm-siren-btn.on { background: rgba(239,68,68,0.1); color: var(--danger); border-color: rgba(239,68,68,0.4); }
+
+/* medidor */
+.meter-value { font-size: 36px; font-weight: 700; letter-spacing: -2px; color: var(--text); line-height: 1; }
+.meter-unit { font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 4px; }
+.meter-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+.meter-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.meter-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
+
+/* add widget bar */
+.add-widget-bar { display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.add-widget-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; background: var(--bg2); border: 1px dashed var(--border2); border-radius: 12px; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center; max-width: 420px; }
+.add-widget-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ══════════════════════════════════════════
    MOBILE — até 768px
 ═══════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -552,20 +609,17 @@ body::before {
 
 
 
-  <!-- WIDGET PANEL — painel dinâmico e configurável pelo usuário -->
-  <div id="widget-panel" style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px"></div>
+  <!-- WIDGET PANEL — painel dinâmico configurável pelo usuário -->
+  <div id="widget-panel" style="display:flex;flex-direction:column;gap:0"></div>
 
-  <!-- BARRA de adicionar widget -->
-  <div style="display:flex;align-items:center;justify-content:center;margin-bottom:14px">
-    <button onclick="openWidgetPicker()"
-      style="display:flex;align-items:center;gap:8px;padding:9px 20px;background:var(--bg2);border:1px dashed var(--border2);border-radius:12px;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;width:100%;justify-content:center;max-width:420px"
-      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
+  <!-- Barra de adicionar widget -->
+  <div class="add-widget-bar">
+    <button class="add-widget-btn" onclick="openWidgetPicker()">
       <span style="font-size:16px">＋</span> Adicionar widget
     </button>
   </div>
 
-  <!-- Hidden containers para lógica existente (tanks, sched, rooms) -->
+  <!-- Containers ocultos para lógica existente (tanks, sched, rooms) -->
   <div style="display:none">
     <div id="tanks-card">
       <div id="tanks-count"></div>
@@ -1247,10 +1301,10 @@ function buildPersistPayload() {
     schedules,
     // Inclui TUDO da caixa — credenciais inclusive — para sincronizar entre dispositivos
     waterTanks,
+    // Bomba de irrigação — incluída para sincronizar entre dispositivos
     irrigPump,
-    // Widgets configuráveis — sincroniza layout entre PC e celular
-    widgets: widgets.filter(w => !['ambiente','caixa_agua','irrigacao'].includes(w.type)),
     relayPrefix: RELAY_PREFIX,
+    widgets: widgets,
     weather: { city: weather.city, lat: weather.lat, lon: weather.lon },
     savedAt: new Date().toISOString(),
   });
@@ -1329,12 +1383,13 @@ function loadFromBrokerPayload(payload) {
     }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
-    // Widgets genéricos do broker
+    // Widgets genéricos — sincroniza entre dispositivos
     if (d.widgets && d.widgets.length) {
       d.widgets.forEach(bw => {
         if (!widgets.some(w => w.id === bw.id)) widgets.push(bw);
       });
       saveWidgets();
+      renderWidgetPanel();
     }
     // Clima — só atualiza se o broker tiver cidade e o local não tiver
     if (d.weather?.city && !weather.city) {
@@ -1566,10 +1621,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
   requestAnimationFrame(() => {
+    renderRelays();
+    renderRooms();
+    renderSchedules();
+    renderTanks();
+    renderIrrigPumpCard();
     loadWidgets();
     renderWidgetPanel();
-    renderRelays();
-    renderSchedules();
 
     // ── Barra de status de notificações ───────────────────────────────
     setTimeout(() => {
@@ -1726,6 +1784,7 @@ function subscribeAll() {
   // Assina tópico de persistência — carrega config de qualquer dispositivo
   client.subscribe(PERSIST_TOPIC, { qos: 1 }, () => log(`↳ config: ${PERSIST_TOPIC}`, 'sys'));
   subscribeAllRooms();
+  subscribeWidgetTopics();
 }
 
 // ============ MENSAGENS MQTT ============
@@ -1735,6 +1794,7 @@ function handleMsg(topic, payload, pkt) {
   // Config persistida no broker
   if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
   handleRoomMessage(topic, payload);
+  handleWidgetMessage(topic, payload);
 
   let data;
   try { data = JSON.parse(payload); } catch(e) {
@@ -1797,9 +1857,6 @@ function handleMsg(topic, payload, pkt) {
     updateLiveBar(topic, false);
     return;
   }
-
-  // ------ WIDGETS GENÉRICOS (portão, relé, alarme, medidor) ------
-  handleWidgetMessage(topic, payload);
 }
 
 function updateLiveBar(topic, cached) {
@@ -3593,7 +3650,461 @@ function _updateLoginBtn() {
 // Ao carregar, restaura sessão
 document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { once: false });
 
-</script>
+// ════════════════════════════════════════════════════════════════════
+// SISTEMA DE WIDGETS GENÉRICOS
+// ════════════════════════════════════════════════════════════════════
+
+let widgets = [];
+
+function saveWidgets() {
+  try { localStorage.setItem('autoflow_widgets', JSON.stringify(widgets)); } catch(e) {}
+}
+
+function loadWidgets() {
+  try {
+    const raw = localStorage.getItem('autoflow_widgets');
+    if (raw) widgets = JSON.parse(raw);
+  } catch(e) { widgets = []; }
+}
+
+// ── RENDER DO PAINEL ──────────────────────────────────────────────
+function renderWidgetPanel() {
+  const panel = document.getElementById('widget-panel');
+  if (!panel) return;
+  panel.innerHTML = '';
+  if (!widgets.length) return;
+  widgets.forEach(w => {
+    const el = buildWidgetCard(w);
+    if (el) panel.appendChild(el);
+  });
+}
+
+function buildWidgetCard(w) {
+  const wrap = document.createElement('div');
+  wrap.className = 'w-card';
+  wrap.id = 'wcard-' + w.id;
+
+  const header = `
+    <div class="w-card-header">
+      <span class="w-card-title">${w.icon || ''} ${w.name}</span>
+      <button class="w-edit-btn" onclick="openWidgetCfgModal('${w.id}')">✎ Editar</button>
+    </div>`;
+
+  switch (w.type) {
+    case 'ambiente':   wrap.innerHTML = header + renderWidgetAmbiente(w);  break;
+    case 'caixa_agua': wrap.innerHTML = header + renderWidgetCaixaAgua(w); break;
+    case 'irrigacao':  wrap.innerHTML = header + renderWidgetIrrigacao(w); break;
+    case 'portao':     wrap.innerHTML = header + renderWidgetPortao(w);    break;
+    case 'rele':       wrap.innerHTML = header + renderWidgetRele(w);      break;
+    case 'alarme':     wrap.innerHTML = header + renderWidgetAlarme(w);    break;
+    case 'medidor':    wrap.innerHTML = header + renderWidgetMedidor(w);   break;
+    default: return null;
+  }
+  return wrap;
+}
+
+// ── RENDERS POR TIPO ──────────────────────────────────────────────
+function renderWidgetAmbiente(w) {
+  const room = rooms.find(r => r.id === w.roomId);
+  if (!room) return `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);padding:10px 0">Ambiente não encontrado. Configure o widget.</div>`;
+  const d = room.data || {};
+  const temp = d.temp != null ? d.temp.toFixed(1) : '--';
+  const hum  = d.hum  != null ? Math.round(d.hum)  : '--';
+  const smoke= d.smoke != null ? d.smoke.toFixed(1) : '--';
+  return `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px">Temp</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-1px">${temp}<span style="font-size:13px;font-weight:400;color:var(--muted)">°C</span></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px">Umidade</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-1px">${hum}<span style="font-size:13px;font-weight:400;color:var(--muted)">%</span></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px">Gás/Fumaça</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-1px">${smoke}<span style="font-size:13px;font-weight:400;color:var(--muted)">%</span></div>
+      </div>
+    </div>`;
+}
+
+function renderWidgetCaixaAgua(w) {
+  const tank = waterTanks.find(t => t.id === w.tankId);
+  if (!tank) return `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);padding:10px 0">Caixa não encontrada. Configure o widget.</div>`;
+  const lvl = tank.level != null ? tank.level : '--';
+  const col = typeof lvl === 'number' ? (lvl <= 10 ? 'var(--danger)' : lvl <= 25 ? 'var(--warn)' : 'var(--accent)') : 'var(--muted)';
+  const pct = typeof lvl === 'number' ? lvl : 0;
+  return `
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="flex:1">
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px">Nível</div>
+        <div style="font-size:32px;font-weight:700;letter-spacing:-2px;color:${col}">${lvl}<span style="font-size:15px;font-weight:400;color:var(--muted)">%</span></div>
+        <div style="height:4px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${col};border-radius:2px;transition:width 0.5s ease"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px">${tank.name}</div>
+      </div>
+    </div>`;
+}
+
+function renderWidgetIrrigacao(w) {
+  const nextSched = schedules.filter(s => s.enabled !== false).sort((a,b) => a.time.localeCompare(b.time))[0];
+  const cnt = schedules.filter(s => s.enabled !== false).length;
+  return `
+    <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px">
+      <span style="font-size:24px">💧</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${cnt} agendamento${cnt !== 1 ? 's' : ''} ativo${cnt !== 1 ? 's' : ''}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px">${nextSched ? 'Próximo: ' + nextSched.time : 'Nenhum agendado'}</div>
+      </div>
+      <button class="btn" style="margin-left:auto;font-size:10px;padding:5px 12px" onclick="openRoomModal()">Gerenciar</button>
+    </div>`;
+}
+
+function renderWidgetPortao(w) {
+  const stateKey = 'wg_state_' + w.id;
+  const st = window[stateKey] || 'desconhecido';
+  const dotCls = st === 'aberto' ? 'open' : st === 'fechado' ? 'closed' : '';
+  const stLabel = st === 'aberto' ? '🔴 Aberto' : st === 'fechado' ? '🟢 Fechado' : '⚪ Desconhecido';
+  return `
+    <button class="gate-btn" id="gate-btn-${w.id}" onclick="triggerGatePulse('${w.id}')">
+      🚗 Acionar ${w.name}
+    </button>
+    <div class="gate-status">
+      <div class="gate-dot ${dotCls}" id="gate-dot-${w.id}"></div>
+      <span style="color:var(--muted)" id="gate-lbl-${w.id}">${stLabel}</span>
+    </div>`;
+}
+
+function renderWidgetRele(w) {
+  const relay = relays.find(r => r.id === w.relayId);
+  const isOn = relay ? relay.state : false;
+  const stColor = isOn ? 'var(--accent)' : 'var(--muted)';
+  const stLabel = isOn ? 'LIGADO' : 'DESLIGADO';
+  return `
+    <div class="w-relay-row">
+      <div>
+        <div class="w-relay-name">${w.icon || '⚡'} ${relay ? relay.name : w.name}</div>
+        <div class="w-relay-state" style="color:${stColor};margin-top:4px">${stLabel}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleWidgetRelay('${w.id}', this.checked)">
+        <div class="toggle-track"></div>
+        <div class="toggle-knob"></div>
+      </label>
+    </div>`;
+}
+
+function renderWidgetAlarme(w) {
+  const triggered = window['wa_trig_' + w.id] || false;
+  const sirenOn   = window['wa_siren_' + w.id] || false;
+  return `
+    <div class="alarm-row">
+      <div class="alarm-indicator">
+        <div class="alarm-dot ${triggered ? 'triggered' : 'ok'}" id="alarm-dot-${w.id}"></div>
+        <span id="alarm-lbl-${w.id}" style="color:${triggered ? 'var(--danger)' : 'var(--green)'}">${triggered ? 'ALARME ATIVO' : 'Normal'}</span>
+      </div>
+      <button class="alarm-siren-btn ${sirenOn ? 'on' : ''}" id="alarm-siren-${w.id}" onclick="toggleWidgetSiren('${w.id}')">
+        🔔 Sirene ${sirenOn ? 'ON' : 'OFF'}
+      </button>
+    </div>`;
+}
+
+function renderWidgetMedidor(w) {
+  const val  = window['wm_val_' + w.id];
+  const disp = val != null ? parseFloat(val).toFixed(w.decimals != null ? w.decimals : 1) : '--';
+  const max  = w.max || 100;
+  const pct  = val != null ? Math.min(100, Math.max(0, (parseFloat(val) / max) * 100)) : 0;
+  return `
+    <div>
+      <div class="meter-value">${disp}<span class="meter-unit">${w.unit || ''}</span></div>
+      <div class="meter-sub" id="meter-sub-${w.id}">${w.topic || 'aguardando...'}</div>
+      <div class="meter-bar"><div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+// ── AÇÕES DOS WIDGETS ─────────────────────────────────────────────
+function triggerGatePulse(wid) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w || !w.topic) return;
+  if (client && client.connected) {
+    client.publish(w.topic, w.payload || '1', { qos: 1 });
+    log(`🚗 Portão acionado: ${w.name}`, 'ok');
+  } else {
+    log('Sem conexão MQTT', 'warn');
+  }
+  const btn = document.getElementById('gate-btn-' + wid);
+  if (btn) { btn.classList.add('pulsing'); setTimeout(() => btn.classList.remove('pulsing'), 600); }
+}
+
+function toggleWidgetRelay(wid, state) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w || !w.relayId) return;
+  const relay = relays.find(r => r.id === w.relayId);
+  if (relay) setRelay(relay, state);
+}
+
+function toggleWidgetSiren(wid) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w || !w.sirenTopic) return;
+  const cur = window['wa_siren_' + wid] || false;
+  const next = !cur;
+  window['wa_siren_' + wid] = next;
+  if (client && client.connected) {
+    client.publish(w.sirenTopic, next ? (w.sirenOnPayload || 'ON') : (w.sirenOffPayload || 'OFF'), { qos: 1 });
+  }
+  const btn = document.getElementById('alarm-siren-' + wid);
+  if (btn) { btn.className = 'alarm-siren-btn ' + (next ? 'on' : ''); btn.textContent = '🔔 Sirene ' + (next ? 'ON' : 'OFF'); }
+}
+
+// ── MQTT handler para widgets ─────────────────────────────────────
+function handleWidgetMessage(topic, payload) {
+  widgets.forEach(w => {
+    if (w.type === 'portao' && w.stateTopic && topic === w.stateTopic) {
+      const st = payload.toLowerCase().includes('open') || payload === '1' || payload.toLowerCase() === 'on' ? 'aberto' : 'fechado';
+      window['wg_state_' + w.id] = st;
+      const dot = document.getElementById('gate-dot-' + w.id);
+      const lbl = document.getElementById('gate-lbl-' + w.id);
+      if (dot) { dot.className = 'gate-dot ' + (st === 'aberto' ? 'open' : 'closed'); }
+      if (lbl) lbl.textContent = st === 'aberto' ? '🔴 Aberto' : '🟢 Fechado';
+    }
+    if (w.type === 'alarme' && w.sensorTopic && topic === w.sensorTopic) {
+      const trig = payload === '1' || payload.toLowerCase() === 'on' || payload.toLowerCase() === 'motion';
+      window['wa_trig_' + w.id] = trig;
+      const dot = document.getElementById('alarm-dot-' + w.id);
+      const lbl = document.getElementById('alarm-lbl-' + w.id);
+      if (dot) { dot.className = 'alarm-dot ' + (trig ? 'triggered' : 'ok'); }
+      if (lbl) { lbl.textContent = trig ? 'ALARME ATIVO' : 'Normal'; lbl.style.color = trig ? 'var(--danger)' : 'var(--green)'; }
+    }
+    if (w.type === 'medidor' && w.topic && topic === w.topic) {
+      let val = parseFloat(payload);
+      if (isNaN(val)) { try { const obj = JSON.parse(payload); val = parseFloat(obj[w.jsonKey] || obj.value || 0); } catch(e) {} }
+      window['wm_val_' + w.id] = val;
+      const max = w.max || 100;
+      const pct = Math.min(100, Math.max(0, (val / max) * 100));
+      const disp = val.toFixed(w.decimals != null ? w.decimals : 1);
+      const meterEl = document.querySelector(`#wcard-${w.id} .meter-value`);
+      const barEl   = document.getElementById('meter-bar-' + w.id);
+      if (meterEl) meterEl.innerHTML = `${disp}<span class="meter-unit">${w.unit || ''}</span>`;
+      if (barEl)   barEl.style.width = pct + '%';
+    }
+    if (w.type === 'ambiente') {
+      const room = rooms.find(r => r.id === w.roomId);
+      if (room && room.sensor && topic === `sensors/${room.sensor}/data`) {
+        const card = document.getElementById('wcard-' + w.id);
+        if (card) {
+          const body = card.querySelector('.w-card-header + div') || card.children[1];
+          if (body) body.outerHTML = renderWidgetAmbiente(w);
+        }
+      }
+    }
+    if (w.type === 'caixa_agua') {
+      const tank = waterTanks.find(t => t.id === w.tankId);
+      if (tank && topic.includes('caixas/agua')) {
+        const card = document.getElementById('wcard-' + w.id);
+        if (card && card.children[1]) card.children[1].outerHTML = renderWidgetCaixaAgua(w);
+      }
+    }
+  });
+}
+
+// ── SUBSCRIÇÃO dos tópicos dos widgets ───────────────────────────
+function subscribeWidgetTopics() {
+  if (!client || !client.connected) return;
+  widgets.forEach(w => {
+    if (w.stateTopic)  client.subscribe(w.stateTopic,  { qos: 1 });
+    if (w.sensorTopic) client.subscribe(w.sensorTopic, { qos: 1 });
+    if (w.topic && w.type === 'medidor') client.subscribe(w.topic, { qos: 1 });
+  });
+}
+
+// ── MODAL: PICKER ─────────────────────────────────────────────────
+function openWidgetPicker() {
+  document.getElementById('widget-picker-modal').classList.add('open');
+}
+function closeWidgetPicker() {
+  document.getElementById('widget-picker-modal').classList.remove('open');
+}
+
+// ── MODAL: CONFIGURAR WIDGET ──────────────────────────────────────
+const WIDGET_TYPE_LABELS = {
+  ambiente:   { label: 'Ambiente',         icon: '🌡️' },
+  caixa_agua: { label: "Caixa d'água",     icon: '🪣' },
+  irrigacao:  { label: 'Irrigação',        icon: '💧' },
+  portao:     { label: 'Portão / Porta',   icon: '🚗' },
+  rele:       { label: 'Relé genérico',    icon: '⚡' },
+  alarme:     { label: 'Alarme',           icon: '🚨' },
+  medidor:    { label: 'Medidor',          icon: '📊' },
+};
+
+function selectWidgetType(type) {
+  closeWidgetPicker();
+  openWidgetCfgModal(null, type);
+}
+
+function openWidgetCfgModal(editId, forceType) {
+  const modal  = document.getElementById('widget-cfg-modal');
+  const title  = document.getElementById('wcm-title');
+  const fields = document.getElementById('wcm-fields');
+  const delBtn = document.getElementById('wcm-del-btn');
+  const typeEl = document.getElementById('wcm-type');
+  const idEl   = document.getElementById('wcm-edit-id');
+
+  let type, existing;
+  if (editId) {
+    existing = widgets.find(w => w.id === editId);
+    type = existing ? existing.type : forceType;
+  } else {
+    type = forceType;
+    existing = null;
+  }
+
+  const meta = WIDGET_TYPE_LABELS[type] || {};
+  title.textContent = (editId ? '✎ Editar' : '＋ Adicionar') + ' — ' + (meta.label || type);
+  typeEl.value = type;
+  idEl.value   = editId || '';
+  delBtn.style.display = editId ? 'block' : 'none';
+
+  fields.innerHTML = buildWidgetFields(type, existing);
+  modal.classList.add('open');
+}
+
+function closeWidgetCfgModal() {
+  document.getElementById('widget-cfg-modal').classList.remove('open');
+}
+
+function buildWidgetFields(type, ex) {
+  const v = (key, def) => ex ? (ex[key] != null ? ex[key] : def) : def;
+  const inp = (id, label, val, placeholder) => `
+    <div class="field">
+      <label>${label}</label>
+      <input id="wcm-${id}" type="text" value="${val || ''}" placeholder="${placeholder || ''}">
+    </div>`;
+  const nameField = inp('name', 'Nome do widget', v('name',''), 'ex: Sala, Portão Garagem...');
+  const iconField = inp('icon', 'Ícone (emoji)', v('icon', WIDGET_TYPE_LABELS[type]?.icon || ''), '🏠');
+
+  switch(type) {
+    case 'ambiente':
+      const roomOpts = rooms.map(r => `<option value="${r.id}" ${v('roomId','') === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
+      return `${nameField}
+        <div class="field"><label>Ambiente cadastrado</label>
+          <select id="wcm-roomId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
+            <option value="">-- selecione --</option>${roomOpts}
+          </select>
+        </div>`;
+
+    case 'caixa_agua':
+      const tankOpts = waterTanks.map(t => `<option value="${t.id}" ${v('tankId','') === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
+      return `${nameField}
+        <div class="field"><label>Caixa d'água cadastrada</label>
+          <select id="wcm-tankId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
+            <option value="">-- selecione --</option>${tankOpts}
+          </select>
+        </div>`;
+
+    case 'irrigacao':
+      return `${nameField}${iconField}`;
+
+    case 'portao':
+      return `${nameField}${iconField}
+        ${inp('topic',       'Tópico de acionamento (publish)',  v('topic',''),       'home/portao/cmd')}
+        ${inp('payload',     'Payload de pulso',                 v('payload','1'),    '1')}
+        ${inp('stateTopic',  'Tópico de estado (subscribe)',     v('stateTopic',''),  'home/portao/state')}`;
+
+    case 'rele':
+      const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}" ${v('relayId','') === r.id ? 'selected' : ''}>${r.icon} ${r.name}</option>`).join('');
+      return `${nameField}${iconField}
+        <div class="field"><label>Relé vinculado</label>
+          <select id="wcm-relayId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
+            <option value="">-- selecione --</option>${relayOpts}
+          </select>
+        </div>`;
+
+    case 'alarme':
+      return `${nameField}${iconField}
+        ${inp('sensorTopic',    'Tópico do sensor PIR/contato',   v('sensorTopic',''),    'home/alarme/pir')}
+        ${inp('sirenTopic',     'Tópico da sirene (publish)',      v('sirenTopic',''),     'home/alarme/sirene')}
+        ${inp('sirenOnPayload', 'Payload sirene ON',               v('sirenOnPayload','ON'),  'ON')}
+        ${inp('sirenOffPayload','Payload sirene OFF',              v('sirenOffPayload','OFF'),'OFF')}`;
+
+    case 'medidor':
+      return `${nameField}${iconField}
+        ${inp('topic',   'Tópico MQTT',          v('topic',''),  'sensors/energia/potencia')}
+        ${inp('jsonKey', 'Chave JSON (opcional)', v('jsonKey',''), 'value')}
+        ${inp('unit',    'Unidade',               v('unit',''),   'kW, A, °C...')}
+        ${inp('max',     'Valor máximo (barra)',  v('max',100),   '100')}
+        ${inp('decimals','Casas decimais',         v('decimals',1),'1')}`;
+
+    default:
+      return `${nameField}${iconField}`;
+  }
+}
+
+function saveWidgetFromModal() {
+  const type  = document.getElementById('wcm-type').value;
+  const editId= document.getElementById('wcm-edit-id').value;
+  const gv    = id => { const el = document.getElementById('wcm-' + id); return el ? el.value.trim() : ''; };
+  const gvRaw = id => { const el = document.getElementById('wcm-' + id); return el ? el.value : ''; };
+
+  const name = gv('name');
+  if (!name) { alert('Informe o nome do widget.'); return; }
+
+  let w = { id: editId || ('w_' + Date.now()), type, name, icon: gv('icon') };
+
+  switch(type) {
+    case 'ambiente':   w.roomId   = gv('roomId');   break;
+    case 'caixa_agua': w.tankId   = gv('tankId');   break;
+    case 'irrigacao':  break;
+    case 'portao':
+      w.topic       = gv('topic');
+      w.payload     = gvRaw('payload') || '1';
+      w.stateTopic  = gv('stateTopic');
+      break;
+    case 'rele':       w.relayId  = gv('relayId');  break;
+    case 'alarme':
+      w.sensorTopic    = gv('sensorTopic');
+      w.sirenTopic     = gv('sirenTopic');
+      w.sirenOnPayload = gvRaw('sirenOnPayload') || 'ON';
+      w.sirenOffPayload= gvRaw('sirenOffPayload') || 'OFF';
+      break;
+    case 'medidor':
+      w.topic    = gv('topic');
+      w.jsonKey  = gv('jsonKey');
+      w.unit     = gv('unit');
+      w.max      = parseFloat(gvRaw('max')) || 100;
+      w.decimals = parseInt(gvRaw('decimals')) || 1;
+      break;
+  }
+
+  if (editId) {
+    const idx = widgets.findIndex(x => x.id === editId);
+    if (idx >= 0) widgets[idx] = w;
+  } else {
+    widgets.push(w);
+  }
+
+  saveWidgets();
+  renderWidgetPanel();
+  subscribeWidgetTopics();
+  publishPersist();
+  closeWidgetCfgModal();
+  log(`🧩 Widget "${name}" ${editId ? 'atualizado' : 'adicionado'}`, 'ok');
+}
+
+function deleteWidgetFromModal() {
+  const editId = document.getElementById('wcm-edit-id').value;
+  if (!editId) return;
+  const w = widgets.find(x => x.id === editId);
+  if (!confirm(`Remover widget "${w ? w.name : editId}"?`)) return;
+  widgets = widgets.filter(x => x.id !== editId);
+  saveWidgets();
+  renderWidgetPanel();
+  publishPersist();
+  closeWidgetCfgModal();
+  log(`🧩 Widget removido`, 'sys');
+}
+
+
 
 <!-- ═══ MODAL: SELETOR DE WIDGET ════════════════════════════════════ -->
 <div class="modal-overlay" id="widget-picker-modal">
