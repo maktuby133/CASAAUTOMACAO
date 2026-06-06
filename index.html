@@ -535,6 +535,20 @@ body::before {
     style="margin-bottom:8px;display:none;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.35);color:var(--danger);animation:pulse-alarm 2s ease-in-out infinite;flex-direction:row;align-items:center;gap:10px">
   </div>
 
+  <!-- Barra de status de notificações + botão de teste -->
+  <div id="notif-bar" style="display:none;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:10px">
+    <span style="font-size:14px">🔔</span>
+    <span style="color:var(--muted)">Notificações de gás:</span>
+    <span id="notif-status-lbl" style="font-weight:700;color:var(--muted)">verificando...</span>
+    <span style="flex:1"></span>
+    <button onclick="testGasNotification()"
+      style="font-family:var(--mono);font-size:10px;padding:3px 10px;background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--muted);cursor:pointer">
+      🔊 Testar
+    </button>
+    <button onclick="document.getElementById('notif-bar').style.display='none'"
+      style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
+  </div>
+
 
 
 
@@ -1368,15 +1382,58 @@ function initPWA() {
   // Service worker inline para cache offline
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'autoflow-v1';
+const CACHE = 'autoflow-v2';
 const ASSETS = ['${window.location.href}'];
-self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))));
+self.addEventListener('install',  e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))); self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
 self.addEventListener('fetch', e => e.respondWith(
   caches.match(e.request).then(r => r || fetch(e.request).then(res => {
     if (res.status === 200) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
     return res;
   }).catch(() => caches.match(e.request)))
-));`;
+));
+
+// ── Push notification handler ──────────────────────────────────────
+self.addEventListener('push', e => {
+  let data = { title: '🚨 Alarme de Gás', body: 'Nível elevado detectado!', roomName: '' };
+  try { if (e.data) data = { ...data, ...e.data.json() }; } catch(_) {}
+  e.waitUntil(self.registration.showNotification(data.title, {
+    body:    data.body,
+    icon:    'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚨</text></svg>',
+    badge:   'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>',
+    tag:     'gas-alert-' + (data.roomId || 'main'),
+    renotify: true,
+    requireInteraction: true,
+    vibrate: [200, 100, 200, 100, 400],
+    data:    { url: self.location.origin }
+  }));
+});
+
+// Ao clicar na notificação — foca a janela do app
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    if (clients.openWindow) return clients.openWindow(e.notification.data?.url || '/');
+  }));
+});
+
+// Mensagem interna (postMessage) para disparar notificação sem servidor push
+self.addEventListener('message', e => {
+  if (e.data?.type === 'GAS_ALERT') {
+    const d = e.data;
+    self.registration.showNotification(d.title || '🚨 Alarme de Gás', {
+      body:    d.body  || 'Nível elevado detectado!',
+      icon:    'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚨</text></svg>',
+      badge:   'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>',
+      tag:     'gas-alert-' + (d.roomId || 'main'),
+      renotify: true,
+      requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 400],
+      data:    { url: self.location.origin }
+    });
+  }
+});`;
     const swBlob = new Blob([swCode], {type:'text/javascript'});
     const swUrl  = URL.createObjectURL(swBlob);
     navigator.serviceWorker.register(swUrl).catch(() => {});
@@ -1521,6 +1578,17 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSchedules();
     renderTanks();
     renderIrrigPumpCard();
+
+    // ── Barra de status de notificações ───────────────────────────────
+    setTimeout(() => {
+      const bar = document.getElementById('notif-bar');
+      const lbl = document.getElementById('notif-status-lbl');
+      if (!bar || !lbl) return;
+      const st = getNotifStatus();
+      lbl.textContent = st.label;
+      lbl.style.color = st.color;
+      if (Notification.permission !== 'granted') bar.style.display = 'flex';
+    }, 800);
 
     // ── 8. Auto-login: conecta se tiver credenciais salvas ──────────────
     updateMainBtn();
@@ -2350,6 +2418,7 @@ function checkGasRule(room, pct) {
         gasAlertLocked[id] = true;
         showGasLockAlert(room, pct);
         log(`🚨 ALERTA FIXO GÁS — ${room.name}: ${pct}% (${gasAlertCount[id]}x / ${Math.round(elapsed/1000)}s)`, 'warn');
+                  sendGasNotification(room, pct, pct >= 60);
       }
     } else {
       // Já fixado: atualiza o banner com valor atual
@@ -2391,6 +2460,125 @@ function resetGasAlert(roomId) {
   }
   renderRooms();
   log(`Alerta de gás resetado pelo usuário`, 'sys');
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// NOTIFICAÇÕES DE ALARME DE GÁS
+// ═══════════════════════════════════════════════════════════════════
+let _swReg = null; // referência ao service worker registrado
+let _notifEnabled = false;
+let _lastNotifTime = {}; // roomId → timestamp da última notif
+
+// Guarda referência ao SW assim que registrar
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then(reg => { _swReg = reg; }).catch(() => {});
+}
+
+// ── Pede permissão de notificação (chamado na 1ª detecção) ─────────
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') { _notifEnabled = true; return true; }
+  if (Notification.permission === 'denied')  { return false; }
+  // prompt
+  const perm = await Notification.requestPermission();
+  _notifEnabled = (perm === 'granted');
+  if (_notifEnabled) log('🔔 Notificações de gás ativadas', 'ok');
+  else               log('🔕 Permissão de notificação negada — apenas alerta visual', 'warn');
+  // Atualiza barra de status
+  const lbl = document.getElementById('notif-status-lbl');
+  const st  = getNotifStatus();
+  if (lbl) { lbl.textContent = st.label; lbl.style.color = st.color; }
+  if (_notifEnabled) {
+    const bar = document.getElementById('notif-bar');
+    if (bar) setTimeout(() => { bar.style.display = 'none'; }, 2000);
+  }
+  return _notifEnabled;
+}
+
+// ── Envia notificação nativa via SW postMessage ────────────────────
+async function sendGasNotification(room, pct, isAlarm) {
+  const roomId = room.id;
+  const now    = Date.now();
+
+  // Throttle: máximo 1 notif por ambiente a cada 60s
+  if (_lastNotifTime[roomId] && (now - _lastNotifTime[roomId]) < 60000) return;
+  _lastNotifTime[roomId] = now;
+
+  const level = isAlarm ? '🚨 ALARME' : '⚠️ ATENÇÃO';
+  const title = `${level} de Gás — ${room.name}`;
+  const body  = `Nível: ${pct}% detectado no sensor MQ-2. Verifique o ambiente imediatamente!`;
+
+  // Pede permissão se ainda não pediu
+  const allowed = await requestNotifPermission();
+
+  if (allowed && _swReg) {
+    // Notificação via SW (funciona com app minimizado)
+    try {
+      _swReg.active?.postMessage({
+        type:   'GAS_ALERT',
+        title,
+        body,
+        roomId,
+        vibrate: [200, 100, 200, 100, 400],
+      });
+    } catch(e) {
+      // Fallback: Notification API direta
+      new Notification(title, { body, icon: '🚨', tag: 'gas-' + roomId, renotify: true });
+    }
+  } else if (allowed) {
+    // SW não disponível — usa Notification API direta
+    try { new Notification(title, { body, icon: '🚨', tag: 'gas-' + roomId, renotify: true }); } catch(e) {}
+  }
+
+  // Fallback sonoro — beep via Web Audio API
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const playBeep = (freq, start, dur) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.3, ctx.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + start + dur + 0.05);
+    };
+    if (isAlarm) {
+      // Alarme: 3 beeps alternados urgentes
+      playBeep(880, 0,    0.18);
+      playBeep(660, 0.22, 0.18);
+      playBeep(880, 0.44, 0.18);
+      playBeep(660, 0.66, 0.18);
+      playBeep(880, 0.88, 0.30);
+    } else {
+      // Atenção: 2 beeps suaves
+      playBeep(660, 0,   0.15);
+      playBeep(660, 0.2, 0.15);
+    }
+  } catch(e) {}
+}
+
+// ── Teste de notificação (botão nas configurações) ─────────────────
+async function testGasNotification() {
+  const allowed = await requestNotifPermission();
+  const fakeRoom = { id: 'test', name: 'Teste' };
+  if (allowed) {
+    await sendGasNotification(fakeRoom, 75, true);
+    log('🔔 Notificação de teste enviada!', 'ok');
+  } else {
+    log('🔕 Permissão negada — ative nas configurações do navegador', 'warn');
+    // Apenas o beep
+    sendGasNotification(fakeRoom, 75, true);
+  }
+}
+
+// ── Status de notificação em tempo real ────────────────────────────
+function getNotifStatus() {
+  if (!('Notification' in window)) return { ok: false, label: 'Não suportado', color: 'var(--muted)' };
+  if (Notification.permission === 'granted')  return { ok: true,  label: 'Ativadas ✓',  color: 'var(--accent)' };
+  if (Notification.permission === 'denied')   return { ok: false, label: 'Bloqueadas ✗', color: 'var(--danger)' };
+  return { ok: false, label: 'Pendente', color: 'var(--warn)' };
 }
 
 function checkRules() {
