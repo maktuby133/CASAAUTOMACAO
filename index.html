@@ -552,81 +552,51 @@ body::before {
 
 
 
-  <!-- ROW 2: ambientes -->
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-header">
-      <span class="card-title">Ambientes</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span id="rooms-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">nenhum ambiente</span>
-        <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
-      </div>
-    </div>
-    <div id="rooms-grid" class="rooms-scroll" style="max-height:178px;overflow-y:auto;padding-right:2px">
-      <div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
-        Nenhum ambiente cadastrado. Clique em "+ Adicionar" para começar.
-      </div>
-    </div>
+  <!-- WIDGET PANEL — painel dinâmico e configurável pelo usuário -->
+  <div id="widget-panel" style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px"></div>
+
+  <!-- BARRA de adicionar widget -->
+  <div style="display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+    <button onclick="openWidgetPicker()"
+      style="display:flex;align-items:center;gap:8px;padding:9px 20px;background:var(--bg2);border:1px dashed var(--border2);border-radius:12px;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;width:100%;justify-content:center;max-width:420px"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
+      <span style="font-size:16px">＋</span> Adicionar widget
+    </button>
   </div>
 
-  <!-- ROW 3: Caixas d'água + Irrigação -->
-  <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-
-    <!-- COL 1: Caixas d'água -->
-    <div class="card" id="tanks-card">
-      <div class="card-header" style="margin-bottom:12px">
-        <span class="card-title">Caixas d'água</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span id="tanks-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">0 caixas</span>
-          <button class="btn" style="font-size:10px;padding:3px 10px" onclick="openTankModal()" id="btn-add-tank">+ Adicionar</button>
-        </div>
-      </div>
-      <div id="tanks-grid" style="display:flex;flex-direction:column;gap:10px">
-        <div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
-          Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".
-        </div>
-      </div>
+  <!-- Hidden containers para lógica existente (tanks, sched, rooms) -->
+  <div style="display:none">
+    <div id="tanks-card">
+      <div id="tanks-count"></div>
+      <div id="tanks-grid"></div>
+      <div id="btn-add-tank"></div>
     </div>
-
-    <!-- COL 3: Irrigação programada (card colapsável) -->
-    <div class="card">
-      <div class="card-header" style="cursor:pointer;user-select:none" onclick="togglePanel('sched-body','sched-arrow')">
-        <span class="card-title">Irrigação programada</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span id="sched-count" style="font-family:var(--mono);font-size:10px;color:var(--muted)">0 agendamentos</span>
-          <span id="sched-arrow" style="color:var(--muted);font-size:12px;transition:transform 0.2s">▼</span>
+    <div id="rooms-count"></div>
+    <div id="rooms-grid" class="rooms-scroll"></div>
+    <div id="sched-list"></div>
+    <div id="sched-count"></div>
+    <div id="sched-arrow"></div>
+    <div id="sched-body">
+      <div id="sched-form-wrap">
+        <div id="sched-form-arrow"></div>
+        <div id="sched-form">
+          <div class="day-picker" id="day-picker" style="gap:4px">
+            <button class="day-pick-btn" data-d="0" onclick="toggleDay(this)">D</button>
+            <button class="day-pick-btn" data-d="1" onclick="toggleDay(this)">S</button>
+            <button class="day-pick-btn" data-d="2" onclick="toggleDay(this)">T</button>
+            <button class="day-pick-btn" data-d="3" onclick="toggleDay(this)">Q</button>
+            <button class="day-pick-btn" data-d="4" onclick="toggleDay(this)">Q</button>
+            <button class="day-pick-btn" data-d="5" onclick="toggleDay(this)">S</button>
+            <button class="day-pick-btn" data-d="6" onclick="toggleDay(this)">S</button>
+          </div>
+          <input type="time" id="sched-time" value="06:00">
+          <input type="number" id="sched-dur" value="15">
+          <select id="sched-relay"></select>
         </div>
       </div>
-      <div id="sched-body">
-        <div class="sched-list" id="sched-list"></div>
-        <!-- form adicionar -->
-        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px" id="sched-form-wrap">
-          <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="togglePanel('sched-form','sched-form-arrow')">
-            <span id="sched-form-arrow" style="transition:transform 0.2s">▶</span> Novo agendamento
-          </div>
-          <div id="sched-form" style="display:none">
-            <div class="day-picker" id="day-picker" style="margin-bottom:8px;gap:4px">
-              <button class="day-pick-btn" data-d="0" onclick="toggleDay(this)">D</button>
-              <button class="day-pick-btn" data-d="1" onclick="toggleDay(this)">S</button>
-              <button class="day-pick-btn" data-d="2" onclick="toggleDay(this)">T</button>
-              <button class="day-pick-btn" data-d="3" onclick="toggleDay(this)">Q</button>
-              <button class="day-pick-btn" data-d="4" onclick="toggleDay(this)">Q</button>
-              <button class="day-pick-btn" data-d="5" onclick="toggleDay(this)">S</button>
-              <button class="day-pick-btn" data-d="6" onclick="toggleDay(this)">S</button>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-              <input type="time" id="sched-time" value="06:00" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;height:32px;width:90px">
-              <input type="number" id="sched-dur" value="15" min="1" max="120" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;height:32px;width:54px">
-              <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
-              <select id="sched-relay" style="flex:1;min-width:100px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 8px;outline:none;height:32px"></select>
-            </div>
-            <button class="btn primary" style="width:100%;font-size:11px" onclick="addSchedule()">+ Adicionar</button>
-          </div>
-        </div>
-        <!-- Bloco da bomba de irrigação -->
-        <div id="irrig-pump-block"></div>
-      </div>
+      <div id="irrig-pump-block"></div>
     </div>
-
   </div>
 
   <!-- ROW 3: regras + log -->
@@ -1277,8 +1247,9 @@ function buildPersistPayload() {
     schedules,
     // Inclui TUDO da caixa — credenciais inclusive — para sincronizar entre dispositivos
     waterTanks,
-    // Bomba de irrigação — incluída para sincronizar entre dispositivos
     irrigPump,
+    // Widgets configuráveis — sincroniza layout entre PC e celular
+    widgets: widgets.filter(w => !['ambiente','caixa_agua','irrigacao'].includes(w.type)),
     relayPrefix: RELAY_PREFIX,
     weather: { city: weather.city, lat: weather.lat, lon: weather.lon },
     savedAt: new Date().toISOString(),
@@ -1358,6 +1329,13 @@ function loadFromBrokerPayload(payload) {
     }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
+    // Widgets genéricos do broker
+    if (d.widgets && d.widgets.length) {
+      d.widgets.forEach(bw => {
+        if (!widgets.some(w => w.id === bw.id)) widgets.push(bw);
+      });
+      saveWidgets();
+    }
     // Clima — só atualiza se o broker tiver cidade e o local não tiver
     if (d.weather?.city && !weather.city) {
       weather.city = d.weather.city;
@@ -1588,11 +1566,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
   requestAnimationFrame(() => {
+    loadWidgets();
+    renderWidgetPanel();
     renderRelays();
-    renderRooms();
     renderSchedules();
-    renderTanks();
-    renderIrrigPumpCard();
 
     // ── Barra de status de notificações ───────────────────────────────
     setTimeout(() => {
@@ -1820,6 +1797,9 @@ function handleMsg(topic, payload, pkt) {
     updateLiveBar(topic, false);
     return;
   }
+
+  // ------ WIDGETS GENÉRICOS (portão, relé, alarme, medidor) ------
+  handleWidgetMessage(topic, payload);
 }
 
 function updateLiveBar(topic, cached) {
@@ -3614,5 +3594,74 @@ function _updateLoginBtn() {
 document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { once: false });
 
 </script>
+
+<!-- ═══ MODAL: SELETOR DE WIDGET ════════════════════════════════════ -->
+<div class="modal-overlay" id="widget-picker-modal">
+  <div class="modal" style="width:460px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">＋ Adicionar widget</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:14px">
+      Escolha o tipo de widget para adicionar ao painel
+    </div>
+    <div class="widget-picker-grid">
+      <div class="widget-type-opt" onclick="selectWidgetType('ambiente')">
+        <span class="wt-icon">🌡️</span>
+        <span class="wt-label">Ambiente</span>
+        <span class="wt-sub">Temp · Umidade · Gás · Lâmpada</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('caixa_agua')">
+        <span class="wt-icon">🪣</span>
+        <span class="wt-label">Caixa d'água</span>
+        <span class="wt-sub">Nível + bomba</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('irrigacao')">
+        <span class="wt-icon">💧</span>
+        <span class="wt-label">Irrigação</span>
+        <span class="wt-sub">Agendamentos + bomba</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('portao')">
+        <span class="wt-icon">🚗</span>
+        <span class="wt-label">Portão / Porta</span>
+        <span class="wt-sub">Pulso + sensor aberto/fechado</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('rele')">
+        <span class="wt-icon">⚡</span>
+        <span class="wt-label">Relé genérico</span>
+        <span class="wt-sub">Liga/desliga livre</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('alarme')">
+        <span class="wt-icon">🚨</span>
+        <span class="wt-label">Alarme</span>
+        <span class="wt-sub">PIR · sensor · sirene</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('medidor')">
+        <span class="wt-icon">📊</span>
+        <span class="wt-label">Medidor</span>
+        <span class="wt-sub">Qualquer valor MQTT</span>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn" onclick="closeWidgetPicker()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: CONFIGURAR WIDGET GENÉRICO ════════════════════════════ -->
+<div class="modal-overlay" id="widget-cfg-modal">
+  <div class="modal" style="width:440px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title" id="wcm-title">Configurar widget</div>
+    <div class="modal-fields" id="wcm-fields"></div>
+    <input type="hidden" id="wcm-type"/>
+    <input type="hidden" id="wcm-edit-id"/>
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between">
+      <button id="wcm-del-btn" class="btn"
+        style="display:none;color:var(--danger);border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07)"
+        onclick="deleteWidgetFromModal()">🗑 Excluir</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn" onclick="closeWidgetCfgModal()">Cancelar</button>
+        <button class="btn primary" onclick="saveWidgetFromModal()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
