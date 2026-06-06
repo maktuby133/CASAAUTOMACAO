@@ -2399,38 +2399,42 @@ function handleTankMessage(topic, payload, data) {
 const gasAlertCount    = {};  // roomId → nº de detecções acima do limiar
 const gasAlertTimer    = {};  // roomId → timestamp da primeira detecção contínua
 const gasAlertLocked   = {};  // roomId → true quando alerta fixo ativado
-const GAS_DETECT_LIMIT = 3;   // nº de detecções para fixar alerta
-const GAS_TIME_LIMIT   = 5000; // ms contínuos para fixar alerta
+const gasAlertSent     = {};  // roomId → timestamp da última notificação disparada
+const GAS_DETECT_LIMIT = 3;   // nº de detecções consecutivas para fixar alerta
+const GAS_TIME_LIMIT   = 10000; // ms contínuos para fixar alerta (10s)
+
+// Zera contadores sem desbloquear alerta fixo já confirmado pelo usuário
+function resetGasCounters(roomId) {
+  gasAlertCount[roomId] = 0;
+  gasAlertTimer[roomId] = null;
+}
 
 function checkGasRule(room, pct) {
   const id = room.id;
-  const isHigh = pct >= 30; // limiar: atenção ou alarme
 
-  if (isHigh) {
-    // Contador de detecções
-    gasAlertCount[id] = (gasAlertCount[id] || 0) + 1;
-    // Timer contínuo
-    if (!gasAlertTimer[id]) gasAlertTimer[id] = Date.now();
-    const elapsed = Date.now() - gasAlertTimer[id];
+  // gas_alert=true já vem do firmware com threshold calibrado.
+  // Aqui exigimos confirmação por leituras CONSECUTIVAS para evitar
+  // falso positivo por mensagem retained ao recarregar a página.
+  gasAlertCount[id] = (gasAlertCount[id] || 0) + 1;
+  if (!gasAlertTimer[id]) gasAlertTimer[id] = Date.now();
+  const elapsed = Date.now() - gasAlertTimer[id];
 
-    if (!gasAlertLocked[id]) {
-      if (gasAlertCount[id] >= GAS_DETECT_LIMIT || elapsed >= GAS_TIME_LIMIT) {
-        gasAlertLocked[id] = true;
-        showGasLockAlert(room, pct);
-        log(`🚨 ALERTA FIXO GÁS — ${room.name}: ${pct}% (${gasAlertCount[id]}x / ${Math.round(elapsed/1000)}s)`, 'warn');
-                  sendGasNotification(room, pct, pct >= 60);
-      }
-    } else {
-      // Já fixado: atualiza o banner com valor atual
+  if (!gasAlertLocked[id]) {
+    // Só fixa o alerta após GAS_DETECT_LIMIT leituras consecutivas E GAS_TIME_LIMIT ms
+    // Isso garante que uma única mensagem retained (ao recarregar) não dispara falso alarme
+    if (gasAlertCount[id] >= GAS_DETECT_LIMIT && elapsed >= GAS_TIME_LIMIT) {
+      gasAlertLocked[id] = true;
       showGasLockAlert(room, pct);
+      log(`🚨 ALERTA FIXO GÁS — ${room.name}: raw=${room.data.smokeRaw} (${gasAlertCount[id]}x em ${Math.round(elapsed/1000)}s)`, 'warn');
+      sendGasNotification(room, pct, true);
+    } else {
+      log(`⚠ GÁS detectado ${room.name}: ${gasAlertCount[id]}/${GAS_DETECT_LIMIT}x — aguardando confirmação`, 'warn');
     }
   } else {
-    // Abaixo do limiar: zera timer contínuo, mas NÃO zera contador nem desbloqueia
-    gasAlertTimer[id] = null;
-    // Se não está bloqueado, pode limpar contador
-    if (!gasAlertLocked[id]) gasAlertCount[id] = 0;
+    // Já fixado: apenas atualiza banner
+    showGasLockAlert(room, pct);
   }
-  renderRooms(); // atualiza ícone ⚠ no card
+  renderRooms();
 }
 
 function showGasLockAlert(room, pct) {
@@ -3259,14 +3263,23 @@ function handleRoomMessage(topic, payload) {
         room.data.online   = true;
 
         if (room.hasSmoke && d.gas_raw !== undefined) {
-          const raw  = parseInt(d.gas_raw) || 0;
-          const pct  = Math.min(Math.round((raw / 4095) * 100), 100);
-          room.data.smokeRaw  = raw;
-          room.data.smoke     = pct;
-          room.data.gasAlert  = !!d.gas_alert;
-          if (d.gas_alert) {
-            log(`🚨 ALARME GÁS — ${room.name}: raw=${raw} (${pct}%)`, 'warn');
+          const raw      = parseInt(d.gas_raw) || 0;
+          const gasAlert = !!d.gas_alert; // campo calculado pelo firmware com threshold calibrado
+          // Converte raw para % apenas para exibição visual — NÃO define limiar de alarme
+          // O MQ2_THRESHOLD do ESP32 (ex: 3200) é muito diferente de 30% do ADC (4095*0.3=1228)
+          // Por isso usamos o gas_alert do firmware como fonte de verdade
+          const pct = gasAlert ? Math.max(60, Math.min(Math.round((raw / 4095) * 100), 100))
+                               : Math.min(Math.round((raw / 4095) * 100), 29); // cap em 29% se sem alerta
+          room.data.smokeRaw = raw;
+          room.data.smoke    = pct;
+          room.data.gasAlert = gasAlert;
+
+          if (gasAlert) {
+            log(`🚨 ALARME GÁS — ${room.name}: raw=${raw}`, 'warn');
             checkGasRule(room, pct);
+          } else {
+            // Sem alerta: reseta contadores para evitar falso positivo acumulado
+            resetGasCounters(room.id);
           }
         }
 
