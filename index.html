@@ -248,18 +248,104 @@ body::before {
 .wt-label { font-size: 13px; font-weight: 600; color: var(--text); }
 .wt-sub { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
 
-/* widget cards no panel */
-.w-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 14px; animation: fadeIn 0.3s ease both; transition: border-color 0.2s; }
+/* ══ WIDGET GRID PANEL ══════════════════════════════════════════════ */
+#widget-panel {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+/* Tamanhos de coluna dos cards */
+.w-card          { grid-column: span 6; }   /* padrão: meia largura */
+.w-card.sz-small { grid-column: span 4; }   /* 1/3 */
+.w-card.sz-med   { grid-column: span 6; }   /* 1/2 */
+.w-card.sz-large { grid-column: span 8; }   /* 2/3 */
+.w-card.sz-full  { grid-column: span 12; }  /* 100% */
+
+/* Card base */
+.w-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 16px;
+  animation: fadeIn 0.25s ease both;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  min-width: 0;
+}
 .w-card:hover { border-color: var(--border2); }
-/* Evita re-animação ao atualizar conteúdo interno do card */
 .w-card.patched { animation: none !important; }
+.w-card.drag-over {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(0,212,160,0.18);
+}
+.w-card.dragging {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+/* Header do card */
+.w-card-header {
+  display: flex; align-items: center;
+  gap: 6px; margin-bottom: 12px;
+  user-select: none;
+}
+.w-drag-handle {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 2px 3px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.w-drag-handle:hover { color: var(--text); background: var(--bg3); }
+.w-drag-handle:active { cursor: grabbing; }
+.w-card-title {
+  font-size: 11px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.w-card-title::before {
+  content: ''; display: inline-block;
+  width: 3px; height: 12px;
+  background: var(--accent); border-radius: 2px; flex-shrink: 0;
+}
+/* Botões de resize */
+.w-resize-btns {
+  display: flex; gap: 2px; flex-shrink: 0;
+}
+.w-resize-btn {
+  width: 22px; height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+.w-resize-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.06); }
+.w-resize-btn.active { background: rgba(0,212,160,0.12); border-color: rgba(0,212,160,0.4); color: var(--accent); }
+.w-edit-btn {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--muted); cursor: pointer;
+  font-size: 11px; padding: 2px 7px; font-family: var(--mono);
+  transition: all 0.15s; flex-shrink: 0;
+}
+.w-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+
 /* Transição suave para elementos atualizados inline */
 .gate-dot, .alarm-dot, .alarm-indicator span, .meter-bar-fill { transition: all 0.3s ease; }
-.w-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.w-card-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-.w-card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
-.w-edit-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 12px; padding: 3px 8px; font-family: var(--mono); transition: all 0.15s; }
-.w-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* portão */
 .gate-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border-radius: var(--radius); border: 1.5px solid var(--border2); background: var(--bg3); color: var(--text); font-family: var(--mono); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
@@ -294,8 +380,17 @@ body::before {
 
 /* add widget bar */
 .add-widget-bar { display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
-.add-widget-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; background: var(--bg2); border: 1px dashed var(--border2); border-radius: 12px; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center; max-width: 420px; }
+.add-widget-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; background: var(--bg2); border: 1px dashed var(--border2); border-radius: 12px; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center; }
 .add-widget-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Mobile: tudo full width */
+@media (max-width: 768px) {
+  #widget-panel { grid-template-columns: 1fr; }
+  .w-card, .w-card.sz-small, .w-card.sz-med, .w-card.sz-large, .w-card.sz-full {
+    grid-column: span 1 !important;
+  }
+  .w-resize-btns { display: none; }
+}
 
 /* ══════════════════════════════════════════
    MOBILE — até 768px
@@ -613,8 +708,8 @@ body::before {
 
 
 
-  <!-- WIDGET PANEL — painel dinâmico configurável pelo usuário -->
-  <div id="widget-panel" style="display:flex;flex-direction:column;gap:0"></div>
+  <!-- WIDGET PANEL — grid dinâmico configurável pelo usuário -->
+  <div id="widget-panel"></div>
 
   <!-- Barra de adicionar widget -->
   <div class="add-widget-bar">
@@ -2333,12 +2428,9 @@ function renderTanks() {
       ${pumpsHtml}
     </div>`;
   }).join('');
-  // Atualiza widgets de caixa_agua no painel
-  if (typeof renderWidgetPanel === 'function') {
-    widgets.filter(w => w.type === 'caixa_agua').forEach(w => {
-      const card = document.getElementById('wcard-' + w.id);
-      if (card && card.children[1]) card.children[1].innerHTML = renderWidgetCaixaAgua(w);
-    });
+  // Atualiza widgets de caixa_agua no painel (patch cirúrgico)
+  if (typeof patchWidgetCard === 'function') {
+    widgets.filter(w => w.type === 'caixa_agua').forEach(w => patchWidgetCard(w));
   }
 }
 const tankClients = {}; // tankId → mqtt client
@@ -3505,12 +3597,9 @@ function renderRooms() {
       </div>
     </div>`;
   }).join('');
-  // Atualiza widgets de ambiente no painel
-  if (typeof renderWidgetPanel === 'function') {
-    widgets.filter(w => w.type === 'ambiente').forEach(w => {
-      const card = document.getElementById('wcard-' + w.id);
-      if (card && card.children[1]) card.children[1].innerHTML = renderWidgetAmbiente(w);
-    });
+  // Atualiza widgets de ambiente no painel (patch cirúrgico)
+  if (typeof patchWidgetCard === 'function') {
+    widgets.filter(w => w.type === 'ambiente').forEach(w => patchWidgetCard(w));
   }
 }
 
@@ -3683,51 +3772,109 @@ function loadWidgets() {
   } catch(e) { widgets = []; }
 }
 
+// ── TAMANHOS DOS CARDS ────────────────────────────────────────────
+// sz: 'small'(4col) | 'med'(6col) | 'large'(8col) | 'full'(12col)
+const W_SIZES = ['small','med','large','full'];
+const W_SIZE_LABELS = { small:'1/3', med:'1/2', large:'2/3', full:'■' };
+
+function getWidgetSize(w) { return w.sz || 'med'; }
+
+function setWidgetSize(wid, sz) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w) return;
+  w.sz = sz;
+  saveWidgets();
+  const el = document.getElementById('wcard-' + wid);
+  if (el) {
+    el.className = el.className.replace(/\bsz-\w+\b/g, '').trim();
+    el.classList.add('w-card', 'sz-' + sz, 'patched');
+    // Atualiza botões de resize ativos
+    el.querySelectorAll('.w-resize-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sz === sz);
+    });
+  }
+}
+
+// ── DRAG AND DROP ─────────────────────────────────────────────────
+let dragSrcId = null;
+
+function initDragEvents(el, wid) {
+  el.setAttribute('draggable', 'true');
+  el.addEventListener('dragstart', e => {
+    dragSrcId = wid;
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragend', () => {
+    el.classList.remove('dragging');
+    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
+  });
+  el.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (dragSrcId && dragSrcId !== wid) el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    el.classList.remove('drag-over');
+    if (!dragSrcId || dragSrcId === wid) return;
+    const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
+    const toIdx   = widgets.findIndex(x => x.id === wid);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const [moved] = widgets.splice(fromIdx, 1);
+    widgets.splice(toIdx, 0, moved);
+    saveWidgets();
+    // Re-renderiza apenas a ordem no DOM sem recriar conteúdo
+    const panel = document.getElementById('widget-panel');
+    widgets.forEach(w => {
+      const card = document.getElementById('wcard-' + w.id);
+      if (card) panel.appendChild(card); // reordena no DOM
+    });
+    dragSrcId = null;
+  });
+}
+
 // ── RENDER DO PAINEL ──────────────────────────────────────────────
-// renderWidgetPanel: só reconstrói cards que não existem ainda.
-// Para atualizar conteúdo interno sem piscar, use patchWidgetCard(w).
 function renderWidgetPanel() {
   const panel = document.getElementById('widget-panel');
   if (!panel) return;
 
-  // Remove cards de widgets excluídos
+  // 1. Remove cards de widgets excluídos
   [...panel.children].forEach(el => {
     const wid = el.id ? el.id.replace('wcard-', '') : null;
     if (wid && !widgets.find(w => w.id === wid)) el.remove();
   });
 
-  // Adiciona/atualiza cards na ordem correta
-  widgets.forEach((w, i) => {
-    const existing = document.getElementById('wcard-' + w.id);
-    if (!existing) {
-      // Card novo: cria do zero com animação
-      const el = buildWidgetCard(w);
-      if (!el) return;
-      const ref = panel.children[i];
-      if (ref) panel.insertBefore(el, ref);
-      else panel.appendChild(el);
+  // 2. Cria cards novos ou atualiza existentes
+  widgets.forEach(w => {
+    let el = document.getElementById('wcard-' + w.id);
+    if (!el) {
+      el = buildWidgetCard(w);
+      if (el) panel.appendChild(el); // adiciona temporariamente no final
     } else {
-      // Card existente: patch cirúrgico (sem recriar o elemento raiz)
-      patchWidgetCard(w, existing);
+      patchWidgetCard(w, el);
     }
+  });
+
+  // 3. Reordena o DOM para bater com widgets[] (sem duplicar)
+  widgets.forEach(w => {
+    const card = document.getElementById('wcard-' + w.id);
+    if (card) panel.appendChild(card); // appendChild move se já existe
   });
 }
 
-// patchWidgetCard: atualiza apenas o conteúdo interno de um card já existente,
-// sem remover/recriar o elemento raiz — evita piscadas e perda de foco.
+// patchWidgetCard: atualiza apenas o conteúdo interno de um card existente
 function patchWidgetCard(w, wrap) {
   if (!wrap) wrap = document.getElementById('wcard-' + w.id);
   if (!wrap) return;
-
-  // Marca como patched para suprimir re-animação CSS
   wrap.classList.add('patched');
+  // Garante classe de tamanho
+  wrap.className = wrap.className.replace(/\bsz-\w+\b/g, '').replace('patched','').trim();
+  wrap.classList.add('w-card', 'sz-' + getWidgetSize(w), 'patched');
 
-  // Substitui tudo abaixo do header (primeiro filho) sem tocar no próprio card
   const header = wrap.querySelector('.w-card-header');
-  // Remove nós que não são o header
   [...wrap.children].forEach(ch => { if (ch !== header) ch.remove(); });
 
-  // Injeta o novo body como fragment
   const tmp = document.createElement('div');
   switch (w.type) {
     case 'ambiente':   tmp.innerHTML = renderWidgetAmbiente(w);  break;
@@ -3743,26 +3890,40 @@ function patchWidgetCard(w, wrap) {
 }
 
 function buildWidgetCard(w) {
+  const sz = getWidgetSize(w);
   const wrap = document.createElement('div');
-  wrap.className = 'w-card';
+  wrap.className = `w-card sz-${sz}`;
   wrap.id = 'wcard-' + w.id;
 
-  const header = `
+  // Resize buttons
+  const resizeBtns = W_SIZES.map(s =>
+    `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}">${W_SIZE_LABELS[s]}</button>`
+  ).join('');
+
+  wrap.innerHTML = `
     <div class="w-card-header">
+      <span class="w-drag-handle" title="Arrastar para mover">⠿</span>
       <span class="w-card-title">${w.icon || ''} ${w.name}</span>
-      <button class="w-edit-btn" onclick="openWidgetCfgModal('${w.id}')">✎ Editar</button>
+      <div class="w-resize-btns">${resizeBtns}</div>
+      <button class="w-edit-btn" onclick="openWidgetCfgModal('${w.id}')">✎</button>
     </div>`;
 
+  let body = '';
   switch (w.type) {
-    case 'ambiente':   wrap.innerHTML = header + renderWidgetAmbiente(w);  break;
-    case 'caixa_agua': wrap.innerHTML = header + renderWidgetCaixaAgua(w); break;
-    case 'irrigacao':  wrap.innerHTML = header + renderWidgetIrrigacao(w); break;
-    case 'portao':     wrap.innerHTML = header + renderWidgetPortao(w);    break;
-    case 'rele':       wrap.innerHTML = header + renderWidgetRele(w);      break;
-    case 'alarme':     wrap.innerHTML = header + renderWidgetAlarme(w);    break;
-    case 'medidor':    wrap.innerHTML = header + renderWidgetMedidor(w);   break;
+    case 'ambiente':   body = renderWidgetAmbiente(w);  break;
+    case 'caixa_agua': body = renderWidgetCaixaAgua(w); break;
+    case 'irrigacao':  body = renderWidgetIrrigacao(w); break;
+    case 'portao':     body = renderWidgetPortao(w);    break;
+    case 'rele':       body = renderWidgetRele(w);      break;
+    case 'alarme':     body = renderWidgetAlarme(w);    break;
+    case 'medidor':    body = renderWidgetMedidor(w);   break;
     default: return null;
   }
+  const bodyDiv = document.createElement('div');
+  bodyDiv.innerHTML = body;
+  while (bodyDiv.firstChild) wrap.appendChild(bodyDiv.firstChild);
+
+  initDragEvents(wrap, w.id);
   return wrap;
 }
 
@@ -4315,6 +4476,11 @@ function saveWidgetFromModal() {
   if (!name) { alert('Informe o nome do widget.'); return; }
 
   let w = { id: editId || ('w_' + Date.now()), type, name, icon: gv('icon') };
+  // Preserva tamanho e posição do card existente
+  if (editId) {
+    const prev = widgets.find(x => x.id === editId);
+    if (prev && prev.sz) w.sz = prev.sz;
+  }
 
   switch(type) {
     case 'ambiente':   w.roomId   = gv('roomId');   break;
