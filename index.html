@@ -863,53 +863,54 @@ body::before {
 </div>
 
 <!-- MODAL CAIXA D'ÁGUA -->
+<!-- MODAL CAIXA D'ÁGUA — estilo unificado com modal de ambiente -->
 <div class="modal-overlay" id="tank-modal">
-  <div class="modal" style="width:460px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title" id="tank-modal-title">Nova Caixa d'água</div>
-    <input type="hidden" id="tank-edit-id" value="">
-
-    <!-- Nome da caixa -->
+  <div class="modal" style="width:440px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title" id="tank-modal-title">🪣 Nova caixa d'água</div>
     <div class="modal-fields">
+
+      <!-- Nome -->
       <div class="field">
         <label>Nome da caixa</label>
-        <input id="tank-name" placeholder="ex: Caixa Principal, Cisterna..." />
+        <input id="tank-name" placeholder="ex: Caixa Principal, Cisterna..."/>
       </div>
 
-      <!-- Sensor da caixa -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <!-- Device / Sensor -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-        Sensor MQTT
+        Sensor de nível (ESP32 LoRa)
       </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <div style="padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px">
         <div class="field" style="margin-bottom:8px">
-          <label>Código do sensor (water code)</label>
-          <input id="tank-code" placeholder="ex: E524D0" oninput="updateTankPreview()" style="font-family:var(--mono);letter-spacing:0.1em;text-transform:uppercase"/>
-          <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-            Tópico dados: <span style="color:var(--accent2)" id="tank-topic-preview">caixas/agua/.../dados</span><br>
-            Tópico status: <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
+          <label>Código do sensor <span style="font-weight:400;opacity:0.6;font-size:9px">(water code — exibido no dispositivo)</span></label>
+          <input id="tank-code" placeholder="ex: E524D0" maxlength="12"
+            oninput="updateTankPreview()"
+            style="font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase"/>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.9">
+            📥 <span style="color:var(--accent2)" id="tank-topic-preview">caixas/agua/.../dados</span><br>
+            📡 <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
           </div>
         </div>
-      </div>
-
-      <!-- Capacidade -->
-      <div class="field" style="margin-top:6px">
-        <label>Capacidade total (litros)</label>
-        <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"/>
-      </div>
-
-      <!-- Info broker global -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius)">
-        <span style="font-size:16px">🔗</span>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
-          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — esta caixa usará automaticamente<br>
-          as credenciais MQTT configuradas no painel principal.
+        <div class="field" style="margin-bottom:0">
+          <label>Capacidade total (litros)</label>
+          <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"
+            style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;width:100%"/>
         </div>
       </div>
 
-      <!-- Bombas / Relés -->
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:8px 0 6px;display:flex;align-items:center;gap:8px">
+      <!-- Broker compartilhado -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius);margin-bottom:10px">
+        <span style="font-size:16px">🔗</span>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
+          <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — usa automaticamente as<br>
+          credenciais MQTT configuradas no painel principal.
+        </div>
+      </div>
+
+      <!-- Bombas vinculadas -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
-        Bombas / Relés de abastecimento
+        Bombas de abastecimento
         <span style="margin-left:auto;font-size:9px;opacity:0.7">máx. 2</span>
       </div>
       <div id="tank-pump-rows" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -918,93 +919,95 @@ body::before {
       </button>
     </div>
 
-    <div class="modal-actions" style="margin-top:16px">
-      <button class="btn" onclick="closeTankModal()">Cancelar</button>
-      <button class="btn primary" onclick="confirmSaveTank()">Salvar caixa</button>
+    <input type="hidden" id="tank-edit-id"/>
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between">
+      <button id="tank-delete-btn" class="btn"
+        style="display:none;color:var(--danger);border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.07)"
+        onclick="deleteTankFromModal()">🗑 Excluir</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn" onclick="closeTankModal()">Cancelar</button>
+        <button class="btn primary" onclick="confirmSaveTank()">Salvar</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- weather-card-col is inline in row-3 -->
-
-<!-- MODAL BOMBA IRRIGAÇÃO -->
+<!-- MODAL BOMBA IRRIGAÇÃO — estilo unificado -->
 <div class="modal-overlay" id="irrig-pump-modal">
-  <div class="modal" style="width:420px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">⚙ Configurar Bomba de Irrigação</div>
+  <div class="modal" style="width:440px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">💧 Bomba de Irrigação</div>
     <div class="modal-fields">
 
+      <!-- Nome -->
       <div class="field">
         <label>Nome da bomba</label>
         <input id="ip-pump-name" value="Bomba de irrigação" placeholder="ex: Bomba principal"/>
       </div>
 
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <!-- Relé associado -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
-        Relé associado
+        Relé que controla a bomba
       </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius)">
+      <div style="padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px">
         <div class="field" style="margin:0">
-          <label>Saída (relé) que controla a bomba</label>
-          <select id="ip-relay-sel" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px"></select>
+          <label>Saída (OUT) associada</label>
+          <select id="ip-relay-sel"
+            style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px">
+          </select>
           <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono)">
-            O relé selecionado será acionado pelos agendamentos.
+            O relé selecionado será acionado pelos agendamentos de irrigação.
           </div>
         </div>
       </div>
 
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:10px 0 6px;display:flex;align-items:center;gap:8px">
+      <!-- Tópico MQTT -->
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px">
         <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
-        Conexão MQTT da bomba
+        Tópico MQTT
       </div>
-      <!-- Info broker global -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius);margin-bottom:4px">
+      <div style="padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px">
+        <div class="field" style="margin:0">
+          <label>Tópico onde a bomba escuta ON/OFF</label>
+          <input id="ip-topic" placeholder="ex: irrigacao/relay/bomba"
+            style="font-family:var(--mono);font-size:11px;color:var(--accent2)"/>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--mono)">
+            Deixe vazio para usar <span style="color:var(--accent2)">irrigacao/relay/{relé}</span> automaticamente
+          </div>
+        </div>
+      </div>
+
+      <!-- Broker compartilhado -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:var(--radius);margin-bottom:10px">
         <span style="font-size:16px">🔗</span>
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">
           <span style="color:var(--accent);font-weight:600">Broker compartilhado</span> — usa as credenciais MQTT<br>
-          do painel principal. Preencha abaixo apenas se usar broker diferente.
-        </div>
-      </div>
-      <div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
-        <div class="field" style="margin:0">
-          <label>Host do broker</label>
-          <input id="ip-host" placeholder="ex: xxxx.s1.eu.hivemq.cloud" style="font-family:var(--mono);font-size:11px"/>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="field" style="margin:0">
-            <label>Usuário MQTT</label>
-            <input id="ip-user" placeholder="ex: esp32-Project"/>
-          </div>
-          <div class="field" style="margin:0">
-            <label>Senha MQTT</label>
-            <input id="ip-pass" type="password" placeholder="••••••••"/>
-          </div>
-        </div>
-        <div class="field" style="margin:0">
-          <label>Tópico MQTT da bomba</label>
-          <input id="ip-topic" placeholder="ex: irrigacao/relay/bomba" style="font-family:var(--mono);font-size:11px;color:var(--accent2)"/>
-          <div style="font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)">Tópico onde a bomba escuta ON/OFF — separado dos relés dos ambientes</div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">
-          Porta: <strong>8884</strong> (WSS) — mesmo padrão das caixas d'água
+          do painel principal automaticamente.
         </div>
       </div>
 
+      <!-- Como funciona -->
       <div style="padding:10px 12px;background:rgba(0,212,160,0.04);border:1px solid rgba(0,212,160,0.15);border-radius:var(--radius)">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:600;margin-bottom:4px">📋 Como funciona</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
-          • <strong style="color:var(--text)">Modo AUTO</strong>: bomba liga/desliga conforme agendamentos<br>
-          • <strong style="color:var(--text)">Modo MANUAL</strong>: você controla manualmente o botão<br>
-          • Chuva detectada ou prevista ≥ 70% → irrigação bloqueada 🌧️<br>
-          • Configure os horários no painel "Novo agendamento" acima
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:600;margin-bottom:6px">📋 Como funciona</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.9">
+          • <strong style="color:var(--text)">Modo AUTO</strong> — liga/desliga conforme agendamentos<br>
+          • <strong style="color:var(--text)">Modo MANUAL</strong> — você controla pelo botão<br>
+          • Chuva ≥ 70% detectada → irrigação bloqueada 🌧
         </div>
       </div>
+
+      <!-- campos ocultos de compatibilidade -->
+      <input type="hidden" id="ip-host"/>
+      <input type="hidden" id="ip-user"/>
+      <input type="hidden" id="ip-pass"/>
     </div>
+
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn" onclick="closeIrrigPumpModal()">Cancelar</button>
       <button class="btn primary" onclick="saveIrrigPumpModal()">Salvar</button>
     </div>
   </div>
-</div>
+</div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
 
@@ -1269,10 +1272,13 @@ function switchBrokerTab(mode) {
 // ── MQTT persistence — salva toda config no broker com retain ─────────────
 function buildPersistPayload() {
   return JSON.stringify({
-    relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled })), // sem state
+    relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled })),
     rooms,
     schedules,
-    waterTanks: waterTanks.map(t => ({ id:t.id, name:t.name, code:t.code, capacity:t.capacity, pumps:t.pumps })),
+    // Inclui TUDO da caixa — credenciais inclusive — para sincronizar entre dispositivos
+    waterTanks,
+    // Bomba de irrigação — incluída para sincronizar entre dispositivos
+    irrigPump,
     relayPrefix: RELAY_PREFIX,
     weather: { city: weather.city, lat: weather.lat, lon: weather.lon },
     savedAt: new Date().toISOString(),
@@ -1329,17 +1335,26 @@ function loadFromBrokerPayload(payload) {
 
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
-    // Caixas d'água — apenas atualiza nome/code/capacity/pumps, nunca duplica e preserva credenciais MQTT
-    if (d.waterTanks && d.waterTanks.length) {
-      d.waterTanks.forEach(st => {
-        const existing = waterTanks.find(t => t.id === st.id);
-        if (existing) {
-          // Atualiza apenas campos não-sensíveis — preserva mqttHost/mqttUser/mqttPass do localStorage
-          existing.name = st.name; existing.code = st.code; existing.capacity = st.capacity; existing.pumps = st.pumps;
-        }
-        // NÃO adiciona nova caixa vinda do broker — evita duplicação com localStorage
-      });
+    // Caixas d'água — restaura lista completa do broker (inclui credenciais)
+    // O broker é a fonte de verdade — garante sincronização entre PC e celular
+    if (d.waterTanks !== undefined) {
+      if (d.waterTanks.length) {
+        // Merge: preserva dados ao vivo (nível, etc.) de tanks já conhecidas
+        const merged = d.waterTanks.map(st => {
+          const existing = waterTanks.find(t => t.id === st.id);
+          return existing ? { ...st, level: existing.level, lastSeen: existing.lastSeen } : st;
+        });
+        waterTanks = merged;
+      } else {
+        waterTanks = [];
+      }
       saveTanks();
+    }
+
+    // Bomba de irrigação
+    if (d.irrigPump) {
+      irrigPump = Object.assign(irrigPump, d.irrigPump);
+      saveIrrigPump();
     }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
@@ -1991,6 +2006,8 @@ function openTankModal(editId) {
   const t = editId ? waterTanks.find(x => x.id === editId) : null;
   document.getElementById('tank-edit-id').value = editId || '';
   document.getElementById('tank-modal-title').textContent = t ? 'Editar caixa' : 'Nova caixa d\'água';
+    const delBtn = document.getElementById('tank-delete-btn');
+    if (delBtn) delBtn.style.display = editId ? 'flex' : 'none';
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
@@ -2143,6 +2160,7 @@ function confirmSaveTank() {
     waterTanks.push(tankData);
   }
   saveTanks();
+  publishPersist(); // sincroniza com celular e outros dispositivos
 
   // Conecta ao broker desta caixa se ainda não conectado ou se as credenciais mudaram
   connectTankBroker(tankData);
@@ -2152,11 +2170,26 @@ function confirmSaveTank() {
   closeTankModal();
 }
 
+function deleteTankFromModal() {
+  const id = document.getElementById('tank-edit-id')?.value;
+  if (!id) return;
+  const t = waterTanks.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`Remover caixa "${t.name}"?`)) return;
+  waterTanks = waterTanks.filter(x => x.id !== id);
+  saveTanks();
+  publishPersist();
+  renderTanks();
+  closeTankModal();
+  log(`Caixa "${t.name}" removida`, 'sys');
+}
+
 function removeTank(id) {
   const t = waterTanks.find(x => x.id === id);
   if (!t || !confirm(`Remover "${t.name}"?`)) return;
   waterTanks = waterTanks.filter(x => x.id !== id);
   saveTanks();
+  publishPersist();
   renderTanks();
   log(`Caixa "${t.name}" removida`, 'sys');
 }
