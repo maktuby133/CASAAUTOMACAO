@@ -484,8 +484,8 @@ body::before {
   }
   .room-main-row {
     flex: 1 !important; min-width: 0 !important;
-    flex-wrap: nowrap !important; gap: 5px !important;
-    align-items: center !important; overflow: hidden !important;
+    flex-wrap: wrap !important; gap: 5px !important;
+    align-items: center !important; overflow: visible !important;
   }
   .room-val  { font-size: 13px !important; }
   .room-unit { font-size: 9px !important; }
@@ -541,16 +541,17 @@ body::before {
 /* === ROOMS === */
 .rooms-scroll {
   display:grid; grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 80px; gap:8px;
+  gap:8px;
 }
 .rooms-scroll::-webkit-scrollbar { width: 3px; }
 .rooms-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 7px 9px;
+  border-radius: var(--radius); padding: 7px 22px 7px 9px;
   transition: border-color 0.2s; position:relative; min-width:0;
-  height: 80px; box-sizing: border-box; overflow: hidden;
-  display: flex; flex-direction: column; gap: 3px;
+  box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 4px;
+  /* SEM height fixo, SEM overflow:hidden — botões nunca somem */
 }
 .room-card:hover { border-color: var(--border2); }
 .room-card:hover .room-del-btn { opacity: 1; }
@@ -573,10 +574,15 @@ body::before {
 .room-icon   { font-size:12px; flex-shrink:0; }
 .room-name   { font-size:11px; font-weight:600; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .room-ts     { font-family:var(--mono); font-size:7px; color:var(--muted); flex-shrink:0; }
-/* sensor + relay row */
+/* sensor row — dados de sensor, pode truncar se estreito */
 .room-main-row {
   display: flex; align-items: center; gap: 5px;
-  flex: 1; overflow: hidden; min-width: 0;
+  flex-wrap: wrap; min-width: 0; overflow: visible;
+}
+/* relay row — botões, NUNCA cortados */
+.room-relay-row {
+  display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap; flex-shrink: 0;
 }
 .room-sep { width:1px; height:12px; background:var(--border); flex-shrink:0; }
 .room-val  { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--text); letter-spacing:-0.5px; white-space:nowrap; }
@@ -615,51 +621,14 @@ body::before {
 .rm-sensor-opt:hover { border-color:var(--border2); }
 .rm-sensor-opt.selected { border-color:var(--accent); background:rgba(0,212,160,0.08); }
 
-/* ══ rooms-scroll dentro do widget: sem altura fixa por linha ══ */
+/* ══ rooms-scroll dentro do widget ══ */
 #widget-panel .rooms-scroll {
-  grid-auto-rows: auto !important;
-}
-#widget-panel .room-card {
-  height: auto !important;
-  min-height: 66px;
-  overflow: visible !important;
+  grid-template-columns: 1fr; /* coluna única dentro do widget */
+  gap: 5px;
 }
 
-/* ══ room-card compacto no sz-small ══
-   Dentro de um card 1/3, o room-card vira coluna compacta */
-.sz-small .rooms-scroll {
-  display: flex !important;
-  flex-direction: column !important;
-  grid-template-columns: unset !important;
-  grid-auto-rows: unset !important;
-}
-.sz-small .room-card {
-  height: auto !important;
-  min-height: 56px !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  padding: 6px 22px 6px 8px !important;
-  overflow: visible !important;
-}
-.sz-small .room-header {
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 4px !important;
-  margin-bottom: 4px !important;
-  padding-right: 0 !important;
-  max-width: 100% !important;
-  width: 100% !important;
-}
-.sz-small .room-header::after { display: none !important; }
-.sz-small .room-ts { display: none !important; }
-.sz-small .room-main-row {
-  flex-wrap: wrap !important;
-  gap: 4px 6px !important;
-  width: 100% !important;
-  overflow: visible !important;
-}
-.sz-small .room-val { font-size: 12px !important; }
-.sz-small .room-relay-wrap { flex-shrink: 0 !important; }
+/* sz-small: mesma coisa mas mais compacto */
+.sz-small .rooms-scroll { gap: 4px; }
 
 /* ══ Irrigação: status bomba botões ══ */
 .irrig-pump-status {
@@ -3850,110 +3819,74 @@ function renderWidgetAmbienteGrid(w) {
     return `<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente cadastrado. Clique em "+ Ambiente" para começar.</div>`;
   }
 
-  const sz = getWidgetSize(w);
-  const isCompact = (sz === 'small'); // card estreito: layout vertical garantido
-
   return rooms.map(r => {
     const d  = r.data || { temp:null, hum:null, smoke:null, lamp:false, lastSeen:null };
     const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
     const alarmCls = d.smoke >= 60 ? 'alarm' : d.smoke >= 30 ? 'warn-smoke' : '';
+
     const linkedRelays = (r.relays || []).map(rel => {
       const rid  = typeof rel === 'string' ? rel : rel.id;
       const rObj = relays.find(x => x.id === rid);
       if (!rObj) return null;
-      return { ...rObj, displayIcon: (typeof rel === 'object' && rel.icon) || rObj.icon, displayLabel: (typeof rel === 'object' && rel.label) || rObj.name };
+      return { ...rObj,
+        displayIcon:  (typeof rel === 'object' && rel.icon)  || rObj.icon,
+        displayLabel: (typeof rel === 'object' && rel.label) || rObj.name };
     }).filter(Boolean);
 
-    if (isCompact) {
-      // ── LAYOUT COMPACTO (sz-small) ──────────────────────────────────
-      // Estrutura vertical: nome | dados essenciais | botões — sem overflow
-      const tempHtml = (r.hasTemp && d.temp !== null)
-        ? `<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">🌡️${d.temp.toFixed(1)}<span style="font-size:9px;font-weight:400;color:var(--muted)">°C</span></span>`
-        : '';
-      const humHtml = (r.hasTemp && d.hum !== null)
-        ? `<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">💧${Math.round(d.hum)}<span style="font-size:8px">%</span></span>`
-        : '';
-      const gasHtml = r.hasSmoke
-        ? (() => {
-            const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
-            const gv = d.smoke !== null ? d.smoke : null;
-            return `<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${sl.color}">🔥${gv !== null ? gv + '%' : '—'}<span style="font-size:8px;margin-left:1px">${sl.label}</span>${gasLocked ? '<span style="color:var(--danger)">⚠</span>' : ''}</span>`;
-          })()
-        : '';
-      const noData = !d.lastSeen
-        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted)">aguardando…</span>`
-        : '';
-
-      // Botões (lâmpada + relés vinculados) — sempre visíveis
-      const btnsHtml = (() => {
-        const btns = [];
-        if (r.hasLamp) {
-          const lampOn = d.lamp === true;
-          btns.push(`<label class="room-relay-switch" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}" style="flex-shrink:0">
-            <span style="font-size:13px;line-height:1;margin-right:3px">${lampOn ? '💡' : '🔦'}</span>
-            <input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
-            <div class="rrs-track"></div><div class="rrs-knob"></div>
-          </label>`);
-        }
-        linkedRelays.forEach(rel => {
-          btns.push(`<label class="room-relay-switch" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}" style="flex-shrink:0">
-            <span style="font-size:13px;line-height:1;margin-right:3px">${rel.displayIcon}</span>
-            <input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
-            <div class="rrs-track"></div><div class="rrs-knob"></div>
-          </label>`);
-        });
-        return btns.join('');
-      })();
-
-      return `<div class="room-card ${alarmCls}" id="room-${r.id}"
-        style="height:auto!important;min-height:0!important;overflow:visible!important;
-               display:flex;flex-direction:column;gap:4px;padding:7px 24px 7px 8px;">
-        <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
-        <!-- linha: ícone + nome -->
-        <div style="display:flex;align-items:center;gap:4px;min-width:0">
-          <span style="font-size:12px;flex-shrink:0">${r.icon}</span>
-          <span style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name}</span>
-        </div>
-        <!-- linha: dados de sensores -->
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0">
-          ${noData}${tempHtml}${humHtml}${gasHtml}
-        </div>
-        <!-- linha: botões — SEMPRE visíveis -->
-        ${btnsHtml ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-top:2px">${btnsHtml}</div>` : ''}
-      </div>`;
-    }
-
-    // ── LAYOUT PADRÃO (med / large / full) ─────────────────────────
-    const rowItems = [];
+    // ── linha de sensores ─────────────────────────────────────────
+    const sensorItems = [];
     if (!d.lastSeen) {
-      rowItems.push(`<span class="room-nodata">aguardando...</span>`);
+      sensorItems.push(`<span class="room-nodata">aguardando…</span>`);
     } else {
       if (r.hasTemp && d.temp !== null)
-        rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:10px;line-height:1">🌡️</span><span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span></div>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:10px;line-height:1">🌡️</span><span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span></span>`);
       if (r.hasTemp && d.hum !== null) {
-        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-        rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></div>`);
+        if (sensorItems.length > 0 && d.temp !== null) sensorItems.push(`<div class="room-sep"></div>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></span>`);
       }
       if (r.hasSmoke) {
-        const smokeVal = d.smoke !== null ? d.smoke : null;
         const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
-        if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-        rowItems.push(`<div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="font-size:12px;color:${sl.color}">${smokeVal !== null ? smokeVal : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${smokeVal !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite">⚠</span>` : ''}</div>`);
+        const sv = d.smoke !== null ? d.smoke : null;
+        if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="font-size:12px;color:${sl.color}">${sv !== null ? sv : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${sv !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger)">⚠</span>` : ''}</span>`);
       }
     }
+
+    // ── linha de botões — ROW PRÓPRIA, nunca entra no sensorItems ──
+    const btnItems = [];
     if (r.hasLamp) {
-      if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
       const lampOn = d.lamp === true;
-      rowItems.push(`<div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}"><span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span><label class="room-relay-switch"><input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)"><div class="rrs-track"></div><div class="rrs-knob"></div></label></div>`);
+      btnItems.push(`<div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
+        <span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span>
+        <label class="room-relay-switch">
+          <input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>`);
     }
     linkedRelays.forEach(rel => {
-      if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-      rowItems.push(`<div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}"><span style="font-size:12px;line-height:1">${rel.displayIcon}</span><label class="room-relay-switch"><input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)"><div class="rrs-track"></div><div class="rrs-knob"></div></label></div>`);
+      btnItems.push(`<div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}">
+        <span style="font-size:12px;line-height:1">${rel.displayIcon}</span>
+        <label class="room-relay-switch">
+          <input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>`);
     });
+
+    const btnRowHtml = btnItems.length
+      ? `<div class="room-relay-row">${btnItems.join('')}</div>`
+      : '';
+
     return `<div class="room-card ${alarmCls}" id="room-${r.id}">
       <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
-      <div class="room-header"><span class="room-icon">${r.icon}</span><span class="room-name">${r.name}</span>${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}</div>
-      <div class="room-main-row">${rowItems.join('')}</div>
+      <div class="room-header">
+        <span class="room-icon">${r.icon}</span>
+        <span class="room-name">${r.name}</span>
+        ${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
+      </div>
+      <div class="room-main-row">${sensorItems.join('')}</div>
+      ${btnRowHtml}
     </div>`;
   }).join('');
 }
