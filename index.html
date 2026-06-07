@@ -603,6 +603,74 @@ body::before {
 }
 .rm-sensor-opt:hover { border-color:var(--border2); }
 .rm-sensor-opt.selected { border-color:var(--accent); background:rgba(0,212,160,0.08); }
+
+/* ══ rooms-scroll dentro do widget: sem altura fixa por linha ══ */
+#widget-panel .rooms-scroll {
+  grid-auto-rows: auto !important;
+}
+#widget-panel .room-card {
+  height: auto !important;
+  min-height: 66px;
+  overflow: visible !important;
+}
+
+/* ══ room-card compacto no sz-small ══
+   Dentro de um card 1/3, o room-card vira coluna compacta */
+.sz-small .rooms-scroll {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: unset !important;
+  grid-auto-rows: unset !important;
+}
+.sz-small .room-card {
+  height: auto !important;
+  min-height: 56px !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  padding: 6px 22px 6px 8px !important;
+  overflow: visible !important;
+}
+.sz-small .room-header {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-bottom: 4px !important;
+  padding-right: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+.sz-small .room-header::after { display: none !important; }
+.sz-small .room-ts { display: none !important; }
+.sz-small .room-main-row {
+  flex-wrap: wrap !important;
+  gap: 4px 6px !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+.sz-small .room-val { font-size: 12px !important; }
+.sz-small .room-relay-wrap { flex-shrink: 0 !important; }
+
+/* ══ Irrigação: status bomba botões ══ */
+.irrig-pump-status {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 12px;
+  margin-bottom: 10px;
+}
+.irrig-pump-status .pump-label {
+  font-size: 12px; font-weight: 600; color: var(--text); flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.irrig-sched-btn {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 9px 14px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--muted);
+  font-family: var(--mono); font-size: 11px;
+  cursor: pointer; transition: all 0.15s;
+  justify-content: space-between;
+}
+.irrig-sched-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.04); }
 </style>
 </head>
 <body>
@@ -3979,12 +4047,16 @@ function renderWidgetAmbienteGrid(w) {
 
 function renderWidgetAmbiente(w) {
   const cnt = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
+  const sz = getWidgetSize(w);
+  const gridStyle = sz === 'small'
+    ? 'display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:300px;padding-right:2px'
+    : 'max-height:220px;overflow-y:auto;padding-right:2px';
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${cnt}</span>
       <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
     </div>
-    <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="max-height:220px;overflow-y:auto;padding-right:2px">${renderWidgetAmbienteGrid(w)}</div>`;
+    <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
 }
 
 function renderWidgetCaixaAguaGrid(w) {
@@ -4057,51 +4129,53 @@ function renderWidgetCaixaAgua(w) {
 
 function renderWidgetIrrigacao(w) {
   const cnt = schedules.length;
-  const schedHtml = cnt === 0
-    ? `<div style="font-size:11px;color:var(--muted);padding:4px 0 8px;font-family:var(--mono)">Nenhum agendamento.</div>`
-    : schedules.map(s => {
+
+  // Resumo dos agendamentos (apenas próximos, sem form)
+  const schedSummary = cnt === 0
+    ? `<div style="font-size:11px;color:var(--muted);padding:8px 0;font-family:var(--mono)">Nenhum agendamento configurado.</div>`
+    : schedules.slice(0,3).map(s => {
         const rel = relays.find(r => r.id === s.relay);
         const dayShort = ['D','S','T','Q','Q','S','S'];
         const activeDays = dayShort.map((d,i) => s.days.includes(i)
-          ? `<span style="color:var(--accent);font-weight:600">${d}</span>`
+          ? `<span style="color:var(--accent);font-weight:700">${d}</span>`
           : `<span style="color:var(--border2)">${d}</span>`
         ).join('<span style="margin:0 1px"></span>');
-        return `<div class="sched-item">
+        return `<div class="sched-item" style="padding:6px 10px">
           <div class="sched-time">${s.time}</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.04em;flex-shrink:0">${s.duration}m</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">${s.duration}m</div>
           <div class="sched-info" style="flex:1;min-width:0">
             <div class="sched-relay">${rel ? rel.icon + ' ' + rel.name : '—'}</div>
             <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.06em;margin-top:2px">${activeDays}</div>
           </div>
           <button class="btn-icon" onclick="removeSchedule('${s.id}')" title="Remover" style="width:20px;height:20px;font-size:10px;flex-shrink:0">✕</button>
         </div>`;
-      }).join('');
+      }).join('') + (cnt > 3 ? `<div style="font-family:var(--mono);font-size:9px;color:var(--muted);padding:4px 10px">+${cnt-3} agendamento${cnt-3>1?'s':''} oculto${cnt-3>1?'s':''}…</div>` : '');
 
-  // Monta lista de relés no select
-  const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+  // Status + controle da bomba de irrigação
+  const isManual = (irrigPump && irrigPump.mode === 'manual') || false;
+  const pumpRel  = irrigPump && irrigPump.relayId ? relays.find(r => r.id === irrigPump.relayId) : null;
+  const pumpOn   = pumpRel ? (pumpRel.state || false) : false;
+  const pumpName = (irrigPump && irrigPump.name) || 'Bomba';
+  const pumpHtml = `
+    <div class="irrig-pump-status" id="irrig-pump-status-w${w.id}">
+      <span style="font-size:16px;line-height:1;flex-shrink:0">💧</span>
+      <span class="pump-label">${pumpName}: <span style="color:${pumpOn ? 'var(--accent)':'var(--muted)'};font-weight:700">${pumpOn ? '● ON' : '○ OFF'}</span></span>
+      <div class="pump-mode-toggle" style="flex-shrink:0">
+        <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="setIrrigMode('auto')">AUTO</button>
+        <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="setIrrigMode('manual')">MAN</button>
+      </div>
+      ${isManual ? `<button class="pump-btn ${pumpOn ? 'on' : 'off'}" onclick="toggleIrrigPumpManual()" style="flex-shrink:0;padding:4px 8px;font-size:10px">
+        <span class="pump-icon" style="font-size:12px">⚙</span>${pumpOn ? 'Desligar' : 'Ligar'}
+      </button>` : ''}
+    </div>`;
 
   return `
-    <div class="sched-list" style="max-height:180px;overflow-y:auto;margin-bottom:10px;padding-right:2px;display:flex;flex-direction:column;gap:4px">${schedHtml}</div>
-    <div style="border-top:1px solid var(--border);padding-top:10px">
-      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Novo agendamento</div>
-      <div class="day-picker" id="day-picker-w${w.id}" style="gap:4px;margin-bottom:8px">
-        <button class="day-pick-btn" data-d="0" onclick="wToggleDay(this,'${w.id}')">D</button>
-        <button class="day-pick-btn" data-d="1" onclick="wToggleDay(this,'${w.id}')">S</button>
-        <button class="day-pick-btn" data-d="2" onclick="wToggleDay(this,'${w.id}')">T</button>
-        <button class="day-pick-btn" data-d="3" onclick="wToggleDay(this,'${w.id}')">Q</button>
-        <button class="day-pick-btn" data-d="4" onclick="wToggleDay(this,'${w.id}')">Q</button>
-        <button class="day-pick-btn" data-d="5" onclick="wToggleDay(this,'${w.id}')">S</button>
-        <button class="day-pick-btn" data-d="6" onclick="wToggleDay(this,'${w.id}')">S</button>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-        <input type="time" id="sched-time-w${w.id}" value="06:00" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;height:32px;width:90px">
-        <input type="number" id="sched-dur-w${w.id}" value="15" min="1" max="120" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;height:32px;width:54px">
-        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
-        <select id="sched-relay-w${w.id}" style="flex:1;min-width:100px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 8px;outline:none;height:32px">${relayOpts}</select>
-      </div>
-      <button class="btn primary" style="width:100%;font-size:11px" onclick="wAddSchedule('${w.id}')">+ Adicionar</button>
-    </div>
-    <div id="irrig-pump-block-w${w.id}" style="margin-top:10px"></div>`;
+    ${pumpHtml}
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">${schedSummary}</div>
+    <button class="irrig-sched-btn" onclick="openIrrigSchedModal('${w.id}')">
+      <span>📅 Agendamentos</span>
+      <span style="background:rgba(0,212,160,0.12);color:var(--accent);border-radius:10px;padding:1px 8px;font-size:10px">${cnt}</span>
+    </button>`;
 }
 
 function renderWidgetPortao(w) {
@@ -4271,6 +4345,94 @@ function wAddSchedule(wid) {
 // ── renderTanks sobrescrita para também atualizar widgets ─────────
 const _origRenderTanks = renderTanks;
 // (patch aplicado após load — ver abaixo)
+
+// ── IRRIGAÇÃO WIDGET: modo da bomba e modal de agendamentos ───────
+function setIrrigMode(mode) {
+  // Delega para a função existente de modo da bomba
+  if (typeof toggleIrrigPumpMode === 'function') {
+    toggleIrrigPumpMode(mode);
+    // Atualiza também widgets do painel
+    if (typeof widgets !== 'undefined')
+      widgets.filter(w => w.type === 'irrigacao').forEach(w => patchWidgetCard(w));
+  }
+}
+
+function openIrrigSchedModal(wid) {
+  // Preenche select de relés
+  const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+  document.getElementById('irrig-sched-relay').innerHTML = relayOpts || '<option value="">— nenhum relé —</option>';
+  // Limpa dias selecionados
+  if (!wSelectedDays[wid]) wSelectedDays[wid] = new Set();
+  document.querySelectorAll('#irrig-sched-days .day-pick-btn').forEach(btn => {
+    btn.dataset.wid = wid;
+    btn.classList.toggle('sel', wSelectedDays[wid].has(parseInt(btn.dataset.d)));
+  });
+  document.getElementById('irrig-sched-wid').value = wid;
+  document.getElementById('irrig-sched-modal').classList.add('open');
+  _renderIrrigSchedList();
+}
+
+function closeIrrigSchedModal() {
+  document.getElementById('irrig-sched-modal').classList.remove('open');
+}
+
+function irrigSchedToggleDay(btn) {
+  const wid = document.getElementById('irrig-sched-wid').value;
+  if (!wSelectedDays[wid]) wSelectedDays[wid] = new Set();
+  const d = parseInt(btn.dataset.d);
+  if (wSelectedDays[wid].has(d)) { wSelectedDays[wid].delete(d); btn.classList.remove('sel'); }
+  else { wSelectedDays[wid].add(d); btn.classList.add('sel'); }
+}
+
+function irrigSchedAdd() {
+  const wid  = document.getElementById('irrig-sched-wid').value;
+  const days = wSelectedDays[wid] ? [...wSelectedDays[wid]] : [];
+  if (!days.length) { alert('Selecione pelo menos um dia da semana.'); return; }
+  const t   = document.getElementById('irrig-sched-time').value || '06:00';
+  const dur = parseInt(document.getElementById('irrig-sched-dur').value) || 15;
+  const rel = document.getElementById('irrig-sched-relay').value;
+  if (!rel) { alert('Selecione um relé/zona.'); return; }
+  schedules.push({ id: 's' + Date.now(), days, time: t, duration: dur, relay: rel, active: true });
+  wSelectedDays[wid] = new Set();
+  try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
+  const w = widgets.find(x => x.id === wid);
+  if (w) patchWidgetCard(w);
+  publishPersist();
+  log(`Agendamento: ${t} por ${dur}min`, 'ok');
+  // Atualiza lista no modal sem fechar
+  _renderIrrigSchedList();
+}
+
+function _renderIrrigSchedList() {
+  const listEl = document.getElementById('irrig-sched-list-modal');
+  if (!listEl) return;
+  if (!schedules.length) {
+    listEl.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 0">Nenhum agendamento.</div>`;
+    return;
+  }
+  const dayShort = ['D','S','T','Q','Q','S','S'];
+  listEl.innerHTML = schedules.map(s => {
+    const rel = relays.find(r => r.id === s.relay);
+    const daysStr = dayShort.filter((_,i) => s.days.includes(i)).join(' ');
+    return `<div class="sched-item" style="padding:6px 10px">
+      <div class="sched-time">${s.time}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">${s.duration}m</div>
+      <div class="sched-info" style="flex:1;min-width:0">
+        <div class="sched-relay">${rel ? rel.icon + ' ' + rel.name : '—'}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-top:2px">${daysStr}</div>
+      </div>
+      <button class="btn-icon" onclick="irrigSchedRemove('${s.id}')" title="Remover" style="width:22px;height:22px;font-size:11px;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function irrigSchedRemove(sid) {
+  const wid = document.getElementById('irrig-sched-wid').value;
+  removeSchedule(sid);
+  _renderIrrigSchedList();
+  const w = widgets.find(x => x.id === wid);
+  if (w) patchWidgetCard(w);
+}
 
 
 function handleWidgetMessage(topic, payload) {
@@ -4536,6 +4698,51 @@ function deleteWidgetFromModal() {
 }
 
 </script>
+
+<!-- ═══ MODAL: AGENDAMENTOS DE IRRIGAÇÃO ════════════════════════════ -->
+<div class="modal-overlay" id="irrig-sched-modal">
+  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">📅 Agendamentos de Irrigação</div>
+    <input type="hidden" id="irrig-sched-wid">
+
+    <!-- Lista existente -->
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Agendados</div>
+    <div id="irrig-sched-list-modal" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;margin-bottom:16px;padding-right:2px"></div>
+
+    <!-- Novo agendamento -->
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:10px">Novo agendamento</div>
+
+      <!-- Dias da semana -->
+      <div id="irrig-sched-days" style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="day-pick-btn" data-d="0" onclick="irrigSchedToggleDay(this)">D</button>
+        <button class="day-pick-btn" data-d="1" onclick="irrigSchedToggleDay(this)">S</button>
+        <button class="day-pick-btn" data-d="2" onclick="irrigSchedToggleDay(this)">T</button>
+        <button class="day-pick-btn" data-d="3" onclick="irrigSchedToggleDay(this)">Q</button>
+        <button class="day-pick-btn" data-d="4" onclick="irrigSchedToggleDay(this)">Q</button>
+        <button class="day-pick-btn" data-d="5" onclick="irrigSchedToggleDay(this)">S</button>
+        <button class="day-pick-btn" data-d="6" onclick="irrigSchedToggleDay(this)">S</button>
+      </div>
+
+      <!-- Hora + duração + relé -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <input type="time" id="irrig-sched-time" value="06:00"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;height:36px;width:98px">
+        <input type="number" id="irrig-sched-dur" value="15" min="1" max="120"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 8px;outline:none;height:36px;width:58px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
+        <select id="irrig-sched-relay"
+          style="flex:1;min-width:110px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;height:36px"></select>
+      </div>
+
+      <button class="btn primary" style="width:100%;font-size:11px" onclick="irrigSchedAdd()">＋ Adicionar agendamento</button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn" onclick="closeIrrigSchedModal()">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ MODAL: SELETOR DE WIDGET ════════════════════════════════════ -->
 <div class="modal-overlay" id="widget-picker-modal">
