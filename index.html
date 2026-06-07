@@ -952,8 +952,6 @@ body::before {
   </div>
 </div>
 
-<div id="relay-list" style="display:none"></div>
-
 <!-- hidden stub so JS refs to cfg-panel don't crash -->
 <div id="cfg-panel" style="display:none"></div>
 
@@ -964,7 +962,7 @@ body::before {
       <span>📡</span> Configuração do Broker MQTT
     </div>
     <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:16px;padding:8px 10px;background:var(--bg3);border-radius:6px;line-height:1.7">
-      Este broker será usado por <strong style="color:var(--text)">todos os dispositivos</strong> — caixas d'água, bomba de irrigação e relés.
+      Este broker será usado por <strong style="color:var(--text)">todos os dispositivos</strong> — caixas d'água, bomba de irrigação e ambientes (ESP32).
     </div>
     <div class="modal-fields">
       <div class="field" style="grid-column:1/-1">
@@ -1227,31 +1225,19 @@ body::before {
 <script>
 // ============ STATE ============
 let client = null;
-// 8 saídas fixas — saída 1 = bomba (fixa), 2-8 livres
-// O usuário define o prefixo; tópicos gerados: {prefixo}/out1 … {prefixo}/out8
+// Relés dinâmicos — cada ambiente (ESP32) registra seus próprios relés
+// Não há mais "saídas digitais" fixas globais; o array é populado pelos ambientes
 let RELAY_PREFIX = 'home/relay';
-let relays = [
-  {id:'out1', name:'Bomba de irrigação', icon:'💧', enabled:true,  locked:true,  state:false},
-  {id:'out2', name:'Saída 2',            icon:'🔌', enabled:false, locked:false, state:false},
-  {id:'out3', name:'Saída 3',            icon:'🔌', enabled:false, locked:false, state:false},
-  {id:'out4', name:'Saída 4',            icon:'🔌', enabled:false, locked:false, state:false},
-  {id:'out5', name:'Saída 5',            icon:'🔌', enabled:false, locked:false, state:false},
-  {id:'out6', name:'Saída 6',            icon:'🔌', enabled:false, locked:false, state:false},
-  {id:'out7', name:'Saída 7',            icon:'🔌', enabled:false, locked:false, state:false},
-  {id:'out8', name:'Saída 8',            icon:'🔌', enabled:false, locked:false, state:false},
-];
-function relayTopic(r) { return `${RELAY_PREFIX}/${r.id}`; }
-let schedules = [
-  {id:'s1', days:[1,3,5],   time:'06:00', duration:20, relay:'out1', active:true},
-  {id:'s2', days:[0,2,4,6], time:'18:30', duration:15, relay:'out1', active:true},
-];
+let relays = [];
+function relayTopic(r) { return r.topic || `${RELAY_PREFIX}/${r.id}`; }
+let schedules = [];
 let selectedDays = [];
 let liveData = {water:null, temp:null, hum:null, liters:null, distance:null};
 const dayShort = ['D','S','T','Q','Q','S','S'];
 
 // ============ BOMBA IRRIGAÇÃO ============
 // Configuração da bomba de irrigação (salva no localStorage)
-let irrigPump = { relayId: 'out1', name: 'Bomba de irrigação', mode: 'auto', mqttHost: '', mqttUser: '', mqttPass: '', mqttTopic: '' };
+let irrigPump = { relayId: null, name: 'Bomba de irrigação', mode: 'auto', mqttHost: '', mqttUser: '', mqttPass: '', mqttTopic: '' };
 let irrigClient = null; // cliente MQTT dedicado para a bomba
 
 function saveIrrigPump() {
@@ -1285,7 +1271,7 @@ function connectIrrigBroker() {
     const rel = relays.find(r => r.id === irrigPump.relayId);
     if (rel && topic === relayTopic(rel) + '/state') {
       rel.state = (msg.toString() === 'ON' || msg.toString() === '1');
-      renderRelays(); renderIrrigPumpCard();
+      renderIrrigPumpCard();
     }
   });
   irrigClient.on('error',   (e) => log(`❌ Broker bomba: ${e.message}`, 'warn'));
@@ -1308,7 +1294,7 @@ function setIrrigRelay(state) {
   } else {
     log(`[sem MQTT] Bomba "${irrigPump.name}" → ${payload}`, 'info');
   }
-  saveRelayState(); renderRelays(); renderIrrigPumpCard();
+  saveRelayState(); renderIrrigPumpCard();
 }
 function toggleIrrigPumpMode(mode) {
   irrigPump.mode = mode;
@@ -1383,7 +1369,6 @@ function saveIrrigPumpModal() {
     connectIrrigBroker();
   }
   renderIrrigPumpCard();
-  renderRelays();
   log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.relayId}`, 'ok');
   closeIrrigPumpModal();
 }
@@ -1463,14 +1448,10 @@ function switchBrokerTab(mode) {
 // ── MQTT persistence — salva toda config no broker com retain ─────────────
 function buildPersistPayload() {
   return JSON.stringify({
-    relays: relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled })),
     rooms,
     schedules,
-    // Inclui TUDO da caixa — credenciais inclusive — para sincronizar entre dispositivos
     waterTanks,
-    // Bomba de irrigação — incluída para sincronizar entre dispositivos
     irrigPump,
-    relayPrefix: RELAY_PREFIX,
     widgets: widgets,
     weather: { city: weather.city, lat: weather.lat, lon: weather.lon },
     savedAt: new Date().toISOString(),
@@ -1489,18 +1470,6 @@ function loadFromBrokerPayload(payload) {
   try {
     const d = JSON.parse(payload);
     const brokerTime = d.savedAt ? new Date(d.savedAt).getTime() : 0;
-
-    // Relés — restaura apenas configuração (nome, ícone, enabled) — nunca o state
-    // O estado real vem dos tópicos home/relay/outX/state assinados no broker
-    if (d.relays) {
-      d.relays.forEach(sr => {
-        const r = relays.find(x => x.id === sr.id);
-        if (r && !r.locked) { r.name=sr.name; r.icon=sr.icon; r.enabled=sr.enabled; }
-      });
-      try { localStorage.setItem('autoflow_relays', JSON.stringify(
-        relays.map(r => ({ id:r.id, name:r.name, icon:r.icon, enabled:r.enabled, state:r.state }))
-      )); } catch(e) {}
-    }
 
     // Ambientes — só restaura do broker se ele tiver dados mais recentes
     // que o localStorage local (evita apagar ambientes criados offline)
@@ -1569,7 +1538,7 @@ function loadFromBrokerPayload(payload) {
         });
       }
     }
-    renderRelays(); renderRooms(); renderSchedules(); renderTanks();
+    renderRooms(); renderSchedules(); renderTanks();
     log(`☁ Config carregada do broker (${new Date(d.savedAt).toLocaleString('pt-BR')})`, 'ok');
   } catch(e) { log('Erro ao carregar config do broker: ' + e.message, 'warn'); }
 }
@@ -1725,14 +1694,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 1. Carrega TUDO do localStorage de uma vez ────────────────────────
   const saved = getCfg();
 
-  // ── 2. Restaura relés PRIMEIRO (antes dos ambientes) ─────────────────
+  // ── 2. Restaura relés dinâmicos PRIMEIRO (antes dos ambientes) ──────────
   try {
     const sr = JSON.parse(localStorage.getItem('autoflow_relays') || '[]');
+    // Array dinâmico: restaura o estado dos relés existentes
     sr.forEach(s => {
       const r = relays.find(x => x.id === s.id);
-      if (!r) return;
-      if (!r.locked) { r.name = s.name || r.name; r.icon = s.icon || r.icon; r.enabled = !!s.enabled; }
-      r.state = !!s.state;
+      if (r) { r.state = !!s.state; }
     });
   } catch(e) {}
 
@@ -1779,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setV('cfg-local-pass',  saved.localPass);
   setV('cfg-local-water', saved.localWater);
   setV('cfg-local-temp',  saved.localTemp);
-  if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix;
+  if (saved.relayPrefix) RELAY_PREFIX = saved.relayPrefix; // mantido por compatibilidade com irrigação
 
 
 
@@ -1788,7 +1756,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
   requestAnimationFrame(() => {
-    renderRelays();
     renderRooms();
     renderSchedules();
     renderTanks();
@@ -1974,7 +1941,6 @@ function handleMsg(topic, payload, pkt) {
       if (tankRelayIds.has(r.id) || r.id === irrigRelayId) return; // ignora bombas
       if (topic === relayTopic(r) + '/state') {
         r.state = (payload === 'ON' || payload === '1');
-        renderRelays();
         renderRooms();
       }
     });
@@ -2863,163 +2829,34 @@ function setRelay(relay, state) {
   }
   saveRelayState();
   publishPersist();
-  renderRelays();
   renderRooms();
   renderIrrigPumpCard();
 }
 
 function renderRelays() {
-  const el  = document.getElementById('relay-list');
+  // Saídas digitais globais foram removidas — cada ESP32 gerencia seus próprios relés via ambiente.
+  // Esta função mantém apenas o select de agendamento de irrigação atualizado.
   const sel = document.getElementById('sched-relay');
-  const enabled   = relays.filter(r => r.enabled);
-  const available = relays.filter(r => !r.enabled);
-
-  el.innerHTML = enabled.map(r => {
-    const id = r.id;
-    return `<div class="relay-item ${r.state ? 'active' : ''}" id="ri-${id}">
-      <div class="relay-icon">${r.icon}</div>
-      <div class="relay-info">
-        <div class="relay-name">${r.name}${r.locked?'<span style="font-size:7px;font-family:var(--mono);color:var(--accent);margin-left:4px">●</span>':''}</div>
-      </div>
-      <div class="relay-state-dot"></div>
-      <!-- Hover overlay: toggle + ações -->
-      <div class="relay-hover-actions">
-        <label class="toggle" style="width:34px;height:19px">
-          <input type="checkbox" ${r.state?'checked':''} onchange="setRelay(relays.find(x=>x.id==='${id}'),this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-knob" style="width:12px;height:12px;top:3px;left:3px"></div>
-        </label>
-        ${!r.locked?`
-        <button class="btn-icon" onclick="openEditRelay('${id}')" style="width:22px;height:22px;font-size:10px" title="Renomear">✏</button>
-        <button class="btn-icon" onclick="disableRelay('${id}')" style="width:22px;height:22px;font-size:10px" title="Remover">✕</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
-
-  if (available.length) {
-    el.innerHTML += `<button class="add-relay-btn" onclick="pickRelay()" style="grid-column:1/-1;padding:6px 8px;font-size:10px">
-      ＋ saída <span style="opacity:0.5">(${available.length} livre${available.length===1?'':'s'})</span>
-    </button>`;
-  }
-
-  // Irrigação: mostra apenas out1 (bomba) + relés que não foram vinculados a nenhum ambiente
+  if (!sel) return;
+  const enabled = relays.filter(r => r.enabled);
+  // Para irrigação: relés não vinculados a ambientes + o relé da própria bomba
   const roomUsed = new Set();
   rooms.forEach(room => {
     (room.relays || []).forEach(rel => {
       roomUsed.add(typeof rel === 'string' ? rel : rel.id);
     });
   });
-  const schedAvailable = enabled.filter(r => r.id === 'out1' || !roomUsed.has(r.id));
+  const schedAvailable = enabled.filter(r => r.id === (irrigPump.relayId || '') || !roomUsed.has(r.id));
   sel.innerHTML = schedAvailable.length
     ? schedAvailable.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('')
-    : '<option disabled>Nenhuma saída disponível</option>';
-
-  // Atualiza card da bomba de irrigação
+    : '<option disabled>Nenhum relé disponível</option>';
   renderIrrigPumpCard();
 }
-
-function pickRelay() {
-  const available = relays.filter(r => !r.enabled);
-  // Note: this is the "enable new output" picker, not the room relay picker
-  if (!available.length) return;
-  const opts = available.map(r =>
-    `<button class="btn" style="width:100%;text-align:left;margin-bottom:6px;font-size:12px;padding:8px 12px" onclick="enableRelay('${r.id}');closePicker()">${r.id.toUpperCase()} <span style="color:var(--muted);font-family:var(--mono);font-size:10px">→ ${relayTopic(r)}</span></button>`
-  ).join('');
-  const overlay = document.createElement('div');
-  overlay.id = 'picker-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
-  overlay.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px;width:360px;max-width:90vw">
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px">Qual saída ativar?</div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:16px">Selecione para nomear e ativar</div>
-      ${opts}
-      <button class="btn" style="width:100%;margin-top:4px" onclick="closePicker()">Cancelar</button>
-    </div>`;
-  document.body.appendChild(overlay);
-}
-
-function closePicker() {
-  const el = document.getElementById('picker-overlay'); if(!el) return;
-  if (el) el.remove();
-}
-
-function enableRelay(id) {
-  const r = relays.find(x => x.id === id);
-  if (!r) return;
-  const name = prompt(`Nome para ${id.toUpperCase()}:`, `Saída ${id.replace('out','')}`);
-  if (!name) return;
-  const icon = prompt('Ícone (emoji):', '🔌') || '🔌';
-  r.name = name; r.icon = icon; r.enabled = true;
-  // Só assina /state no broker principal se não for bomba de caixa ou irrigação
-  const tankRelayIds = new Set(waterTanks.flatMap(t => (t.pumps||[]).map(p => p.relayId)));
-  if (client && client.connected && r.id !== irrigPump.relayId && !tankRelayIds.has(r.id)) {
-    client.subscribe(relayTopic(r) + '/state', { qos:1 });
-  }
-  saveRelayState();
-  publishPersist();
-  renderRelays();
-  log(`${id.toUpperCase()} ativada: "${name}" → ${relayTopic(r)}`, 'ok');
-}
-
-function openEditRelay(id) {
-  const r = relays.find(x => x.id === id);
-  if (!r) return;
-  const name = prompt('Novo nome:', r.name);
-  if (!name) return;
-  const icon = prompt('Ícone:', r.icon) || r.icon;
-  r.name = name; r.icon = icon;
-  saveRelayState();
-  publishPersist();
-  renderRelays();
-  log(`${id.toUpperCase()} renomeada: "${name}"`, 'sys');
-}
-
-function disableRelay(id) {
-  const r = relays.find(x => x.id === id);
-  if (!r || r.locked) return;
-  if (!confirm(`Remover "${r.name}" do painel?`)) return;
-  r.enabled = false; r.state = false;
-  r.name = `Saída ${id.replace('out','')}`; r.icon = '🔌';
-  saveRelayState();
-  publishPersist();
-  renderRelays();
-  log(`${id.toUpperCase()} removida do painel`, 'sys');
-}
-
-function openRelayModal() {
-  if (document.getElementById('rm-prefix')) document.getElementById('rm-prefix').value = RELAY_PREFIX;
-  updatePrefixPreview();
-  if(document.getElementById('relay-modal')) document.getElementById('relay-modal').classList.add('open');
-}
-
-function updatePrefixPreview() {
-  const p = document.getElementById('rm-prefix')?.value.trim() || 'home/relay';
-  const preview = document.getElementById('rm-preview');
-  if (!preview) return;
-  preview.innerHTML = Array.from({length:8}, (_,i) =>
-    `<span style="color:var(--accent2)">${p}/out${i+1}</span>${i===0?' <span style="color:var(--accent);font-size:9px">← bomba (fixa)</span>':''}`
-  ).join('<br>');
-}
-function closeRelayModal() { document.getElementById('relay-modal')?.classList.remove('open'); }
-
-function confirmAddRelay() {
-  const prefix = document.getElementById('rm-prefix')?.value.trim() || '';
-  if (!prefix) { log('Preencha o prefixo', 'warn'); return; }
-  RELAY_PREFIX = prefix;
-  if (client && client.connected) {
-    relays.filter(r => r.enabled).forEach(r => {
-      client.subscribe(relayTopic(r) + '/state', { qos:1 });
-    });
-  }
-  setCfg({ relayPrefix: RELAY_PREFIX });
-  renderRelays();
-  log(`Prefixo: ${RELAY_PREFIX} → out1…out8`, 'ok');
-  closeRelayModal();
-}
 function saveRelayState() {
+  // Persiste apenas os relés dinâmicos (vindos dos ambientes)
   try {
     localStorage.setItem('autoflow_relays', JSON.stringify(
-      relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled, state: r.state }))
+      relays.map(r => ({ id: r.id, name: r.name, icon: r.icon, enabled: r.enabled, state: r.state, topic: r.topic || null }))
     ));
   } catch(e) {}
 }
@@ -4771,11 +4608,6 @@ function deleteWidgetFromModal() {
         <span class="wt-icon">🚗</span>
         <span class="wt-label">Portão / Porta</span>
         <span class="wt-sub">Pulso + sensor aberto/fechado</span>
-      </div>
-      <div class="widget-type-opt" onclick="selectWidgetType('rele')">
-        <span class="wt-icon">⚡</span>
-        <span class="wt-label">Relé genérico</span>
-        <span class="wt-sub">Liga/desliga livre</span>
       </div>
       <div class="widget-type-opt" onclick="selectWidgetType('alarme')">
         <span class="wt-icon">🚨</span>
