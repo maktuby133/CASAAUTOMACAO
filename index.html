@@ -4623,33 +4623,44 @@ function buildWidgetFields(type, ex) {
 
     case 'portao': {
       const gMode = v('triggerMode','pulse');
+      const pOpen  = v('payloadOpen','OPEN');
+      const pClose = v('payloadClose','CLOSE');
+      const pPulse = v('payload','1');
+      // helpers para os radio groups
+      const radioRow = (name, val, cur, label) =>
+        `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text);padding:3px 0">
+          <input type="radio" name="${name}" value="${val}" ${cur===val?'checked':''}>
+          <code style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px">${val}</code>
+          <span style="color:var(--muted);font-size:10px">${label}</span>
+        </label>`;
       return `${nameField}${iconField}
-        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Dispositivo ESP32</div>
-        ${inp('deviceId',    'ID do dispositivo',              v('deviceId',''),        'garagem')}
-        ${inp('deviceHost',  'Broker MQTT (host)',             v('deviceHost',''),      'xxxxxxxx.s1.eu.hivemq.cloud')}
-        ${inp('deviceUser',  'Usuário MQTT',                   v('deviceUser',''),      'usuario')}
-        ${inp('devicePass',  'Senha MQTT',                     v('devicePass',''),      '••••••••')}
-        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Tópicos</div>
-        ${inp('topic',       'Tópico de acionamento (cmd)',    v('topic',''),           'home/garagem/cmd')}
-        ${inp('stateTopic',  'Tópico de estado (subscribe)',   v('stateTopic',''),      'home/garagem/state')}
-        ${inp('obstTopic',   'Tópico de obstáculo (opcional)', v('obstTopic',''),       'home/garagem/obstaculo')}
-        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Modo de acionamento</div>
-        <div style="display:flex;gap:8px;margin-bottom:4px">
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Dispositivo</div>
+        ${inp('deviceId',   'ID do dispositivo',  v('deviceId',''),  'garagem')}
+        ${inp('devicePass', 'Senha do dispositivo', v('devicePass',''), '••••••••')}
+
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:14px 0 8px">Modo de acionamento</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text)">
-            <input type="radio" name="wcm-triggerMode" id="wcm-triggerMode-pulse"     value="pulse"     ${gMode==='pulse'?'checked':''}     onchange="document.getElementById('wcm-triggerMode').value=this.value">
-            <span><strong>Pulso</strong> — envia uma vez e encerra</span>
+            <input type="radio" name="wcm-triggerMode" value="pulse"     ${gMode==='pulse'?'checked':''}     onchange="document.getElementById('wcm-triggerMode').value=this.value">
+            <strong>Pulso</strong><span style="color:var(--muted);font-size:10px">— um botão, envia uma vez</span>
           </label>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text)">
-            <input type="radio" name="wcm-triggerMode" id="wcm-triggerMode-retentive" value="retentive" ${gMode==='retentive'?'checked':''} onchange="document.getElementById('wcm-triggerMode').value=this.value">
-            <span><strong>Retentivo</strong> — mantém sinal (Abrir / Fechar separados)</span>
+            <input type="radio" name="wcm-triggerMode" value="retentive" ${gMode==='retentive'?'checked':''} onchange="document.getElementById('wcm-triggerMode').value=this.value">
+            <strong>Retentivo</strong><span style="color:var(--muted);font-size:10px">— Abrir / Fechar separados</span>
           </label>
         </div>
         <input type="hidden" id="wcm-triggerMode" value="${gMode}">
-        ${inp('payload',     'Payload pulso (padrão: 1)',      v('payload','1'),        '1')}
-        ${inp('payloadOpen', 'Payload Abrir (retentivo)',      v('payloadOpen','OPEN'), 'OPEN')}
-        ${inp('payloadClose','Payload Fechar (retentivo)',     v('payloadClose','CLOSE'),'CLOSE')}`;
+
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:0 0 8px">Payload — botão Abrir</div>
+        <div style="display:flex;gap:16px;margin-bottom:12px">
+          ${radioRow('wcm-payloadOpen','OPEN', pOpen,'abre')}
+          ${radioRow('wcm-payloadOpen','CLOSE',pOpen,'fecha')}
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:0 0 8px">Payload — botão Fechar</div>
+        <div style="display:flex;gap:16px;margin-bottom:4px">
+          ${radioRow('wcm-payloadClose','OPEN', pClose,'abre')}
+          ${radioRow('wcm-payloadClose','CLOSE',pClose,'fecha')}
+        </div>`;
     }
 
     case 'rele':
@@ -4701,19 +4712,24 @@ function saveWidgetFromModal() {
     case 'ambiente':   w.roomId   = gv('roomId');   break;
     case 'caixa_agua': w.tankId   = gv('tankId');   break;
     case 'irrigacao':  break;
-    case 'portao':
-      w.topic        = gv('topic');
-      w.payload      = gvRaw('payload') || '1';
-      w.payloadOpen  = gvRaw('payloadOpen') || 'OPEN';
-      w.payloadClose = gvRaw('payloadClose') || 'CLOSE';
-      w.stateTopic   = gv('stateTopic');
-      w.obstTopic    = gv('obstTopic');
-      w.triggerMode  = gvRaw('triggerMode') || 'pulse';
+    case 'portao': {
+      // Radio buttons — pega o valor selecionado de cada grupo
+      const selMode  = document.querySelector('input[name="wcm-triggerMode"]:checked');
+      const selOpen  = document.querySelector('input[name="wcm-payloadOpen"]:checked');
+      const selClose = document.querySelector('input[name="wcm-payloadClose"]:checked');
+      w.triggerMode  = selMode  ? selMode.value  : 'pulse';
+      w.payloadOpen  = selOpen  ? selOpen.value  : 'OPEN';
+      w.payloadClose = selClose ? selClose.value : 'CLOSE';
+      w.payload      = '1'; // pulso simples sempre publica 1
       w.deviceId     = gv('deviceId');
-      w.deviceHost   = gv('deviceHost');
-      w.deviceUser   = gv('deviceUser');
       w.devicePass   = gvRaw('devicePass');
+      // Tópicos derivados automaticamente do deviceId (padrão do firmware)
+      const did = w.deviceId || 'garagem';
+      w.topic      = `home/${did}/cmd`;
+      w.stateTopic = `home/${did}/state`;
+      w.obstTopic  = `home/${did}/obstaculo`;
       break;
+    }
     case 'rele':       w.relayId  = gv('relayId');  break;
     case 'alarme':
       w.sensorTopic    = gv('sensorTopic');
