@@ -347,15 +347,26 @@ body::before {
 /* Transição suave para elementos atualizados inline */
 .gate-dot, .alarm-dot, .alarm-indicator span, .meter-bar-fill { transition: all 0.3s ease; }
 
-/* portão */
+/* portão / garagem */
 .gate-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border-radius: var(--radius); border: 1.5px solid var(--border2); background: var(--bg3); color: var(--text); font-family: var(--mono); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .gate-btn:hover { border-color: var(--accent); background: rgba(0,212,160,0.06); color: var(--accent); }
+.gate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .gate-btn.pulsing { animation: gate-pulse 0.6s ease; }
 @keyframes gate-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(0.96)} }
+.gate-btn.danger { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.06); color: var(--danger); }
+.gate-btn.danger:hover { border-color: var(--danger); background: rgba(239,68,68,0.12); }
 .gate-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-family: var(--mono); font-size: 11px; }
-.gate-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
-.gate-dot.open { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
-.gate-dot.closed { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.gate-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; flex-shrink:0; }
+.gate-dot.open    { background: var(--warn);   box-shadow: 0 0 6px var(--warn); }
+.gate-dot.closed  { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+.gate-dot.moving  { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse-dot 0.6s infinite; }
+.gate-dot.blocked { background: var(--danger); box-shadow: 0 0 6px var(--danger); animation: pulse-dot 0.5s infinite; }
+.gate-obstruct { display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius);font-family:var(--mono);font-size:10px;color:var(--danger);margin-top:8px; }
+.gate-mode-row { display:flex;align-items:center;gap:6px;margin-top:8px; }
+.gate-mode-lbl { font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;flex:1; }
+.gate-mode-toggle { display:inline-flex;align-items:center;border-radius:6px;overflow:hidden;border:1.5px solid var(--border);font-family:var(--mono);font-size:9px;font-weight:700; }
+.gate-mode-btn { background:none;border:none;padding:4px 10px;cursor:pointer;color:var(--muted);transition:all 0.15s; }
+.gate-mode-btn.active { background:var(--accent);color:#000; }
 
 /* relé genérico */
 .w-relay-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
@@ -1263,15 +1274,17 @@ function connectIrrigBroker() {
   });
   irrigClient.on('connect', () => {
     log(`✅ Broker da bomba conectado!`, 'ok');
-    // Assina estado do relé para feedback
-    const rel = relays.find(r => r.id === irrigPump.relayId);
-    if (rel) irrigClient.subscribe(relayTopic(rel) + '/state', { qos:1 });
+    // Assina estado da bomba para feedback do ESP32
+    const stateTopic = (irrigPump.mqttTopic || 'irrigacao/bomba/cmd').replace('/cmd', '/state');
+    irrigClient.subscribe(stateTopic, { qos: 1 });
   });
   irrigClient.on('message', (topic, msg) => {
-    const rel = relays.find(r => r.id === irrigPump.relayId);
-    if (rel && topic === relayTopic(rel) + '/state') {
-      rel.state = (msg.toString() === 'ON' || msg.toString() === '1');
+    const stateTopic = (irrigPump.mqttTopic || 'irrigacao/bomba/cmd').replace('/cmd', '/state');
+    if (topic === stateTopic) {
+      irrigPump.on = (msg.toString() === 'ON' || msg.toString() === '1');
+      saveIrrigPump();
       renderIrrigPumpCard();
+      widgets.filter(w => w.type === 'irrigacao').forEach(w => patchWidgetCard(w));
     }
   });
   irrigClient.on('error',   (e) => log(`❌ Broker bomba: ${e.message}`, 'warn'));
@@ -1279,11 +1292,8 @@ function connectIrrigBroker() {
 }
 
 function setIrrigRelay(state) {
-  const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
-  if (!rel) { log('Relé da bomba não habilitado', 'warn'); return; }
-  rel.state = state;
-  // Usa tópico dedicado se configurado; senão tópico isolado por padrão
-  const topic = irrigPump.mqttTopic || `irrigacao/relay/${irrigPump.relayId}`;
+  irrigPump.on = !!state;
+  const topic = irrigPump.mqttTopic || `irrigacao/bomba/cmd`;
   const payload = state ? 'ON' : 'OFF';
   if (irrigClient && irrigClient.connected) {
     irrigClient.publish(topic, payload, { retain: true, qos: 1 });
@@ -1294,26 +1304,29 @@ function setIrrigRelay(state) {
   } else {
     log(`[sem MQTT] Bomba "${irrigPump.name}" → ${payload}`, 'info');
   }
-  saveRelayState(); renderIrrigPumpCard();
+  saveIrrigPump();
+  renderIrrigPumpCard();
+  // Atualiza widgets de irrigação
+  widgets.filter(w => w.type === 'irrigacao').forEach(w => patchWidgetCard(w));
 }
 function toggleIrrigPumpMode(mode) {
   irrigPump.mode = mode;
   saveIrrigPump();
   renderIrrigPumpCard();
+  widgets.filter(w => w.type === 'irrigacao').forEach(w => patchWidgetCard(w));
   log(`Bomba irrigação → modo ${mode.toUpperCase()}`, 'sys');
 }
 function toggleIrrigPumpManual() {
-  const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
-  if (!rel) { log('Bomba de irrigação não está habilitada nos relés', 'warn'); return; }
-  setIrrigRelay(!rel.state);
-  renderIrrigPumpCard();
+  setIrrigRelay(!irrigPump.on);
 }
 function renderIrrigPumpCard() {
   const el = document.getElementById('irrig-pump-block');
   if (!el) return;
-  const rel = relays.find(r => r.id === irrigPump.relayId && r.enabled);
-  const on  = rel?.state || false;
+  const on  = !!irrigPump.on;
   const isManual = irrigPump.mode === 'manual';
+  const hasTopic = !!irrigPump.mqttTopic;
+  const brokerStatus = irrigClient?.connected ? '● online' : irrigPump.mqttHost ? '○ offline' : 'não conf.';
+  const brokerColor  = irrigClient?.connected ? 'var(--accent)' : irrigPump.mqttHost ? 'var(--warn)' : 'var(--muted)';
   el.innerHTML = `
     <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px">
       <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
@@ -1324,7 +1337,7 @@ function renderIrrigPumpCard() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <button onclick="${isManual ? 'toggleIrrigPumpManual()' : 'void(0)'}"
           class="pump-btn ${on ? 'on' : 'off'}"
-          style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
+          style="${!isManual ? 'cursor:default;opacity:0.6' : ''}"
           title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático — controla pela programação'}">
           <span class="pump-icon">💧</span>
           <span style="font-size:11px">${irrigPump.name}</span>
@@ -1334,11 +1347,11 @@ function renderIrrigPumpCard() {
           <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="toggleIrrigPumpMode('auto')">AUTO</button>
           <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="toggleIrrigPumpMode('manual')">MAN</button>
         </div>
-        ${rel ? `
-        <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">
-          ${isManual ? '🔧 Controle manual' : '⚡ Auto: liga na programação'}
-          · broker: <span style="color:${irrigClient?.connected ? 'var(--accent)' : irrigPump.mqttHost ? 'var(--warn)' : 'var(--muted)'}">${irrigClient?.connected ? '● online' : irrigPump.mqttHost ? '○ offline' : 'não conf.'}</span>
-        </div>` : `<div style="font-family:var(--mono);font-size:8px;color:var(--warn)">⚠ Relé não habilitado</div>`}
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">
+        ${isManual ? '🔧 Controle manual' : '⚡ Auto: liga na programação'}
+        · broker: <span style="color:${brokerColor}">${brokerStatus}</span>
+        ${hasTopic ? `· <span style="color:var(--accent2)">${irrigPump.mqttTopic}</span>` : ''}
       </div>
     </div>`;
 }
@@ -1357,19 +1370,17 @@ function closeIrrigPumpModal() {
   document.getElementById('irrig-pump-modal').classList.remove('open');
 }
 function saveIrrigPumpModal() {
-  irrigPump.relayId   = document.getElementById('ip-relay-sel').value;
   irrigPump.name      = document.getElementById('ip-pump-name').value.trim() || 'Bomba de irrigação';
   irrigPump.mqttHost  = document.getElementById('ip-host').value.trim();
   irrigPump.mqttUser  = document.getElementById('ip-user').value.trim();
   irrigPump.mqttPass  = document.getElementById('ip-pass').value;
   irrigPump.mqttTopic = document.getElementById('ip-topic').value.trim();
   saveIrrigPump();
-  // Conecta broker próprio se credenciais foram fornecidas
   if (irrigPump.mqttHost && irrigPump.mqttUser && irrigPump.mqttPass) {
     connectIrrigBroker();
   }
   renderIrrigPumpCard();
-  log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.relayId}`, 'ok');
+  log(`Bomba irrigação configurada: "${irrigPump.name}" → ${irrigPump.mqttTopic || 'irrigacao/bomba/cmd'}`, 'ok');
   closeIrrigPumpModal();
 }
 function populateIrrigPumpRelaySelect() {
@@ -4055,8 +4066,7 @@ function renderWidgetIrrigacao(w) {
 
   // Status + controle da bomba de irrigação
   const isManual = (irrigPump && irrigPump.mode === 'manual') || false;
-  const pumpRel  = irrigPump && irrigPump.relayId ? relays.find(r => r.id === irrigPump.relayId) : null;
-  const pumpOn   = pumpRel ? (pumpRel.state || false) : false;
+  const pumpOn   = !!irrigPump.on;
   const pumpName = (irrigPump && irrigPump.name) || 'Bomba';
   const pumpHtml = `
     <div class="irrig-pump-status" id="irrig-pump-status-w${w.id}">
@@ -4081,22 +4091,80 @@ function renderWidgetIrrigacao(w) {
 }
 
 function renderWidgetPortao(w) {
-  const stateKey = 'wg_state_' + w.id;
-  const st = window[stateKey] || 'desconhecido';
-  const dotCls = st === 'aberto' ? 'open' : st === 'fechado' ? 'closed' : '';
-  const stColor = st === 'aberto' ? 'var(--warn)' : st === 'fechado' ? 'var(--green)' : 'var(--muted)';
-  const stLabel = st === 'aberto' ? '🔴 Aberto' : st === 'fechado' ? '🟢 Fechado' : '⚪ Desconhecido';
-  const lastTs = window['wg_ts_' + w.id] || null;
+  const st        = window['wg_state_'    + w.id] || 'desconhecido';
+  const obst      = window['wg_obst_'     + w.id] || false;   // sensor de obstáculo
+  const moving    = window['wg_moving_'   + w.id] || false;   // portão em movimento
+  const lastTs    = window['wg_ts_'       + w.id] || null;
+  const mode      = w.triggerMode || 'pulse';   // 'pulse' | 'retentive'
+  const retOn     = window['wg_ret_on_'   + w.id] || false;   // estado retentivo ON
+
+  // Dot de estado
+  let dotCls, stLabel, stColor;
+  if (obst) {
+    dotCls = 'blocked'; stLabel = '🚫 Obstáculo detectado'; stColor = 'var(--danger)';
+  } else if (moving) {
+    dotCls = 'moving'; stLabel = '⏳ Movendo…'; stColor = 'var(--accent)';
+  } else if (st === 'aberto') {
+    dotCls = 'open'; stLabel = '🔴 Aberto'; stColor = 'var(--warn)';
+  } else if (st === 'fechado') {
+    dotCls = 'closed'; stLabel = '🟢 Fechado'; stColor = 'var(--green)';
+  } else {
+    dotCls = ''; stLabel = '⚪ Aguardando…'; stColor = 'var(--muted)';
+  }
+
+  // Botão principal
+  const btnDisabled = obst ? 'disabled' : '';
+  const btnCls      = obst ? 'danger' : (retOn ? 'on' : '');
+  let btnLabel, btnOnclick;
+  if (mode === 'pulse') {
+    btnLabel  = `${w.icon || '🚗'} ${w.name}`;
+    btnOnclick = `triggerGate('${w.id}')`;
+  } else {
+    // Retentivo: dois botões Abrir / Fechar
+    btnLabel  = '';
+    btnOnclick = '';
+  }
+
+  const retBtnsHtml = mode === 'retentive' ? `
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="gate-btn ${obst ? 'danger' : ''}" style="flex:1;padding:10px" ${obst ? 'disabled' : ''}
+        onclick="triggerGateRetentive('${w.id}','open')">
+        🔓 Abrir
+      </button>
+      <button class="gate-btn ${obst ? 'danger' : ''}" style="flex:1;padding:10px" ${obst ? 'disabled' : ''}
+        onclick="triggerGateRetentive('${w.id}','close')">
+        🔒 Fechar
+      </button>
+    </div>` : '';
+
+  const pulseBtnHtml = mode === 'pulse' ? `
+    <button class="gate-btn ${btnCls} ${obst ? 'danger' : ''}" id="gate-btn-${w.id}" ${btnDisabled}
+      onclick="${btnOnclick}">
+      ${w.icon || '🚗'} ${w.name}
+    </button>` : '';
+
+  const obstructHtml = obst ? `
+    <div class="gate-obstruct">
+      ⚠ Obstáculo — portão bloqueado
+    </div>` : '';
+
   return `
-    <button class="gate-btn" id="gate-btn-${w.id}" onclick="triggerGatePulse('${w.id}')">
-      🚗 Acionar ${w.name}
-    </button>
-    <div class="gate-status" style="margin-top:10px">
+    ${pulseBtnHtml}${retBtnsHtml}
+    ${obstructHtml}
+    <div class="gate-status">
       <div class="gate-dot ${dotCls}" id="gate-dot-${w.id}"></div>
-      <span style="color:${stColor};font-weight:600" id="gate-lbl-${w.id}">${stLabel}</span>
-      ${lastTs ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto">${lastTs}</span>` : `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto" id="gate-ts-${w.id}">aguardando...</span>`}
+      <span style="color:${stColor};font-weight:600;font-size:11px" id="gate-lbl-${w.id}">${stLabel}</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto" id="gate-ts-${w.id}">${lastTs || ''}</span>
     </div>
-    ${w.stateTopic ? `<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.stateTopic}">📶 ${w.stateTopic}</div>` : ''}`;
+    <div class="gate-mode-row">
+      <span class="gate-mode-lbl">Modo:</span>
+      <div class="gate-mode-toggle">
+        <button class="gate-mode-btn ${mode === 'pulse'     ? 'active' : ''}" onclick="setGateMode('${w.id}','pulse')">Pulso</button>
+        <button class="gate-mode-btn ${mode === 'retentive' ? 'active' : ''}" onclick="setGateMode('${w.id}','retentive')">Reter</button>
+      </div>
+    </div>
+    ${w.stateTopic    ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.stateTopic}">📶 ${w.stateTopic}</div>` : ''}
+    ${w.obstTopic     ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.obstTopic}">🔍 ${w.obstTopic}</div>` : ''}`;
 }
 
 function renderWidgetRele(w) {
@@ -4185,18 +4253,78 @@ function renderWidgetMedidor(w) {
 }
 
 // ── AÇÕES DOS WIDGETS ─────────────────────────────────────────────
-function triggerGatePulse(wid) {
+function triggerGate(wid) {
   const w = widgets.find(x => x.id === wid);
   if (!w || !w.topic) return;
-  if (client && client.connected) {
-    client.publish(w.topic, w.payload || '1', { qos: 1 });
-    log(`🚗 Portão acionado: ${w.name}`, 'ok');
-  } else {
-    log('Sem conexão MQTT', 'warn');
-  }
+  if (window['wg_obst_' + wid]) { log('⚠ Obstáculo detectado — acionamento bloqueado', 'warn'); return; }
+  const cl = w.mqttClientId ? window['wg_client_' + wid] : null;
+  const broker = (cl && cl.connected) ? cl : (client && client.connected) ? client : null;
+  if (!broker) { log('Sem conexão MQTT', 'warn'); return; }
+  broker.publish(w.topic, w.payload || '1', { qos: 1 });
+  log(`🚗 ${w.name}: pulso enviado`, 'ok');
   const btn = document.getElementById('gate-btn-' + wid);
   if (btn) { btn.classList.add('pulsing'); setTimeout(() => btn.classList.remove('pulsing'), 600); }
+  // Feedback visual de movimento por 4s
+  window['wg_moving_' + wid] = true;
+  patchGateDom(wid);
+  setTimeout(() => { window['wg_moving_' + wid] = false; patchGateDom(wid); }, 4000);
 }
+
+function triggerGateRetentive(wid, action) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w || !w.topic) return;
+  if (window['wg_obst_' + wid]) { log('⚠ Obstáculo — acionamento bloqueado', 'warn'); return; }
+  const broker = (client && client.connected) ? client : null;
+  if (!broker) { log('Sem conexão MQTT', 'warn'); return; }
+  const payload = action === 'open' ? (w.payloadOpen || 'OPEN') : (w.payloadClose || 'CLOSE');
+  broker.publish(w.topic, payload, { qos: 1 });
+  log(`🚗 ${w.name}: ${action === 'open' ? 'abrindo' : 'fechando'}`, 'ok');
+  window['wg_moving_' + wid] = true;
+  patchGateDom(wid);
+  setTimeout(() => { window['wg_moving_' + wid] = false; patchGateDom(wid); }, 5000);
+}
+
+function setGateMode(wid, mode) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w) return;
+  w.triggerMode = mode;
+  saveWidgets();
+  patchWidgetCard(w);
+}
+
+function patchGateDom(wid) {
+  // Atualiza apenas dot e label sem re-render completo
+  const w   = widgets.find(x => x.id === wid);
+  if (!w) return;
+  const st    = window['wg_state_'  + wid] || 'desconhecido';
+  const obst  = window['wg_obst_'   + wid] || false;
+  const moving= window['wg_moving_' + wid] || false;
+  let dotCls, stLabel, stColor;
+  if (obst) {
+    dotCls='blocked'; stLabel='🚫 Obstáculo detectado'; stColor='var(--danger)';
+  } else if (moving) {
+    dotCls='moving';  stLabel='⏳ Movendo…';            stColor='var(--accent)';
+  } else if (st === 'aberto') {
+    dotCls='open';    stLabel='🔴 Aberto';               stColor='var(--warn)';
+  } else if (st === 'fechado') {
+    dotCls='closed';  stLabel='🟢 Fechado';              stColor='var(--green)';
+  } else {
+    dotCls='';        stLabel='⚪ Aguardando…';           stColor='var(--muted)';
+  }
+  const dot = document.getElementById('gate-dot-' + wid);
+  const lbl = document.getElementById('gate-lbl-' + wid);
+  const ts  = document.getElementById('gate-ts-'  + wid);
+  if (dot) dot.className = 'gate-dot ' + dotCls;
+  if (lbl) { lbl.textContent = stLabel; lbl.style.color = stColor; }
+  if (ts && window['wg_ts_' + wid]) ts.textContent = window['wg_ts_' + wid];
+  // Se obstáculo mudou precisa re-render para mostrar/ocultar o banner
+  const obBanner = document.querySelector(`#gate-btn-${wid}`)?.closest('.widget-body')?.querySelector('.gate-obstruct');
+  if (obst && !obBanner) patchWidgetCard(w);
+  if (!obst && obBanner) patchWidgetCard(w);
+}
+
+// Mantém compat com chamadas antigas
+function triggerGatePulse(wid) { triggerGate(wid); }
 
 function toggleWidgetRelay(wid, state) {
   const w = widgets.find(x => x.id === wid);
@@ -4250,13 +4378,7 @@ const _origRenderTanks = renderTanks;
 
 // ── IRRIGAÇÃO WIDGET: modo da bomba e modal de agendamentos ───────
 function setIrrigMode(mode) {
-  // Delega para a função existente de modo da bomba
-  if (typeof toggleIrrigPumpMode === 'function') {
-    toggleIrrigPumpMode(mode);
-    // Atualiza também widgets do painel
-    if (typeof widgets !== 'undefined')
-      widgets.filter(w => w.type === 'irrigacao').forEach(w => patchWidgetCard(w));
-  }
+  toggleIrrigPumpMode(mode);
 }
 
 function openIrrigSchedModal(wid) {
@@ -4340,17 +4462,20 @@ function irrigSchedRemove(sid) {
 function handleWidgetMessage(topic, payload) {
   widgets.forEach(w => {
     // Portão — atualiza indicador de estado diretamente no DOM
-    if (w.type === 'portao' && w.stateTopic && topic === w.stateTopic) {
-      const st = payload.toLowerCase().includes('open') || payload === '1' || payload.toLowerCase() === 'on' ? 'aberto' : 'fechado';
-      window['wg_state_' + w.id] = st;
-      const ts = new Date().toLocaleTimeString('pt-BR');
-      window['wg_ts_' + w.id] = ts;
-      const dot = document.getElementById('gate-dot-' + w.id);
-      const lbl = document.getElementById('gate-lbl-' + w.id);
-      const tsEl = document.getElementById('gate-ts-' + w.id);
-      if (dot) dot.className = 'gate-dot ' + (st === 'aberto' ? 'open' : 'closed');
-      if (lbl) { lbl.textContent = st === 'aberto' ? '🔴 Aberto' : '🟢 Fechado'; lbl.style.color = st === 'aberto' ? 'var(--warn)' : 'var(--green)'; }
-      if (tsEl) tsEl.textContent = ts;
+    if (w.type === 'portao') {
+      if (w.stateTopic && topic === w.stateTopic) {
+        const st = payload.toLowerCase().includes('open') || payload === '1' || payload.toLowerCase() === 'on' ? 'aberto' : 'fechado';
+        window['wg_state_'  + w.id] = st;
+        window['wg_ts_'     + w.id] = new Date().toLocaleTimeString('pt-BR');
+        window['wg_moving_' + w.id] = false;
+        patchGateDom(w.id);
+      }
+      if (w.obstTopic && topic === w.obstTopic) {
+        const blocked = payload === '1' || payload.toLowerCase() === 'on' || payload.toLowerCase() === 'blocked';
+        window['wg_obst_' + w.id] = blocked;
+        patchGateDom(w.id);
+        if (blocked) log(`🚫 ${w.name}: obstáculo detectado!`, 'warn');
+      }
     }
     // Alarme — atualiza indicador diretamente
     if (w.type === 'alarme' && w.sensorTopic && topic === w.sensorTopic) {
@@ -4404,6 +4529,7 @@ function subscribeWidgetTopics() {
   widgets.forEach(w => {
     if (w.stateTopic)  client.subscribe(w.stateTopic,  { qos: 1 });
     if (w.sensorTopic) client.subscribe(w.sensorTopic, { qos: 1 });
+    if (w.obstTopic)   client.subscribe(w.obstTopic,   { qos: 1 });
     if (w.topic && w.type === 'medidor') client.subscribe(w.topic, { qos: 1 });
   });
 }
@@ -4495,11 +4621,36 @@ function buildWidgetFields(type, ex) {
     case 'irrigacao':
       return `${nameField}${iconField}`;
 
-    case 'portao':
+    case 'portao': {
+      const gMode = v('triggerMode','pulse');
       return `${nameField}${iconField}
-        ${inp('topic',       'Tópico de acionamento (publish)',  v('topic',''),       'home/portao/cmd')}
-        ${inp('payload',     'Payload de pulso',                 v('payload','1'),    '1')}
-        ${inp('stateTopic',  'Tópico de estado (subscribe)',     v('stateTopic',''),  'home/portao/state')}`;
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Dispositivo ESP32</div>
+        ${inp('deviceId',    'ID do dispositivo',              v('deviceId',''),        'garagem')}
+        ${inp('deviceHost',  'Broker MQTT (host)',             v('deviceHost',''),      'xxxxxxxx.s1.eu.hivemq.cloud')}
+        ${inp('deviceUser',  'Usuário MQTT',                   v('deviceUser',''),      'usuario')}
+        ${inp('devicePass',  'Senha MQTT',                     v('devicePass',''),      '••••••••')}
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Tópicos</div>
+        ${inp('topic',       'Tópico de acionamento (cmd)',    v('topic',''),           'home/garagem/cmd')}
+        ${inp('stateTopic',  'Tópico de estado (subscribe)',   v('stateTopic',''),      'home/garagem/state')}
+        ${inp('obstTopic',   'Tópico de obstáculo (opcional)', v('obstTopic',''),       'home/garagem/obstaculo')}
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:12px 0 8px">Modo de acionamento</div>
+        <div style="display:flex;gap:8px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text)">
+            <input type="radio" name="wcm-triggerMode" id="wcm-triggerMode-pulse"     value="pulse"     ${gMode==='pulse'?'checked':''}     onchange="document.getElementById('wcm-triggerMode').value=this.value">
+            <span><strong>Pulso</strong> — envia uma vez e encerra</span>
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text)">
+            <input type="radio" name="wcm-triggerMode" id="wcm-triggerMode-retentive" value="retentive" ${gMode==='retentive'?'checked':''} onchange="document.getElementById('wcm-triggerMode').value=this.value">
+            <span><strong>Retentivo</strong> — mantém sinal (Abrir / Fechar separados)</span>
+          </label>
+        </div>
+        <input type="hidden" id="wcm-triggerMode" value="${gMode}">
+        ${inp('payload',     'Payload pulso (padrão: 1)',      v('payload','1'),        '1')}
+        ${inp('payloadOpen', 'Payload Abrir (retentivo)',      v('payloadOpen','OPEN'), 'OPEN')}
+        ${inp('payloadClose','Payload Fechar (retentivo)',     v('payloadClose','CLOSE'),'CLOSE')}`;
+    }
 
     case 'rele':
       const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}" ${v('relayId','') === r.id ? 'selected' : ''}>${r.icon} ${r.name}</option>`).join('');
@@ -4551,9 +4702,17 @@ function saveWidgetFromModal() {
     case 'caixa_agua': w.tankId   = gv('tankId');   break;
     case 'irrigacao':  break;
     case 'portao':
-      w.topic       = gv('topic');
-      w.payload     = gvRaw('payload') || '1';
-      w.stateTopic  = gv('stateTopic');
+      w.topic        = gv('topic');
+      w.payload      = gvRaw('payload') || '1';
+      w.payloadOpen  = gvRaw('payloadOpen') || 'OPEN';
+      w.payloadClose = gvRaw('payloadClose') || 'CLOSE';
+      w.stateTopic   = gv('stateTopic');
+      w.obstTopic    = gv('obstTopic');
+      w.triggerMode  = gvRaw('triggerMode') || 'pulse';
+      w.deviceId     = gv('deviceId');
+      w.deviceHost   = gv('deviceHost');
+      w.deviceUser   = gv('deviceUser');
+      w.devicePass   = gvRaw('devicePass');
       break;
     case 'rele':       w.relayId  = gv('relayId');  break;
     case 'alarme':
