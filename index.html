@@ -3838,6 +3838,10 @@ function renderWidgetAmbienteGrid(w) {
   if (!rooms.length) {
     return `<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente cadastrado. Clique em "+ Ambiente" para começar.</div>`;
   }
+
+  const sz = getWidgetSize(w);
+  const isCompact = (sz === 'small'); // card estreito: layout vertical garantido
+
   return rooms.map(r => {
     const d  = r.data || { temp:null, hum:null, smoke:null, lamp:false, lastSeen:null };
     const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
@@ -3848,6 +3852,67 @@ function renderWidgetAmbienteGrid(w) {
       if (!rObj) return null;
       return { ...rObj, displayIcon: (typeof rel === 'object' && rel.icon) || rObj.icon, displayLabel: (typeof rel === 'object' && rel.label) || rObj.name };
     }).filter(Boolean);
+
+    if (isCompact) {
+      // ── LAYOUT COMPACTO (sz-small) ──────────────────────────────────
+      // Estrutura vertical: nome | dados essenciais | botões — sem overflow
+      const tempHtml = (r.hasTemp && d.temp !== null)
+        ? `<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">🌡️${d.temp.toFixed(1)}<span style="font-size:9px;font-weight:400;color:var(--muted)">°C</span></span>`
+        : '';
+      const humHtml = (r.hasTemp && d.hum !== null)
+        ? `<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">💧${Math.round(d.hum)}<span style="font-size:8px">%</span></span>`
+        : '';
+      const gasHtml = r.hasSmoke
+        ? (() => {
+            const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
+            const gv = d.smoke !== null ? d.smoke : null;
+            return `<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${sl.color}">🔥${gv !== null ? gv + '%' : '—'}<span style="font-size:8px;margin-left:1px">${sl.label}</span>${gasLocked ? '<span style="color:var(--danger)">⚠</span>' : ''}</span>`;
+          })()
+        : '';
+      const noData = !d.lastSeen
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted)">aguardando…</span>`
+        : '';
+
+      // Botões (lâmpada + relés vinculados) — sempre visíveis
+      const btnsHtml = (() => {
+        const btns = [];
+        if (r.hasLamp) {
+          const lampOn = d.lamp === true;
+          btns.push(`<label class="room-relay-switch" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}" style="flex-shrink:0">
+            <span style="font-size:13px;line-height:1;margin-right:3px">${lampOn ? '💡' : '🔦'}</span>
+            <input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
+            <div class="rrs-track"></div><div class="rrs-knob"></div>
+          </label>`);
+        }
+        linkedRelays.forEach(rel => {
+          btns.push(`<label class="room-relay-switch" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}" style="flex-shrink:0">
+            <span style="font-size:13px;line-height:1;margin-right:3px">${rel.displayIcon}</span>
+            <input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
+            <div class="rrs-track"></div><div class="rrs-knob"></div>
+          </label>`);
+        });
+        return btns.join('');
+      })();
+
+      return `<div class="room-card ${alarmCls}" id="room-${r.id}"
+        style="height:auto!important;min-height:0!important;overflow:visible!important;
+               display:flex;flex-direction:column;gap:4px;padding:7px 24px 7px 8px;">
+        <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
+        <!-- linha: ícone + nome -->
+        <div style="display:flex;align-items:center;gap:4px;min-width:0">
+          <span style="font-size:12px;flex-shrink:0">${r.icon}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name}</span>
+        </div>
+        <!-- linha: dados de sensores -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0">
+          ${noData}${tempHtml}${humHtml}${gasHtml}
+        </div>
+        <!-- linha: botões — SEMPRE visíveis -->
+        ${btnsHtml ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-top:2px">${btnsHtml}</div>` : ''}
+      </div>`;
+    }
+
+    // ── LAYOUT PADRÃO (med / large / full) ─────────────────────────
     const rowItems = [];
     if (!d.lastSeen) {
       rowItems.push(`<span class="room-nodata">aguardando...</span>`);
