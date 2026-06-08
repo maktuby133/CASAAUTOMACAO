@@ -1824,11 +1824,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 8. Auto-login: conecta se tiver credenciais salvas ──────────────
     updateMainBtn();
     const s = getCfg();
-    const hasCloud = !!(s.host && s.pass);
+    // Restaura brokerMode ANTES de checar credenciais
+    const savedMode = s.brokerMode || 'cloud';
+    brokerMode = savedMode;
+    switchBrokerTab(savedMode);
+    const hasCloud = !!(s.host);       // host basta; senha pode ser opcional
     const hasLocal = !!(s.localHost);
-    if (hasCloud || hasLocal) {
-      // Garante que o brokerMode correto está ativo antes de conectar
-      if (s.brokerMode) { brokerMode = s.brokerMode; switchBrokerTab(s.brokerMode); }
+    if ((savedMode === 'local' && hasLocal) || (savedMode !== 'local' && hasCloud)) {
       log('🔑 Credenciais encontradas — conectando automaticamente...', 'info');
       connectMQTT();
     }
@@ -1896,7 +1898,6 @@ function connectMQTT() {
   const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
   if (!host) { log('Preencha o host do broker', 'warn'); return; }
-  if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
 
   // Salva tudo antes de conectar
   setCfg(isLocal
