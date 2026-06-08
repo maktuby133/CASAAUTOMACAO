@@ -1721,6 +1721,14 @@ function closeBrokerModal() {
 }
 
 function smartConnect() {
+  // Se já está conectado → abre modal para reconfigurar
+  if (window._mqttConnected) { openBrokerModal(); return; }
+  // Se tem credenciais salvas → conecta direto, sem abrir modal
+  const s = getCfg();
+  const isLocal = brokerMode === 'local';
+  const hasHost = isLocal ? !!s.localHost : !!s.host;
+  if (hasHost) { connectMQTT(); return; }
+  // Sem credenciais → abre modal
   openBrokerModal();
 }
 
@@ -1859,40 +1867,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
 
-  // Lê 100% do localStorage — zero dependência do DOM
-  // O DOM só é usado quando o usuário clica em Conectar manualmente (campos visíveis)
+  // 100% independente do DOM — lê sempre do localStorage
+  // Quando o usuário clica em Conectar no modal, saveBrokerCfg() salva primeiro, depois chama connectMQTT()
   const s = getCfg();
 
-  // Se o painel estiver visível, prioriza o que está digitado nos campos
-  const panelOpen = document.getElementById('cfg-panel')?.style.display !== 'none'
-    && window.getComputedStyle(document.getElementById('cfg-panel')).display !== 'none';
-
-  const fromDom = (id) => {
-    if (!panelOpen) return '';
-    const el = document.getElementById(id);
-    return el ? el.value.trim() : '';
-  };
-  const fromDomPass = (id) => {
-    if (!panelOpen) return '';
-    const el = document.getElementById(id);
-    return el ? el.value : '';
-  };
-
-  const host  = isLocal
-    ? (fromDom('cfg-local-host') || s.localHost || '')
-    : (fromDom('cfg-host')       || s.host       || '');
-  const port  = isLocal
-    ? (parseInt(fromDom('cfg-local-port') || s.localPort) || 9001)
-    : (parseInt(fromDom('cfg-port')       || s.port)      || 8884);
-  const user  = isLocal
-    ? (fromDom('cfg-local-user') || s.localUser || '')
-    : (fromDom('cfg-user')       || s.user       || '');
-  const pass  = isLocal
-    ? (fromDomPass('cfg-local-pass') || s.localPass || '')
-    : (fromDomPass('cfg-pass')       || s.pass       || '');
-  const water = isLocal
-    ? (fromDom('cfg-local-water') || s.localWater || '')
-    : (s.water || '');
+  const host  = isLocal ? (s.localHost || '') : (s.host  || '');
+  const port  = isLocal ? (parseInt(s.localPort) || 9001) : (parseInt(s.port) || 8884);
+  const user  = isLocal ? (s.localUser || '') : (s.user  || '');
+  const pass  = isLocal ? (s.localPass || '') : (s.pass  || '');
+  const water = isLocal ? (s.localWater || '') : (s.water || '');
   const temp  = (isLocal ? (s.localTemp || '') : (s.temp || ''))
     .toLowerCase().replace(/[^a-z0-9_-]/g, '');
   const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
@@ -1927,7 +1910,7 @@ function connectMQTT() {
     clientId: 'autoflow_' + Math.random().toString(36).substr(2, 8),
     clean: true,
     connectTimeout: 10000,
-    reconnectPeriod: 5000,
+    reconnectPeriod: 0,  // desliga auto-reconnect — o app controla via smartConnect()
   });
 
   client.on('connect', () => {
