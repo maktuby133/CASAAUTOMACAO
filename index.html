@@ -1029,7 +1029,7 @@ body::before {
     </div>
     <div class="modal-actions" style="justify-content:space-between">
       <button class="btn" onclick="closeBrokerModal()">Fechar</button>
-      <button class="btn primary" onclick="connectMQTT()" id="broker-connect-btn">Conectar</button>
+      <button class="btn primary" onclick="saveCfgField();connectMQTT()" id="broker-connect-btn">Conectar</button>
     </div>
   </div>
 </div>
@@ -1911,8 +1911,8 @@ function connectMQTT() {
     password: pass,
     clientId: 'autoflow_' + Math.random().toString(36).substr(2, 8),
     clean: true,
-    connectTimeout: 10000,
-    reconnectPeriod: 0,  // desliga auto-reconnect — o app controla via smartConnect()
+    connectTimeout: 8000,
+    reconnectPeriod: 30000,  // tenta reconectar após 30s se cair; 0 causa bug no MQTT.js v5
   });
 
   client.on('connect', () => {
