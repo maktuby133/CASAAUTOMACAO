@@ -2501,19 +2501,49 @@ function removeTank(id) {
   log(`Caixa "${t.name}" removida`, 'sys');
 }
 
-function tankSvg(level, id) {
-  const pct = Math.min(Math.max(level || 0, 0), 100);
-  const fillH = Math.round((pct / 100) * 28);
-  const fillY = 33 - fillH;
-  const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+function tankSvg(level, id, offline) {
+  const pct     = Math.min(Math.max(level || 0, 0), 100);
+  const fillH   = Math.round((pct / 100) * 28);
+  const fillY   = 33 - fillH;
+  const col     = offline ? 'rgba(107,114,128,0.5)'
+                : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+  const stroke  = offline ? 'rgba(107,114,128,0.35)' : 'rgba(255,255,255,0.2)';
+  const fillOp  = offline ? '0.18' : '0.35';
+  const lineOp  = offline ? '0.35' : '0.7';
+
+  // Triângulo de alerta offline no topo da barra de nível
+  const warnTriangle = offline ? `
+    <!-- triângulo de sinal sem conexão no centro da caixa -->
+    <polygon points="17,10 11,22 23,22" fill="none" stroke="rgba(107,114,128,0.5)" stroke-width="1.2" stroke-linejoin="round"/>
+    <line x1="17" y1="13.5" x2="17" y2="18" stroke="rgba(107,114,128,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="17" cy="20" r="0.8" fill="rgba(107,114,128,0.5)"/>
+    <!-- linha diagonal de "sem sinal" no topo da tampa -->
+    <line x1="8" y1="1" x2="26" y2="3" stroke="rgba(107,114,128,0.4)" stroke-width="1" stroke-linecap="round"/>` : '';
+
+  // Linha tracejada no nível atual quando offline (mostra último valor conhecido)
+  const dashedLine = (!offline && fillH > 0) ? `
+    <rect x="3" y="${Math.max(fillY,5)}" width="28" height="2" rx="1" fill="${col}" opacity="${lineOp}" clip-path="url(#wClip${id})"/>` : '';
+
+  const offlineDash = (offline && fillH > 0) ? `
+    <!-- última leitura tracejada — dado desatualizado -->
+    <line x1="4" y1="${Math.max(fillY+1,6)}" x2="31" y2="${Math.max(fillY+1,6)}"
+      stroke="rgba(107,114,128,0.4)" stroke-width="1.5" stroke-dasharray="3,2"
+      clip-path="url(#wClip${id})"/>` : '';
+
   return `<svg viewBox="0 0 34 38" width="34" height="38" xmlns="http://www.w3.org/2000/svg">
-    <rect x="5" y="0" width="24" height="4" rx="1.5" fill="rgba(255,255,255,0.15)"/>
-    <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+    <!-- tampa -->
+    <rect x="5" y="0" width="24" height="4" rx="1.5" fill="${offline ? 'rgba(107,114,128,0.1)' : 'rgba(255,255,255,0.15)'}"/>
+    <!-- corpo -->
+    <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="${stroke}" stroke-width="1.5"/>
     <clipPath id="wClip${id}"><rect x="3" y="5" width="28" height="28" rx="2"/></clipPath>
-    <rect x="3" y="${fillY}" width="28" height="${fillH}" rx="2" fill="${col}" opacity="0.35" clip-path="url(#wClip${id})"/>
-    <rect x="3" y="${Math.max(fillY,5)}" width="28" height="2" rx="1" fill="${col}" opacity="0.7" clip-path="url(#wClip${id})"/>
-    <rect x="2" y="34" width="30" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
-    <rect x="13" y="35" width="8" height="3" rx="1" fill="rgba(255,255,255,0.15)"/>
+    <!-- preenchimento -->
+    <rect x="3" y="${fillY}" width="28" height="${fillH}" rx="2" fill="${col}" opacity="${fillOp}" clip-path="url(#wClip${id})"/>
+    ${dashedLine}
+    ${offlineDash}
+    ${warnTriangle}
+    <!-- base -->
+    <rect x="2" y="34" width="30" height="4" rx="2" fill="${offline ? 'rgba(107,114,128,0.08)' : 'rgba(255,255,255,0.1)'}"/>
+    <rect x="13" y="35" width="8" height="3" rx="1" fill="${offline ? 'rgba(107,114,128,0.12)' : 'rgba(255,255,255,0.15)'}"/>
   </svg>`;
 }
 
@@ -2541,9 +2571,14 @@ function renderTanks() {
   }
 
   grid.innerHTML = waterTanks.map(t => {
-    const pct = t.level;
-    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pct      = t.level;
+    const secAgo   = t.lastSeen ? Math.round((Date.now() - new Date(t.lastSeen)) / 1000) : null;
+    const offline  = !t.online || (secAgo !== null && secAgo > 90) || (!t.lastSeen);
+    const col      = offline ? 'var(--muted)' : pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub      = offline
+      ? (secAgo !== null ? `⚡ sem sinal · ${secAgo < 3600 ? Math.floor(secAgo/60)+'min' : Math.floor(secAgo/3600)+'h'} atrás` : '⚡ sem sinal')
+      : pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const subCol   = offline ? 'var(--muted)' : col;
 
     const pumpsHtml = t.pumps && t.pumps.length ? `
       <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
@@ -2581,18 +2616,19 @@ function renderTanks() {
     return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
       onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
             <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
             <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
             <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
           </div>
           <div style="display:flex;align-items:baseline;gap:5px">
-            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
             ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
           </div>
-          <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
         </div>
       </div>
       ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
@@ -4167,18 +4203,19 @@ function renderWidgetCaixaAguaGrid(w) {
     return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
       onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
             <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
             <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
             <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
           </div>
           <div style="display:flex;align-items:baseline;gap:5px">
-            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
             ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
           </div>
-          <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
         </div>
       </div>
       ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
