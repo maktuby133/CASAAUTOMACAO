@@ -3038,6 +3038,8 @@ function startScheduleEngine() {
 }
 
 // ============ LOG ============
+let _logEntries = [];
+let _logFilter  = 'all';
 function log(msg, type = 'sys') {
   const ts = new Date().toLocaleTimeString('pt-BR');
   _logEntries.push({ ts, msg, type });
