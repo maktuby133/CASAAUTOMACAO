@@ -2006,8 +2006,13 @@ function connectMQTT() {
 function subscribeAll() {
   const subs = [];
   if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
-  // Wildcard para capturar retained de temperatura independente de timing
-  subs.push('sensors/#');
+  // Assina só os dispositivos que têm ambiente cadastrado (sem wildcard)
+  rooms.forEach(r => {
+    if (r.deviceId) {
+      subs.push(`sensors/${r.deviceId}/data`);
+      subs.push(`sensors/${r.deviceId}/gas`);
+    }
+  });
   // Caixas d'água cadastradas
   subs.push('caixas/agua/#');
   // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
