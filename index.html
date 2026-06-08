@@ -4802,22 +4802,42 @@ function handleWidgetMessage(topic, payload) {
 }
 
 // ── SUBSCRIÇÃO dos tópicos dos widgets ───────────────────────────
+// Guarda os tópicos de widgets atualmente assinados
+let _widgetSubscribedTopics = new Set();
+
 function subscribeWidgetTopics() {
   if (!client || !client.connected) return;
+
+  // Monta o conjunto de tópicos que devem estar ativos agora
+  const newTopics = new Set();
   widgets.forEach(w => {
-    if (w.stateTopic)    client.subscribe(w.stateTopic,    { qos: 1 });
-    if (w.sensorTopic)   client.subscribe(w.sensorTopic,   { qos: 1 });
-    if (w.obstTopic)     client.subscribe(w.obstTopic,     { qos: 1 });
-    // Medidor
+    if (w.stateTopic)  newTopics.add(w.stateTopic);
+    if (w.sensorTopic) newTopics.add(w.sensorTopic);
+    if (w.obstTopic)   newTopics.add(w.obstTopic);
     if (w.type === 'medidor') {
-      if (w.topic)       client.subscribe(w.topic,         { qos: 1 });
-      if (w.totalTopic)  client.subscribe(w.totalTopic,    { qos: 1 });
+      if (w.topic)      newTopics.add(w.topic);
+      if (w.totalTopic) newTopics.add(w.totalTopic);
     }
-    // Relé standalone — subscibe no stateTopic direto
     if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic) {
-      client.subscribe(w.relStateTopic, { qos: 1 });
+      newTopics.add(w.relStateTopic);
     }
   });
+
+  // Cancela assinaturas de tópicos que não pertencem a nenhum widget ativo
+  _widgetSubscribedTopics.forEach(t => {
+    if (!newTopics.has(t)) {
+      client.unsubscribe(t);
+    }
+  });
+
+  // Assina apenas os tópicos novos (que ainda não estavam assinados)
+  newTopics.forEach(t => {
+    if (!_widgetSubscribedTopics.has(t)) {
+      client.subscribe(t, { qos: 1 });
+    }
+  });
+
+  _widgetSubscribedTopics = newTopics;
 }
 
 // ── MODAL: PICKER ─────────────────────────────────────────────────
