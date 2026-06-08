@@ -54,7 +54,7 @@ body::before {
 .logo-text span { color: var(--accent); }
 .logo-tag { font-family: var(--mono); font-size: 9px; color: var(--muted); border: 0.5px solid var(--border2); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
 .topbar-sep { width: 1px; height: 18px; background: var(--border2); flex-shrink: 0; }
-.topbar-weather { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; overflow: hidden; }
+.topbar-weather { display: flex; align-items: center; justify-content: space-between; gap: 0; flex: 1; min-width: 0; overflow: hidden; }
 .topbar-weather-item { display: flex; flex-direction: column; align-items: center; white-space: nowrap; flex-shrink: 0; }
 .topbar-weather-val { font-family: var(--mono); font-weight: 700; color: var(--text); font-size: 13px; line-height: 1; }
 .topbar-weather-unit { font-size: 9px; color: var(--muted); margin-top: 1px; }
@@ -4065,9 +4065,12 @@ function renderWidgetAmbienteGrid(w) {
       </div>`);
     });
 
-    const btnRowHtml = btnItems.length
-      ? `<div class="room-relay-row">${btnItems.join('')}</div>`
-      : '';
+    // Lâmpada e relés ficam na mesma linha dos sensores
+    const sensorAndBtnRow = [...sensorItems];
+    if (btnItems.length) {
+      if (sensorAndBtnRow.length) sensorAndBtnRow.push('<div class="room-sep" style="height:16px"></div>');
+      btnItems.forEach(b => sensorAndBtnRow.push(b));
+    }
 
     return `<div class="room-card ${alarmCls}" id="room-${r.id}">
       <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
@@ -4076,13 +4079,12 @@ function renderWidgetAmbienteGrid(w) {
         <span class="room-name">${r.name}</span>
         <span style="margin-left:auto">${onlineBadge}</span>
       </div>
-      <div class="room-main-row">${sensorItems.join('')}</div>
+      <div class="room-main-row">${sensorAndBtnRow.join('')}</div>
       ${(() => {
         const h = getHistory(r.id, 'temp');
         if (h.length < 3) return '';
         return `<div style="margin-top:6px;opacity:0.7">${buildSparklineSVG(h,'var(--accent)',70,16)}</div>`;
       })()}
-      ${btnRowHtml}
     </div>`;
   }).join('');
 }
