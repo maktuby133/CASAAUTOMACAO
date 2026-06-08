@@ -1223,7 +1223,7 @@ body::before {
         onclick="deleteTankFromModal()">🗑 Excluir</button>
       <div style="display:flex;gap:10px;margin-left:auto">
         <button class="btn" onclick="closeTankModal()">Cancelar</button>
-        <button class="btn primary" onclick="confirmSaveTank()">Salvar</button>
+        <button class="btn primary" id="tank-save-btn" onclick="confirmSaveTank()">Salvar</button>
       </div>
     </div>
   </div>
@@ -2307,12 +2307,18 @@ function loadTanks() {
   try { waterTanks = JSON.parse(localStorage.getItem('autoflow_tanks') || '[]'); } catch(e) { waterTanks = []; }
 }
 
-function openTankModal(editId) {
+function openTankModal(editId, fromWidget) {
   const t = editId ? waterTanks.find(x => x.id === editId) : null;
   document.getElementById('tank-edit-id').value = editId || '';
-  document.getElementById('tank-modal-title').textContent = t ? 'Editar caixa' : 'Nova caixa d\'água';
-    const delBtn = document.getElementById('tank-delete-btn');
-    if (delBtn) delBtn.style.display = editId ? 'flex' : 'none';
+  // flag para saber se veio do fluxo de widget
+  document.getElementById('tank-modal').dataset.fromWidget = fromWidget ? '1' : '';
+  const titleEl = document.getElementById('tank-modal-title');
+  titleEl.textContent = fromWidget ? '🪣 Nova caixa d\'água' : (t ? 'Editar caixa' : 'Nova caixa d\'água');
+  const delBtn = document.getElementById('tank-delete-btn');
+  if (delBtn) delBtn.style.display = editId ? 'flex' : 'none';
+  // Botão salvar vira "Salvar e adicionar widget" quando fromWidget
+  const saveBtn = document.getElementById('tank-save-btn');
+  if (saveBtn) saveBtn.textContent = fromWidget ? '＋ Criar e adicionar widget' : 'Salvar';
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
   const _tpe = document.getElementById('tank-pass'); if (_tpe) _tpe.value = t?.pass || '';
@@ -2474,6 +2480,27 @@ function confirmSaveTank() {
 
   renderTanks();
   log(`Caixa "${name}" salva (sensor: caixas/agua/${code}/dados)`, 'ok');
+
+  // Se veio do fluxo de widget, cria o widget automaticamente
+  const fromWidget = document.getElementById('tank-modal').dataset.fromWidget === '1';
+  if (fromWidget) {
+    const wName = name + ' — nível';
+    const newWidget = {
+      id:     'w_' + Date.now(),
+      type:   'caixa_agua',
+      name:   wName,
+      icon:   '🪣',
+      tankId: tankData.id,
+      sz:     'med',
+    };
+    widgets.push(newWidget);
+    saveWidgets();
+    renderWidgetPanel();
+    subscribeWidgetTopics();
+    publishPersist();
+    log(`🧩 Widget "${wName}" criado junto com a caixa`, 'ok');
+  }
+
   closeTankModal();
 }
 
@@ -4935,6 +4962,11 @@ const WIDGET_TYPE_LABELS = {
 
 function selectWidgetType(type) {
   closeWidgetPicker();
+  if (type === 'caixa_agua') {
+    // Abre o modal de caixa d'água diretamente, já no fluxo de criar widget
+    openTankModal(null, true);
+    return;
+  }
   openWidgetCfgModal(null, type);
 }
 
