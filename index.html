@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFlow — Painel de Automação</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,22 +14,26 @@
 <link rel="manifest" id="pwa-manifest">
 <style>
 :root {
-  --bg: #0b0e14;
-  --bg2: #111620;
-  --bg3: #181e2a;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #e8eaf0;
-  --muted: #6b7280;
-  --accent: #00d4a0;
-  --accent2: #0ea5e9;
-  --warn: #f59e0b;
-  --danger: #ef4444;
-  --green: #10b981;
-  --mono: 'IBM Plex Mono', monospace;
-  --sans: 'Syne', sans-serif;
-  --radius: 10px;
-  --radius-lg: 16px;
+  --bg:  #0c0f16;
+  --bg2: #121720;
+  --bg3: #191f2c;
+  --bg4: #1e2538;
+  --border:  rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+  --border3: rgba(255,255,255,0.18);
+  --text:    #eceef4;
+  --subtle:  #9ca3af;
+  --muted:   #6b7280;
+  --accent:  #22d3a0;
+  --accent2: #3b82f6;
+  --warn:    #f59e0b;
+  --danger:  #ef4444;
+  --green:   #10b981;
+  --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+  --sans:  'Inter', system-ui, sans-serif;
+  --radius:    8px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
@@ -44,21 +48,32 @@ body::before {
 .app { position: relative; z-index: 1; max-width: 100%; margin: 0; padding: 0 20px 60px; }
 
 /* TOPBAR */
-.topbar { display: flex; align-items: center; gap: 12px; padding: 12px 0 12px; border-bottom: 1px solid var(--border); margin-bottom: 18px; flex-wrap: nowrap; }
-.logo { display: flex; align-items: baseline; gap: 8px; flex-shrink: 0; }
-.logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 11px 0 11px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: nowrap; }
+.logo { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; }
+.logo-text { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; font-family: var(--mono); }
 .logo-text span { color: var(--accent); }
-.logo-tag { font-family: var(--mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border2); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
-.topbar-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
-.topbar-weather { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
-.topbar-weather-item { display: flex; align-items: baseline; gap: 2px; font-family: var(--mono); font-size: 13px; white-space: nowrap; flex-shrink: 0; }
-.topbar-weather-val { font-weight: 700; color: var(--text); font-size: 14px; }
-.topbar-weather-unit { font-size: 10px; color: var(--muted); }
-.topbar-weather-city { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex-shrink: 1; }
-.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.conn-status { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-.dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.logo-tag { font-family: var(--mono); font-size: 9px; color: var(--muted); border: 0.5px solid var(--border2); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+.topbar-sep { width: 1px; height: 18px; background: var(--border2); flex-shrink: 0; }
+.topbar-weather { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; overflow: hidden; }
+.topbar-weather-item { display: flex; flex-direction: column; align-items: center; white-space: nowrap; flex-shrink: 0; }
+.topbar-weather-val { font-family: var(--mono); font-weight: 700; color: var(--text); font-size: 13px; line-height: 1; }
+.topbar-weather-unit { font-size: 9px; color: var(--muted); margin-top: 1px; }
+.topbar-weather-city { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; flex-shrink: 1; }
+.topbar-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+
+/* MQTT chip — substitui o dot sozinho */
+.mqtt-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-family: var(--mono); font-size: 10px; font-weight: 600; border: 0.5px solid; transition: all 0.2s; cursor: default; letter-spacing: 0.04em; }
+.mqtt-chip.connected { color: var(--accent); border-color: rgba(34,211,160,0.3); background: rgba(34,211,160,0.1); }
+.mqtt-chip.connecting { color: var(--warn); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1); }
+.mqtt-chip.disconnected { color: var(--muted); border-color: var(--border2); background: transparent; }
+
+/* Botões ícone compactos no topbar */
+.icon-btn { width: 30px; height: 30px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg3); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--subtle, #9ca3af); font-size: 14px; transition: all 0.15s; flex-shrink: 0; }
+.icon-btn:hover { border-color: var(--border3); color: var(--text); background: var(--bg4); }
+
+.conn-status { display: none; } /* substituído pelo mqtt-chip */
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.dot.on { background: var(--accent); }
 .dot.connecting { background: var(--warn); animation: pulse-dot 1s ease-in-out infinite; }
 @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
@@ -75,10 +90,10 @@ body::before {
 .pump-mode-btn { padding:3px 8px;cursor:pointer;border:none;transition:all 0.15s;background:var(--bg2);color:var(--muted); }
 .pump-mode-btn.active { background:var(--accent);color:#000; }
 
-.btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-.btn:hover { background: var(--bg3); }
+.btn { font-family: var(--sans); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; padding: 7px 13px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg3); color: var(--subtle, #9ca3af); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn:hover { background: var(--bg4); color: var(--text); border-color: var(--border3); }
 .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
-.btn.primary:hover { background: #00b889; }
+.btn.primary:hover { background: #1fc090; border-color: #1fc090; }
 
 /* LAYOUT */
 .grid-main { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
@@ -86,13 +101,30 @@ body::before {
 .col-right { display: flex; flex-direction: column; gap: 20px; }
 
 /* CARDS */
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; transition: border-color 0.2s; animation: fadeIn 0.3s ease both; }
+.card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; transition: border-color 0.2s; animation: fadeIn 0.3s ease both; position: relative; overflow: hidden; }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent); pointer-events: none; }
 .card:hover { border-color: var(--border2); }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.card-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-.card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+/* Ícone colorido por categoria */
+.card-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.card-icon.teal  { background: rgba(34,211,160,0.12); }
+.card-icon.blue  { background: rgba(59,130,246,0.12); }
+.card-icon.amber { background: rgba(245,158,11,0.12); }
+.card-icon.red   { background: rgba(239,68,68,0.12); }
+.card-icon.purple{ background: rgba(139,92,246,0.12); }
+
+.card-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--subtle, #9ca3af); flex: 1; }
+.card-title-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+/* Badge compacto no header do card */
+.card-badge { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; border: 0.5px solid; }
+.card-badge.ok    { color: var(--accent); border-color: rgba(34,211,160,0.25); background: rgba(34,211,160,0.1); }
+.card-badge.warn  { color: var(--warn); border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.1); }
+.card-badge.info  { color: var(--accent2); border-color: rgba(59,130,246,0.25); background: rgba(59,130,246,0.1); }
+.card-badge.off   { color: var(--muted); border-color: var(--border2); background: transparent; }
 
 /* CONFIG */
 .config-panel { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
@@ -116,12 +148,21 @@ body::before {
 .metric-box::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease; }
 .metric-box.has-data::after { transform: scaleX(1); }
 .metric-box.warn::after { background: var(--warn); }
-.metric-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
-.metric-value { font-size: 22px; font-weight: 700; line-height: 1; color: var(--text); letter-spacing: -1px; }
-.metric-value .unit { font-size: 13px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: 2px; }
-.metric-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
-.metric-sub.ok { color: var(--green); }
+.metric-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 8px; }
+.metric-value { font-family: var(--mono); font-size: 24px; font-weight: 700; line-height: 1; color: var(--text); letter-spacing: -0.04em; }
+.metric-value .unit { font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: 2px; }
+.metric-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 5px; }
+.metric-sub.ok { color: var(--accent); }
 .metric-sub.warn { color: var(--warn); }
+
+/* Barra de progresso nos metric-boxes */
+.metric-progress { height: 3px; background: var(--bg4, #1e2538); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.metric-progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+
+/* Status offline por sensor */
+.sensor-online  { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 9px; font-weight: 600; color: var(--accent); }
+.sensor-offline { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 9px; font-weight: 600; color: var(--muted); }
+.sensor-offline-val { color: var(--muted) !important; opacity: 0.5; }
 
 .live-bar { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
@@ -217,23 +258,31 @@ body::before {
 .rule-badge.off { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
 
 /* LOG */
-.log-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; max-height: 150px; overflow-y: auto; font-family: var(--mono); font-size: 11px; line-height: 1.9; }
+.log-box { background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; max-height: 150px; overflow-y: auto; font-family: var(--mono); font-size: 10px; }
 .log-box::-webkit-scrollbar { width: 4px; }
 .log-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-.log-line { display: block; }
-.log-line .ts { color: var(--muted); margin-right: 8px; }
-.log-ok .msg { color: var(--accent); }
+.log-line { display: flex; align-items: flex-start; gap: 7px; padding: 4px 0; border-bottom: 0.5px solid var(--border); }
+.log-line:last-child { border: none; }
+.log-line .ts { color: var(--muted); flex-shrink: 0; width: 48px; font-size: 9px; padding-top: 2px; }
+.log-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.log-ok   .log-dot { background: var(--accent); }
+.log-warn .log-dot { background: var(--warn); }
+.log-info .log-dot { background: var(--accent2); }
+.log-sys  .log-dot { background: var(--muted); }
+.log-line .msg { flex: 1; font-size: 10px; line-height: 1.6; color: var(--subtle, #9ca3af); }
+.log-line .msg b { color: var(--text); font-weight: 500; }
+.log-ok   .msg { color: var(--accent); }
 .log-warn .msg { color: var(--warn); }
 .log-info .msg { color: var(--accent2); }
-.log-sys .msg { color: var(--muted); }
+.log-sys  .msg { color: var(--muted); }
 
 /* MODAL */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 24px; width: 420px; max-width: 90vw; }
-.modal-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+.modal { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 22px; width: 420px; max-width: 92vw; box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.04) inset; }
+.modal-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text); letter-spacing: -0.01em; }
 .modal-fields { display: flex; flex-direction: column; gap: 12px; }
-.modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+.modal-actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
 
 /* ══ WIDGET SYSTEM ══ */
 .widget-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -426,8 +475,8 @@ body::before {
   .topbar-weather-val { font-size: 13px; }
   .topbar-right { gap: 5px; flex-shrink: 0; }
   .conn-status { display: none; }
-  .cfg-btn-lbl, .login-btn-lbl { display: none; }
-  #cfg-main-btn, #login-btn { padding: 6px 9px !important; min-width: 34px; }
+  .login-btn-lbl { display: none; }
+  #login-btn { padding: 4px !important; min-width: 30px; }
 
   /* ── Config panel ── */
   .config-grid { grid-template-columns: 1fr !important; }
@@ -706,29 +755,21 @@ body::before {
     </div>
 
     <div class="topbar-right">
-      <!-- Dot de clima -->
-      <div class="dot" id="live-dot" title="Clima ao vivo"></div>
+      <!-- Dot de clima (oculto — usado só por JS) -->
+      <div class="dot" id="live-dot" style="display:none"></div>
 
-      <!-- Botão + para mudar local do clima -->
-      <button onclick="openCityModal()" title="Mudar cidade do clima"
-        style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--accent);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
-
-      <!-- Status MQTT -->
-      <div class="conn-status">
+      <!-- Chip MQTT — substitui dot + botão broker -->
+      <div id="mqtt-chip" class="mqtt-chip disconnected" onclick="smartConnect()" title="Configurar Broker MQTT" style="cursor:pointer">
         <div class="dot" id="mqtt-dot"></div>
-        <span id="mqtt-label" style="display:none">Desconectado</span>
+        <span id="mqtt-label">MQTT</span>
       </div>
 
-      <!-- Botão Broker / Configuração MQTT -->
-      <button class="btn" id="cfg-main-btn" onclick="smartConnect()" title="Configurar Broker MQTT"
-        style="display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px">
-        <span style="font-size:12px">📡</span><span class="cfg-btn-lbl">Broker</span>
-      </button>
+      <!-- Botão ícone: cidade do clima -->
+      <button class="icon-btn" onclick="openCityModal()" title="Mudar cidade do clima">🌍</button>
 
-      <!-- Botão Login -->
-      <button class="btn" id="login-btn" onclick="openLoginModal()" title="Login / Conta"
-        style="display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:11px">
-        <span style="font-size:12px">👤</span><span class="login-btn-lbl" id="login-btn-lbl">Login</span>
+      <!-- Botão ícone: login/perfil -->
+      <button class="icon-btn" id="login-btn" onclick="openLoginModal()" title="Login / Conta">
+        <span id="login-btn-lbl">👤</span>
       </button>
     </div>
   </div>
@@ -837,7 +878,7 @@ body::before {
         <button class="btn" onclick="clearLog()" style="font-size:10px;padding:4px 10px">Limpar</button>
       </div>
       <div class="log-box" id="log-box" style="max-height:130px">
-        <span class="log-line log-sys"><span class="ts">--:--:--</span><span class="msg">Sistema iniciado. Configure o MQTT acima.</span></span>
+        <span class="log-line log-sys"><span class="ts">--:--:--</span><span class="log-dot"></span><span class="msg">Sistema iniciado. Configure o MQTT acima.</span></span>
       </div>
     </div>
 
@@ -1605,7 +1646,7 @@ self.addEventListener('message', e => {
 }
 
 function updateMainBtn() {
-  const btn = document.getElementById('cfg-main-btn');
+  const btn = document.getElementById('cfg-main-btn') || document.getElementById('mqtt-chip');
   if (!btn) return;
   const s = getCfg();
   const connected = window._mqttConnected;
@@ -2791,8 +2832,14 @@ function hideAlert() {
 
 // ============ CONN STATUS ============
 function setConnStatus(cls, txt) {
-  document.getElementById('mqtt-dot').className = 'dot ' + (cls === 'on' ? 'on' : cls === 'connecting' ? 'connecting' : '');
-  document.getElementById('mqtt-label').textContent = txt;
+  const dot   = document.getElementById('mqtt-dot');
+  const label = document.getElementById('mqtt-label');
+  const chip  = document.getElementById('mqtt-chip');
+  if (dot)   dot.className   = 'dot ' + (cls === 'on' ? 'on' : cls === 'connecting' ? 'connecting' : '');
+  if (label) label.textContent = txt;
+  if (chip) {
+    chip.className = 'mqtt-chip ' + (cls === 'on' ? 'connected' : cls === 'connecting' ? 'connecting' : 'disconnected');
+  }
 }
 
 // ============ RELAYS ============
@@ -2948,10 +2995,12 @@ function log(msg, type = 'sys') {
   const cls = { ok:'log-ok', warn:'log-warn', info:'log-info', sys:'log-sys' }[type] || 'log-sys';
   const el  = document.createElement('span');
   el.className = 'log-line ' + cls;
-  el.innerHTML = `<span class="ts">${ts}</span><span class="msg">${msg}</span>`;
+  el.innerHTML = `<span class="ts">${ts}</span><span class="log-dot"></span><span class="msg">${msg}</span>`;
   box.appendChild(el);
-  box.appendChild(document.createTextNode('\n'));
   box.scrollTop = box.scrollHeight;
+  // Limita a 120 entradas
+  const lines = box.querySelectorAll('.log-line');
+  if (lines.length > 120) lines[0].remove();
 }
 
 
@@ -3475,7 +3524,7 @@ function renderRooms() {
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        ${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
+        <span style="margin-left:auto">${onlineBadge}</span>
       </div>
       <div class="room-main-row">
         ${rowItems.join('')}
@@ -3785,10 +3834,13 @@ function buildWidgetCard(w) {
     `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}">${W_SIZE_LABELS[s]}</button>`
   ).join('');
 
+  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue' };
+  const iconClr = iconClrMap[w.type] || 'teal';
   wrap.innerHTML = `
     <div class="w-card-header">
       <span class="w-drag-handle" title="Arrastar para mover">⠿</span>
-      <span class="w-card-title">${w.icon || ''} ${w.name}</span>
+      <div class="card-icon ${iconClr}" style="width:24px;height:24px;border-radius:6px;font-size:12px;flex-shrink:0">${w.icon || ''}</div>
+      <span class="w-card-title">${w.name}</span>
       <div class="w-resize-btns">${resizeBtns}</div>
       <button class="w-edit-btn" onclick="openWidgetCfgModal('${w.id}')">✎</button>
     </div>`;
@@ -3835,6 +3887,14 @@ function renderWidgetAmbienteGrid(w) {
 
     // ── linha de sensores ─────────────────────────────────────────
     const sensorItems = [];
+    const secAgo = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
+    const isOffline = secAgo !== null && secAgo > 90;
+    const onlineBadge = !d.lastSeen
+      ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>–</span>`
+      : isOffline
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>offline ${secAgo < 3600 ? Math.floor(secAgo/60)+'m' : Math.floor(secAgo/3600)+'h'}</span>`
+        : `<span style="font-family:var(--mono);font-size:9px;color:var(--accent);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block"></span>online</span>`;
+
     if (!d.lastSeen) {
       sensorItems.push(`<span class="room-nodata">aguardando…</span>`);
     } else {
@@ -3883,7 +3943,7 @@ function renderWidgetAmbienteGrid(w) {
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        ${d.lastSeen ? `<span class="room-ts">${d.lastSeen.toLocaleTimeString('pt-BR')}</span>` : ''}
+        <span style="margin-left:auto">${onlineBadge}</span>
       </div>
       <div class="room-main-row">${sensorItems.join('')}</div>
       ${btnRowHtml}
