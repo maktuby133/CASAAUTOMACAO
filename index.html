@@ -4698,18 +4698,64 @@ function setIrrigMode(mode) {
 }
 
 function openIrrigSchedModal(wid) {
-  // Preenche select de relés
-  const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
-  document.getElementById('irrig-sched-relay').innerHTML = relayOpts || '<option value="">— nenhum relé —</option>';
-  // Limpa dias selecionados
   if (!wSelectedDays[wid]) wSelectedDays[wid] = new Set();
   document.querySelectorAll('#irrig-sched-days .day-pick-btn').forEach(btn => {
     btn.dataset.wid = wid;
     btn.classList.toggle('sel', wSelectedDays[wid].has(parseInt(btn.dataset.d)));
   });
   document.getElementById('irrig-sched-wid').value = wid;
-  document.getElementById('irrig-sched-modal').classList.add('open');
+  _renderIrrigSchedSlots(wid);
   _renderIrrigSchedList();
+  document.getElementById('irrig-sched-modal').classList.add('open');
+}
+
+function _renderIrrigSchedSlots(wid) {
+  const relayOpts = relays.filter(r => r.enabled)
+    .map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+  const relaySelect = (idx) => `<select id="islot-rel-${idx}"
+    style="flex:1;min-width:110px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:0 8px;outline:none;height:34px">
+    ${relayOpts || '<option value="">— nenhum relé —</option>'}
+  </select>`;
+
+  const slotLabels = ['1º', '2º', '3º', '4º'];
+  const slotTimes  = ['06:00', '11:00', '16:00', '20:00'];
+
+  const slotsEl = document.getElementById('irrig-sched-slots');
+  slotsEl.innerHTML = slotLabels.map((lbl, i) => `
+    <div style="display:grid;grid-template-columns:32px 1fr 1fr 1fr 28px;gap:8px;align-items:center;
+      background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+      <!-- Número do slot -->
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--muted);text-align:center">
+        ${lbl}
+      </div>
+      <!-- Hora -->
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">horário</div>
+        <input type="time" id="islot-time-${i}" value="${slotTimes[i]}"
+          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;padding:0 8px;outline:none;height:34px">
+      </div>
+      <!-- Duração -->
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">duração</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="number" id="islot-dur-${i}" value="15" min="1" max="240"
+            style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;padding:0 8px;outline:none;height:34px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">min</span>
+        </div>
+      </div>
+      <!-- Relé -->
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">relé / zona</div>
+        ${relaySelect(i)}
+      </div>
+      <!-- Toggle ativo -->
+      <div style="display:flex;align-items:center;justify-content:center">
+        <label class="room-relay-switch" title="Ativar/desativar este slot">
+          <input type="checkbox" id="islot-on-${i}" checked>
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>
+    </div>`).join('');
 }
 
 function closeIrrigSchedModal() {
@@ -4724,24 +4770,43 @@ function irrigSchedToggleDay(btn) {
   else { wSelectedDays[wid].add(d); btn.classList.add('sel'); }
 }
 
-function irrigSchedAdd() {
+function irrigSchedSaveSlots() {
   const wid  = document.getElementById('irrig-sched-wid').value;
   const days = wSelectedDays[wid] ? [...wSelectedDays[wid]] : [];
   if (!days.length) { alert('Selecione pelo menos um dia da semana.'); return; }
-  const t   = document.getElementById('irrig-sched-time').value || '06:00';
-  const dur = parseInt(document.getElementById('irrig-sched-dur').value) || 15;
-  const rel = document.getElementById('irrig-sched-relay').value;
-  if (!rel) { alert('Selecione um relé/zona.'); return; }
-  schedules.push({ id: 's' + Date.now(), days, time: t, duration: dur, relay: rel, active: true });
-  wSelectedDays[wid] = new Set();
+
+  let added = 0;
+  for (let i = 0; i < 4; i++) {
+    const onEl  = document.getElementById(`islot-on-${i}`);
+    if (!onEl || !onEl.checked) continue;
+    const t   = document.getElementById(`islot-time-${i}`)?.value || '06:00';
+    const dur = parseInt(document.getElementById(`islot-dur-${i}`)?.value) || 15;
+    const rel = document.getElementById(`islot-rel-${i}`)?.value;
+    if (!rel) continue;
+    // Evita duplicata exata (mesmo dia+hora+relé)
+    const dup = schedules.find(s =>
+      s.relay === rel && s.time === t &&
+      JSON.stringify([...s.days].sort()) === JSON.stringify([...days].sort())
+    );
+    if (dup) continue;
+    schedules.push({ id: 's' + Date.now() + '_' + i, days, time: t, duration: dur, relay: rel, active: true });
+    added++;
+  }
+
+  if (!added) { alert('Nenhum slot novo para adicionar (verifique se já existem agendamentos iguais).'); return; }
   try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
   const w = widgets.find(x => x.id === wid);
   if (w) patchWidgetCard(w);
   publishPersist();
-  log(`Agendamento: ${t} por ${dur}min`, 'ok');
-  // Atualiza lista no modal sem fechar
+  log(`${added} agendamento(s) salvos`, 'ok');
   _renderIrrigSchedList();
+  // Reseta dias
+  wSelectedDays[wid] = new Set();
+  document.querySelectorAll('#irrig-sched-days .day-pick-btn').forEach(b => b.classList.remove('sel'));
 }
+
+// mantém compatibilidade com código antigo
+function irrigSchedAdd() { irrigSchedSaveSlots(); }
 
 function _renderIrrigSchedList() {
   const listEl = document.getElementById('irrig-sched-list-modal');
@@ -4751,17 +4816,24 @@ function _renderIrrigSchedList() {
     return;
   }
   const dayShort = ['D','S','T','Q','Q','S','S'];
+  const dayFull = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   listEl.innerHTML = schedules.map(s => {
     const rel = relays.find(r => r.id === s.relay);
-    const daysStr = dayShort.filter((_,i) => s.days.includes(i)).join(' ');
-    return `<div class="sched-item" style="padding:6px 10px">
-      <div class="sched-time">${s.time}</div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">${s.duration}m</div>
-      <div class="sched-info" style="flex:1;min-width:0">
-        <div class="sched-relay">${rel ? rel.icon + ' ' + rel.name : '—'}</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-top:2px">${daysStr}</div>
+    const daysStr = dayFull.filter((_,i) => s.days.includes(i)).join(', ');
+    const durLabel = s.duration >= 60
+      ? `${Math.floor(s.duration/60)}h${s.duration%60?s.duration%60+'min':''}`
+      : `${s.duration}min`;
+    return `<div class="sched-item" style="padding:8px 10px;gap:10px">
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:38px">
+        <span class="sched-time" style="font-size:14px">${s.time}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent2);margin-top:2px">${durLabel}</span>
       </div>
-      <button class="btn-icon" onclick="irrigSchedRemove('${s.id}')" title="Remover" style="width:22px;height:22px;font-size:11px;flex-shrink:0">✕</button>
+      <div class="sched-info" style="flex:1;min-width:0">
+        <div class="sched-relay" style="font-size:12px">${rel ? rel.icon + ' ' + rel.name : '— relé não encontrado'}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${daysStr}</div>
+      </div>
+      <button class="btn-icon" onclick="irrigSchedRemove('${s.id}')" title="Remover"
+        style="width:22px;height:22px;font-size:11px;flex-shrink:0;color:var(--muted)">✕</button>
     </div>`;
   }).join('');
 }
@@ -5364,20 +5436,14 @@ function toggleWidgetRelayStandalone(wid, state) {
 
 <!-- ═══ MODAL: AGENDAMENTOS DE IRRIGAÇÃO ════════════════════════════ -->
 <div class="modal-overlay" id="irrig-sched-modal">
-  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">📅 Agendamentos de Irrigação</div>
+  <div class="modal" style="width:520px;max-height:92vh;overflow-y:auto">
+    <div class="modal-title">📅 Programação de Irrigação</div>
     <input type="hidden" id="irrig-sched-wid">
 
-    <!-- Lista existente -->
-    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Agendados</div>
-    <div id="irrig-sched-list-modal" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;margin-bottom:16px;padding-right:2px"></div>
-
-    <!-- Novo agendamento -->
-    <div style="border-top:1px solid var(--border);padding-top:14px">
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:10px">Novo agendamento</div>
-
-      <!-- Dias da semana -->
-      <div id="irrig-sched-days" style="display:flex;gap:6px;margin-bottom:12px">
+    <!-- Dias da semana — compartilhado pelos 4 slots -->
+    <div style="margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Dias da semana</div>
+      <div id="irrig-sched-days" style="display:flex;gap:6px">
         <button class="day-pick-btn" data-d="0" onclick="irrigSchedToggleDay(this)">D</button>
         <button class="day-pick-btn" data-d="1" onclick="irrigSchedToggleDay(this)">S</button>
         <button class="day-pick-btn" data-d="2" onclick="irrigSchedToggleDay(this)">T</button>
@@ -5386,22 +5452,24 @@ function toggleWidgetRelayStandalone(wid, state) {
         <button class="day-pick-btn" data-d="5" onclick="irrigSchedToggleDay(this)">S</button>
         <button class="day-pick-btn" data-d="6" onclick="irrigSchedToggleDay(this)">S</button>
       </div>
-
-      <!-- Hora + duração + relé -->
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-        <input type="time" id="irrig-sched-time" value="06:00"
-          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;height:36px;width:98px">
-        <input type="number" id="irrig-sched-dur" value="15" min="1" max="120"
-          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 8px;outline:none;height:36px;width:58px">
-        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
-        <select id="irrig-sched-relay"
-          style="flex:1;min-width:110px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;height:36px"></select>
-      </div>
-
-      <button class="btn primary" style="width:100%;font-size:11px" onclick="irrigSchedAdd()">＋ Adicionar agendamento</button>
     </div>
 
-    <div class="modal-actions" style="margin-top:14px">
+    <!-- 4 slots de horário -->
+    <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:10px">
+      Horários programados — até 4 por dia
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px" id="irrig-sched-slots">
+      <!-- slots renderizados por JS -->
+    </div>
+
+    <!-- Lista de agendamentos salvos -->
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Agendamentos ativos</div>
+      <div id="irrig-sched-list-modal" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;padding-right:2px"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between">
+      <button class="btn" style="font-size:11px" onclick="irrigSchedSaveSlots()">💾 Salvar horários</button>
       <button class="btn" onclick="closeIrrigSchedModal()">Fechar</button>
     </div>
   </div>
