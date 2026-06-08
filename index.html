@@ -3943,6 +3943,21 @@ function buildWidgetCard(w) {
   return wrap;
 }
 
+
+// ── HISTORY / SPARKLINE STUBS ────────────────────────────────────────────────
+function getHistory(id, metric) { return []; }
+function buildSparklineSVG(data, color, w, h) {
+  if (!data || data.length < 2) return '';
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * h;
+    return x + ',' + y;
+  }).join(' ');
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5"/></svg>';
+}
+
 // ── RENDERS POR TIPO ──────────────────────────────────────────────
 
 function renderWidgetAmbienteGrid(w) {
@@ -4750,8 +4765,8 @@ function buildWidgetFields(type, ex) {
             <option value="">-- selecione --</option>${relayOpts}
           </select>
         </div>`;
-    }
 
+    }
     case 'alarme':
       return `${nameField}${iconField}
         ${inp('sensorTopic',    'Tópico do sensor PIR/contato',   v('sensorTopic',''),    'home/alarme/pir')}
@@ -4938,6 +4953,11 @@ function deleteWidgetFromModal() {
         <span class="wt-icon">📊</span>
         <span class="wt-label">Medidor</span>
         <span class="wt-sub">Qualquer valor MQTT</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('rele')">
+        <span class="wt-icon">⚡</span>
+        <span class="wt-label">Relé genérico</span>
+        <span class="wt-sub">Controle de relé</span>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:16px">
