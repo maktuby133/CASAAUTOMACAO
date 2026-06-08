@@ -1029,7 +1029,7 @@ body::before {
     </div>
     <div class="modal-actions" style="justify-content:space-between">
       <button class="btn" onclick="closeBrokerModal()">Fechar</button>
-      <button class="btn primary" onclick="saveCfgField();connectMQTT()" id="broker-connect-btn">Conectar</button>
+      <button class="btn primary" onclick="connectMQTT()" id="broker-connect-btn">Conectar</button>
     </div>
   </div>
 </div>
@@ -1858,23 +1858,55 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(_updateLoginBtn, 0);
 });
 
+function _updateBrokerModalStatus(cls, txt) {
+  const dot = document.getElementById('broker-modal-dot');
+  const lbl = document.getElementById('broker-modal-status');
+  if (!dot || !lbl) return;
+  if (cls === 'connecting') {
+    dot.className = 'dot connecting'; lbl.textContent = txt; lbl.style.color = 'var(--warn)';
+  } else if (cls === 'on') {
+    dot.className = 'dot on'; lbl.textContent = txt; lbl.style.color = 'var(--accent)';
+  } else if (cls === 'error') {
+    dot.className = 'dot'; lbl.textContent = txt; lbl.style.color = 'var(--danger)';
+  } else {
+    dot.className = 'dot'; lbl.textContent = txt; lbl.style.color = '';
+  }
+}
+
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
 
-  // 100% independente do DOM — lê sempre do localStorage
-  // Quando o usuário clica em Conectar no modal, saveBrokerCfg() salva primeiro, depois chama connectMQTT()
+  // Lê do DOM primeiro (modal aberto) — captura o que o usuário digitou mesmo sem oninput
+  // Fallback para localStorage se os campos não existirem no DOM
+  const domVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : null; };
+  const domPass = (id) => { const el = document.getElementById(id); return el ? el.value : null; };
+
   const s = getCfg();
 
-  const host  = isLocal ? (s.localHost || '') : (s.host  || '');
-  const port  = isLocal ? (parseInt(s.localPort) || 9001) : (parseInt(s.port) || 8884);
-  const user  = isLocal ? (s.localUser || '') : (s.user  || '');
-  const pass  = isLocal ? (s.localPass || '') : (s.pass  || '');
-  const water = isLocal ? (s.localWater || '') : (s.water || '');
-  const temp  = (isLocal ? (s.localTemp || '') : (s.temp || ''))
-    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  let host, port, user, pass, water, temp, gas;
+  if (isLocal) {
+    host  = domVal('cfg-local-host')  ?? s.localHost  ?? '';
+    port  = parseInt(domVal('cfg-local-port') ?? s.localPort) || 9001;
+    user  = domVal('cfg-local-user')  ?? s.localUser  ?? '';
+    pass  = domPass('cfg-local-pass') ?? s.localPass  ?? '';
+    water = domVal('cfg-local-water') ?? s.localWater ?? '';
+    temp  = (domVal('cfg-local-temp') ?? s.localTemp  ?? '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  } else {
+    host  = domVal('cfg-host')  ?? s.host  ?? '';
+    port  = parseInt(domVal('cfg-port') ?? s.port) || 8884;
+    user  = domVal('cfg-user')  ?? s.user  ?? '';
+    pass  = domPass('cfg-pass') ?? s.pass  ?? '';
+    water = domVal('cfg-water') ?? s.water ?? '';
+    temp  = (domVal('cfg-temp') ?? s.temp  ?? '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  }
 
-  if (!host) { log('Preencha o host do broker', 'warn'); return; }
+  if (!host) {
+    log('Preencha o host do broker', 'warn');
+    _updateBrokerModalStatus('error', 'Host não preenchido');
+    return;
+  }
 
   // Salva tudo antes de conectar
   setCfg(isLocal
@@ -1896,12 +1928,14 @@ function connectMQTT() {
   if (client) { try { client.end(true); } catch(e) {} }
 
   setConnStatus('connecting', 'Conectando...');
+  _updateBrokerModalStatus('connecting', 'Conectando…');
   log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
 
   // Timeout de segurança: se após 15s nenhum evento disparar, volta para desconectado
   const _connTimeout = setTimeout(() => {
     if (!window._mqttConnected) {
       setConnStatus('off', 'Timeout');
+      _updateBrokerModalStatus('error', 'Timeout — verifique host/porta');
       log('Conexão MQTT: timeout (15s)', 'warn');
     }
   }, 15000);
@@ -1919,6 +1953,7 @@ function connectMQTT() {
     clearTimeout(_connTimeout);
     window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
+    _updateBrokerModalStatus('on', 'Conectado');
     log('Broker MQTT conectado!', 'ok');
     try { document.getElementById('cfg-panel').style.setProperty('display','none','important'); } catch(e){}
     closeBrokerModal();
@@ -1932,8 +1967,8 @@ function connectMQTT() {
     startScheduleEngine();
     subscribeTanks();
   });
-  client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
-  client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
+  client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); _updateBrokerModalStatus('error', 'Erro: ' + (e.message || 'verifique credenciais')); log('Erro MQTT: ' + e.message, 'warn'); });
+  client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); _updateBrokerModalStatus('error', 'Offline — sem rota para o broker'); log('MQTT offline', 'warn'); });
   client.on('close',   ()  => { if (!window._mqttConnected) { updateMainBtn(); setConnStatus('off', 'Desconectado'); } });
   client.on('message', (t, m, pkt) => handleMsg(t, m.toString(), pkt));
 }
