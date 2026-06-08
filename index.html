@@ -4677,7 +4677,7 @@ function buildWidgetFields(type, ex) {
   const iconField = inp('icon', 'Ícone (emoji)', v('icon', WIDGET_TYPE_LABELS[type]?.icon || ''), '🏠');
 
   switch(type) {
-    case 'ambiente':
+    case 'ambiente': {
       const roomOpts = rooms.map(r => `<option value="${r.id}" ${v('roomId','') === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
       return `${nameField}
         <div class="field"><label>Ambiente cadastrado</label>
@@ -4685,8 +4685,9 @@ function buildWidgetFields(type, ex) {
             <option value="">-- selecione --</option>${roomOpts}
           </select>
         </div>`;
+    }
 
-    case 'caixa_agua':
+    case 'caixa_agua': {
       const tankOpts = waterTanks.map(t => `<option value="${t.id}" ${v('tankId','') === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
       return `${nameField}
         <div class="field"><label>Caixa d'água cadastrada</label>
@@ -4694,6 +4695,7 @@ function buildWidgetFields(type, ex) {
             <option value="">-- selecione --</option>${tankOpts}
           </select>
         </div>`;
+    }
 
     case 'irrigacao':
       return `${nameField}${iconField}`;
@@ -4740,7 +4742,7 @@ function buildWidgetFields(type, ex) {
         </div>`;
     }
 
-    case 'rele':
+    case 'rele': {
       const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}" ${v('relayId','') === r.id ? 'selected' : ''}>${r.icon} ${r.name}</option>`).join('');
       return `${nameField}${iconField}
         <div class="field"><label>Relé vinculado</label>
@@ -4748,6 +4750,7 @@ function buildWidgetFields(type, ex) {
             <option value="">-- selecione --</option>${relayOpts}
           </select>
         </div>`;
+    }
 
     case 'alarme':
       return `${nameField}${iconField}
