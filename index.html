@@ -1599,8 +1599,14 @@ function loadFromBrokerPayload(payload) {
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
     // Widgets genéricos — sincroniza entre dispositivos
     if (d.widgets && d.widgets.length) {
+      // Usa localStorage como fonte de verdade para exclusões:
+      // widgets removidos localmente não são reinseridos pelo broker
+      let localWidgets = [];
+      try { localWidgets = JSON.parse(localStorage.getItem('autoflow_widgets') || '[]'); } catch(e) {}
       d.widgets.forEach(bw => {
-        if (!widgets.some(w => w.id === bw.id)) widgets.push(bw);
+        const existsLocally = localWidgets.some(lw => lw.id === bw.id);
+        const alreadyLoaded = widgets.some(w => w.id === bw.id);
+        if (!existsLocally && !alreadyLoaded) widgets.push(bw);
       });
       saveWidgets();
       renderWidgetPanel();
