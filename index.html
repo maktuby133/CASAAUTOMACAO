@@ -3490,6 +3490,13 @@ function renderRooms() {
     const d  = r.data;
     const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
     const alarmCls = d.smoke >= 60 ? 'alarm' : d.smoke >= 30 ? 'warn-smoke' : '';
+    const _secAgo = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
+    const _offline = _secAgo !== null && _secAgo > 90;
+    const onlineBadge = !d.lastSeen
+      ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>–</span>`
+      : _offline
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>offline ${_secAgo < 3600 ? Math.floor(_secAgo/60)+'m' : Math.floor(_secAgo/3600)+'h'}</span>`
+        : `<span style="font-family:var(--mono);font-size:9px;color:var(--accent);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block"></span>online</span>`;
 
     // Linked relays
     const linkedRelays = (r.relays || []).map(rel => {
