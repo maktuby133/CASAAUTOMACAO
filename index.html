@@ -1721,14 +1721,8 @@ function closeBrokerModal() {
 }
 
 function smartConnect() {
-  // Se já está conectado → abre modal para reconfigurar
-  if (window._mqttConnected) { openBrokerModal(); return; }
-  // Se tem credenciais salvas → conecta direto, sem abrir modal
-  const s = getCfg();
-  const isLocal = brokerMode === 'local';
-  const hasHost = isLocal ? !!s.localHost : !!s.host;
-  if (hasHost) { connectMQTT(); return; }
-  // Sem credenciais → abre modal
+  // Clique no chip sempre abre o modal (conectado ou não)
+  // Auto-connect silencioso só acontece no DOMContentLoaded
   openBrokerModal();
 }
 
