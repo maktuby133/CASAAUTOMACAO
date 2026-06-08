@@ -3883,15 +3883,30 @@ function _updateLoginBtn() {
   const lbl = document.getElementById('login-btn-lbl');
   if (!btn) return;
   if (session) {
-    lbl.textContent = session.username;
+    // Mostra só a inicial em maiúsculo — sem sobrepor o botão
+    const initial = (session.username || '?').charAt(0).toUpperCase();
+    lbl.innerHTML = `<span style="
+      font-family:var(--mono);
+      font-size:13px;
+      font-weight:700;
+      color:var(--accent);
+      line-height:1;
+      letter-spacing:0;
+    ">${initial}</span>`;
+    btn.title = session.username;
     btn.style.color = 'var(--accent)';
-    btn.style.borderColor = 'rgba(0,212,160,0.4)';
-    btn.style.background = 'rgba(0,212,160,0.06)';
+    btn.style.borderColor = 'rgba(34,211,160,0.4)';
+    btn.style.background = 'rgba(34,211,160,0.08)';
+    btn.style.width = '30px';
+    btn.style.padding = '0';
   } else {
-    lbl.textContent = 'Login';
+    lbl.innerHTML = '👤';
+    btn.title = 'Login / Conta';
     btn.style.color = '';
     btn.style.borderColor = '';
     btn.style.background = '';
+    btn.style.width = '';
+    btn.style.padding = '';
   }
 }
 
