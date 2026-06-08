@@ -48,18 +48,21 @@ body::before {
 .app { position: relative; z-index: 1; max-width: 100%; margin: 0; padding: 0 20px 60px; }
 
 /* TOPBAR */
-.topbar { display: flex; align-items: center; gap: 10px; padding: 11px 0 11px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: nowrap; }
-.logo { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; }
+.topbar { display: flex; align-items: center; gap: 0; padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: nowrap; }
+.logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-right: 20px; }
 .logo-text { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; font-family: var(--mono); }
 .logo-text span { color: var(--accent); }
 .logo-tag { font-family: var(--mono); font-size: 9px; color: var(--muted); border: 0.5px solid var(--border2); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
-.topbar-sep { width: 1px; height: 18px; background: var(--border2); flex-shrink: 0; }
-.topbar-weather { display: flex; align-items: center; justify-content: space-between; gap: 0; flex: 1; min-width: 0; overflow: hidden; }
-.topbar-weather-item { display: flex; flex-direction: column; align-items: center; white-space: nowrap; flex-shrink: 0; }
-.topbar-weather-val { font-family: var(--mono); font-weight: 700; color: var(--text); font-size: 13px; line-height: 1; }
-.topbar-weather-unit { font-size: 9px; color: var(--muted); margin-top: 1px; }
-.topbar-weather-city { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; flex-shrink: 1; }
-.topbar-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.topbar-sep { width: 1px; height: 28px; background: var(--border2); flex-shrink: 0; }
+.topbar-weather { display: flex; align-items: center; justify-content: space-evenly; flex: 1; min-width: 0; overflow: hidden; padding: 0 12px; }
+.topbar-weather-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; white-space: nowrap; flex-shrink: 0; padding: 0 14px; }
+.topbar-weather-val { font-family: var(--mono); font-weight: 700; color: var(--text); font-size: 16px; line-height: 1; letter-spacing: -0.5px; }
+.topbar-weather-unit { font-size: 9px; color: var(--muted); }
+.topbar-weather-lbl { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.topbar-weather-city { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 14px; flex-shrink: 0; }
+.topbar-weather-city-name { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.topbar-weather-city-lbl { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding-left: 16px; border-left: 1px solid var(--border2); }
 
 /* MQTT chip — substitui o dot sozinho */
 .mqtt-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-family: var(--mono); font-size: 10px; font-weight: 600; border: 0.5px solid; transition: all 0.2s; cursor: default; letter-spacing: 0.04em; }
@@ -459,21 +462,19 @@ body::before {
   .app { padding: 0 10px 80px; }
 
   /* ── Topbar ── */
-  .topbar { padding: 10px 0; gap: 6px; flex-wrap: nowrap; }
+  .topbar { padding: 8px 0; gap: 0; }
   .logo-tag { display: none; }
-  .logo-text { font-size: 16px; flex-shrink: 0; }
-  .topbar-sep { display: none; }
-  /* Clima: só ícone + temp no mobile */
-  .topbar-weather { gap: 5px; }
-  .topbar-weather-city,
-  #wi-irrig-status,
+  .logo-text { font-size: 15px; flex-shrink: 0; }
+  .topbar-sep { display: none !important; }
+  /* Clima mobile: só cidade + temp */
+  .topbar-weather { justify-content: flex-start; padding: 0 8px; gap: 0; }
+  #wi-city-inline-wrap,
   #mb-rain-inline,
-  #wi-hum-inline-wrap,
-  .topbar-weather-item:not(:first-of-type) { display: none !important; }
-  /* Mostrar só temp */
-  .topbar-weather-item:first-of-type { display: flex !important; }
-  .topbar-weather-val { font-size: 13px; }
-  .topbar-right { gap: 5px; flex-shrink: 0; }
+  .topbar-weather-item:not(:nth-child(3)) { display: none !important; }
+  /* Mostrar só temp no mobile */
+  .topbar-weather-item:nth-child(3) { display: flex !important; padding: 0 6px; }
+  .topbar-weather-val { font-size: 15px; }
+  .topbar-right { gap: 5px; flex-shrink: 0; border-left: none; padding-left: 0; }
   .conn-status { display: none; }
   .login-btn-lbl { display: none; }
   #login-btn { padding: 4px !important; min-width: 30px; }
@@ -737,41 +738,70 @@ body::before {
 
     <!-- Clima inline na topbar -->
     <div class="topbar-weather" id="topbar-weather">
-      <span id="wi-icon-inline" style="font-size:16px;flex-shrink:0">🌍</span>
-      <span class="topbar-weather-city" id="wi-city-inline">configure →</span>
-      <span id="wi-irrig-status" style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(107,114,128,0.12);color:var(--muted);flex-shrink:0">clima</span>
 
-      <!-- Temp -->
-      <span class="topbar-sep" style="height:14px"></span>
-      <span class="topbar-weather-item" title="Temperatura">
-        🌡️ <span class="topbar-weather-val" id="wi-temp-inline">—</span><span class="topbar-weather-unit">°C</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-feels-inline"></span>
-      </span>
+      <!-- Cidade + ícone -->
+      <div class="topbar-weather-city" id="wi-city-inline-wrap">
+        <span id="wi-icon-inline" style="font-size:18px;line-height:1">🌍</span>
+        <span class="topbar-weather-city-name" id="wi-city-inline">configure</span>
+        <span class="topbar-weather-city-lbl">cidade</span>
+      </div>
+
+      <div class="topbar-sep"></div>
+
+      <!-- Temperatura -->
+      <div class="topbar-weather-item" title="Temperatura">
+        <span class="topbar-weather-lbl">temp</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-temp-inline">—</span><span class="topbar-weather-unit">°C</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="wi-feels-inline"></span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- Umidade -->
-      <span class="topbar-weather-item" title="Umidade">
-        💧<span class="topbar-weather-val" id="wi-hum-inline">—</span><span class="topbar-weather-unit">%</span>
-      </span>
+      <div class="topbar-weather-item" title="Umidade">
+        <span class="topbar-weather-lbl">umidade</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-hum-inline">—</span><span class="topbar-weather-unit">%</span>
+        </span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- Chuva -->
-      <span class="topbar-weather-item" id="mb-rain-inline" title="Chuva">
-        🌧<span class="topbar-weather-val" id="wi-rain-inline">—</span><span class="topbar-weather-unit">mm</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-prob-inline"></span>
-      </span>
+      <div class="topbar-weather-item" id="mb-rain-inline" title="Chuva">
+        <span class="topbar-weather-lbl">chuva</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-rain-inline">—</span><span class="topbar-weather-unit">mm</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="wi-prob-inline"></span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- Vento -->
-      <span class="topbar-weather-item" title="Vento">
-        💨<span class="topbar-weather-val" id="wi-wind-inline">—</span><span class="topbar-weather-unit">km/h</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-winddir-inline"></span>
-      </span>
+      <div class="topbar-weather-item" title="Vento">
+        <span class="topbar-weather-lbl">vento</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-wind-inline">—</span><span class="topbar-weather-unit">km/h</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="wi-winddir-inline"></span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- UV -->
-      <span class="topbar-weather-item" title="Índice UV">
-        ☀️<span class="topbar-weather-val" id="wi-uv-inline">—</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:1px" id="wi-uvlbl-inline">UV</span>
-      </span>
+      <div class="topbar-weather-item" title="Índice UV">
+        <span class="topbar-weather-lbl">índice uv</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-uv-inline">—</span>
+          <span class="topbar-weather-unit" id="wi-uvlbl-inline"></span>
+        </span>
+      </div>
 
-      <span id="live-ts" style="font-family:var(--mono);font-size:9px;color:var(--muted);flex-shrink:0;display:none">aguardando...</span>
+      <span id="wi-irrig-status" style="display:none"></span>
+      <span id="live-ts" style="display:none"></span>
       <span id="wi-status-inline" style="display:none"></span>
     </div>
 
