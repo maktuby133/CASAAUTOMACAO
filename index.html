@@ -3669,37 +3669,37 @@ function doLogin() {
   if (!user || !pass) { _showLoginMsg('Preencha usuário e senha.', 'err'); return; }
   const users = _getUsers();
   if (!users[user]) { _showLoginMsg('Usuário não encontrado. Crie uma conta.', 'err'); return; }
-  if (users[user] !== pass) { _showLoginMsg('Senha incorreta.', 'err'); return; }
-  _saveSession({ username: user });
+  // Suporta formato legado (string) e novo (objeto { pass, role })
+  const storedPass = typeof users[user] === 'object' ? users[user].pass : users[user];
+  const userRole   = typeof users[user] === 'object' ? (users[user].role || 'admin') : 'admin';
+  if (storedPass !== pass) { _showLoginMsg('Senha incorreta.', 'err'); return; }
+  _saveSession({ username: user, role: userRole });
   _updateLoginBtn();
-  log(`👤 Login: ${user}`, 'ok');
+  log(`👤 Login: ${user} (${userRole})`, 'ok');
   closeLoginModal();
   setTimeout(applyRoleRestrictions, 100);
 }
 
 function doRegister() {
-  const user = document.getElementById('login-username').value.trim();
-  const pass = document.getElementById('login-password').value;
+  const user = document.getElementById('login-username')?.value.trim();
+  const pass = document.getElementById('login-password')?.value;
+  const role = document.getElementById('login-role')?.value || 'admin';
+
   if (!user || !pass) { _showLoginMsg('Preencha usuário e senha.', 'err'); return; }
   if (user.length < 3) { _showLoginMsg('Usuário deve ter ao menos 3 caracteres.', 'err'); return; }
   if (pass.length < 4) { _showLoginMsg('Senha deve ter ao menos 4 caracteres.', 'err'); return; }
 
-  // Dica: se senha bater com a do broker, mostra aviso positivo
-  const brokerPass = document.getElementById('cfg-pass')?.value || getCfg().pass || '';
-
   const users = _getUsers();
   if (users[user]) { _showLoginMsg('Usuário já existe.', 'err'); return; }
-  users[user] = pass;
+
+  // Salva como objeto { pass, role } — retrocompatível com formato string antigo
+  users[user] = { pass, role };
   _saveUsers(users);
-  _saveSession({ username: user });
+  _saveSession({ username: user, role });
   _updateLoginBtn();
-  log(`👤 Conta criada: ${user}`, 'ok');
-  if (brokerPass && pass === brokerPass) {
-    _showLoginMsg('✓ Conta criada! Senha igual ao broker MQTT.', 'ok');
-    setTimeout(closeLoginModal, 1400);
-  } else {
-    closeLoginModal();
-  }
+  log(`👤 Conta criada: ${user} (${role})`, 'ok');
+  _showLoginMsg('✓ Conta criada com sucesso!', 'ok');
+  setTimeout(closeLoginModal, 1200);
 }
 
 function doLogout() {
