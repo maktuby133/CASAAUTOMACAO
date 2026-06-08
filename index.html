@@ -767,6 +767,9 @@ body::before {
       <!-- Botão ícone: cidade do clima -->
       <button class="icon-btn" onclick="openCityModal()" title="Mudar cidade do clima">🌍</button>
 
+      <!-- Botão ícone: alertas -->
+      <button class="icon-btn" onclick="openAlertRulesModal();refreshAlertDeviceSelect()" title="Alertas configuráveis" id="alerts-btn">🔔</button>
+
       <!-- Botão ícone: login/perfil -->
       <button class="icon-btn" id="login-btn" onclick="openLoginModal()" title="Login / Conta">
         <span id="login-btn-lbl">👤</span>
@@ -873,9 +876,17 @@ body::before {
 
     <!-- Log -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header" style="margin-bottom:8px;flex-wrap:wrap;gap:6px">
+        <div class="card-icon teal">📋</div>
         <span class="card-title">Log de eventos</span>
-        <button class="btn" onclick="clearLog()" style="font-size:10px;padding:4px 10px">Limpar</button>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:auto;align-items:center">
+          <button class="log-filter-btn active" data-f="all"  onclick="setLogFilter('all')">Todos</button>
+          <button class="log-filter-btn ok"     data-f="ok"   onclick="setLogFilter('ok')">OK</button>
+          <button class="log-filter-btn warn"   data-f="warn" onclick="setLogFilter('warn')">Alertas</button>
+          <button class="log-filter-btn"        data-f="sys"  onclick="setLogFilter('sys')">Sistema</button>
+          <button class="btn" style="font-size:10px;padding:3px 8px" onclick="exportLog()" title="Exportar log">⬇</button>
+          <button class="btn" style="font-size:10px;padding:3px 8px" onclick="_logEntries.length=0;document.getElementById('log-box').innerHTML=''" title="Limpar">✕</button>
+        </div>
       </div>
       <div class="log-box" id="log-box" style="max-height:130px">
         <span class="log-line log-sys"><span class="ts">--:--:--</span><span class="log-dot"></span><span class="msg">Sistema iniciado. Configure o MQTT acima.</span></span>
@@ -1046,6 +1057,17 @@ body::before {
               style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
           </div>
         </div>
+        <!-- Campo role — só aparece no registro -->
+        <div id="login-role-wrap" style="display:none">
+          <div class="field">
+            <label>Perfil de acesso</label>
+            <select id="login-role" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px">
+              <option value="admin">Admin — acesso total</option>
+              <option value="operator">Operador — controla, não configura</option>
+              <option value="viewer">Visualizador — apenas leitura</option>
+            </select>
+          </div>
+        </div>
         <div id="login-msg" style="display:none;font-family:var(--mono);font-size:11px;padding:8px 10px;border-radius:6px;margin-top:2px"></div>
       </div>
       <div class="modal-actions" style="justify-content:space-between">
@@ -1062,7 +1084,10 @@ body::before {
       <div style="text-align:center;padding:16px 0 20px">
         <div style="font-size:40px;margin-bottom:10px">👤</div>
         <div style="font-size:16px;font-weight:600;color:var(--text)" id="profile-username-lbl"></div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:4px">● Sessão ativa</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--accent)">● Sessão ativa</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:2px 8px;border:0.5px solid var(--border2);border-radius:4px" id="profile-role-lbl">Admin</div>
+        </div>
       </div>
       <div class="modal-actions" style="justify-content:center;gap:12px">
         <button class="btn" onclick="closeLoginModal()">Fechar</button>
@@ -2990,17 +3015,21 @@ function startScheduleEngine() {
 
 // ============ LOG ============
 function log(msg, type = 'sys') {
-  const box = document.getElementById('log-box');
-  const ts  = new Date().toLocaleTimeString('pt-BR');
-  const cls = { ok:'log-ok', warn:'log-warn', info:'log-info', sys:'log-sys' }[type] || 'log-sys';
-  const el  = document.createElement('span');
-  el.className = 'log-line ' + cls;
-  el.innerHTML = `<span class="ts">${ts}</span><span class="log-dot"></span><span class="msg">${msg}</span>`;
-  box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
-  // Limita a 120 entradas
-  const lines = box.querySelectorAll('.log-line');
-  if (lines.length > 120) lines[0].remove();
+  const ts = new Date().toLocaleTimeString('pt-BR');
+  _logEntries.push({ ts, msg, type });
+  if (_logEntries.length > 500) _logEntries.shift();
+  if (_logFilter === 'all' || _logFilter === type) {
+    const box = document.getElementById('log-box');
+    if (!box) return;
+    const cls = { ok:'log-ok', warn:'log-warn', info:'log-info', sys:'log-sys' }[type] || 'log-sys';
+    const el  = document.createElement('span');
+    el.className = 'log-line ' + cls;
+    el.innerHTML = `<span class="ts">${ts}</span><span class="log-dot"></span><span class="msg">${msg}</span>`;
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+    const lines = box.querySelectorAll('.log-line');
+    if (lines.length > 120) lines[0].remove();
+  }
 }
 
 
@@ -3598,6 +3627,13 @@ function _refreshLoginModal() {
     profileWrap.style.display = '';
     document.getElementById('profile-username-lbl').textContent = session.username;
     document.getElementById('login-modal-heading').textContent = 'Minha conta';
+    // Exibe role do usuário
+    const usrs = _getUsers();
+    const ud = usrs[session.username];
+    const role = (typeof ud === 'object' ? ud.role : null) || 'admin';
+    const roleLabels = { admin:'Admin', operator:'Operador', viewer:'Visualizador' };
+    const roleLblEl = document.getElementById('profile-role-lbl');
+    if (roleLblEl) roleLblEl.textContent = roleLabels[role] || role;
     return;
   }
 
@@ -3606,11 +3642,16 @@ function _refreshLoginModal() {
   const isReg = _loginMode === 'register';
   document.getElementById('login-modal-heading').textContent = isReg ? 'Criar conta' : 'Entrar no AutoFlow';
   document.getElementById('login-action-btn').textContent = isReg ? 'Criar conta' : 'Entrar';
-  document.getElementById('login-action-btn').onclick = isReg ? doRegister : doLogin;
+  document.getElementById('login-action-btn').onclick = isReg ? doRegisterWithRole : doLogin;
   document.getElementById('login-switch-btn').textContent = isReg ? '← Já tenho conta' : 'Criar conta';
   document.getElementById('login-msg').style.display = 'none';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
+  // Mostrar role selector só no registro
+  const roleWrap = document.getElementById('login-role-wrap');
+  if (roleWrap) roleWrap.style.display = isReg ? '' : 'none';
+  const confirmWrap = document.getElementById('login-confirm-wrap');
+  if (confirmWrap) confirmWrap.style.display = isReg ? '' : 'none';
 }
 
 function _showLoginMsg(msg, type) {
@@ -3633,6 +3674,7 @@ function doLogin() {
   _updateLoginBtn();
   log(`👤 Login: ${user}`, 'ok');
   closeLoginModal();
+  setTimeout(applyRoleRestrictions, 100);
 }
 
 function doRegister() {
@@ -3946,6 +3988,11 @@ function renderWidgetAmbienteGrid(w) {
         <span style="margin-left:auto">${onlineBadge}</span>
       </div>
       <div class="room-main-row">${sensorItems.join('')}</div>
+      ${(() => {
+        const h = getHistory(r.id, 'temp');
+        if (h.length < 3) return '';
+        return `<div style="margin-top:6px;opacity:0.7">${buildSparklineSVG(h,'var(--accent)',70,16)}</div>`;
+      })()}
       ${btnRowHtml}
     </div>`;
   }).join('');
@@ -4877,5 +4924,86 @@ function deleteWidgetFromModal() {
     </div>
   </div>
 </div>
+
+<!-- ═══ MODAL: ALERTAS CONFIGURÁVEIS ════════════════════════════════ -->
+<div class="modal-overlay" id="alert-rules-modal">
+  <div class="modal" style="width:500px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">🔔 Alertas configuráveis</div>
+    <div id="alert-rules-list" style="margin-bottom:14px"></div>
+
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px"></span>
+      Nova regra
+    </div>
+    <div style="padding:12px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+      <div class="field" style="margin:0">
+        <label>Nome da regra</label>
+        <input id="ar-name" placeholder="ex: Temperatura alta, Gás crítico..."/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="field" style="margin:0">
+          <label>Dispositivo</label>
+          <select id="ar-device" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 10px;outline:none;height:36px">
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Campo</label>
+          <select id="ar-field" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 10px;outline:none;height:36px">
+            <option value="temp">🌡️ Temperatura (°C)</option>
+            <option value="hum">💧 Umidade (%)</option>
+            <option value="smoke">🔥 Gás (%)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px">
+        <div class="field" style="margin:0">
+          <label>Operador</label>
+          <select id="ar-op" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;height:36px">
+            <option value=">">&gt;</option>
+            <option value="<">&lt;</option>
+            <option value=">=">&gt;=</option>
+            <option value="<=">&lt;=</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Valor limite</label>
+          <input id="ar-threshold" type="number" placeholder="ex: 35"/>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Duração (seg)</label>
+          <input id="ar-duration" type="number" value="30" min="5" placeholder="30"/>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text)">
+        <input type="checkbox" id="ar-notif" checked style="accent-color:var(--accent)">
+        Enviar notificação push ao disparar
+      </label>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn" onclick="closeAlertRulesModal()">Fechar</button>
+      <button class="btn primary" onclick="addAlertRule()">＋ Criar regra</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: QR SCANNER ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="qr-scanner-modal">
+  <div class="modal" style="width:340px;text-align:center">
+    <div class="modal-title">📷 Ler QR Code do ESP32</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:12px">
+      Aponte para o QR Code exibido no portal AP do dispositivo
+    </div>
+    <div style="position:relative;background:var(--bg3);border-radius:var(--radius);overflow:hidden;aspect-ratio:1">
+      <video id="qr-video" style="width:100%;height:100%;object-fit:cover" playsinline muted></video>
+      <canvas id="qr-canvas" style="display:none"></canvas>
+      <!-- Visor -->
+      <div style="position:absolute;inset:20%;border:2px solid var(--accent);border-radius:8px;opacity:0.7;pointer-events:none"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;justify-content:center">
+      <button class="btn" onclick="closeQrScanner()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
