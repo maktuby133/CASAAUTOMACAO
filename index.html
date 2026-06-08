@@ -1052,6 +1052,7 @@ body::before {
           <label>Senha <span style="font-weight:400;opacity:0.6;font-size:9px">(padrão: senha do broker MQTT)</span></label>
           <div style="display:flex;gap:6px">
             <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"
+              onkeydown="if(event.key==='Enter') document.getElementById('login-action-btn').click()"
               style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;transition:border-color 0.15s"/>
             <button type="button" onclick="togglePassVis('login-password',this)"
               style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
@@ -1074,7 +1075,7 @@ body::before {
         <button class="btn" onclick="switchLoginMode()" id="login-switch-btn" style="font-size:10px;color:var(--muted)">Criar conta</button>
         <div style="display:flex;gap:8px">
           <button class="btn" onclick="closeLoginModal()">Cancelar</button>
-          <button class="btn primary" id="login-action-btn" onclick="doLogin()">Entrar</button>
+          <button class="btn primary" id="login-action-btn">Entrar</button>
         </div>
       </div>
     </div>
@@ -3641,8 +3642,12 @@ function _refreshLoginModal() {
   profileWrap.style.display = 'none';
   const isReg = _loginMode === 'register';
   document.getElementById('login-modal-heading').textContent = isReg ? 'Criar conta' : 'Entrar no AutoFlow';
-  document.getElementById('login-action-btn').textContent = isReg ? 'Criar conta' : 'Entrar';
-  document.getElementById('login-action-btn').onclick = isReg ? doRegisterWithRole : doLogin;
+  const actionBtn = document.getElementById('login-action-btn');
+  actionBtn.textContent = isReg ? 'Criar conta' : 'Entrar';
+  actionBtn.onclick = null;
+  actionBtn.addEventListener('click', isReg ? doRegister : doLogin, { once: false });
+  // Remove listener anterior para evitar duplicação
+  actionBtn.onclick = isReg ? doRegister : doLogin;
   document.getElementById('login-switch-btn').textContent = isReg ? '← Já tenho conta' : 'Criar conta';
   document.getElementById('login-msg').style.display = 'none';
   document.getElementById('login-username').value = '';
