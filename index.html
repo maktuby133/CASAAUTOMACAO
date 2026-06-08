@@ -1904,6 +1904,14 @@ function connectMQTT() {
   setConnStatus('connecting', 'Conectando...');
   log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
 
+  // Timeout de segurança: se após 15s nenhum evento disparar, volta para desconectado
+  const _connTimeout = setTimeout(() => {
+    if (!window._mqttConnected) {
+      setConnStatus('off', 'Timeout');
+      log('Conexão MQTT: timeout (15s)', 'warn');
+    }
+  }, 15000);
+
   client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
     username: user,
     password: pass,
@@ -1914,6 +1922,7 @@ function connectMQTT() {
   });
 
   client.on('connect', () => {
+    clearTimeout(_connTimeout);
     window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
     log('Broker MQTT conectado!', 'ok');
@@ -1931,6 +1940,7 @@ function connectMQTT() {
   });
   client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
   client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
+  client.on('close',   ()  => { if (!window._mqttConnected) { updateMainBtn(); setConnStatus('off', 'Desconectado'); } });
   client.on('message', (t, m, pkt) => handleMsg(t, m.toString(), pkt));
 }
 
