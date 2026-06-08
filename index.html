@@ -700,6 +700,27 @@ body::before {
   justify-content: space-between;
 }
 .irrig-sched-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.04); }
+
+/* ── Medidor modes ───────────────────────────────────────────── */
+.meter-mode-card { display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 6px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);text-align:center;transition:border-color .15s,background .15s; }
+.meter-mode-card:has(input:checked),.meter-mode-card.selected { border-color:var(--accent);background:rgba(34,211,160,.07); }
+.meter-energy-grid { display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px; }
+.energy-cell { background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px; }
+.energy-cell .ec-val { font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text); }
+.energy-cell .ec-lbl { font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px; }
+.flow-rate-big { font-family:var(--mono);font-size:32px;font-weight:700;color:#3b82f6;line-height:1; }
+.flow-unit-lbl { font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:4px; }
+.flow-row { display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border-radius:var(--radius);margin-top:6px; }
+.flow-row .fr-val { font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text); }
+.flow-row .fr-lbl { font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto; }
+/* ── device-id section block ─────────────────────────────────── */
+.dev-section { padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px; }
+.dev-section-label { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px; }
+.dev-section-label .dsb { display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px; }
+/* ── relay mode toggle ────────────────────────────────────────── */
+.rel-mode-card { flex:1;display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);transition:border-color .15s; }
+.rel-mode-card:has(input:checked) { border-color:var(--accent); }
+
 </style>
 </head>
 <body>
@@ -1127,7 +1148,17 @@ body::before {
             📡 <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
           </div>
         </div>
-        <div class="field" style="margin-bottom:0">
+        <div class="field" style="margin-bottom:8px">
+          <label>Senha do dispositivo</label>
+          <div style="display:flex;gap:6px">
+            <input id="tank-pass" type="password" placeholder="Senha do portal AP do ESP32"
+              style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
+            <button type="button" onclick="togglePassVis('tank-pass',this)"
+              style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--mono)">🔑 Autenticação dos comandos para o ESP32</div>
+        </div>
+      <div class="field" style="margin-bottom:0">
           <label>Capacidade total (litros)</label>
           <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"
             style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;width:100%"/>
@@ -2250,6 +2281,7 @@ function openTankModal(editId) {
     if (delBtn) delBtn.style.display = editId ? 'flex' : 'none';
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
+  const _tpe = document.getElementById('tank-pass'); if (_tpe) _tpe.value = t?.pass || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
   updateTankPreview();
   // Pump rows
@@ -2368,6 +2400,7 @@ function renderTankPumpRows() {
 function confirmSaveTank() {
   const name     = document.getElementById('tank-name').value.trim();
   const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+  const pass     = document.getElementById('tank-pass')?.value || '';
   const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
   const editId   = document.getElementById('tank-edit-id').value;
 
@@ -2390,7 +2423,7 @@ function confirmSaveTank() {
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
-  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, pass, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
   pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
 
   if (editId) {
@@ -4260,28 +4293,47 @@ function renderWidgetPortao(w) {
 }
 
 function renderWidgetRele(w) {
-  const relay = relays.find(r => r.id === w.relayId);
-  const isOn = relay ? relay.state : false;
-  const stColor = isOn ? 'var(--accent)' : 'var(--muted)';
-  const bgColor = isOn ? 'rgba(0,212,160,0.06)' : 'var(--bg3)';
+  const isStandalone = w.relMode === 'standalone';
+  let isOn, relayName, disabled;
+  if (isStandalone) {
+    isOn      = window['wr_state_' + w.id] || false;
+    relayName = w.name;
+    disabled  = false;
+  } else {
+    const relay = relays.find(r => r.id === w.relayId);
+    isOn      = relay ? relay.state : false;
+    relayName = relay ? relay.name : w.name;
+    disabled  = !relay;
+  }
+  const stColor     = isOn ? 'var(--accent)' : 'var(--muted)';
+  const bgColor     = isOn ? 'rgba(0,212,160,0.06)' : 'var(--bg3)';
   const borderColor = isOn ? 'rgba(0,212,160,0.3)' : 'var(--border)';
-  const stIcon = isOn ? '🟢' : '⚪';
+  const stIcon      = isOn ? '🟢' : '⚪';
+  const onchangeFn  = isStandalone
+    ? `toggleWidgetRelayStandalone('${w.id}', this.checked)`
+    : `toggleWidgetRelay('${w.id}', this.checked)`;
+  const topicBadge  = isStandalone && w.relTopic
+    ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.relTopic}</div>`
+    : '';
   return `
-    <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:var(--radius);padding:14px 16px;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
-          ${w.icon || '⚡'} ${relay ? relay.name : w.name}
+    <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:var(--radius);padding:14px 16px;transition:all 0.3s">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
+            ${w.icon || '⚡'} ${relayName}
+          </div>
+          <div style="font-family:var(--mono);font-size:11px;color:${stColor};display:flex;align-items:center;gap:5px">
+            ${stIcon} <span id="wr-st-${w.id}">${isOn ? 'LIGADO' : 'DESLIGADO'}</span>
+            ${disabled ? '<span style="font-size:9px;color:var(--danger);margin-left:6px">⚠ Relé não encontrado</span>' : ''}
+          </div>
         </div>
-        <div style="font-family:var(--mono);font-size:11px;color:${stColor};display:flex;align-items:center;gap:5px">
-          ${stIcon} <span>${isOn ? 'LIGADO' : 'DESLIGADO'}</span>
-          ${!relay ? `<span style="font-size:9px;color:var(--danger);margin-left:6px">⚠ Relé não encontrado</span>` : ''}
-        </div>
+        <label class="toggle" style="transform:scale(1.2);transform-origin:right center;flex-shrink:0">
+          <input type="checkbox" ${isOn ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="${onchangeFn}">
+          <div class="toggle-track"></div>
+          <div class="toggle-knob"></div>
+        </label>
       </div>
-      <label class="toggle" style="transform:scale(1.2);transform-origin:right center;flex-shrink:0">
-        <input type="checkbox" ${isOn ? 'checked' : ''} ${!relay ? 'disabled' : ''} onchange="toggleWidgetRelay('${w.id}', this.checked)">
-        <div class="toggle-track"></div>
-        <div class="toggle-knob"></div>
-      </label>
+      ${topicBadge}
     </div>`;
 }
 
@@ -4317,6 +4369,78 @@ function renderWidgetAlarme(w) {
 }
 
 function renderWidgetMedidor(w) {
+  const mode = w.meterMode || 'generic';
+
+  // ── Fluxo de Água ────────────────────────────────────────────
+  if (mode === 'flow_water') {
+    const rate  = window['wm_val_'   + w.id];
+    const total = window['wm_tot_'   + w.id];
+    const limit = w.dailyLimit || 500;
+    const rateDisp  = rate  != null ? parseFloat(rate).toFixed(1)  : '--';
+    const totalDisp = total != null ? parseFloat(total).toFixed(0) : '--';
+    const pctDaily  = total != null ? Math.min(100, (parseFloat(total)/limit)*100) : 0;
+    const barColor  = pctDaily >= 90 ? 'var(--danger)' : pctDaily >= 70 ? 'var(--warn)' : '#3b82f6';
+    const topicShort = (w.topic||'').length > 35 ? '…'+(w.topic||'').slice(-33) : (w.topic||'aguardando…');
+    return `
+      <div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px">
+          <span class="flow-rate-big" id="meter-val-${w.id}">${rateDisp}</span>
+          <span class="flow-unit-lbl">L/min</span>
+          <span id="meter-ts-${w.id}" style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--muted)"></span>
+        </div>
+        <div class="flow-row" style="margin-bottom:4px">
+          <span style="font-size:14px">💧</span>
+          <span class="fr-val" id="meter-sub-${w.id}">${totalDisp} L</span>
+          <span class="fr-lbl">consumo hoje</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between">
+          <span>0 L</span><span>limite: ${limit} L</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pctDaily}%;background:${barColor}"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.topic||''}">${topicShort}</div>
+      </div>`;
+  }
+
+  // ── Energia PZEM-004T ────────────────────────────────────────
+  if (mode === 'energy') {
+    const e = window['wm_energy_' + w.id] || {};
+    const pow  = e.power     != null ? parseFloat(e.power).toFixed(0)     : '--';
+    const vol  = e.voltage   != null ? parseFloat(e.voltage).toFixed(1)   : '--';
+    const cur  = e.current   != null ? parseFloat(e.current).toFixed(2)   : '--';
+    const kwh  = e.energy    != null ? parseFloat(e.energy).toFixed(3)    : '--';
+    const pf   = e.pf        != null ? parseFloat(e.pf).toFixed(2)        : '--';
+    const tariff = w.tariff || 0.65;
+    const cost = e.energy != null ? (parseFloat(e.energy)*tariff).toFixed(2) : '--';
+    const powNum = e.power != null ? parseFloat(e.power) : 0;
+    const maxW   = (w.phases||1) === 3 ? 15000 : 5000;
+    const pct    = Math.min(100,(powNum/maxW)*100);
+    const barColor = pct>=90?'var(--danger)':pct>=70?'var(--warn)':'#f59e0b';
+    return `
+      <div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
+          <div class="meter-value" id="meter-val-${w.id}">${pow}<span class="meter-unit">W</span></div>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto" id="meter-ts-${w.id}"></span>
+        </div>
+        <div class="meter-bar" style="margin-bottom:10px">
+          <div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div class="meter-energy-grid">
+          <div class="energy-cell"><div class="ec-val" id="me-vol-${w.id}">${vol}</div><div class="ec-lbl">⚡ Tensão (V)</div></div>
+          <div class="energy-cell"><div class="ec-val" id="me-cur-${w.id}">${cur}</div><div class="ec-lbl">🔌 Corrente (A)</div></div>
+          <div class="energy-cell"><div class="ec-val" id="me-kwh-${w.id}">${kwh}</div><div class="ec-lbl">📈 Energia (kWh)</div></div>
+          <div class="energy-cell"><div class="ec-val" id="me-pf-${w.id}">${pf}</div><div class="ec-lbl">📐 Fator Potência</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--radius)">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--warn)">💰 Custo acumulado</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn)" id="me-cost-${w.id}">R$ ${cost}</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
+      </div>`;
+  }
+
+  // ── Genérico ─────────────────────────────────────────────────
   const val  = window['wm_val_' + w.id];
   const disp = val != null ? parseFloat(val).toFixed(w.decimals != null ? w.decimals : 1) : '--';
   const max  = w.max || 100;
@@ -4578,21 +4702,84 @@ function handleWidgetMessage(topic, payload) {
       if (dot) dot.className = 'alarm-dot ' + (trig ? 'triggered' : 'ok');
       if (lbl) { lbl.textContent = trig ? 'ALARME ATIVO' : 'Normal'; lbl.style.color = trig ? 'var(--danger)' : 'var(--green)'; }
     }
-    // Medidor — atualiza valor inline
-    if (w.type === 'medidor' && w.topic && topic === w.topic) {
-      let val = parseFloat(payload);
-      if (isNaN(val)) { try { const obj = JSON.parse(payload); val = parseFloat(obj[w.jsonKey] || obj.value || 0); } catch(e) {} }
-      window['wm_val_' + w.id] = val;
-      const max = w.max || 100;
-      const pct = Math.min(100, Math.max(0, (val / max) * 100));
-      const disp = val.toFixed(w.decimals != null ? w.decimals : 1);
-      const barColor = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
-      const meterEl = document.querySelector(`#wcard-${w.id} .meter-value`);
-      const barEl   = document.getElementById('meter-bar-' + w.id);
-      const tsEl    = document.getElementById('meter-ts-' + w.id);
-      if (meterEl) meterEl.innerHTML = `${disp}<span class="meter-unit">${w.unit || ''}</span>`;
-      if (barEl)   { barEl.style.width = pct + '%'; barEl.style.background = barColor; }
-      if (tsEl)    tsEl.textContent = new Date().toLocaleTimeString('pt-BR');
+    // Medidor — atualiza por modo
+    if (w.type === 'medidor') {
+      const mMode = w.meterMode || 'generic';
+      const now = new Date().toLocaleTimeString('pt-BR');
+      if (mMode === 'energy' && w.topic && topic === w.topic) {
+        // PZEM-004T — JSON payload
+        let e = {};
+        try { e = JSON.parse(payload); } catch(ex) { e = { power: parseFloat(payload)||0 }; }
+        window['wm_energy_' + w.id] = e;
+        window['wm_val_'    + w.id] = e.power;
+        const safe = (id,val,dec) => { const el=document.getElementById(id); if(el) el.textContent=(val!=null?parseFloat(val).toFixed(dec||1):'--'); };
+        safe('meter-val-'+w.id, e.power, 0);
+        safe('me-vol-'+w.id,    e.voltage,   1);
+        safe('me-cur-'+w.id,    e.current,   2);
+        safe('me-kwh-'+w.id,    e.energy,    3);
+        safe('me-pf-'+w.id,     e.pf,        2);
+        const costEl = document.getElementById('me-cost-'+w.id);
+        if (costEl && e.energy!=null) costEl.textContent='R$ '+(parseFloat(e.energy)*(w.tariff||0.65)).toFixed(2);
+        const powNum = parseFloat(e.power)||0;
+        const maxW = (w.phases||1)===3?15000:5000;
+        const pct  = Math.min(100,(powNum/maxW)*100);
+        const barEl = document.getElementById('meter-bar-'+w.id);
+        if (barEl) { barEl.style.width=pct+'%'; barEl.style.background=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'#f59e0b'; }
+        const tsEl = document.getElementById('meter-ts-'+w.id);
+        if (tsEl) tsEl.textContent = now;
+      } else if (mMode === 'flow_water') {
+        if (w.topic && topic === w.topic) {
+          // YF-S201 — flow rate (L/min)
+          let rate = parseFloat(payload);
+          if (isNaN(rate)) { try { const o=JSON.parse(payload); rate=parseFloat(o.flow||o.rate||o.value||0); } catch(ex){} }
+          window['wm_val_' + w.id] = rate;
+          const rateEl = document.getElementById('meter-val-'+w.id);
+          if (rateEl) rateEl.textContent = rate.toFixed(1);
+          const max = w.maxFlow||30;
+          const pct = Math.min(100,(rate/max)*100);
+          const barEl = document.getElementById('meter-bar-'+w.id);
+          if (barEl) { barEl.style.width=pct+'%'; barEl.style.background='#3b82f6'; }
+          const tsEl = document.getElementById('meter-ts-'+w.id);
+          if (tsEl) tsEl.textContent = now;
+        }
+        if (w.totalTopic && topic === w.totalTopic) {
+          // Totalizer (L accumulated today)
+          let tot = parseFloat(payload);
+          if (isNaN(tot)) { try { const o=JSON.parse(payload); tot=parseFloat(o.total||o.value||0); } catch(ex){} }
+          window['wm_tot_' + w.id] = tot;
+          const totEl = document.getElementById('meter-sub-'+w.id);
+          if (totEl) totEl.textContent = tot.toFixed(0)+' L';
+          const limit = w.dailyLimit||500;
+          const pctD  = Math.min(100,(tot/limit)*100);
+          const barEl = document.getElementById('meter-bar-'+w.id);
+          if (barEl) { barEl.style.width=pctD+'%'; barEl.style.background=pctD>=90?'var(--danger)':pctD>=70?'var(--warn)':'#3b82f6'; }
+          if (tot >= limit) log(`💧 ${w.name}: limite diário atingido (${tot.toFixed(0)} L)!`, 'warn');
+        }
+      } else if (w.topic && topic === w.topic) {
+        // Generic MQTT value
+        let val = parseFloat(payload);
+        if (isNaN(val)) { try { const obj=JSON.parse(payload); val=parseFloat(obj[w.jsonKey]||obj.value||0); } catch(e){} }
+        window['wm_val_' + w.id] = val;
+        const max = w.max || 100;
+        const pct = Math.min(100, Math.max(0, (val/max)*100));
+        const disp = val.toFixed(w.decimals!=null?w.decimals:1);
+        const barColor = pct>=90?'var(--danger)':pct>=70?'var(--warn)':'var(--accent)';
+        const meterEl = document.querySelector(`#wcard-${w.id} .meter-value`);
+        const barEl   = document.getElementById('meter-bar-'+w.id);
+        const tsEl    = document.getElementById('meter-ts-'+w.id);
+        if (meterEl) meterEl.innerHTML = `${disp}<span class="meter-unit">${w.unit||''}</span>`;
+        if (barEl)   { barEl.style.width=pct+'%'; barEl.style.background=barColor; }
+        if (tsEl)    tsEl.textContent = now;
+      }
+    }
+    // Relé standalone — atualiza estado pelo stateTopic
+    if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic && topic === w.relStateTopic) {
+      const on = payload==='ON'||payload==='1'||payload.toLowerCase()==='on';
+      window['wr_state_'+w.id] = on;
+      const cb   = document.querySelector(`#wcard-${w.id} input[type=checkbox]`);
+      const stEl = document.getElementById('wr-st-'+w.id);
+      if (cb)   cb.checked = on;
+      if (stEl) { stEl.textContent=on?'LIGADO':'DESLIGADO'; stEl.style.color=on?'var(--accent)':'var(--muted)'; }
     }
     // Ambiente — patch cirúrgico apenas no grid de ambientes deste widget
     if (w.type === 'ambiente') {
@@ -4619,10 +4806,18 @@ function handleWidgetMessage(topic, payload) {
 function subscribeWidgetTopics() {
   if (!client || !client.connected) return;
   widgets.forEach(w => {
-    if (w.stateTopic)  client.subscribe(w.stateTopic,  { qos: 1 });
-    if (w.sensorTopic) client.subscribe(w.sensorTopic, { qos: 1 });
-    if (w.obstTopic)   client.subscribe(w.obstTopic,   { qos: 1 });
-    if (w.topic && w.type === 'medidor') client.subscribe(w.topic, { qos: 1 });
+    if (w.stateTopic)    client.subscribe(w.stateTopic,    { qos: 1 });
+    if (w.sensorTopic)   client.subscribe(w.sensorTopic,   { qos: 1 });
+    if (w.obstTopic)     client.subscribe(w.obstTopic,     { qos: 1 });
+    // Medidor
+    if (w.type === 'medidor') {
+      if (w.topic)       client.subscribe(w.topic,         { qos: 1 });
+      if (w.totalTopic)  client.subscribe(w.totalTopic,    { qos: 1 });
+    }
+    // Relé standalone — subscibe no stateTopic direto
+    if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic) {
+      client.subscribe(w.relStateTopic, { qos: 1 });
+    }
   });
 }
 
@@ -4713,7 +4908,13 @@ function buildWidgetFields(type, ex) {
     }
 
     case 'irrigacao':
-      return `${nameField}${iconField}`;
+      return `${nameField}${iconField}
+        <div class="dev-section-label" style="margin-top:12px"><span class="dsb"></span>Dispositivo ESP32 (opcional)</div>
+        <div class="dev-section">
+          ${inp('deviceId',   'ID do dispositivo',    v('deviceId',''),   'ex: bomba01')}
+          ${inp('devicePass', 'Senha do dispositivo', v('devicePass',''), '••••••••')}
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:-4px">Deixe em branco para usar o relé configurado na bomba de irrigação global.</div>
+        </div>`;
 
     case 'portao': {
       const gMode = v('triggerMode','pulse');
@@ -4759,13 +4960,43 @@ function buildWidgetFields(type, ex) {
 
     case 'rele': {
       const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}" ${v('relayId','') === r.id ? 'selected' : ''}>${r.icon} ${r.name}</option>`).join('');
+      const relMode = v('relMode','linked');
       return `${nameField}${iconField}
-        <div class="field"><label>Relé vinculado</label>
-          <select id="wcm-relayId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
-            <option value="">-- selecione --</option>${relayOpts}
-          </select>
+        <div class="dev-section-label" style="margin-top:10px"><span class="dsb"></span>Modo de controle</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <label class="rel-mode-card" style="border-color:${relMode!=='standalone'?'var(--accent)':'var(--border2)'};background:${relMode!=='standalone'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-relMode" value="linked" ${relMode!=='standalone'?'checked':''} style="display:none"
+              onchange="this.closest('[style*=flex]').querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border2)');this.closest('label').style.borderColor='var(--accent)';document.getElementById('wcm-rele-linked').style.display='';document.getElementById('wcm-rele-standalone').style.display='none'">
+            <span style="font-size:16px">🔗</span>
+            <div><div style="font-family:var(--mono);font-size:11px;font-weight:600">Relé da lista</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Relé já cadastrado</div></div>
+          </label>
+          <label class="rel-mode-card" style="border-color:${relMode==='standalone'?'var(--accent)':'var(--border2)'};background:${relMode==='standalone'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-relMode" value="standalone" ${relMode==='standalone'?'checked':''} style="display:none"
+              onchange="this.closest('[style*=flex]').querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border2)');this.closest('label').style.borderColor='var(--accent)';document.getElementById('wcm-rele-linked').style.display='none';document.getElementById('wcm-rele-standalone').style.display=''">
+            <span style="font-size:16px">📡</span>
+            <div><div style="font-family:var(--mono);font-size:11px;font-weight:600">Dispositivo ESP32</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">ID + senha + tópico</div></div>
+          </label>
+        </div>
+        <div id="wcm-rele-linked" style="display:${relMode!=='standalone'?'':'none'}">
+          <div class="field"><label>Relé vinculado</label>
+            <select id="wcm-relayId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
+              <option value="">-- selecione --</option>${relayOpts}
+            </select>
+          </div>
+        </div>
+        <div id="wcm-rele-standalone" style="display:${relMode==='standalone'?'':'none'}">
+          <div class="dev-section">
+            ${inp('deviceId',      'ID do dispositivo',        v('deviceId',''),      'ex: rele01')}
+            ${inp('devicePass',    'Senha do dispositivo',     v('devicePass',''),    '••••••••')}
+            ${inp('relTopic',      'Tópico comando (publish)', v('relTopic',''),      'home/rele01/cmd')}
+            ${inp('relStateTopic', 'Tópico estado (subscribe)',v('relStateTopic',''), 'home/rele01/state')}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              ${inp('payloadOn',  'Payload ON',  v('payloadOn','ON'),  'ON')}
+              ${inp('payloadOff', 'Payload OFF', v('payloadOff','OFF'),'OFF')}
+            </div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:-4px">💡 Tópico vazio → auto: <code>home/{deviceId}/cmd</code></div>
+          </div>
         </div>`;
-
     }
     case 'alarme':
       return `${nameField}${iconField}
@@ -4774,13 +5005,55 @@ function buildWidgetFields(type, ex) {
         ${inp('sirenOnPayload', 'Payload sirene ON',               v('sirenOnPayload','ON'),  'ON')}
         ${inp('sirenOffPayload','Payload sirene OFF',              v('sirenOffPayload','OFF'),'OFF')}`;
 
-    case 'medidor':
+    case 'medidor': {
+      const mMode = v('meterMode','generic');
+      const modeFields = {
+        generic: `
+          ${inp('topic',   'Tópico MQTT',              v('topic',''),     'sensors/meu_sensor/valor')}
+          ${inp('jsonKey', 'Chave JSON (opcional)',     v('jsonKey',''),   'value')}
+          ${inp('unit',    'Unidade',                   v('unit',''),      'kW, L/min, ppm...')}
+          ${inp('max',     'Valor máximo (barra)',      v('max',100),      '100')}
+          ${inp('decimals','Casas decimais',             v('decimals',1),   '1')}`,
+        flow_water: `
+          <div style="padding:8px 10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+            🌊 <strong style="color:#3b82f6">YF-S201</strong> / YF-B7 (ESP32)<br>
+            Publica <code style="color:var(--accent2)">{id}/flow</code> (L/min) e <code style="color:var(--accent2)">{id}/total</code> (L acum.)
+          </div>
+          ${inp('deviceId',   'ID do dispositivo',        v('deviceId',''),    'ex: fluxo01')}
+          ${inp('devicePass', 'Senha do dispositivo',     v('devicePass',''),  '••••••••')}
+          ${inp('maxFlow',    'Vazão máxima (L/min)',      v('maxFlow',30),     '30')}
+          ${inp('dailyLimit', 'Limite diário alertar (L)', v('dailyLimit',500), '500')}`,
+        energy: `
+          <div style="padding:8px 10px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+            ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> (ESP32) — JSON em <code style="color:var(--accent2)">{id}/energy</code><br>
+            <code style="color:var(--text)">{voltage, current, power, energy, frequency, pf}</code>
+          </div>
+          ${inp('deviceId',  'ID do dispositivo',       v('deviceId',''),   'ex: energia01')}
+          ${inp('devicePass','Senha do dispositivo',    v('devicePass',''), '••••••••')}
+          ${inp('tariff',    'Tarifa elétrica (R$/kWh)', v('tariff',0.65),   '0.65')}
+          ${inp('phases',    'Fases (1 ou 3)',            v('phases',1),      '1')}`
+      };
       return `${nameField}${iconField}
-        ${inp('topic',   'Tópico MQTT',          v('topic',''),  'sensors/energia/potencia')}
-        ${inp('jsonKey', 'Chave JSON (opcional)', v('jsonKey',''), 'value')}
-        ${inp('unit',    'Unidade',               v('unit',''),   'kW, A, °C...')}
-        ${inp('max',     'Valor máximo (barra)',  v('max',100),   '100')}
-        ${inp('decimals','Casas decimais',         v('decimals',1),'1')}`;
+        <div class="dev-section-label" style="margin-top:10px"><span class="dsb"></span>Modo do medidor</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+          <label class="meter-mode-card" style="border-color:${mMode==='generic'?'var(--accent)':'var(--border2)'};background:${mMode==='generic'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-meterMode" value="generic" ${mMode==='generic'?'checked':''} onchange="_switchMeterMode('generic')" style="display:none">
+            <span style="font-size:22px">📊</span><span style="font-family:var(--mono);font-size:10px;font-weight:600">Genérico</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Qualquer valor</span>
+          </label>
+          <label class="meter-mode-card" style="border-color:${mMode==='flow_water'?'var(--accent)':'var(--border2)'};background:${mMode==='flow_water'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-meterMode" value="flow_water" ${mMode==='flow_water'?'checked':''} onchange="_switchMeterMode('flow_water')" style="display:none">
+            <span style="font-size:22px">🌊</span><span style="font-family:var(--mono);font-size:10px;font-weight:600">Fluxo Água</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">YF-S201</span>
+          </label>
+          <label class="meter-mode-card" style="border-color:${mMode==='energy'?'var(--accent)':'var(--border2)'};background:${mMode==='energy'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-meterMode" value="energy" ${mMode==='energy'?'checked':''} onchange="_switchMeterMode('energy')" style="display:none">
+            <span style="font-size:22px">⚡</span><span style="font-family:var(--mono);font-size:10px;font-weight:600">Energia</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">PZEM-004T</span>
+          </label>
+        </div>
+        <div id="wcm-meter-fields">${modeFields[mMode]||modeFields.generic}</div>`;
+    }
 
     default:
       return `${nameField}${iconField}`;
@@ -4825,20 +5098,56 @@ function saveWidgetFromModal() {
       w.obstTopic  = `home/${did}/obstaculo`;
       break;
     }
-    case 'rele':       w.relayId  = gv('relayId');  break;
+    case 'rele': {
+      const selRelMode = document.querySelector('input[name="wcm-relMode"]:checked');
+      w.relMode = selRelMode ? selRelMode.value : 'linked';
+      if (w.relMode === 'standalone') {
+        w.deviceId      = gv('deviceId');
+        w.devicePass    = gvRaw('devicePass');
+        w.relTopic      = gv('relTopic') || (w.deviceId ? `home/${w.deviceId}/cmd` : '');
+        w.relStateTopic = gv('relStateTopic') || (w.deviceId ? `home/${w.deviceId}/state` : '');
+        w.payloadOn     = gvRaw('payloadOn') || 'ON';
+        w.payloadOff    = gvRaw('payloadOff') || 'OFF';
+      } else {
+        w.relayId = gv('relayId');
+      }
+      break;
+    }
     case 'alarme':
       w.sensorTopic    = gv('sensorTopic');
       w.sirenTopic     = gv('sirenTopic');
       w.sirenOnPayload = gvRaw('sirenOnPayload') || 'ON';
       w.sirenOffPayload= gvRaw('sirenOffPayload') || 'OFF';
       break;
-    case 'medidor':
-      w.topic    = gv('topic');
-      w.jsonKey  = gv('jsonKey');
-      w.unit     = gv('unit');
-      w.max      = parseFloat(gvRaw('max')) || 100;
-      w.decimals = parseInt(gvRaw('decimals')) || 1;
+    case 'medidor': {
+      const selMM = document.querySelector('input[name="wcm-meterMode"]:checked');
+      w.meterMode = selMM ? selMM.value : 'generic';
+      if (w.meterMode === 'flow_water') {
+        w.deviceId   = gv('deviceId');
+        w.devicePass = gvRaw('devicePass');
+        w.maxFlow    = parseFloat(gvRaw('maxFlow'))    || 30;
+        w.dailyLimit = parseFloat(gvRaw('dailyLimit')) || 500;
+        const did = w.deviceId || 'fluxo';
+        w.topic      = `${did}/flow`;
+        w.totalTopic = `${did}/total`;
+        w.unit = 'L/min'; w.max = w.maxFlow;
+      } else if (w.meterMode === 'energy') {
+        w.deviceId   = gv('deviceId');
+        w.devicePass = gvRaw('devicePass');
+        w.tariff     = parseFloat(gvRaw('tariff'))  || 0.65;
+        w.phases     = parseInt(gvRaw('phases'))    || 1;
+        const did = w.deviceId || 'energia';
+        w.topic = `${did}/energy`;
+        w.unit = 'W'; w.max = 5000;
+      } else {
+        w.topic    = gv('topic');
+        w.jsonKey  = gv('jsonKey');
+        w.unit     = gv('unit');
+        w.max      = parseFloat(gvRaw('max'))      || 100;
+        w.decimals = parseInt(gvRaw('decimals'))   || 1;
+      }
       break;
+    }
   }
 
   if (editId) {
@@ -4867,6 +5176,63 @@ function deleteWidgetFromModal() {
   publishPersist();
   closeWidgetCfgModal();
   log(`🧩 Widget removido`, 'sys');
+}
+
+
+// ── Medidor: troca modo no modal de configuração ─────────────────
+function _switchMeterMode(mode) {
+  const fieldsDiv = document.getElementById('wcm-meter-fields');
+  if (!fieldsDiv) return;
+  const inp = (id,lbl,val,ph) => `<div class="field"><label>${lbl}</label><input id="wcm-${id}" type="text" value="${val||''}" placeholder="${ph||''}"></div>`;
+  const modeHTML = {
+    generic: `
+      ${inp('topic',   'Tópico MQTT',                '','sensors/meu_sensor/valor')}
+      ${inp('jsonKey', 'Chave JSON (opcional)',       '','value')}
+      ${inp('unit',    'Unidade',                     '','kW, L/min, ppm...')}
+      ${inp('max',     'Valor máximo (barra)',         100,'100')}
+      ${inp('decimals','Casas decimais',               1,'1')}`,
+    flow_water: `
+      <div style="padding:8px 10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+        🌊 <strong style="color:#3b82f6">YF-S201</strong> / YF-B7 (ESP32) — publica <code style="color:var(--accent2)">{id}/flow</code> (L/min) e <code style="color:var(--accent2)">{id}/total</code> (L acum.)
+      </div>
+      ${inp('deviceId',   'ID do dispositivo',       '','ex: fluxo01')}
+      ${inp('devicePass', 'Senha do dispositivo',    '','••••••••')}
+      ${inp('maxFlow',    'Vazão máxima (L/min)',      30,'30')}
+      ${inp('dailyLimit', 'Limite diário alertar (L)', 500,'500')}`,
+    energy: `
+      <div style="padding:8px 10px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+        ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> (ESP32) — JSON em <code style="color:var(--accent2)">{id}/energy</code><br>
+        <code style="color:var(--text)">{voltage, current, power, energy, frequency, pf}</code>
+      </div>
+      ${inp('deviceId',  'ID do dispositivo',       '','ex: energia01')}
+      ${inp('devicePass','Senha do dispositivo',    '','••••••••')}
+      ${inp('tariff',    'Tarifa elétrica (R$/kWh)', 0.65,'0.65')}
+      ${inp('phases',    'Fases (1 ou 3)',            1,'1')}`
+  };
+  fieldsDiv.innerHTML = modeHTML[mode] || modeHTML.generic;
+  document.querySelectorAll('input[name="wcm-meterMode"]').forEach(r => {
+    const card = r.closest('label');
+    if (!card) return;
+    const sel = r.value === mode;
+    card.style.borderColor = sel ? 'var(--accent)' : 'var(--border2)';
+    card.style.background  = sel ? 'rgba(34,211,160,.07)' : 'var(--bg3)';
+  });
+}
+
+// ── Relé standalone: publica diretamente no tópico do widget ─────
+function toggleWidgetRelayStandalone(wid, state) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w) return;
+  if (!client || !client.connected) { log('Sem conexão MQTT', 'warn'); return; }
+  const topic = w.relTopic || (w.deviceId ? `home/${w.deviceId}/cmd` : null);
+  if (!topic) { log('Tópico do relé não configurado', 'warn'); return; }
+  client.publish(topic, state ? (w.payloadOn||'ON') : (w.payloadOff||'OFF'), { qos: 1 });
+  window['wr_state_'+wid] = state;
+  const cb   = document.querySelector(`#wcard-${wid} input[type=checkbox]`);
+  const stEl = document.getElementById('wr-st-'+wid);
+  if (cb)   cb.checked = state;
+  if (stEl) { stEl.textContent = state?'LIGADO':'DESLIGADO'; stEl.style.color = state?'var(--accent)':'var(--muted)'; }
+  log(`⚡ ${w.name}: ${state?'ligado':'desligado'}`, 'ok');
 }
 
 </script>
@@ -4952,12 +5318,12 @@ function deleteWidgetFromModal() {
       <div class="widget-type-opt" onclick="selectWidgetType('medidor')">
         <span class="wt-icon">📊</span>
         <span class="wt-label">Medidor</span>
-        <span class="wt-sub">Qualquer valor MQTT</span>
+        <span class="wt-sub">Genérico · Fluxo · Energia</span>
       </div>
       <div class="widget-type-opt" onclick="selectWidgetType('rele')">
         <span class="wt-icon">⚡</span>
         <span class="wt-label">Relé genérico</span>
-        <span class="wt-sub">Controle de relé</span>
+        <span class="wt-sub">Lista ou ESP32 independente</span>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:16px">
