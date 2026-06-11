@@ -1627,12 +1627,15 @@ function loadFromBrokerPayload(payload) {
     }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
-    // Widgets genéricos — broker é a fonte de verdade única
-    // Qualquer navegador/dispositivo recebe exatamente o que está no broker
+    // Widgets genéricos — merge por timestamp (broker tem precedência só se mais recente)
     if (d.widgets !== undefined) {
-      widgets = d.widgets || [];
-      saveWidgets();
-      renderWidgetPanel();
+      const localTs = (() => { try { return parseInt(localStorage.getItem('autoflow_widgets_ts') || '0'); } catch(e) { return 0; } })();
+      if (brokerTime >= localTs) {
+        widgets = d.widgets || [];
+        saveWidgets();
+        try { localStorage.setItem('autoflow_widgets_ts', String(brokerTime)); } catch(e) {}
+        renderWidgetPanel();
+      }
     }
     // Clima — só atualiza se o broker tiver cidade e o local não tiver
     if (d.weather?.city && !weather.city) {
@@ -1860,7 +1863,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
+  // ── 6. Render inicial — aguarda DOM estar pronto ─────────────────────
   initPWA();
 
   // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
@@ -1883,7 +1886,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Notification.permission !== 'granted') bar.style.display = 'flex';
     }, 800);
 
-    // ── 8. Auto-login: conecta se tiver credenciais salvas ──────────────
+    // ── 7. Auto-login: conecta se tiver credenciais salvas ──────────────
     updateMainBtn();
     const s = getCfg();
     // Restaura brokerMode ANTES de checar credenciais
@@ -1900,7 +1903,7 @@ document.addEventListener('DOMContentLoaded', () => {
     connectAllTankBrokers();
   });
 
-  // ── 9. Restaura clima e auto-carrega ──────────────────────────────────
+  // ── 8. Restaura clima e auto-carrega ──────────────────────────────────
   const wlat = parseFloat(saved.weatherLat);
   const wlon = parseFloat(saved.weatherLon);
   if (saved.weatherCity && !isNaN(wlat) && !isNaN(wlon)) {
@@ -1985,14 +1988,14 @@ function connectMQTT() {
   }
   TOPICS_TEMP = temp ? `sensors/${temp}/data` : '';
 
-  if (client) { try { client.end(true); } catch(e) {} }
+  if (client) { try { client.end(true); } catch(e) {} clearTimeout(window._connTimeout); }
 
   setConnStatus('connecting', 'Conectando...');
   _updateBrokerModalStatus('connecting', 'Conectando…');
   log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
 
   // Timeout de segurança: se após 15s nenhum evento disparar, volta para desconectado
-  const _connTimeout = setTimeout(() => {
+  window._connTimeout = setTimeout(() => {
     if (!window._mqttConnected) {
       setConnStatus('off', 'Timeout');
       _updateBrokerModalStatus('error', 'Timeout — verifique host/porta');
@@ -2010,7 +2013,7 @@ function connectMQTT() {
   });
 
   client.on('connect', () => {
-    clearTimeout(_connTimeout);
+    clearTimeout(window._connTimeout);
     window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
     _updateBrokerModalStatus('on', 'Conectado');
@@ -3910,9 +3913,6 @@ function _updateLoginBtn() {
   }
 }
 
-// Ao carregar, restaura sessão
-document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { once: false });
-
 // ════════════════════════════════════════════════════════════════════
 // SISTEMA DE WIDGETS GENÉRICOS
 // ════════════════════════════════════════════════════════════════════
@@ -3920,7 +3920,10 @@ document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { on
 let widgets = [];
 
 function saveWidgets() {
-  try { localStorage.setItem('autoflow_widgets', JSON.stringify(widgets)); } catch(e) {}
+  try {
+    localStorage.setItem('autoflow_widgets', JSON.stringify(widgets));
+    localStorage.setItem('autoflow_widgets_ts', String(Date.now()));
+  } catch(e) {}
 }
 
 function loadWidgets() {
@@ -4211,59 +4214,63 @@ function renderWidgetAmbiente(w) {
     <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
 }
 
+function renderTankBox(t) {
+  const pct     = t.level;
+  const offline = !t.online;
+  const col     = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+  const subCol  = pct === null ? 'var(--muted)' : col;
+  const sub     = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+  const pumpsHtml = t.pumps && t.pumps.length ? `
+    <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
+      ${t.pumps.map(p => {
+        const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
+        const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
+        const isManual = mode === 'manual';
+        return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
+            class="pump-btn ${on ? 'on' : 'off'}"
+            style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
+            title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático'}">
+            <span class="pump-icon">⚙</span>
+            <span style="font-size:11px">${p.name || 'Bomba'}</span>
+            <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${on?'rgba(0,212,160,0.2)':'rgba(255,255,255,0.05)'}">${on ? '● ON' : '○ OFF'}</span>
+          </button>
+          <div class="pump-mode-toggle">
+            <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','auto')">AUTO</button>
+            <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','manual')">MAN</button>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${isManual ? '🔧 Controle manual ativado' : `⚡ Auto: liga ≤${p.triggerOn}% / desliga ≥${p.triggerOff}%`}</div>`;
+      }).join('')}
+    </div>` : '';
+  return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
+    onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+          ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
+          <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
+          <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:5px">
+          <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+          ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
+      </div>
+    </div>
+    ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
+    ${pumpsHtml}
+  </div>`;
+}
+
 function renderWidgetCaixaAguaGrid(w) {
   if (!waterTanks.length) {
     return `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>`;
   }
-  return waterTanks.map(t => {
-    const pct = t.level;
-    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
-    const pumpsHtml = t.pumps && t.pumps.length ? `
-      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
-        ${t.pumps.map(p => {
-          const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
-          const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
-          const isManual = mode === 'manual';
-          return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
-              class="pump-btn ${on ? 'on' : 'off'}"
-              style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
-              title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático'}">
-              <span class="pump-icon">⚙</span>
-              <span style="font-size:11px">${p.name || 'Bomba'}</span>
-              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${on?'rgba(0,212,160,0.2)':'rgba(255,255,255,0.05)'}">${on ? '● ON' : '○ OFF'}</span>
-            </button>
-            <div class="pump-mode-toggle">
-              <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','auto')">AUTO</button>
-              <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','manual')">MAN</button>
-            </div>
-          </div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${isManual ? '🔧 Controle manual ativado' : `⚡ Auto: liga ≤${p.triggerOn}% / desliga ≥${p.triggerOff}%`}</div>`;
-        }).join('')}
-      </div>` : '';
-    return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
-      onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-            <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
-            ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
-            <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
-            <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
-          </div>
-          <div style="display:flex;align-items:baseline;gap:5px">
-            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
-            ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
-          </div>
-          <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
-        </div>
-      </div>
-      ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
-      ${pumpsHtml}
-    </div>`;
-  }).join('');
+  return waterTanks.map(t => renderTankBox(t)).join('');
 }
 
 function renderWidgetCaixaAgua(w) {
@@ -4862,6 +4869,13 @@ function irrigSchedRemove(sid) {
 }
 
 
+// ── Debounce map para evitar re-render excessivo por mensagens rápidas ──
+const _widgetRenderDebounce = {};
+function _debouncePatch(w, delay) {
+  clearTimeout(_widgetRenderDebounce[w.id]);
+  _widgetRenderDebounce[w.id] = setTimeout(() => patchWidgetCard(w), delay || 80);
+}
+
 function handleWidgetMessage(topic, payload) {
   widgets.forEach(w => {
     // Portão — atualiza indicador de estado diretamente no DOM
@@ -4968,23 +4982,13 @@ function handleWidgetMessage(topic, payload) {
       if (cb)   cb.checked = on;
       if (stEl) { stEl.textContent=on?'LIGADO':'DESLIGADO'; stEl.style.color=on?'var(--accent)':'var(--muted)'; }
     }
-    // Ambiente — patch cirúrgico apenas no grid de ambientes deste widget
+    // Ambiente — patch com debounce para evitar flickering com múltiplos sensores
     if (w.type === 'ambiente') {
-      const grid = document.getElementById('rooms-grid-w' + w.id);
-      if (grid) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = renderWidgetAmbienteGrid(w);
-        grid.innerHTML = tmp.innerHTML;
-      }
+      _debouncePatch(w, 80);
     }
-    // Caixa d'água — patch cirúrgico apenas no grid de tanques deste widget
+    // Caixa d'água — patch com debounce para evitar flickering
     if (w.type === 'caixa_agua') {
-      const grid = document.getElementById('tanks-grid-w' + w.id);
-      if (grid) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = renderWidgetCaixaAguaGrid(w);
-        grid.innerHTML = tmp.innerHTML;
-      }
+      _debouncePatch(w, 80);
     }
   });
 }
