@@ -2806,7 +2806,13 @@ function handleTankMessage(topic, payload, data) {
     }
     if (topic === statusTopic) {
       t.online = data.online !== false;
-      if (!t.online) showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
+      // Só alerta offline se o tank já recebeu dados antes (lastSeen definido)
+      // e se o widget está no painel — evita falso alerta de tanks em localStorage
+      // sem card adicionado no painel
+      const tankInPanel = widgets.some(w => w.type === 'caixa_agua' && w.tankId === t.id);
+      if (!t.online && t.lastSeen && tankInPanel) {
+        showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
+      }
     }
   });
 }
