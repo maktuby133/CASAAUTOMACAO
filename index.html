@@ -864,14 +864,6 @@ body::before {
     <button class="add-widget-btn" onclick="openWidgetPicker()">
       <span style="font-size:16px">＋</span> Adicionar widget
     </button>
-    <button id="af-discover-btn" onclick="openAutoflowModal('')"
-      style="display:none;align-items:center;gap:6px;padding:8px 14px;background:rgba(59,130,246,.12);
-      border:1px solid rgba(59,130,246,.35);border-radius:10px;color:var(--accent2);
-      font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
-      <span>📡</span> Dispositivos novos: <span class="af-badge" style="background:var(--accent2);color:#000;
-        border-radius:10px;padding:0 6px;font-size:10px">0</span>
-    </button>
-
   </div>
 
   <!-- Containers ocultos para lógica existente (tanks, sched, rooms) -->
@@ -1834,8 +1826,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 4. Restaura ambientes ─────────────────────────────────────────────
   loadRooms();
-  // ── AutoFlow devices ──────────────────────────────────────────────────────
-  loadAutoflowDevices();
 
   // ── 4b. Restaura caixas d'água ────────────────────────────────────────
   loadTanks();
@@ -2060,8 +2050,6 @@ function subscribeAll() {
       subs.push(`sensors/${r.deviceId}/gas`);
     }
   });
-  // ── Wildcard AutoFlow: descoberta automática de ESP32 ──────────────────
-  subs.push('autoflow/#');
   // Caixas d'água cadastradas
   subs.push('caixas/agua/#');
   // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
@@ -2087,8 +2075,6 @@ function handleMsg(topic, payload, pkt) {
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
   // Config persistida no broker
   if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
-  // ── AutoFlow unified protocol ──────────────────────────────────────────────
-  if (topic.startsWith('autoflow/')) { handleAutoflowMessage(topic, payload); return; }
   handleRoomMessage(topic, payload);
   handleWidgetMessage(topic, payload);
 
@@ -2820,7 +2806,13 @@ function handleTankMessage(topic, payload, data) {
     }
     if (topic === statusTopic) {
       t.online = data.online !== false;
-      if (!t.online) showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
+      // Só alerta offline se o tank já recebeu dados antes (lastSeen definido)
+      // e se o widget está no painel — evita falso alerta de tanks em localStorage
+      // sem card adicionado no painel
+      const tankInPanel = widgets.some(w => w.type === 'caixa_agua' && w.tankId === t.id);
+      if (!t.online && t.lastSeen && tankInPanel) {
+        showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
+      }
     }
   });
 }
@@ -3575,376 +3567,6 @@ function _unsubscribeOrphanSensorTopics() {
 }
 
 
-// ════════════════════════════════════════════════════════════════════
-// SISTEMA DE DESCOBERTA AUTOMÁTICA DE DISPOSITIVOS (autoflow/{id}/*)
-// ════════════════════════════════════════════════════════════════════
-// Mapa de dispositivos vistos via autoflow/+/data antes do cadastro
-const _discoveredDevices = {};   // id → { id, lastSeen, data }
-
-// Dispositivos AutoFlow cadastrados pelo usuário (persiste em localStorage)
-// Estrutura: [{ id, name, type:'ambiente'|'fluxo', icon, data:{...} }]
-let autoflowDevices = [];
-
-function loadAutoflowDevices() {
-  try { autoflowDevices = JSON.parse(localStorage.getItem('autoflow_devs') || '[]'); } catch(e) { autoflowDevices = []; }
-}
-function saveAutoflowDevices() {
-  try { localStorage.setItem('autoflow_devs', JSON.stringify(autoflowDevices)); } catch(e) {}
-}
-
-// ── Roteador de mensagens autoflow/ ─────────────────────────────────────────
-function handleAutoflowMessage(topic, payload) {
-  // Espera: autoflow/{id}/{subtopic}
-  const parts = topic.split('/');
-  if (parts.length < 3 || parts[0] !== 'autoflow') return;
-  const devId   = parts[1].toUpperCase();
-  const subTopic = parts.slice(2).join('/');
-
-  let data;
-  try { data = JSON.parse(payload); } catch(e) { data = { raw: payload }; }
-
-  // Registra como visto (auto-discovery)
-  if (!_discoveredDevices[devId]) {
-    _discoveredDevices[devId] = { id: devId, firstSeen: new Date(), data: {} };
-    log(`📡 Novo dispositivo detectado: ${devId} (autoflow/${devId}/${subTopic})`, 'info');
-    renderDiscoveryBadge();
-  }
-  _discoveredDevices[devId].lastSeen = new Date();
-  _discoveredDevices[devId].lastTopic = subTopic;
-
-  // Roteia para o dispositivo cadastrado (se existir)
-  const dev = autoflowDevices.find(d => d.id === devId);
-  if (!dev) return;  // não cadastrado — só registra no discovery
-
-  dev.data = dev.data || {};
-  dev.data.lastSeen = new Date();
-  dev.data.online   = true;
-
-  if (subTopic === 'data') {
-    // Ambiente: temp, hum, gas_raw, gas_alert, lamp
-    if (data.temperature !== undefined) dev.data.temp = parseFloat(data.temperature);
-    if (data.humidity    !== undefined) dev.data.hum  = parseFloat(data.humidity);
-    if (data.gas_raw     !== undefined) {
-      const raw  = parseInt(data.gas_raw) || 0;
-      const alert = !!data.gas_alert;
-      dev.data.smokeRaw  = raw;
-      dev.data.gasAlert  = alert;
-      dev.data.smoke     = alert
-        ? Math.max(60, Math.min(Math.round((raw / 4095) * 100), 100))
-        : Math.min(Math.round((raw / 4095) * 100), 29);
-      if (alert) checkAutoflowGasRule(dev);
-    }
-    if (data.lamp !== undefined) dev.data.lamp = !!data.lamp;
-    // Fluxo: flow_lpm, session_l, total_l
-    if (data.flow_lpm   !== undefined) dev.data.flowLpm    = parseFloat(data.flow_lpm);
-    if (data.session_l  !== undefined) dev.data.sessionL   = parseFloat(data.session_l);
-    if (data.total_l    !== undefined) dev.data.totalL     = parseFloat(data.total_l);
-    if (data.percentage !== undefined) dev.data.percentage = parseFloat(data.percentage);
-    updateLiveBar(topic, false);
-  }
-
-  if (subTopic === 'status') {
-    dev.data.online = data.online !== false;
-    dev.data.ip     = data.ip     || null;
-    dev.data.rssi   = data.rssi   || null;
-    if (!dev.data.online) {
-      triggerAutoflowAlert(dev, 'offline', `⚠ "${dev.name}" offline`);
-    }
-  }
-
-  renderAutoflowCards();
-}
-
-// ── Alertas para dispositivos AutoFlow ──────────────────────────────────────
-const _afAlertSent = {};   // devId → { type → timestamp }
-
-function triggerAutoflowAlert(dev, type, msg) {
-  const now = Date.now();
-  if (!_afAlertSent[dev.id]) _afAlertSent[dev.id] = {};
-  const last = _afAlertSent[dev.id][type] || 0;
-  if (now - last < 60000) return;   // throttle 60s
-  _afAlertSent[dev.id][type] = now;
-  log(`⚠ ${msg}`, 'warn');
-  sendGasNotification({ id: dev.id, name: dev.name }, 0, false).catch(()=>{});
-}
-
-function checkAutoflowGasRule(dev) {
-  const d = dev.data;
-  if (!d.gasAlert) return;
-  triggerAutoflowAlert(dev, 'gas', `🔥 GÁS ${dev.name}: raw=${d.smokeRaw} → ALARME`);
-  // Reusa banner de gás existente
-  const b = document.getElementById('gas-lock-banner');
-  if (b) {
-    b.innerHTML = `<span style="font-size:14px">🚨</span>
-      <span style="flex:1"><strong>ALERTA DE GÁS — ${dev.name}</strong><br>
-      Sensor: raw=${d.smokeRaw} · Dispositivo: ${dev.id}</span>
-      <button onclick="document.getElementById('gas-lock-banner').classList.remove('show')"
-        style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:6px;
-        color:var(--danger);font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer">✕</button>`;
-    b.classList.add('show');
-  }
-}
-
-// ── Controla relé/lâmpada de um dispositivo AutoFlow ────────────────────────
-function setAutoflowLamp(dev, state) {
-  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
-  const topic = `autoflow/${dev.id}/relay/lamp/set`;
-  client.publish(topic, JSON.stringify({ lamp: state, pass: dev.pass || '' }), { qos:1, retain:true });
-  if (dev.data) dev.data.lamp = state;
-  renderAutoflowCards();
-  log(`💡 ${dev.name} → ${state ? 'ON' : 'OFF'}`, state ? 'ok' : 'sys');
-}
-
-// ── Badge de dispositivos descobertos (não cadastrados) ──────────────────────
-function renderDiscoveryBadge() {
-  const registered = new Set(autoflowDevices.map(d => d.id));
-  const unseen = Object.keys(_discoveredDevices).filter(id => !registered.includes(id));
-  const btn = document.getElementById('af-discover-btn');
-  if (btn) {
-    btn.style.display = unseen.length ? 'flex' : 'none';
-    const badge = btn.querySelector('.af-badge');
-    if (badge) badge.textContent = unseen.length;
-  }
-}
-
-// ── Modal de cadastro de dispositivo AutoFlow ────────────────────────────────
-function openAutoflowModal(devId) {
-  const modal = document.getElementById('autoflow-modal');
-  if (!modal) return;
-  // Pre-fill ID se vier do discovery
-  const idInput = document.getElementById('af-device-id');
-  if (idInput) idInput.value = devId || '';
-  // Popula lista de descobertos não cadastrados
-  const registered = new Set(autoflowDevices.map(d => d.id));
-  const list = document.getElementById('af-discovered-list');
-  if (list) {
-    const unseen = Object.values(_discoveredDevices).filter(d => !registered.has(d.id));
-    list.innerHTML = unseen.length
-      ? unseen.map(d => `<div onclick="document.getElementById('af-device-id').value='${d.id}'"
-          style="cursor:pointer;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);
-          border-radius:6px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span style="color:var(--accent)">●</span>
-          <span style="font-weight:700;letter-spacing:.1em">${d.id}</span>
-          <span style="color:var(--muted);font-size:9px">visto ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}</span>
-          <span style="font-family:var(--mono);font-size:9px;background:rgba(0,212,160,.1);color:var(--accent);
-            border:1px solid rgba(0,212,160,.25);border-radius:4px;padding:1px 5px;margin-left:auto">↖ usar</span>
-        </div>`).join('')
-      : `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 0">
-          Nenhum dispositivo detectado ainda.<br>Ligue o ESP32 e aguarde...</div>`;
-  }
-  modal.classList.add('open');
-}
-
-function closeAutoflowModal() {
-  const m = document.getElementById('autoflow-modal');
-  if (m) m.classList.remove('open');
-}
-
-function confirmAddAutoflowDevice() {
-  const id   = (document.getElementById('af-device-id')?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-  const name = (document.getElementById('af-device-name')?.value || '').trim();
-  const type = document.querySelector('input[name="af-type"]:checked')?.value || 'ambiente';
-  const icon = document.getElementById('af-device-icon')?.value || (type === 'ambiente' ? '🏠' : '💧');
-  const pass = document.getElementById('af-device-pass')?.value || '';
-  const editId = document.getElementById('af-edit-id')?.value || '';
-
-  if (!id)   { log('Preencha o ID do dispositivo', 'warn'); return; }
-  if (!name) { log('Preencha o nome do dispositivo', 'warn'); return; }
-
-  if (editId) {
-    const d = autoflowDevices.find(x => x.id === editId);
-    if (d) { d.name = name; d.icon = icon; d.pass = pass; d.type = type; }
-  } else {
-    if (autoflowDevices.find(d => d.id === id)) {
-      log(`Dispositivo ${id} já cadastrado`, 'warn'); return;
-    }
-    autoflowDevices.push({ id, name, type, icon, pass,
-      data: { temp:null, hum:null, smoke:null, smokeRaw:0, gasAlert:false, lamp:false,
-              flowLpm:0, sessionL:0, totalL:0, percentage:0, lastSeen:null, online:false } });
-    // Subscreve tópicos deste dispositivo agora
-    if (client && client.connected) {
-      client.subscribe(`autoflow/${id}/#`, { qos:1 }, () => log(`↳ autoflow/${id}/#`, 'sys'));
-    }
-    log(`Dispositivo "${name}" (${id}) cadastrado como ${type}`, 'ok');
-  }
-  saveAutoflowDevices();
-  publishPersist();
-  renderAutoflowCards();
-  renderDiscoveryBadge();
-  closeAutoflowModal();
-}
-
-function removeAutoflowDevice(id) {
-  const d = autoflowDevices.find(x => x.id === id);
-  if (!d) return;
-  autoflowDevices = autoflowDevices.filter(x => x.id !== id);
-  saveAutoflowDevices();
-  publishPersist();
-  renderAutoflowCards();
-  log(`Dispositivo "${d.name}" removido`, 'sys');
-}
-
-function editAutoflowDevice(id) {
-  const d = autoflowDevices.find(x => x.id === id);
-  if (!d) return;
-  openAutoflowModal(d.id);
-  setTimeout(() => {
-    const idEl = document.getElementById('af-device-id');
-    if (idEl) { idEl.value = d.id; idEl.readOnly = true; }
-    const nameEl = document.getElementById('af-device-name');
-    if (nameEl) nameEl.value = d.name;
-    const iconEl = document.getElementById('af-device-icon');
-    if (iconEl) iconEl.value = d.icon;
-    const passEl = document.getElementById('af-device-pass');
-    if (passEl) passEl.value = d.pass || '';
-    const editEl = document.getElementById('af-edit-id');
-    if (editEl) editEl.value = d.id;
-    const typeInput = document.querySelector(`input[name="af-type"][value="${d.type}"]`);
-    if (typeInput) typeInput.checked = true;
-  }, 50);
-}
-
-// ── Render de cards AutoFlow (injetado no widget de ambiente) ────────────────
-function renderAutoflowCards() {
-  autoflowDevices.forEach(dev => {
-    const el = document.getElementById('af-card-' + dev.id);
-    if (!el) {
-      // Card ainda não existe no DOM — re-render completo do widget que o contém
-      _debouncePatch({ id: 'autoflow_widget', type: 'autoflow' }, 120);
-      return;
-    }
-    // Patch cirúrgico do card existente
-    _patchAutoflowCard(el, dev);
-  });
-}
-
-function _patchAutoflowCard(el, dev) {
-  const d = dev.data || {};
-  const secAgo   = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
-  const offline  = secAgo !== null && secAgo > 90;
-  const onlineDot = d.lastSeen
-    ? (offline
-        ? `<span style="color:var(--muted);font-family:var(--mono);font-size:9px">⬤ offline</span>`
-        : `<span style="color:var(--accent);font-family:var(--mono);font-size:9px">⬤ online</span>`)
-    : `<span style="color:var(--muted);font-family:var(--mono);font-size:9px">⬤ –</span>`;
-
-  if (dev.type === 'ambiente') {
-    el.innerHTML = _renderAmbienteCard(dev, d, onlineDot, offline);
-  } else {
-    el.innerHTML = _renderFluxoCard(dev, d, onlineDot, offline);
-  }
-}
-
-function _renderAmbienteCard(dev, d, onlineDot, offline) {
-  const sl = smokeLevel(d.smoke !== null && d.smoke !== undefined ? d.smoke : null);
-  const lampOn = d.lamp === true;
-  // Alerta de temp
-  let tempAlert = '';
-  if (d.temp !== null && d.temp > 35) tempAlert = `<span style="color:var(--danger);font-size:9px;font-family:var(--mono)">⚠ alta</span>`;
-  return `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <span style="font-size:16px">${dev.icon}</span>
-      <span style="font-size:12px;font-weight:600;flex:1">${dev.name}</span>
-      ${onlineDot}
-      <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
-        border:1px solid var(--border);border-radius:4px;padding:1px 5px">${dev.id}</span>
-      <button onclick="editAutoflowDevice('${dev.id}')"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
-      <button onclick="removeAutoflowDevice('${dev.id}')"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      ${d.temp !== null && d.temp !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
-        <span style="font-size:10px">🌡️</span>
-        <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:${d.temp>35?'var(--danger)':'var(--text)'}">${d.temp.toFixed(1)}<span style="font-size:10px;color:var(--muted)">°C</span></span>
-        ${tempAlert}
-      </div>` : ''}
-      ${d.hum !== null && d.hum !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
-        <span style="font-size:10px">💧</span>
-        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--muted)">${Math.round(d.hum)}<span style="font-size:10px">%</span></span>
-      </div>` : ''}
-      ${d.smoke !== null && d.smoke !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
-        <span style="font-size:10px">🔥</span>
-        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:${sl.color}">${d.smoke}<span style="font-size:9px">%</span></span>
-        <span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color}">${sl.label}</span>
-      </div>` : ''}
-      <div class="room-relay-wrap" title="Lâmpada — ${lampOn?'ON':'OFF'}" style="margin-left:auto">
-        <span style="font-size:14px">${lampOn?'💡':'🔦'}</span>
-        <label class="room-relay-switch">
-          <input type="checkbox" ${lampOn?'checked':''}
-            onchange="setAutoflowLamp(autoflowDevices.find(x=>x.id==='${dev.id}'),this.checked)">
-          <div class="rrs-track"></div><div class="rrs-knob"></div>
-        </label>
-      </div>
-    </div>
-    ${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
-  `;
-}
-
-function _renderFluxoCard(dev, d, onlineDot, offline) {
-  const flowColor = (d.flowLpm || 0) > 0 ? 'var(--accent2)' : 'var(--muted)';
-  return `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <span style="font-size:16px">${dev.icon}</span>
-      <span style="font-size:12px;font-weight:600;flex:1">${dev.name}</span>
-      ${onlineDot}
-      <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
-        border:1px solid var(--border);border-radius:4px;padding:1px 5px">${dev.id}</span>
-      <button onclick="editAutoflowDevice('${dev.id}')"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
-      <button onclick="removeAutoflowDevice('${dev.id}')"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <div>
-        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:${flowColor};line-height:1">
-          ${(d.flowLpm||0).toFixed(2)}<span style="font-size:11px;color:var(--muted)"> L/min</span>
-        </div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">Fluxo atual</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
-          Sessão: <strong>${(d.sessionL||0).toFixed(2)} L</strong>
-        </div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
-          Total: <strong>${(d.totalL||0).toFixed(2)} L</strong>
-        </div>
-      </div>
-    </div>
-    ${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
-  `;
-}
-
-// ── Render widget completo de dispositivos AutoFlow ──────────────────────────
-function renderAutoflowWidget(w) {
-  const addBtn = `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-    <button onclick="openAutoflowModal('')"
-      style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(59,130,246,.1);
-      border:1px solid rgba(59,130,246,.3);border-radius:8px;color:var(--accent2);
-      font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer">
-      ＋ Dispositivo
-    </button>
-  </div>`;
-  if (!autoflowDevices.length) {
-    return addBtn + `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
-      Nenhum dispositivo cadastrado.<br>Clique em "+ Dispositivo" para adicionar.
-    </div>`;
-  }
-  return addBtn + autoflowDevices.map(dev => `
-    <div id="af-card-${dev.id}"
-      style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
-      padding:12px 14px;margin-bottom:8px;transition:border-color .2s"
-      onmouseover="this.style.borderColor='var(--border2)'"
-      onmouseout="this.style.borderColor='var(--border)'">
-      ${dev.type === 'ambiente' ? _renderAmbienteCard(dev, dev.data||{},
-          (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
-                            : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)
-        : _renderFluxoCard(dev, dev.data||{},
-          (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
-                            : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)}
-    </div>
-  `).join('');
-}
 
 function handleRoomMessage(topic, payload) {
   // Só processa se há ao menos uma room com deviceId correspondente ao tópico
@@ -4488,7 +4110,6 @@ function patchWidgetCard(w, wrap) {
     case 'rele':       tmp.innerHTML = renderWidgetRele(w);      break;
     case 'alarme':     tmp.innerHTML = renderWidgetAlarme(w);    break;
     case 'medidor':    tmp.innerHTML = renderWidgetMedidor(w);   break;
-    case 'autoflow':   tmp.innerHTML = renderAutoflowWidget(w);  break;
     default: return;
   }
   while (tmp.firstChild) wrap.appendChild(tmp.firstChild);
@@ -4505,7 +4126,7 @@ function buildWidgetCard(w) {
     `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}">${W_SIZE_LABELS[s]}</button>`
   ).join('');
 
-  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue', autoflow:'teal' };
+  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue' };
   const iconClr = iconClrMap[w.type] || 'teal';
   wrap.innerHTML = `
     <div class="w-card-header">
@@ -4525,7 +4146,6 @@ function buildWidgetCard(w) {
     case 'rele':       body = renderWidgetRele(w);      break;
     case 'alarme':     body = renderWidgetAlarme(w);    break;
     case 'medidor':    body = renderWidgetMedidor(w);   break;
-    case 'autoflow':   body = renderAutoflowWidget(w);  break;
     default: return null;
   }
   const bodyDiv = document.createElement('div');
@@ -4973,6 +4593,7 @@ function renderWidgetMedidor(w) {
   // ── Energia PZEM-004T ────────────────────────────────────────
   if (mode === 'energy') {
     const e = window['wm_energy_' + w.id] || {};
+    const r = window['wm_resumo_' + w.id] || {};
     const pow  = e.power     != null ? parseFloat(e.power).toFixed(0)     : '--';
     const vol  = e.voltage   != null ? parseFloat(e.voltage).toFixed(1)   : '--';
     const cur  = e.current   != null ? parseFloat(e.current).toFixed(2)   : '--';
@@ -5003,7 +4624,30 @@ function renderWidgetMedidor(w) {
           <span style="font-family:var(--mono);font-size:10px;color:var(--warn)">💰 Custo acumulado</span>
           <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn)" id="me-cost-${w.id}">R$ ${cost}</span>
         </div>
-        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
+        <div class="meter-energy-grid" style="margin-top:8px">
+          <div class="energy-cell">
+            <div class="ec-val" id="me-hoje-${w.id}" style="font-size:13px">${r.energia_hoje != null ? parseFloat(r.energia_hoje).toFixed(3) : '--'}</div>
+            <div class="ec-lbl">☀️ Hoje (kWh)</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--warn);margin-top:1px">R$ <span id="me-choje-${w.id}">${r.custo_hoje != null ? parseFloat(r.custo_hoje).toFixed(2) : '--'}</span></div>
+          </div>
+          <div class="energy-cell">
+            <div class="ec-val" id="me-sem-${w.id}" style="font-size:13px">${r.energia_semana != null ? parseFloat(r.energia_semana).toFixed(3) : '--'}</div>
+            <div class="ec-lbl">📅 Semana (kWh)</div>
+          </div>
+          <div class="energy-cell">
+            <div class="ec-val" id="me-mes-${w.id}" style="font-size:13px">${r.energia_mes != null ? parseFloat(r.energia_mes).toFixed(3) : '--'}</div>
+            <div class="ec-lbl">🗓️ Mês (kWh)</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--warn);margin-top:1px">R$ <span id="me-cmes-${w.id}">${r.custo_mes != null ? parseFloat(r.custo_mes).toFixed(2) : '--'}</span></div>
+          </div>
+          <div class="energy-cell">
+            <div class="ec-val" id="me-pf-${w.id}" style="font-size:13px">${pf}</div>
+            <div class="ec-lbl">📐 Fat. Potência</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
+          ${w.devicePass ? '<button onclick="resetEnergiaMedidor(\"' + w.id + '\")" style="margin-left:8px;padding:3px 8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:var(--danger);font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer">&#x21BA; Reset</button>' : ''}
+        </div>
       </div>`;
   }
 
@@ -5036,6 +4680,16 @@ function renderWidgetMedidor(w) {
 }
 
 // ── AÇÕES DOS WIDGETS ─────────────────────────────────────────────
+function resetEnergiaMedidor(wid) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w || !w.devicePass) { log('Senha do dispositivo não configurada', 'warn'); return; }
+  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
+  const cmdTopic = w.topic.replace('/dados', '/comando');
+  const payload  = JSON.stringify({ cmd: 'reset_energia', pass: w.devicePass });
+  client.publish(cmdTopic, payload, { qos: 1 });
+  log(`↺ Reset energia enviado para ${cmdTopic}`, 'ok');
+}
+
 function triggerGate(wid) {
   const w = widgets.find(x => x.id === wid);
   if (!w || !w.topic) return;
@@ -5346,13 +5000,13 @@ function handleWidgetMessage(topic, payload) {
       const mMode = w.meterMode || 'generic';
       const now = new Date().toLocaleTimeString('pt-BR');
       if (mMode === 'energy' && w.topic && topic === w.topic) {
-        // PZEM-004T — JSON payload
+        // Receptor LoRa/PZEM — JSON em {topic_base}/dados
         let e = {};
         try { e = JSON.parse(payload); } catch(ex) { e = { power: parseFloat(payload)||0 }; }
         window['wm_energy_' + w.id] = e;
         window['wm_val_'    + w.id] = e.power;
         const safe = (id,val,dec) => { const el=document.getElementById(id); if(el) el.textContent=(val!=null?parseFloat(val).toFixed(dec||1):'--'); };
-        safe('meter-val-'+w.id, e.power, 0);
+        safe('meter-val-'+w.id, e.power,     0);
         safe('me-vol-'+w.id,    e.voltage,   1);
         safe('me-cur-'+w.id,    e.current,   2);
         safe('me-kwh-'+w.id,    e.energy,    3);
@@ -5366,6 +5020,23 @@ function handleWidgetMessage(topic, payload) {
         if (barEl) { barEl.style.width=pct+'%'; barEl.style.background=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'#f59e0b'; }
         const tsEl = document.getElementById('meter-ts-'+w.id);
         if (tsEl) tsEl.textContent = now;
+      } else if (mMode === 'energy' && w.resumeTopic && topic === w.resumeTopic) {
+        // {topic_base}/resumo — energia_hoje, semana, mes, custo
+        let r = {};
+        try { r = JSON.parse(payload); } catch(ex) {}
+        window['wm_resumo_' + w.id] = r;
+        const safe2 = (id,val,dec) => { const el=document.getElementById(id); if(el && val!=null) el.textContent=parseFloat(val).toFixed(dec); };
+        safe2('me-hoje-'+w.id,   r.energia_hoje,   3);
+        safe2('me-sem-'+w.id,    r.energia_semana, 3);
+        safe2('me-mes-'+w.id,    r.energia_mes,    3);
+        safe2('me-choje-'+w.id,  r.custo_hoje,     2);
+        safe2('me-cmes-'+w.id,   r.custo_mes,      2);
+      } else if (mMode === 'energy' && w.alertTopic && topic === w.alertTopic) {
+        // {topic_base}/alerta — { tipo: 'corrente'|'tensao', valor }
+        let a = {};
+        try { a = JSON.parse(payload); } catch(ex) {}
+        if (a.tipo === 'corrente') showAlert(`⚡ Sobrecarga! Corrente: ${parseFloat(a.valor).toFixed(1)} A — verifique a instalação.`);
+        if (a.tipo === 'tensao')   showAlert(`⚡ Tensão fora da faixa: ${parseFloat(a.valor).toFixed(0)} V — verifique a rede elétrica.`);
       } else if (mMode === 'flow_water') {
         if (w.topic && topic === w.topic) {
           // YF-S201 — flow rate (L/min)
@@ -5455,8 +5126,10 @@ function subscribeWidgetTopics() {
     if (w.sensorTopic) newTopics.add(w.sensorTopic);
     if (w.obstTopic)   newTopics.add(w.obstTopic);
     if (w.type === 'medidor') {
-      if (w.topic)      newTopics.add(w.topic);
-      if (w.totalTopic) newTopics.add(w.totalTopic);
+      if (w.topic)       newTopics.add(w.topic);
+      if (w.totalTopic)  newTopics.add(w.totalTopic);
+      if (w.resumeTopic) newTopics.add(w.resumeTopic);
+      if (w.alertTopic)  newTopics.add(w.alertTopic);
     }
     if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic) {
       newTopics.add(w.relStateTopic);
@@ -5506,20 +5179,7 @@ function selectWidgetType(type) {
     openTankModal(null, true);
     return;
   }
-  if (type === 'autoflow') {
-    // Widget autoflow é singleton — só um por painel
-    if (widgets.find(w => w.type === 'autoflow')) {
-      alert('Já existe um widget de Dispositivos AutoFlow no painel.');
-      return;
-    }
-    const w = { id: 'w_autoflow', type: 'autoflow', name: 'Dispositivos AutoFlow', icon: '📲', sz: 'full' };
-    widgets.push(w);
-    saveWidgets();
-    renderWidgetPanel();
-    publishPersist();
-    log('🧩 Widget "Dispositivos AutoFlow" adicionado', 'ok');
-    return;
-  }
+
   openWidgetCfgModal(null, type);
 }
 
@@ -5697,8 +5357,9 @@ function buildWidgetFields(type, ex) {
           ${inp('dailyLimit', 'Limite diário alertar (L)', v('dailyLimit',500), '500')}`,
         energy: `
           <div style="padding:8px 10px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
-            ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> (ESP32) — JSON em <code style="color:var(--accent2)">{id}/energy</code><br>
-            <code style="color:var(--text)">{voltage, current, power, energy, frequency, pf}</code>
+            ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> + Receptor LoRa — tópicos:<br>
+            <code style="color:var(--accent2)">{base}/dados</code> · <code style="color:var(--accent2)">{base}/resumo</code> · <code style="color:var(--accent2)">{base}/alerta</code><br>
+            <code style="color:var(--text)">{voltage, current, power, energy, pf, energia_hoje, energia_mes…}</code>
           </div>
           ${inp('deviceId',  'ID do dispositivo',       v('deviceId',''),   'ex: energia01')}
           ${inp('devicePass','Senha do dispositivo',    v('devicePass',''), '••••••••')}
@@ -5809,7 +5470,9 @@ function saveWidgetFromModal() {
         w.tariff     = parseFloat(gvRaw('tariff'))  || 0.65;
         w.phases     = parseInt(gvRaw('phases'))    || 1;
         const did = w.deviceId || 'energia';
-        w.topic = `${did}/energy`;
+        w.topic       = `${did}/dados`;
+        w.resumeTopic = `${did}/resumo`;
+        w.alertTopic  = `${did}/alerta`;
         w.unit = 'W'; w.max = 5000;
       } else {
         w.topic    = gv('topic');
@@ -5993,11 +5656,7 @@ function toggleWidgetRelayStandalone(wid, state) {
         <span class="wt-label">Relé genérico</span>
         <span class="wt-sub">Lista ou ESP32 independente</span>
       </div>
-      <div class="widget-type-opt" onclick="selectWidgetType('autoflow')">
-        <span class="wt-icon">📲</span>
-        <span class="wt-label">Dispositivos AutoFlow</span>
-        <span class="wt-sub">Ambiente · Fluxo d'água</span>
-      </div>
+
     </div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn" onclick="closeWidgetPicker()">Cancelar</button>
@@ -6085,133 +5744,6 @@ function toggleWidgetRelayStandalone(wid, state) {
   </div>
 </div>
 
-<!-- ═══ MODAL: QR SCANNER ════════════════════════════════════════════ -->
-<div class="modal-overlay" id="qr-scanner-modal">
-  <div class="modal" style="width:340px;text-align:center">
-    <div class="modal-title">📷 Ler QR Code do ESP32</div>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:12px">
-      Aponte para o QR Code exibido no portal AP do dispositivo
-    </div>
-    <div style="position:relative;background:var(--bg3);border-radius:var(--radius);overflow:hidden;aspect-ratio:1">
-      <video id="qr-video" style="width:100%;height:100%;object-fit:cover" playsinline muted></video>
-      <canvas id="qr-canvas" style="display:none"></canvas>
-      <!-- Visor -->
-      <div style="position:absolute;inset:20%;border:2px solid var(--accent);border-radius:8px;opacity:0.7;pointer-events:none"></div>
-    </div>
-    <div class="modal-actions" style="margin-top:14px;justify-content:center">
-      <button class="btn" onclick="closeQrScanner()">Cancelar</button>
-    </div>
-  </div>
-</div>
 
-
-<!-- MODAL DISPOSITIVO AUTOFLOW -->
-<div class="modal-overlay" id="autoflow-modal">
-  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title" style="display:flex;align-items:center;gap:8px">
-      <span>📲</span> Cadastrar dispositivo AutoFlow
-    </div>
-
-    <!-- Dispositivos detectados -->
-    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
-      letter-spacing:.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
-      <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
-      Dispositivos detectados na rede
-    </div>
-    <div id="af-discovered-list"
-      style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px">
-      Nenhum dispositivo detectado ainda.
-    </div>
-
-    <div class="modal-fields">
-      <!-- ID -->
-      <div class="field">
-        <label>Device ID <span style="font-weight:400;opacity:.6;font-size:9px">(6 dígitos hex do MAC — exibido no portal AP)</span></label>
-        <input id="af-device-id" placeholder="ex: AE4F3C" maxlength="12"
-          style="font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase"/>
-        <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono);line-height:1.8">
-          📶 Conecte ao Wi-Fi <b style="color:var(--text)">AutoFlow-XXXXXX</b> e acesse <b>192.168.4.1</b><br>
-          📥 <span style="color:var(--accent2)" id="af-topic-preview">autoflow/.../data</span>
-        </div>
-      </div>
-
-      <!-- Nome + ícone -->
-      <div style="display:flex;gap:10px;align-items:flex-end">
-        <div class="field" style="flex:0">
-          <label>Ícone</label>
-          <input id="af-device-icon" value="🏠" maxlength="2" style="width:56px"/>
-        </div>
-        <div class="field" style="flex:1">
-          <label>Nome</label>
-          <input id="af-device-name" placeholder="ex: Sala, Garagem, Quintal"/>
-        </div>
-      </div>
-
-      <!-- Tipo -->
-      <div>
-        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
-          letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Tipo de dispositivo</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
-            padding:14px 10px;background:var(--bg3);border:1px solid var(--border2);
-            border-radius:var(--radius-lg);transition:all .15s"
-            onmouseover="this.style.borderColor='var(--accent)'"
-            onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border2)'">
-            <input type="radio" name="af-type" value="ambiente" checked style="display:none"
-              onchange="document.getElementById('af-device-icon').value='🏠'">
-            <span style="font-size:24px">🌡️</span>
-            <span style="font-size:12px;font-weight:600">Ambiente</span>
-            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Temp · Umid · Gás · Lâmpada</span>
-          </label>
-          <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
-            padding:14px 10px;background:var(--bg3);border:1px solid var(--border2);
-            border-radius:var(--radius-lg);transition:all .15s"
-            onmouseover="this.style.borderColor='var(--accent)'"
-            onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border2)'">
-            <input type="radio" name="af-type" value="fluxo" style="display:none"
-              onchange="document.getElementById('af-device-icon').value='💧'">
-            <span style="font-size:24px">💧</span>
-            <span style="font-size:12px;font-weight:600">Fluxo d'água</span>
-            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">L/min · Total · Sessão</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Senha -->
-      <div class="field">
-        <label>Senha do dispositivo</label>
-        <div style="display:flex;gap:6px">
-          <input id="af-device-pass" type="password" placeholder="Senha criada no portal AP"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
-            color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
-          <button type="button" onclick="togglePassVis('af-device-pass',this)"
-            style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);
-            border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 Usada para autenticar comandos enviados ao ESP32</div>
-      </div>
-    </div>
-
-    <input type="hidden" id="af-edit-id" value="">
-    <div class="modal-actions" style="justify-content:space-between">
-      <button class="btn" onclick="closeAutoflowModal()">Cancelar</button>
-      <button class="btn primary" onclick="confirmAddAutoflowDevice()">Salvar dispositivo</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── Auto-update topic preview no modal ──────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const idEl = document.getElementById('af-device-id');
-  if (idEl) idEl.addEventListener('input', () => {
-    const id = idEl.value.toUpperCase().replace(/[^A-Z0-9]/g,'') || '...';
-    const prev = document.getElementById('af-topic-preview');
-    if (prev) prev.textContent = `autoflow/${id}/data`;
-  });
-  // Periodic discovery badge update
-  setInterval(renderDiscoveryBadge, 5000);
-});
-</script>
 </body>
 </html>
