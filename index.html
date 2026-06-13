@@ -304,18 +304,25 @@ body::before {
 #widget-panel {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: 8px;        /* linhas de 8px — widgets usam row span */
-  gap: 14px 14px;
+  grid-auto-flow: dense;
+  gap: 14px;
   align-items: start;
   margin-bottom: 14px;
   position: relative;
 }
 /* Grade visível durante drag */
-#widget-panel.grid-drag-active {
-  background-image:
-    linear-gradient(to right, rgba(0,212,160,0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0,212,160,0.04) 1px, transparent 1px);
-  background-size: calc((100% + 14px) / 12) 8px;
+#widget-panel.grid-drag-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(0,212,160,0.07) 0px, rgba(0,212,160,0.07) 1px,
+    transparent 1px, transparent calc((100% + 14px) / 12)
+  );
+  border-radius: var(--radius-lg);
+  z-index: 0;
 }
 
 /* Tamanhos de coluna dos cards */
@@ -325,15 +332,15 @@ body::before {
 .w-card.sz-large { grid-column: span 8; }
 .w-card.sz-full  { grid-column: span 12; }
 
-/* Ghost de drop — célula de destino */
+/* Ghost de drop */
 #grid-ghost {
-  position: absolute;
+  position: fixed;
   background: rgba(0,212,160,0.08);
-  border: 2px dashed rgba(0,212,160,0.45);
+  border: 2px dashed rgba(0,212,160,0.5);
   border-radius: var(--radius-lg);
   pointer-events: none;
-  z-index: 5;
-  transition: left 0.07s, top 0.07s, width 0.07s, height 0.07s;
+  z-index: 200;
+  transition: left 0.06s, top 0.06s, width 0.06s, height 0.06s;
   display: none;
 }
 
@@ -4076,18 +4083,18 @@ function _cellPx(col, row) {
   };
 }
 
-function _showGhost(col, row) {
+function _showGhost(e) {
   const g = _getOrCreateGhost();
-  const panel = document.getElementById('widget-panel');
-  const COLS = 12;
-  // Clamp para não sair da grade
-  const clampedCol = Math.min(col, COLS - _dragColSpan + 1);
-  const px = _cellPx(clampedCol, row);
+  // Dimensões baseadas no card sendo arrastado
+  const srcEl = document.getElementById('wcard-' + dragSrcId);
+  const srcRect = srcEl ? srcEl.getBoundingClientRect() : null;
+  const w = srcRect ? srcRect.width  : 300;
+  const h = srcRect ? srcRect.height : 120;
   g.style.display = 'block';
-  g.style.left   = px.left + 'px';
-  g.style.top    = px.top  + 'px';
-  g.style.width  = px.width + 'px';
-  g.style.height = px.height + 'px';
+  g.style.left    = (e.clientX - w / 2) + 'px';
+  g.style.top     = (e.clientY - 20)    + 'px';
+  g.style.width   = w + 'px';
+  g.style.height  = h + 'px';
 }
 
 function _hideGhost() {
@@ -4129,8 +4136,7 @@ function _initPanelDrop() {
     e.preventDefault();
     if (!dragSrcId) return;
     e.dataTransfer.dropEffect = 'move';
-    const { col, row } = _gridCellFromMouse(e);
-    _showGhost(col, row);
+    _showGhost(e);
     // Highlight do card alvo mais próximo
     document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w-card');
@@ -4151,19 +4157,10 @@ function _initPanelDrop() {
     document.getElementById('widget-panel').classList.remove('grid-drag-active');
     if (!dragSrcId) return;
 
-    const { col, row } = _gridCellFromMouse(e);
-    const COLS = 12;
-    const clampedCol = Math.min(col, COLS - _dragColSpan + 1);
-
-    // Verifica se há um card alvo para fazer swap/reorder
     const targetEl = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w-card');
     const targetId = targetEl ? targetEl.id.replace('wcard-', '') : null;
 
-    const srcW = widgets.find(x => x.id === dragSrcId);
-    if (!srcW) { dragSrcId = null; return; }
-
     if (targetId && targetId !== dragSrcId) {
-      // Swap de posição na ordem + posição de grade
       const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
       const toIdx   = widgets.findIndex(x => x.id === targetId);
       if (fromIdx >= 0 && toIdx >= 0) {
@@ -4175,26 +4172,24 @@ function _initPanelDrop() {
       }
     }
 
-    // Salva posição de grade livre
-    srcW.gridCol = clampedCol;
-    srcW.gridRow = row;
-
     saveWidgets();
-    renderWidgetPanel();
+    // Reordenar DOM sem re-render completo
+    const p = document.getElementById('widget-panel');
+    widgets.forEach(w => {
+      const card = document.getElementById('wcard-' + w.id);
+      if (card) p.appendChild(card);
+    });
+    const ghost = document.getElementById('grid-ghost');
+    if (ghost) p.appendChild(ghost);
     dragSrcId = null;
     publishPersist();
   });
 }
 
-// Aplica posição de grade livre (quando definida) ou deixa o fluxo normal
+// Reservado para futuro posicionamento explícito
 function _applyGridPos(el, w) {
-  if (w.gridCol && w.gridRow) {
-    el.style.gridColumnStart = w.gridCol;
-    el.style.gridRowStart    = w.gridRow;
-  } else {
-    el.style.gridColumnStart = '';
-    el.style.gridRowStart    = '';
-  }
+  el.style.gridColumnStart = '';
+  el.style.gridRowStart    = '';
 }
 
 // ── RENDER DO PAINEL ──────────────────────────────────────────────
