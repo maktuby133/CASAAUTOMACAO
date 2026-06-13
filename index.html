@@ -304,12 +304,13 @@ body::before {
 #widget-panel {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
+  grid-auto-flow: dense;
   gap: 14px;
   align-items: start;
   margin-bottom: 14px;
 }
 
-/* Tamanhos de coluna dos cards */
+/* Tamanhos de coluna dos cards — dense packing: cards menores preenchem buracos */
 .w-card          { grid-column: span 6; }   /* padrão: meia largura */
 .w-card.sz-small { grid-column: span 4; }   /* 1/3 */
 .w-card.sz-med   { grid-column: span 6; }   /* 1/2 */
@@ -332,7 +333,11 @@ body::before {
 .w-card.drag-over {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 2px rgba(0,212,160,0.18);
+  outline: 2px dashed rgba(0,212,160,0.35);
+  outline-offset: 2px;
 }
+.w-card.drag-over-before { box-shadow: -4px 0 0 0 var(--accent), 0 0 0 1px rgba(0,212,160,0.2); }
+.w-card.drag-over-after  { box-shadow:  4px 0 0 0 var(--accent), 0 0 0 1px rgba(0,212,160,0.2); }
 .w-card.dragging {
   opacity: 0.45;
   border-style: dashed;
@@ -4368,9 +4373,17 @@ function initDragEvents(el, wid) {
   });
   el.addEventListener('dragover', e => {
     e.preventDefault();
-    if (dragSrcId && dragSrcId !== wid) el.classList.add('drag-over');
+    if (!dragSrcId || dragSrcId === wid) return;
+    document.querySelectorAll('.w-card').forEach(c => {
+      c.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
+    });
+    const rect = el.getBoundingClientRect();
+    const before = e.clientX < rect.left + rect.width / 2;
+    el.classList.add('drag-over', before ? 'drag-over-before' : 'drag-over-after');
   });
-  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('dragleave', () => {
+    el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
+  });
   el.addEventListener('drop', e => {
     e.preventDefault();
     el.classList.remove('drag-over');
@@ -4378,16 +4391,24 @@ function initDragEvents(el, wid) {
     const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
     const toIdx   = widgets.findIndex(x => x.id === wid);
     if (fromIdx < 0 || toIdx < 0) return;
+
+    // Determina se soltar antes ou depois do alvo com base na posição do mouse
+    const targetEl = document.getElementById('wcard-' + wid);
+    const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+    const insertBefore = rect ? (e.clientX < rect.left + rect.width / 2 && e.clientY < rect.top + rect.height / 2) : (fromIdx > toIdx);
+
     const [moved] = widgets.splice(fromIdx, 1);
-    widgets.splice(toIdx, 0, moved);
+    const newToIdx = widgets.findIndex(x => x.id === wid);
+    widgets.splice(insertBefore ? newToIdx : newToIdx + 1, 0, moved);
+
     saveWidgets();
-    // Re-renderiza apenas a ordem no DOM sem recriar conteúdo
     const panel = document.getElementById('widget-panel');
     widgets.forEach(w => {
       const card = document.getElementById('wcard-' + w.id);
-      if (card) panel.appendChild(card); // reordena no DOM
+      if (card) panel.appendChild(card);
     });
     dragSrcId = null;
+    publishPersist();
   });
 }
 
