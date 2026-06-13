@@ -304,18 +304,38 @@ body::before {
 #widget-panel {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  grid-auto-flow: dense;
-  gap: 14px;
+  grid-auto-rows: 8px;        /* linhas de 8px — widgets usam row span */
+  gap: 14px 14px;
   align-items: start;
   margin-bottom: 14px;
+  position: relative;
+}
+/* Grade visível durante drag */
+#widget-panel.grid-drag-active {
+  background-image:
+    linear-gradient(to right, rgba(0,212,160,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,212,160,0.04) 1px, transparent 1px);
+  background-size: calc((100% + 14px) / 12) 8px;
 }
 
-/* Tamanhos de coluna dos cards — dense packing: cards menores preenchem buracos */
-.w-card          { grid-column: span 6; }   /* padrão: meia largura */
-.w-card.sz-small { grid-column: span 4; }   /* 1/3 */
-.w-card.sz-med   { grid-column: span 6; }   /* 1/2 */
-.w-card.sz-large { grid-column: span 8; }   /* 2/3 */
-.w-card.sz-full  { grid-column: span 12; }  /* 100% */
+/* Tamanhos de coluna dos cards */
+.w-card          { grid-column: span 6; }
+.w-card.sz-small { grid-column: span 4; }
+.w-card.sz-med   { grid-column: span 6; }
+.w-card.sz-large { grid-column: span 8; }
+.w-card.sz-full  { grid-column: span 12; }
+
+/* Ghost de drop — célula de destino */
+#grid-ghost {
+  position: absolute;
+  background: rgba(0,212,160,0.08);
+  border: 2px dashed rgba(0,212,160,0.45);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+  z-index: 5;
+  transition: left 0.07s, top 0.07s, width 0.07s, height 0.07s;
+  display: none;
+}
 
 /* Card base */
 .w-card {
@@ -330,17 +350,15 @@ body::before {
 }
 .w-card:hover { border-color: var(--border2); }
 .w-card.patched { animation: none !important; }
+.w-card.dragging {
+  opacity: 0.35;
+  border-style: dashed;
+  border-color: var(--accent) !important;
+  pointer-events: none;
+}
 .w-card.drag-over {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(0,212,160,0.18);
-  outline: 2px dashed rgba(0,212,160,0.35);
-  outline-offset: 2px;
-}
-.w-card.drag-over-before { box-shadow: -4px 0 0 0 var(--accent), 0 0 0 1px rgba(0,212,160,0.2); }
-.w-card.drag-over-after  { box-shadow:  4px 0 0 0 var(--accent), 0 0 0 1px rgba(0,212,160,0.2); }
-.w-card.dragging {
-  opacity: 0.45;
-  border-style: dashed;
+  box-shadow: 0 0 0 2px rgba(0,212,160,0.15);
 }
 
 /* Header do card */
@@ -4005,59 +4023,178 @@ function setWidgetSize(wid, sz) {
   }
 }
 
-// ── DRAG AND DROP ─────────────────────────────────────────────────
-let dragSrcId = null;
+// ── DRAG AND DROP — GRADE LIVRE ───────────────────────────────────
+let dragSrcId  = null;
+let _dragColSpan = 6; // colunas do card em drag
+let _ghost = null;
+
+function _getOrCreateGhost() {
+  let g = document.getElementById('grid-ghost');
+  if (!g) {
+    g = document.createElement('div');
+    g.id = 'grid-ghost';
+    document.getElementById('widget-panel').appendChild(g);
+  }
+  return g;
+}
+
+// Converte sz → nº de colunas
+function _szToCols(sz) {
+  return { small:4, med:6, large:8, full:12 }[sz] || 6;
+}
+
+// Calcula col/row da grade a partir da posição do mouse
+function _gridCellFromMouse(e) {
+  const panel = document.getElementById('widget-panel');
+  const pr = panel.getBoundingClientRect();
+  const COLS = 12;
+  const GAP  = 14;
+  const colW = (pr.width + GAP) / COLS;
+  const rowH = 8 + GAP; // grid-auto-rows:8px + gap
+
+  const relX = Math.max(0, e.clientX - pr.left);
+  const relY = Math.max(0, e.clientY - pr.top + panel.scrollTop);
+
+  const col = Math.min(COLS - 1, Math.floor(relX / colW)) + 1;  // 1-based
+  const row = Math.max(1, Math.floor(relY / rowH) + 1);
+  return { col, row };
+}
+
+// Posição px de uma célula da grade dentro do painel
+function _cellPx(col, row) {
+  const panel = document.getElementById('widget-panel');
+  const pr = panel.getBoundingClientRect();
+  const COLS = 12;
+  const GAP = 14;
+  const colW = (pr.width + GAP) / COLS;
+  const rowH = 8 + GAP;
+  return {
+    left: (col - 1) * colW,
+    top:  (row  - 1) * rowH,
+    width: _dragColSpan * colW - GAP,
+    height: 160
+  };
+}
+
+function _showGhost(col, row) {
+  const g = _getOrCreateGhost();
+  const panel = document.getElementById('widget-panel');
+  const COLS = 12;
+  // Clamp para não sair da grade
+  const clampedCol = Math.min(col, COLS - _dragColSpan + 1);
+  const px = _cellPx(clampedCol, row);
+  g.style.display = 'block';
+  g.style.left   = px.left + 'px';
+  g.style.top    = px.top  + 'px';
+  g.style.width  = px.width + 'px';
+  g.style.height = px.height + 'px';
+}
+
+function _hideGhost() {
+  const g = document.getElementById('grid-ghost');
+  if (g) g.style.display = 'none';
+}
 
 function initDragEvents(el, wid) {
-  el.setAttribute('draggable', 'true');
-  el.addEventListener('dragstart', e => {
-    dragSrcId = wid;
-    el.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  el.addEventListener('dragend', () => {
-    el.classList.remove('dragging');
-    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
-  });
-  el.addEventListener('dragover', e => {
-    e.preventDefault();
-    if (!dragSrcId || dragSrcId === wid) return;
-    document.querySelectorAll('.w-card').forEach(c => {
-      c.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
+  // Drag só pelo handle
+  const handle = el.querySelector('.w-drag-handle');
+  if (handle) {
+    handle.setAttribute('draggable', 'true');
+    handle.addEventListener('dragstart', e => {
+      e.stopPropagation();
+      dragSrcId = wid;
+      _dragColSpan = _szToCols(widgets.find(x => x.id === wid)?.sz || 'med');
+      setTimeout(() => el.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', wid);
+      document.getElementById('widget-panel').classList.add('grid-drag-active');
     });
-    const rect = el.getBoundingClientRect();
-    const before = e.clientX < rect.left + rect.width / 2;
-    el.classList.add('drag-over', before ? 'drag-over-before' : 'drag-over-after');
-  });
-  el.addEventListener('dragleave', () => {
-    el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
-  });
-  el.addEventListener('drop', e => {
+    handle.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      _hideGhost();
+      document.getElementById('widget-panel').classList.remove('grid-drag-active');
+      dragSrcId = null;
+    });
+  }
+
+  // O painel inteiro recebe dragover/drop
+}
+
+function _initPanelDrop() {
+  const panel = document.getElementById('widget-panel');
+  if (panel._dropInited) return;
+  panel._dropInited = true;
+
+  panel.addEventListener('dragover', e => {
     e.preventDefault();
-    el.classList.remove('drag-over');
-    if (!dragSrcId || dragSrcId === wid) return;
-    const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
-    const toIdx   = widgets.findIndex(x => x.id === wid);
-    if (fromIdx < 0 || toIdx < 0) return;
+    if (!dragSrcId) return;
+    e.dataTransfer.dropEffect = 'move';
+    const { col, row } = _gridCellFromMouse(e);
+    _showGhost(col, row);
+    // Highlight do card alvo mais próximo
+    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
+    const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w-card');
+    if (target && target.id !== 'wcard-' + dragSrcId) target.classList.add('drag-over');
+  });
 
-    // Determina se soltar antes ou depois do alvo com base na posição do mouse
-    const targetEl = document.getElementById('wcard-' + wid);
-    const rect = targetEl ? targetEl.getBoundingClientRect() : null;
-    const insertBefore = rect ? (e.clientX < rect.left + rect.width / 2 && e.clientY < rect.top + rect.height / 2) : (fromIdx > toIdx);
+  panel.addEventListener('dragleave', e => {
+    if (!e.relatedTarget || !panel.contains(e.relatedTarget)) {
+      _hideGhost();
+      document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
+    }
+  });
 
-    const [moved] = widgets.splice(fromIdx, 1);
-    const newToIdx = widgets.findIndex(x => x.id === wid);
-    widgets.splice(insertBefore ? newToIdx : newToIdx + 1, 0, moved);
+  panel.addEventListener('drop', e => {
+    e.preventDefault();
+    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
+    _hideGhost();
+    document.getElementById('widget-panel').classList.remove('grid-drag-active');
+    if (!dragSrcId) return;
+
+    const { col, row } = _gridCellFromMouse(e);
+    const COLS = 12;
+    const clampedCol = Math.min(col, COLS - _dragColSpan + 1);
+
+    // Verifica se há um card alvo para fazer swap/reorder
+    const targetEl = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w-card');
+    const targetId = targetEl ? targetEl.id.replace('wcard-', '') : null;
+
+    const srcW = widgets.find(x => x.id === dragSrcId);
+    if (!srcW) { dragSrcId = null; return; }
+
+    if (targetId && targetId !== dragSrcId) {
+      // Swap de posição na ordem + posição de grade
+      const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
+      const toIdx   = widgets.findIndex(x => x.id === targetId);
+      if (fromIdx >= 0 && toIdx >= 0) {
+        const [moved] = widgets.splice(fromIdx, 1);
+        const newTo   = widgets.findIndex(x => x.id === targetId);
+        const rect    = targetEl.getBoundingClientRect();
+        const before  = e.clientX < rect.left + rect.width / 2;
+        widgets.splice(before ? newTo : newTo + 1, 0, moved);
+      }
+    }
+
+    // Salva posição de grade livre
+    srcW.gridCol = clampedCol;
+    srcW.gridRow = row;
 
     saveWidgets();
-    const panel = document.getElementById('widget-panel');
-    widgets.forEach(w => {
-      const card = document.getElementById('wcard-' + w.id);
-      if (card) panel.appendChild(card);
-    });
+    renderWidgetPanel();
     dragSrcId = null;
     publishPersist();
   });
+}
+
+// Aplica posição de grade livre (quando definida) ou deixa o fluxo normal
+function _applyGridPos(el, w) {
+  if (w.gridCol && w.gridRow) {
+    el.style.gridColumnStart = w.gridCol;
+    el.style.gridRowStart    = w.gridRow;
+  } else {
+    el.style.gridColumnStart = '';
+    el.style.gridRowStart    = '';
+  }
 }
 
 // ── RENDER DO PAINEL ──────────────────────────────────────────────
@@ -4065,8 +4202,11 @@ function renderWidgetPanel() {
   const panel = document.getElementById('widget-panel');
   if (!panel) return;
 
+  _initPanelDrop();
+
   // 1. Remove cards de widgets excluídos
   [...panel.children].forEach(el => {
+    if (el.id === 'grid-ghost') return;
     const wid = el.id ? el.id.replace('wcard-', '') : null;
     if (wid && !widgets.find(w => w.id === wid)) el.remove();
   });
@@ -4076,7 +4216,7 @@ function renderWidgetPanel() {
     let el = document.getElementById('wcard-' + w.id);
     if (!el) {
       el = buildWidgetCard(w);
-      if (el) panel.appendChild(el); // adiciona temporariamente no final
+      if (el) panel.appendChild(el);
     } else {
       patchWidgetCard(w, el);
     }
@@ -4085,8 +4225,12 @@ function renderWidgetPanel() {
   // 3. Reordena o DOM para bater com widgets[] (sem duplicar)
   widgets.forEach(w => {
     const card = document.getElementById('wcard-' + w.id);
-    if (card) panel.appendChild(card); // appendChild move se já existe
+    if (card) panel.appendChild(card);
   });
+
+  // Garante ghost no fim
+  const ghost = document.getElementById('grid-ghost');
+  if (ghost) panel.appendChild(ghost);
 }
 
 // patchWidgetCard: atualiza apenas o conteúdo interno de um card existente
@@ -4097,6 +4241,7 @@ function patchWidgetCard(w, wrap) {
   // Garante classe de tamanho
   wrap.className = wrap.className.replace(/\bsz-\w+\b/g, '').replace('patched','').trim();
   wrap.classList.add('w-card', 'sz-' + getWidgetSize(w), 'patched');
+  _applyGridPos(wrap, w);
 
   const header = wrap.querySelector('.w-card-header');
   [...wrap.children].forEach(ch => { if (ch !== header) ch.remove(); });
@@ -4120,6 +4265,7 @@ function buildWidgetCard(w) {
   const wrap = document.createElement('div');
   wrap.className = `w-card sz-${sz}`;
   wrap.id = 'wcard-' + w.id;
+  _applyGridPos(wrap, w);
 
   // Resize buttons
   const resizeBtns = W_SIZES.map(s =>
