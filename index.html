@@ -4644,7 +4644,10 @@ function renderWidgetMedidor(w) {
             <div class="ec-lbl">📐 Fat. Potência</div>
           </div>
         </div>
-        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
+          ${w.devicePass ? `<button onclick="resetEnergiaMedidor('${w.id}')" title="Zerar contadores de energia" style="margin-left:8px;padding:3px 8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:var(--danger);font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer;flex-shrink:0">↺ Reset</button>` : ''}
+        </div>
       </div>\`;
   }
 
@@ -4677,6 +4680,16 @@ function renderWidgetMedidor(w) {
 }
 
 // ── AÇÕES DOS WIDGETS ─────────────────────────────────────────────
+function resetEnergiaMedidor(wid) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w || !w.devicePass) { log('Senha do dispositivo não configurada', 'warn'); return; }
+  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
+  const cmdTopic = w.topic.replace('/dados', '/comando');
+  const payload  = JSON.stringify({ cmd: 'reset_energia', pass: w.devicePass });
+  client.publish(cmdTopic, payload, { qos: 1 });
+  log(`↺ Reset energia enviado para ${cmdTopic}`, 'ok');
+}
+
 function triggerGate(wid) {
   const w = widgets.find(x => x.id === wid);
   if (!w || !w.topic) return;
