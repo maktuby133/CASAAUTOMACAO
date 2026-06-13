@@ -2038,6 +2038,8 @@ function connectMQTT() {
     saveTanks();
     irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
     saveIrrigPump();
+    // Cancela assinaturas sensors/ de sessões anteriores que não têm room ativa
+    _unsubscribeOrphanSensorTopics();
     subscribeAll();
     startScheduleEngine();
     subscribeTanks();
@@ -2075,10 +2077,11 @@ function subscribeAll() {
 
 // ============ MENSAGENS MQTT ============
 function handleMsg(topic, payload, pkt) {
-  // Silencia sensors/ sem room cadastrada (retained do broker)
+  // Silencia sensors/ sem room cadastrada com esse deviceId
   if (topic.startsWith('sensors/')) {
     const tid = topic.split('/')[1];
-    if (!rooms.some(r => (r.deviceId || r.tempDeviceId) === tid)) return;
+    const hasRoom = rooms.some(r => (r.deviceId || r.tempDeviceId) === tid);
+    if (!hasRoom) return;
   }
   // Log bruto de TODAS as mensagens
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
@@ -3226,7 +3229,8 @@ function saveRooms() {
 function loadRooms() {
   try {
     rooms = JSON.parse(localStorage.getItem('autoflow_rooms') || '[]');
-    // Restore Date objects
+    // Remove entradas inválidas (sem nome ou sem id — lixo de sessões antigas)
+    rooms = rooms.filter(r => r && r.id && r.name);
     rooms.forEach(r => {
       if (r.data?.lastSeen) r.data.lastSeen = new Date(r.data.lastSeen);
       if (!r.data) r.data = { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false };
@@ -3532,20 +3536,42 @@ function subscribeRoom(room) {
   if (!room || !client || !client.connected) return;
   const devId = room.deviceId || room.tempDeviceId || '';
   if (!devId) return;
+  // Só assina se a room está de fato no array rooms (evita subscrições fantasma)
+  if (!rooms.find(r => r.id === room.id)) return;
   // sensors/{id}/data — temperatura + umidade
-  if (room.hasTemp) {
+  if (room.hasTemp !== false) {
     const t = `sensors/${devId}/data`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
+    _activeSensorTopics.add(t);
   }
   // sensors/{id}/gas — MQ-2 raw + gas_alert + lamp state
-  if (room.hasSmoke || room.hasLamp) {
+  if (room.hasSmoke !== false || room.hasLamp !== false) {
     const t = `sensors/${devId}/gas`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
+    _activeSensorTopics.add(t);
   }
 }
 
 function subscribeAllRooms() {
+  if (!client || !client.connected) return;
   rooms.forEach(r => subscribeRoom(r));
+}
+
+function unsubscribeOrphanSensors() {}
+
+// Rastreia tópicos sensors/ ativamente assinados
+let _activeSensorTopics = new Set();
+
+function _unsubscribeOrphanSensorTopics() {
+  if (!client || !client.connected) return;
+  const validIds = new Set(rooms.map(r => r.deviceId || r.tempDeviceId).filter(Boolean));
+  _activeSensorTopics.forEach(t => {
+    const tid = t.split('/')[1];
+    if (!validIds.has(tid)) {
+      try { client.unsubscribe(t); } catch(e) {}
+      _activeSensorTopics.delete(t);
+    }
+  });
 }
 
 
