@@ -5508,13 +5508,7 @@ function buildWidgetFields(type, ex) {
 
   switch(type) {
     case 'ambiente': {
-      const roomOpts = rooms.map(r => `<option value="${r.id}" ${v('roomId','') === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
-      return `${nameField}
-        <div class="field"><label>Ambiente cadastrado</label>
-          <select id="wcm-roomId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
-            <option value="">-- selecione --</option>${roomOpts}
-          </select>
-        </div>`;
+      return `${nameField}${iconField}`;
     }
 
     case 'caixa_agua': {
@@ -5697,7 +5691,7 @@ function saveWidgetFromModal() {
   }
 
   switch(type) {
-    case 'ambiente':   w.roomId   = gv('roomId');   break;
+    case 'ambiente':   break;
     case 'caixa_agua': w.tankId   = gv('tankId');   break;
     case 'irrigacao':  break;
     case 'portao': {
