@@ -4031,8 +4031,9 @@ function setWidgetSize(wid, sz) {
 }
 
 // ── DRAG AND DROP — GRADE LIVRE ───────────────────────────────────
-let dragSrcId  = null;
-let _dragColSpan = 6; // colunas do card em drag
+let dragSrcId    = null;
+let _dropTargetId = null;
+let _dragColSpan = 6;
 let _ghost = null;
 
 function _getOrCreateGhost() {
@@ -4136,10 +4137,14 @@ function _initPanelDrop() {
     e.preventDefault();
     if (!dragSrcId) return;
     e.dataTransfer.dropEffect = 'move';
-    _showGhost(e);
-    // Highlight do card alvo mais próximo
-    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
+    // Esconder ghost temporariamente para elementFromPoint funcionar
+    const g = document.getElementById('grid-ghost');
+    if (g) g.style.display = 'none';
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w-card');
+    _dropTargetId = (target && target.id !== 'wcard-' + dragSrcId)
+      ? target.id.replace('wcard-', '') : null;
+    _showGhost(e);
+    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
     if (target && target.id !== 'wcard-' + dragSrcId) target.classList.add('drag-over');
   });
 
@@ -4152,28 +4157,28 @@ function _initPanelDrop() {
 
   panel.addEventListener('drop', e => {
     e.preventDefault();
-    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
     _hideGhost();
     document.getElementById('widget-panel').classList.remove('grid-drag-active');
     if (!dragSrcId) return;
 
-    const targetEl = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w-card');
-    const targetId = targetEl ? targetEl.id.replace('wcard-', '') : null;
+    // _dropTargetId foi rastreado no dragover (elementFromPoint antes do ghost cobrir)
+    const targetId = _dropTargetId;
+    _dropTargetId  = null;
+    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
 
     if (targetId && targetId !== dragSrcId) {
       const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
-      const toIdx   = widgets.findIndex(x => x.id === targetId);
-      if (fromIdx >= 0 && toIdx >= 0) {
-        const [moved] = widgets.splice(fromIdx, 1);
-        const newTo   = widgets.findIndex(x => x.id === targetId);
-        const rect    = targetEl.getBoundingClientRect();
-        const before  = e.clientX < rect.left + rect.width / 2;
-        widgets.splice(before ? newTo : newTo + 1, 0, moved);
-      }
+      if (fromIdx < 0) { dragSrcId = null; return; }
+      const [moved] = widgets.splice(fromIdx, 1);
+      const newTo   = widgets.findIndex(x => x.id === targetId);
+      if (newTo < 0) { widgets.splice(fromIdx, 0, moved); dragSrcId = null; return; }
+      const targetEl = document.getElementById('wcard-' + targetId);
+      const rect     = targetEl ? targetEl.getBoundingClientRect() : null;
+      const before   = rect ? e.clientX < rect.left + rect.width / 2 : false;
+      widgets.splice(before ? newTo : newTo + 1, 0, moved);
     }
 
     saveWidgets();
-    // Reordenar DOM sem re-render completo
     const p = document.getElementById('widget-panel');
     widgets.forEach(w => {
       const card = document.getElementById('wcard-' + w.id);
