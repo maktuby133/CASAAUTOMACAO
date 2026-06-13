@@ -3469,55 +3469,52 @@ function deleteRoomFromModal() {
 }
 
 function confirmAddRoom() {
-  const name    = document.getElementById('rm-room-name').value.trim();
-  const icon    = document.getElementById('rm-room-icon').value.trim() || '🏠';
-  const editId  = document.getElementById('rm-room-modal-edit-id').value;
+  const name     = document.getElementById('rm-room-name')?.value.trim() || '';
+  const icon     = document.getElementById('rm-room-icon')?.value.trim() || '🏠';
+  const editId   = document.getElementById('rm-room-modal-edit-id')?.value || '';
   const hasTemp  = document.getElementById('rm-has-temp')?.checked ?? true;
   const hasSmoke = document.getElementById('rm-has-smoke')?.checked ?? true;
   const hasLamp  = document.getElementById('rm-has-lamp')?.checked ?? true;
-
-  // Device ID unificado — um ESP32 serve temp + gás + relé
-  const deviceId = (document.getElementById('rm-device-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'')) || '';
+  const deviceId = (document.getElementById('rm-device-id')?.value || '').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
   const devPass  = document.getElementById('rm-temp-pass')?.value || '';
 
   if (!name) {
     const el = document.getElementById('rm-room-name');
     if (el) { el.style.borderColor = 'var(--danger)'; el.focus(); setTimeout(() => el.style.borderColor = '', 2000); }
-    log('Preencha o nome do ambiente', 'warn'); return;
+    log('Preencha o nome do ambiente', 'warn');
+    return;
   }
-  // deviceId é opcional — ambiente pode ser criado sem ESP32 ainda vinculado
 
-  // Campos de compatibilidade preenchidos automaticamente
   const roomData = {
-    name, icon, hasTemp, hasSmoke, hasLamp,
-    deviceId,
-    tempDeviceId: deviceId, tempDevPass: devPass,
-    gasDeviceId:  deviceId, gasDevPass:  devPass,
-    devPass,
-    topic: '',
-    relays: [], // relé é do próprio ESP32
+    id: editId || ('room_' + Date.now()),
+    name, icon,
+    hasTemp: !!hasTemp, hasSmoke: !!hasSmoke, hasLamp: !!hasLamp,
+    deviceId, tempDeviceId: deviceId, gasDeviceId: deviceId,
+    devPass, tempDevPass: devPass, gasDevPass: devPass,
+    topic: '', relays: [],
     data: { temp:null, hum:null, smoke:null, smokeRaw:0, lamp:false, gasAlert:false, lastSeen:null, online:false }
   };
 
   if (editId) {
-    const r = rooms.find(x => x.id === editId);
-    if (r) {
-      // preserva dados ao vivo
-      const live = r.data;
-      Object.assign(r, roomData);
-      r.id = editId;
-      r.data = live || roomData.data;
+    const idx = rooms.findIndex(x => x.id === editId);
+    if (idx >= 0) {
+      const live = rooms[idx].data;
+      rooms[idx] = { ...roomData, data: live || roomData.data };
     }
   } else {
-    roomData.id = 'room_' + Date.now();
     rooms.push(roomData);
   }
-  saveRooms();
-  publishPersist();
-  renderRooms();
-  const saved = editId ? rooms.find(x => x.id === editId) : rooms[rooms.length - 1];
-  if (client && client.connected && saved) subscribeRoom(saved);
-  log(`Ambiente "${name}" salvo — ESP32: ${deviceId}`, 'ok');
+
+  try { saveRooms(); } catch(e) { console.error('saveRooms', e); }
+  try { renderRooms(); } catch(e) { console.error('renderRooms', e); }
+  try { renderWidgetPanel(); } catch(e) { console.error('renderWidgetPanel', e); }
+  try { publishPersist(); } catch(e) {}
+  try {
+    const saved = rooms.find(x => x.id === roomData.id);
+    if (client && client.connected && saved && saved.deviceId) subscribeRoom(saved);
+  } catch(e) {}
+
+  log(`Ambiente "${name}" salvo`, 'ok');
   closeRoomModal();
 }
 
@@ -4011,7 +4008,7 @@ function renderRooms() {
   const grid = document.getElementById('rooms-grid');
   const cnt  = document.getElementById('rooms-count');
   if (!grid) return;
-  cnt.textContent = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
+  if (cnt) cnt.textContent = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
 
   if (!rooms.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente. Clique em "+ Adicionar".</div>';
@@ -4124,8 +4121,10 @@ function renderRooms() {
     </div>`;
   }).join('');
   // Atualiza widgets de ambiente no painel (patch cirúrgico)
-  if (typeof patchWidgetCard === 'function') {
-    widgets.filter(w => w.type === 'ambiente').forEach(w => patchWidgetCard(w));
+  if (typeof patchWidgetCard === 'function' && typeof widgets !== 'undefined') {
+    widgets.filter(w => w.type === 'ambiente').forEach(w => {
+      try { patchWidgetCard(w); } catch(e) {}
+    });
   }
 }
 
@@ -4508,6 +4507,7 @@ function buildSparklineSVG(data, color, w, h) {
 // ── RENDERS POR TIPO ──────────────────────────────────────────────
 
 function renderWidgetAmbienteGrid(w) {
+  if (!w) return '';
   if (!rooms.length) {
     return `<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente cadastrado. Clique em "+ Ambiente" para começar.</div>`;
   }
