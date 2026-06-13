@@ -3577,7 +3577,7 @@ function handleAutoflowMessage(topic, payload) {
   // Registra como visto (auto-discovery)
   if (!_discoveredDevices[devId]) {
     _discoveredDevices[devId] = { id: devId, firstSeen: new Date(), data: {} };
-    log(`📡 Novo dispositivo detectado: \${devId} (autoflow/\${devId}/\${subTopic})`, 'info');
+    log(`📡 Novo dispositivo detectado: ${devId} (autoflow/${devId}/${subTopic})`, 'info');
     renderDiscoveryBadge();
   }
   _discoveredDevices[devId].lastSeen = new Date();
@@ -3619,7 +3619,7 @@ function handleAutoflowMessage(topic, payload) {
     dev.data.ip     = data.ip     || null;
     dev.data.rssi   = data.rssi   || null;
     if (!dev.data.online) {
-      triggerAutoflowAlert(dev, 'offline', `⚠ "\${dev.name}" offline`);
+      triggerAutoflowAlert(dev, 'offline', `⚠ "${dev.name}" offline`);
     }
   }
 
@@ -3635,20 +3635,20 @@ function triggerAutoflowAlert(dev, type, msg) {
   const last = _afAlertSent[dev.id][type] || 0;
   if (now - last < 60000) return;   // throttle 60s
   _afAlertSent[dev.id][type] = now;
-  log(`⚠ \${msg}`, 'warn');
+  log(`⚠ ${msg}`, 'warn');
   sendGasNotification({ id: dev.id, name: dev.name }, 0, false).catch(()=>{});
 }
 
 function checkAutoflowGasRule(dev) {
   const d = dev.data;
   if (!d.gasAlert) return;
-  triggerAutoflowAlert(dev, 'gas', `🔥 GÁS \${dev.name}: raw=\${d.smokeRaw} → ALARME`);
+  triggerAutoflowAlert(dev, 'gas', `🔥 GÁS ${dev.name}: raw=${d.smokeRaw} → ALARME`);
   // Reusa banner de gás existente
   const b = document.getElementById('gas-lock-banner');
   if (b) {
     b.innerHTML = `<span style="font-size:14px">🚨</span>
-      <span style="flex:1"><strong>ALERTA DE GÁS — \${dev.name}</strong><br>
-      Sensor: raw=\${d.smokeRaw} · Dispositivo: \${dev.id}</span>
+      <span style="flex:1"><strong>ALERTA DE GÁS — ${dev.name}</strong><br>
+      Sensor: raw=${d.smokeRaw} · Dispositivo: ${dev.id}</span>
       <button onclick="document.getElementById('gas-lock-banner').classList.remove('show')"
         style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:6px;
         color:var(--danger);font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer">✕</button>`;
@@ -3659,11 +3659,11 @@ function checkAutoflowGasRule(dev) {
 // ── Controla relé/lâmpada de um dispositivo AutoFlow ────────────────────────
 function setAutoflowLamp(dev, state) {
   if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
-  const topic = `autoflow/\${dev.id}/relay/lamp/set`;
+  const topic = `autoflow/${dev.id}/relay/lamp/set`;
   client.publish(topic, JSON.stringify({ lamp: state, pass: dev.pass || '' }), { qos:1, retain:true });
   if (dev.data) dev.data.lamp = state;
   renderAutoflowCards();
-  log(`💡 \${dev.name} → \${state ? 'ON' : 'OFF'}`, state ? 'ok' : 'sys');
+  log(`💡 ${dev.name} → ${state ? 'ON' : 'OFF'}`, state ? 'ok' : 'sys');
 }
 
 // ── Badge de dispositivos descobertos (não cadastrados) ──────────────────────
@@ -3691,12 +3691,12 @@ function openAutoflowModal(devId) {
   if (list) {
     const unseen = Object.values(_discoveredDevices).filter(d => !registered.has(d.id));
     list.innerHTML = unseen.length
-      ? unseen.map(d => `<div onclick="document.getElementById('af-device-id').value='\${d.id}'"
+      ? unseen.map(d => `<div onclick="document.getElementById('af-device-id').value='${d.id}'"
           style="cursor:pointer;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);
           border-radius:6px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:8px;margin-bottom:4px">
           <span style="color:var(--accent)">●</span>
-          <span style="font-weight:700;letter-spacing:.1em">\${d.id}</span>
-          <span style="color:var(--muted);font-size:9px">visto \${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}</span>
+          <span style="font-weight:700;letter-spacing:.1em">${d.id}</span>
+          <span style="color:var(--muted);font-size:9px">visto ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}</span>
           <span style="font-family:var(--mono);font-size:9px;background:rgba(0,212,160,.1);color:var(--accent);
             border:1px solid rgba(0,212,160,.25);border-radius:4px;padding:1px 5px;margin-left:auto">↖ usar</span>
         </div>`).join('')
@@ -3727,16 +3727,16 @@ function confirmAddAutoflowDevice() {
     if (d) { d.name = name; d.icon = icon; d.pass = pass; d.type = type; }
   } else {
     if (autoflowDevices.find(d => d.id === id)) {
-      log(`Dispositivo \${id} já cadastrado`, 'warn'); return;
+      log(`Dispositivo ${id} já cadastrado`, 'warn'); return;
     }
     autoflowDevices.push({ id, name, type, icon, pass,
       data: { temp:null, hum:null, smoke:null, smokeRaw:0, gasAlert:false, lamp:false,
               flowLpm:0, sessionL:0, totalL:0, percentage:0, lastSeen:null, online:false } });
     // Subscreve tópicos deste dispositivo agora
     if (client && client.connected) {
-      client.subscribe(`autoflow/\${id}/#`, { qos:1 }, () => log(`↳ autoflow/\${id}/#`, 'sys'));
+      client.subscribe(`autoflow/${id}/#`, { qos:1 }, () => log(`↳ autoflow/${id}/#`, 'sys'));
     }
-    log(`Dispositivo "\${name}" (\${id}) cadastrado como \${type}`, 'ok');
+    log(`Dispositivo "${name}" (${id}) cadastrado como ${type}`, 'ok');
   }
   saveAutoflowDevices();
   publishPersist();
@@ -3752,7 +3752,7 @@ function removeAutoflowDevice(id) {
   saveAutoflowDevices();
   publishPersist();
   renderAutoflowCards();
-  log(`Dispositivo "\${d.name}" removido`, 'sys');
+  log(`Dispositivo "${d.name}" removido`, 'sys');
 }
 
 function editAutoflowDevice(id) {
@@ -3770,7 +3770,7 @@ function editAutoflowDevice(id) {
     if (passEl) passEl.value = d.pass || '';
     const editEl = document.getElementById('af-edit-id');
     if (editEl) editEl.value = d.id;
-    const typeInput = document.querySelector(`input[name="af-type"][value="\${d.type}"]`);
+    const typeInput = document.querySelector(`input[name="af-type"][value="${d.type}"]`);
     if (typeInput) typeInput.checked = true;
   }, 50);
 }
@@ -3814,41 +3814,41 @@ function _renderAmbienteCard(dev, d, onlineDot, offline) {
   if (d.temp !== null && d.temp > 35) tempAlert = `<span style="color:var(--danger);font-size:9px;font-family:var(--mono)">⚠ alta</span>`;
   return `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <span style="font-size:16px">\${dev.icon}</span>
-      <span style="font-size:12px;font-weight:600;flex:1">\${dev.name}</span>
-      \${onlineDot}
+      <span style="font-size:16px">${dev.icon}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">${dev.name}</span>
+      ${onlineDot}
       <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
-        border:1px solid var(--border);border-radius:4px;padding:1px 5px">\${dev.id}</span>
-      <button onclick="editAutoflowDevice('\${dev.id}')"
+        border:1px solid var(--border);border-radius:4px;padding:1px 5px">${dev.id}</span>
+      <button onclick="editAutoflowDevice('${dev.id}')"
         style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
-      <button onclick="removeAutoflowDevice('\${dev.id}')"
+      <button onclick="removeAutoflowDevice('${dev.id}')"
         style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      \${d.temp !== null && d.temp !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
+      ${d.temp !== null && d.temp !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
         <span style="font-size:10px">🌡️</span>
-        <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:\${d.temp>35?'var(--danger)':'var(--text)'}">\${d.temp.toFixed(1)}<span style="font-size:10px;color:var(--muted)">°C</span></span>
-        \${tempAlert}
+        <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:${d.temp>35?'var(--danger)':'var(--text)'}">${d.temp.toFixed(1)}<span style="font-size:10px;color:var(--muted)">°C</span></span>
+        ${tempAlert}
       </div>` : ''}
-      \${d.hum !== null && d.hum !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
+      ${d.hum !== null && d.hum !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
         <span style="font-size:10px">💧</span>
-        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--muted)">\${Math.round(d.hum)}<span style="font-size:10px">%</span></span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--muted)">${Math.round(d.hum)}<span style="font-size:10px">%</span></span>
       </div>` : ''}
-      \${d.smoke !== null && d.smoke !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
+      ${d.smoke !== null && d.smoke !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
         <span style="font-size:10px">🔥</span>
-        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:\${sl.color}">\${d.smoke}<span style="font-size:9px">%</span></span>
-        <span style="font-family:var(--mono);font-size:7px;font-weight:700;color:\${sl.color}">\${sl.label}</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:${sl.color}">${d.smoke}<span style="font-size:9px">%</span></span>
+        <span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color}">${sl.label}</span>
       </div>` : ''}
-      <div class="room-relay-wrap" title="Lâmpada — \${lampOn?'ON':'OFF'}" style="margin-left:auto">
-        <span style="font-size:14px">\${lampOn?'💡':'🔦'}</span>
+      <div class="room-relay-wrap" title="Lâmpada — ${lampOn?'ON':'OFF'}" style="margin-left:auto">
+        <span style="font-size:14px">${lampOn?'💡':'🔦'}</span>
         <label class="room-relay-switch">
-          <input type="checkbox" \${lampOn?'checked':''}
-            onchange="setAutoflowLamp(autoflowDevices.find(x=>x.id==='\${dev.id}'),this.checked)">
+          <input type="checkbox" ${lampOn?'checked':''}
+            onchange="setAutoflowLamp(autoflowDevices.find(x=>x.id==='${dev.id}'),this.checked)">
           <div class="rrs-track"></div><div class="rrs-knob"></div>
         </label>
       </div>
     </div>
-    \${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ \${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}\${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
+    ${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
   `;
 }
 
@@ -3856,33 +3856,33 @@ function _renderFluxoCard(dev, d, onlineDot, offline) {
   const flowColor = (d.flowLpm || 0) > 0 ? 'var(--accent2)' : 'var(--muted)';
   return `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <span style="font-size:16px">\${dev.icon}</span>
-      <span style="font-size:12px;font-weight:600;flex:1">\${dev.name}</span>
-      \${onlineDot}
+      <span style="font-size:16px">${dev.icon}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">${dev.name}</span>
+      ${onlineDot}
       <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
-        border:1px solid var(--border);border-radius:4px;padding:1px 5px">\${dev.id}</span>
-      <button onclick="editAutoflowDevice('\${dev.id}')"
+        border:1px solid var(--border);border-radius:4px;padding:1px 5px">${dev.id}</span>
+      <button onclick="editAutoflowDevice('${dev.id}')"
         style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
-      <button onclick="removeAutoflowDevice('\${dev.id}')"
+      <button onclick="removeAutoflowDevice('${dev.id}')"
         style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
     </div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div>
-        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:\${flowColor};line-height:1">
-          \${(d.flowLpm||0).toFixed(2)}<span style="font-size:11px;color:var(--muted)"> L/min</span>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:${flowColor};line-height:1">
+          ${(d.flowLpm||0).toFixed(2)}<span style="font-size:11px;color:var(--muted)"> L/min</span>
         </div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">Fluxo atual</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
         <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
-          Sessão: <strong>\${(d.sessionL||0).toFixed(2)} L</strong>
+          Sessão: <strong>${(d.sessionL||0).toFixed(2)} L</strong>
         </div>
         <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
-          Total: <strong>\${(d.totalL||0).toFixed(2)} L</strong>
+          Total: <strong>${(d.totalL||0).toFixed(2)} L</strong>
         </div>
       </div>
     </div>
-    \${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ \${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}\${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
+    ${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
   `;
 }
 
@@ -3894,12 +3894,12 @@ function renderAutoflowWidget(w) {
     </div>`;
   }
   return autoflowDevices.map(dev => `
-    <div id="af-card-\${dev.id}"
+    <div id="af-card-${dev.id}"
       style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
       padding:12px 14px;margin-bottom:8px;transition:border-color .2s"
       onmouseover="this.style.borderColor='var(--border2)'"
       onmouseout="this.style.borderColor='var(--border)'">
-      \${dev.type === 'ambiente' ? _renderAmbienteCard(dev, dev.data||{},
+      ${dev.type === 'ambiente' ? _renderAmbienteCard(dev, dev.data||{},
           (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
                             : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)
         : _renderFluxoCard(dev, dev.data||{},
@@ -6129,7 +6129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (idEl) idEl.addEventListener('input', () => {
     const id = idEl.value.toUpperCase().replace(/[^A-Z0-9]/g,'') || '...';
     const prev = document.getElementById('af-topic-preview');
-    if (prev) prev.textContent = `autoflow/\${id}/data`;
+    if (prev) prev.textContent = `autoflow/${id}/data`;
   });
   // Periodic discovery badge update
   setInterval(renderDiscoveryBadge, 5000);
