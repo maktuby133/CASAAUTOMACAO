@@ -4593,6 +4593,7 @@ function renderWidgetMedidor(w) {
   // ── Energia PZEM-004T ────────────────────────────────────────
   if (mode === 'energy') {
     const e = window['wm_energy_' + w.id] || {};
+    const r = window['wm_resumo_' + w.id] || {};
     const pow  = e.power     != null ? parseFloat(e.power).toFixed(0)     : '--';
     const vol  = e.voltage   != null ? parseFloat(e.voltage).toFixed(1)   : '--';
     const cur  = e.current   != null ? parseFloat(e.current).toFixed(2)   : '--';
@@ -4623,8 +4624,28 @@ function renderWidgetMedidor(w) {
           <span style="font-family:var(--mono);font-size:10px;color:var(--warn)">💰 Custo acumulado</span>
           <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn)" id="me-cost-${w.id}">R$ ${cost}</span>
         </div>
+        <div class="meter-energy-grid" style="margin-top:8px">
+          <div class="energy-cell">
+            <div class="ec-val" id="me-hoje-${w.id}" style="font-size:13px">${r.energia_hoje != null ? parseFloat(r.energia_hoje).toFixed(3) : '--'}</div>
+            <div class="ec-lbl">☀️ Hoje (kWh)</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--warn);margin-top:1px">R$ <span id="me-choje-${w.id}">${r.custo_hoje != null ? parseFloat(r.custo_hoje).toFixed(2) : '--'}</span></div>
+          </div>
+          <div class="energy-cell">
+            <div class="ec-val" id="me-sem-${w.id}" style="font-size:13px">${r.energia_semana != null ? parseFloat(r.energia_semana).toFixed(3) : '--'}</div>
+            <div class="ec-lbl">📅 Semana (kWh)</div>
+          </div>
+          <div class="energy-cell">
+            <div class="ec-val" id="me-mes-${w.id}" style="font-size:13px">${r.energia_mes != null ? parseFloat(r.energia_mes).toFixed(3) : '--'}</div>
+            <div class="ec-lbl">🗓️ Mês (kWh)</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--warn);margin-top:1px">R$ <span id="me-cmes-${w.id}">${r.custo_mes != null ? parseFloat(r.custo_mes).toFixed(2) : '--'}</span></div>
+          </div>
+          <div class="energy-cell">
+            <div class="ec-val" id="me-pf-${w.id}" style="font-size:13px">${pf}</div>
+            <div class="ec-lbl">📐 Fat. Potência</div>
+          </div>
+        </div>
         <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
-      </div>`;
+      </div>\`;
   }
 
   // ── Genérico ─────────────────────────────────────────────────
@@ -4966,13 +4987,13 @@ function handleWidgetMessage(topic, payload) {
       const mMode = w.meterMode || 'generic';
       const now = new Date().toLocaleTimeString('pt-BR');
       if (mMode === 'energy' && w.topic && topic === w.topic) {
-        // PZEM-004T — JSON payload
+        // Receptor LoRa/PZEM — JSON em {topic_base}/dados
         let e = {};
         try { e = JSON.parse(payload); } catch(ex) { e = { power: parseFloat(payload)||0 }; }
         window['wm_energy_' + w.id] = e;
         window['wm_val_'    + w.id] = e.power;
         const safe = (id,val,dec) => { const el=document.getElementById(id); if(el) el.textContent=(val!=null?parseFloat(val).toFixed(dec||1):'--'); };
-        safe('meter-val-'+w.id, e.power, 0);
+        safe('meter-val-'+w.id, e.power,     0);
         safe('me-vol-'+w.id,    e.voltage,   1);
         safe('me-cur-'+w.id,    e.current,   2);
         safe('me-kwh-'+w.id,    e.energy,    3);
@@ -4986,6 +5007,23 @@ function handleWidgetMessage(topic, payload) {
         if (barEl) { barEl.style.width=pct+'%'; barEl.style.background=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'#f59e0b'; }
         const tsEl = document.getElementById('meter-ts-'+w.id);
         if (tsEl) tsEl.textContent = now;
+      } else if (mMode === 'energy' && w.resumeTopic && topic === w.resumeTopic) {
+        // {topic_base}/resumo — energia_hoje, semana, mes, custo
+        let r = {};
+        try { r = JSON.parse(payload); } catch(ex) {}
+        window['wm_resumo_' + w.id] = r;
+        const safe2 = (id,val,dec) => { const el=document.getElementById(id); if(el && val!=null) el.textContent=parseFloat(val).toFixed(dec); };
+        safe2('me-hoje-'+w.id,   r.energia_hoje,   3);
+        safe2('me-sem-'+w.id,    r.energia_semana, 3);
+        safe2('me-mes-'+w.id,    r.energia_mes,    3);
+        safe2('me-choje-'+w.id,  r.custo_hoje,     2);
+        safe2('me-cmes-'+w.id,   r.custo_mes,      2);
+      } else if (mMode === 'energy' && w.alertTopic && topic === w.alertTopic) {
+        // {topic_base}/alerta — { tipo: 'corrente'|'tensao', valor }
+        let a = {};
+        try { a = JSON.parse(payload); } catch(ex) {}
+        if (a.tipo === 'corrente') showAlert(`⚡ Sobrecarga! Corrente: ${parseFloat(a.valor).toFixed(1)} A — verifique a instalação.`);
+        if (a.tipo === 'tensao')   showAlert(`⚡ Tensão fora da faixa: ${parseFloat(a.valor).toFixed(0)} V — verifique a rede elétrica.`);
       } else if (mMode === 'flow_water') {
         if (w.topic && topic === w.topic) {
           // YF-S201 — flow rate (L/min)
@@ -5075,8 +5113,10 @@ function subscribeWidgetTopics() {
     if (w.sensorTopic) newTopics.add(w.sensorTopic);
     if (w.obstTopic)   newTopics.add(w.obstTopic);
     if (w.type === 'medidor') {
-      if (w.topic)      newTopics.add(w.topic);
-      if (w.totalTopic) newTopics.add(w.totalTopic);
+      if (w.topic)       newTopics.add(w.topic);
+      if (w.totalTopic)  newTopics.add(w.totalTopic);
+      if (w.resumeTopic) newTopics.add(w.resumeTopic);
+      if (w.alertTopic)  newTopics.add(w.alertTopic);
     }
     if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic) {
       newTopics.add(w.relStateTopic);
@@ -5304,8 +5344,9 @@ function buildWidgetFields(type, ex) {
           ${inp('dailyLimit', 'Limite diário alertar (L)', v('dailyLimit',500), '500')}`,
         energy: `
           <div style="padding:8px 10px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
-            ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> (ESP32) — JSON em <code style="color:var(--accent2)">{id}/energy</code><br>
-            <code style="color:var(--text)">{voltage, current, power, energy, frequency, pf}</code>
+            ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> + Receptor LoRa — tópicos:<br>
+            <code style="color:var(--accent2)">{base}/dados</code> · <code style="color:var(--accent2)">{base}/resumo</code> · <code style="color:var(--accent2)">{base}/alerta</code><br>
+            <code style="color:var(--text)">{voltage, current, power, energy, pf, energia_hoje, energia_mes…}</code>
           </div>
           ${inp('deviceId',  'ID do dispositivo',       v('deviceId',''),   'ex: energia01')}
           ${inp('devicePass','Senha do dispositivo',    v('devicePass',''), '••••••••')}
@@ -5416,7 +5457,9 @@ function saveWidgetFromModal() {
         w.tariff     = parseFloat(gvRaw('tariff'))  || 0.65;
         w.phases     = parseInt(gvRaw('phases'))    || 1;
         const did = w.deviceId || 'energia';
-        w.topic = `${did}/energy`;
+        w.topic       = `${did}/dados`;
+        w.resumeTopic = `${did}/resumo`;
+        w.alertTopic  = `${did}/alerta`;
         w.unit = 'W'; w.max = 5000;
       } else {
         w.topic    = gv('topic');
