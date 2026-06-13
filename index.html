@@ -4618,9 +4618,12 @@ function renderWidgetCaixaAguaGrid(w) {
     return `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>`;
   }
   return waterTanks.map(t => {
-    const pct = t.level;
-    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pct     = t.level;
+    const secAgo  = t.lastSeen ? Math.round((Date.now() - new Date(t.lastSeen)) / 1000) : null;
+    const offline = secAgo !== null && secAgo > 120;
+    const col     = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const subCol  = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub     = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
     const pumpsHtml = t.pumps && t.pumps.length ? `
       <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
         ${t.pumps.map(p => {
