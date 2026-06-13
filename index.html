@@ -855,9 +855,24 @@ body::before {
   <div id="widget-panel"></div>
 
   <!-- Barra de adicionar widget -->
-  <div class="add-widget-bar">
+  <div class="add-widget-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <button class="add-widget-btn" onclick="openWidgetPicker()">
       <span style="font-size:16px">＋</span> Adicionar widget
+    </button>
+    <button id="af-discover-btn" onclick="openAutoflowModal('')"
+      style="display:none;align-items:center;gap:6px;padding:8px 14px;background:rgba(59,130,246,.12);
+      border:1px solid rgba(59,130,246,.35);border-radius:10px;color:var(--accent2);
+      font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+      <span>📡</span> Dispositivos novos: <span class="af-badge" style="background:var(--accent2);color:#000;
+        border-radius:10px;padding:0 6px;font-size:10px">0</span>
+    </button>
+    <button onclick="openAutoflowModal('')"
+      style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--bg2);
+      border:1px solid var(--border2);border-radius:10px;color:var(--subtle);
+      font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--subtle)'">
+      <span>📲</span> Dispositivo AutoFlow
     </button>
   </div>
 
@@ -1627,15 +1642,12 @@ function loadFromBrokerPayload(payload) {
     }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
-    // Widgets genéricos — merge por timestamp (broker tem precedência só se mais recente)
+    // Widgets genéricos — broker é a fonte de verdade única
+    // Qualquer navegador/dispositivo recebe exatamente o que está no broker
     if (d.widgets !== undefined) {
-      const localTs = (() => { try { return parseInt(localStorage.getItem('autoflow_widgets_ts') || '0'); } catch(e) { return 0; } })();
-      if (brokerTime >= localTs) {
-        widgets = d.widgets || [];
-        saveWidgets();
-        try { localStorage.setItem('autoflow_widgets_ts', String(brokerTime)); } catch(e) {}
-        renderWidgetPanel();
-      }
+      widgets = d.widgets || [];
+      saveWidgets();
+      renderWidgetPanel();
     }
     // Clima — só atualiza se o broker tiver cidade e o local não tiver
     if (d.weather?.city && !weather.city) {
@@ -1824,6 +1836,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 4. Restaura ambientes ─────────────────────────────────────────────
   loadRooms();
+  // ── AutoFlow devices ──────────────────────────────────────────────────────
+  loadAutoflowDevices();
 
   // ── 4b. Restaura caixas d'água ────────────────────────────────────────
   loadTanks();
@@ -1863,7 +1877,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // ── 6. Render inicial — aguarda DOM estar pronto ─────────────────────
+  // ── 7. Render inicial — aguarda DOM estar pronto ─────────────────────
   initPWA();
 
   // Usa requestAnimationFrame para garantir que o DOM está totalmente pintado
@@ -1886,7 +1900,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Notification.permission !== 'granted') bar.style.display = 'flex';
     }, 800);
 
-    // ── 7. Auto-login: conecta se tiver credenciais salvas ──────────────
+    // ── 8. Auto-login: conecta se tiver credenciais salvas ──────────────
     updateMainBtn();
     const s = getCfg();
     // Restaura brokerMode ANTES de checar credenciais
@@ -1903,7 +1917,7 @@ document.addEventListener('DOMContentLoaded', () => {
     connectAllTankBrokers();
   });
 
-  // ── 8. Restaura clima e auto-carrega ──────────────────────────────────
+  // ── 9. Restaura clima e auto-carrega ──────────────────────────────────
   const wlat = parseFloat(saved.weatherLat);
   const wlon = parseFloat(saved.weatherLon);
   if (saved.weatherCity && !isNaN(wlat) && !isNaN(wlon)) {
@@ -1988,14 +2002,14 @@ function connectMQTT() {
   }
   TOPICS_TEMP = temp ? `sensors/${temp}/data` : '';
 
-  if (client) { try { client.end(true); } catch(e) {} clearTimeout(window._connTimeout); }
+  if (client) { try { client.end(true); } catch(e) {} }
 
   setConnStatus('connecting', 'Conectando...');
   _updateBrokerModalStatus('connecting', 'Conectando…');
   log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
 
   // Timeout de segurança: se após 15s nenhum evento disparar, volta para desconectado
-  window._connTimeout = setTimeout(() => {
+  const _connTimeout = setTimeout(() => {
     if (!window._mqttConnected) {
       setConnStatus('off', 'Timeout');
       _updateBrokerModalStatus('error', 'Timeout — verifique host/porta');
@@ -2013,7 +2027,7 @@ function connectMQTT() {
   });
 
   client.on('connect', () => {
-    clearTimeout(window._connTimeout);
+    clearTimeout(_connTimeout);
     window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
     _updateBrokerModalStatus('on', 'Conectado');
@@ -2039,13 +2053,15 @@ function connectMQTT() {
 function subscribeAll() {
   const subs = [];
   if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
-  // Assina só os dispositivos que têm ambiente cadastrado (sem wildcard)
+  // Ambientes legados (sensors/ prefix)
   rooms.forEach(r => {
     if (r.deviceId) {
       subs.push(`sensors/${r.deviceId}/data`);
       subs.push(`sensors/${r.deviceId}/gas`);
     }
   });
+  // ── Wildcard AutoFlow: descoberta automática de ESP32 ──────────────────
+  subs.push('autoflow/#');
   // Caixas d'água cadastradas
   subs.push('caixas/agua/#');
   // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
@@ -2065,6 +2081,8 @@ function handleMsg(topic, payload, pkt) {
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
   // Config persistida no broker
   if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
+  // ── AutoFlow unified protocol ──────────────────────────────────────────────
+  if (topic.startsWith('autoflow/')) { handleAutoflowMessage(topic, payload); return; }
   handleRoomMessage(topic, payload);
   handleWidgetMessage(topic, payload);
 
@@ -3527,6 +3545,370 @@ function subscribeAllRooms() {
   rooms.forEach(r => subscribeRoom(r));
 }
 
+
+// ════════════════════════════════════════════════════════════════════
+// SISTEMA DE DESCOBERTA AUTOMÁTICA DE DISPOSITIVOS (autoflow/{id}/*)
+// ════════════════════════════════════════════════════════════════════
+// Mapa de dispositivos vistos via autoflow/+/data antes do cadastro
+const _discoveredDevices = {};   // id → { id, lastSeen, data }
+
+// Dispositivos AutoFlow cadastrados pelo usuário (persiste em localStorage)
+// Estrutura: [{ id, name, type:'ambiente'|'fluxo', icon, data:{...} }]
+let autoflowDevices = [];
+
+function loadAutoflowDevices() {
+  try { autoflowDevices = JSON.parse(localStorage.getItem('autoflow_devs') || '[]'); } catch(e) { autoflowDevices = []; }
+}
+function saveAutoflowDevices() {
+  try { localStorage.setItem('autoflow_devs', JSON.stringify(autoflowDevices)); } catch(e) {}
+}
+
+// ── Roteador de mensagens autoflow/ ─────────────────────────────────────────
+function handleAutoflowMessage(topic, payload) {
+  // Espera: autoflow/{id}/{subtopic}
+  const parts = topic.split('/');
+  if (parts.length < 3 || parts[0] !== 'autoflow') return;
+  const devId   = parts[1].toUpperCase();
+  const subTopic = parts.slice(2).join('/');
+
+  let data;
+  try { data = JSON.parse(payload); } catch(e) { data = { raw: payload }; }
+
+  // Registra como visto (auto-discovery)
+  if (!_discoveredDevices[devId]) {
+    _discoveredDevices[devId] = { id: devId, firstSeen: new Date(), data: {} };
+    log(\`📡 Novo dispositivo detectado: \${devId} (autoflow/\${devId}/\${subTopic})\`, 'info');
+    renderDiscoveryBadge();
+  }
+  _discoveredDevices[devId].lastSeen = new Date();
+  _discoveredDevices[devId].lastTopic = subTopic;
+
+  // Roteia para o dispositivo cadastrado (se existir)
+  const dev = autoflowDevices.find(d => d.id === devId);
+  if (!dev) return;  // não cadastrado — só registra no discovery
+
+  dev.data = dev.data || {};
+  dev.data.lastSeen = new Date();
+  dev.data.online   = true;
+
+  if (subTopic === 'data') {
+    // Ambiente: temp, hum, gas_raw, gas_alert, lamp
+    if (data.temperature !== undefined) dev.data.temp = parseFloat(data.temperature);
+    if (data.humidity    !== undefined) dev.data.hum  = parseFloat(data.humidity);
+    if (data.gas_raw     !== undefined) {
+      const raw  = parseInt(data.gas_raw) || 0;
+      const alert = !!data.gas_alert;
+      dev.data.smokeRaw  = raw;
+      dev.data.gasAlert  = alert;
+      dev.data.smoke     = alert
+        ? Math.max(60, Math.min(Math.round((raw / 4095) * 100), 100))
+        : Math.min(Math.round((raw / 4095) * 100), 29);
+      if (alert) checkAutoflowGasRule(dev);
+    }
+    if (data.lamp !== undefined) dev.data.lamp = !!data.lamp;
+    // Fluxo: flow_lpm, session_l, total_l
+    if (data.flow_lpm   !== undefined) dev.data.flowLpm    = parseFloat(data.flow_lpm);
+    if (data.session_l  !== undefined) dev.data.sessionL   = parseFloat(data.session_l);
+    if (data.total_l    !== undefined) dev.data.totalL     = parseFloat(data.total_l);
+    if (data.percentage !== undefined) dev.data.percentage = parseFloat(data.percentage);
+    updateLiveBar(topic, false);
+  }
+
+  if (subTopic === 'status') {
+    dev.data.online = data.online !== false;
+    dev.data.ip     = data.ip     || null;
+    dev.data.rssi   = data.rssi   || null;
+    if (!dev.data.online) {
+      triggerAutoflowAlert(dev, 'offline', \`⚠ "\${dev.name}" offline\`);
+    }
+  }
+
+  renderAutoflowCards();
+}
+
+// ── Alertas para dispositivos AutoFlow ──────────────────────────────────────
+const _afAlertSent = {};   // devId → { type → timestamp }
+
+function triggerAutoflowAlert(dev, type, msg) {
+  const now = Date.now();
+  if (!_afAlertSent[dev.id]) _afAlertSent[dev.id] = {};
+  const last = _afAlertSent[dev.id][type] || 0;
+  if (now - last < 60000) return;   // throttle 60s
+  _afAlertSent[dev.id][type] = now;
+  log(\`⚠ \${msg}\`, 'warn');
+  sendGasNotification({ id: dev.id, name: dev.name }, 0, false).catch(()=>{});
+}
+
+function checkAutoflowGasRule(dev) {
+  const d = dev.data;
+  if (!d.gasAlert) return;
+  triggerAutoflowAlert(dev, 'gas', \`🔥 GÁS \${dev.name}: raw=\${d.smokeRaw} → ALARME\`);
+  // Reusa banner de gás existente
+  const b = document.getElementById('gas-lock-banner');
+  if (b) {
+    b.innerHTML = \`<span style="font-size:14px">🚨</span>
+      <span style="flex:1"><strong>ALERTA DE GÁS — \${dev.name}</strong><br>
+      Sensor: raw=\${d.smokeRaw} · Dispositivo: \${dev.id}</span>
+      <button onclick="document.getElementById('gas-lock-banner').classList.remove('show')"
+        style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:6px;
+        color:var(--danger);font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer">✕</button>\`;
+    b.classList.add('show');
+  }
+}
+
+// ── Controla relé/lâmpada de um dispositivo AutoFlow ────────────────────────
+function setAutoflowLamp(dev, state) {
+  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
+  const topic = \`autoflow/\${dev.id}/relay/lamp/set\`;
+  client.publish(topic, JSON.stringify({ lamp: state, pass: dev.pass || '' }), { qos:1, retain:true });
+  if (dev.data) dev.data.lamp = state;
+  renderAutoflowCards();
+  log(\`💡 \${dev.name} → \${state ? 'ON' : 'OFF'}\`, state ? 'ok' : 'sys');
+}
+
+// ── Badge de dispositivos descobertos (não cadastrados) ──────────────────────
+function renderDiscoveryBadge() {
+  const registered = new Set(autoflowDevices.map(d => d.id));
+  const unseen = Object.keys(_discoveredDevices).filter(id => !registered.includes(id));
+  const btn = document.getElementById('af-discover-btn');
+  if (btn) {
+    btn.style.display = unseen.length ? 'flex' : 'none';
+    const badge = btn.querySelector('.af-badge');
+    if (badge) badge.textContent = unseen.length;
+  }
+}
+
+// ── Modal de cadastro de dispositivo AutoFlow ────────────────────────────────
+function openAutoflowModal(devId) {
+  const modal = document.getElementById('autoflow-modal');
+  if (!modal) return;
+  // Pre-fill ID se vier do discovery
+  const idInput = document.getElementById('af-device-id');
+  if (idInput) idInput.value = devId || '';
+  // Popula lista de descobertos não cadastrados
+  const registered = new Set(autoflowDevices.map(d => d.id));
+  const list = document.getElementById('af-discovered-list');
+  if (list) {
+    const unseen = Object.values(_discoveredDevices).filter(d => !registered.has(d.id));
+    list.innerHTML = unseen.length
+      ? unseen.map(d => \`<div onclick="document.getElementById('af-device-id').value='\${d.id}'"
+          style="cursor:pointer;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);
+          border-radius:6px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="color:var(--accent)">●</span>
+          <span style="font-weight:700;letter-spacing:.1em">\${d.id}</span>
+          <span style="color:var(--muted);font-size:9px">visto \${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}</span>
+          <span style="font-family:var(--mono);font-size:9px;background:rgba(0,212,160,.1);color:var(--accent);
+            border:1px solid rgba(0,212,160,.25);border-radius:4px;padding:1px 5px;margin-left:auto">↖ usar</span>
+        </div>\`).join('')
+      : \`<div style="font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 0">
+          Nenhum dispositivo detectado ainda.<br>Ligue o ESP32 e aguarde...</div>\`;
+  }
+  modal.classList.add('open');
+}
+
+function closeAutoflowModal() {
+  const m = document.getElementById('autoflow-modal');
+  if (m) m.classList.remove('open');
+}
+
+function confirmAddAutoflowDevice() {
+  const id   = (document.getElementById('af-device-id')?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const name = (document.getElementById('af-device-name')?.value || '').trim();
+  const type = document.querySelector('input[name="af-type"]:checked')?.value || 'ambiente';
+  const icon = document.getElementById('af-device-icon')?.value || (type === 'ambiente' ? '🏠' : '💧');
+  const pass = document.getElementById('af-device-pass')?.value || '';
+  const editId = document.getElementById('af-edit-id')?.value || '';
+
+  if (!id)   { log('Preencha o ID do dispositivo', 'warn'); return; }
+  if (!name) { log('Preencha o nome do dispositivo', 'warn'); return; }
+
+  if (editId) {
+    const d = autoflowDevices.find(x => x.id === editId);
+    if (d) { d.name = name; d.icon = icon; d.pass = pass; d.type = type; }
+  } else {
+    if (autoflowDevices.find(d => d.id === id)) {
+      log(\`Dispositivo \${id} já cadastrado\`, 'warn'); return;
+    }
+    autoflowDevices.push({ id, name, type, icon, pass,
+      data: { temp:null, hum:null, smoke:null, smokeRaw:0, gasAlert:false, lamp:false,
+              flowLpm:0, sessionL:0, totalL:0, percentage:0, lastSeen:null, online:false } });
+    // Subscreve tópicos deste dispositivo agora
+    if (client && client.connected) {
+      client.subscribe(\`autoflow/\${id}/#\`, { qos:1 }, () => log(\`↳ autoflow/\${id}/#\`, 'sys'));
+    }
+    log(\`Dispositivo "\${name}" (\${id}) cadastrado como \${type}\`, 'ok');
+  }
+  saveAutoflowDevices();
+  publishPersist();
+  renderAutoflowCards();
+  renderDiscoveryBadge();
+  closeAutoflowModal();
+}
+
+function removeAutoflowDevice(id) {
+  const d = autoflowDevices.find(x => x.id === id);
+  if (!d) return;
+  autoflowDevices = autoflowDevices.filter(x => x.id !== id);
+  saveAutoflowDevices();
+  publishPersist();
+  renderAutoflowCards();
+  log(\`Dispositivo "\${d.name}" removido\`, 'sys');
+}
+
+function editAutoflowDevice(id) {
+  const d = autoflowDevices.find(x => x.id === id);
+  if (!d) return;
+  openAutoflowModal(d.id);
+  setTimeout(() => {
+    const idEl = document.getElementById('af-device-id');
+    if (idEl) { idEl.value = d.id; idEl.readOnly = true; }
+    const nameEl = document.getElementById('af-device-name');
+    if (nameEl) nameEl.value = d.name;
+    const iconEl = document.getElementById('af-device-icon');
+    if (iconEl) iconEl.value = d.icon;
+    const passEl = document.getElementById('af-device-pass');
+    if (passEl) passEl.value = d.pass || '';
+    const editEl = document.getElementById('af-edit-id');
+    if (editEl) editEl.value = d.id;
+    const typeInput = document.querySelector(\`input[name="af-type"][value="\${d.type}"]\`);
+    if (typeInput) typeInput.checked = true;
+  }, 50);
+}
+
+// ── Render de cards AutoFlow (injetado no widget de ambiente) ────────────────
+function renderAutoflowCards() {
+  autoflowDevices.forEach(dev => {
+    const el = document.getElementById('af-card-' + dev.id);
+    if (!el) {
+      // Card ainda não existe no DOM — re-render completo do widget que o contém
+      _debouncePatch({ id: 'autoflow_widget', type: 'autoflow' }, 120);
+      return;
+    }
+    // Patch cirúrgico do card existente
+    _patchAutoflowCard(el, dev);
+  });
+}
+
+function _patchAutoflowCard(el, dev) {
+  const d = dev.data || {};
+  const secAgo   = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
+  const offline  = secAgo !== null && secAgo > 90;
+  const onlineDot = d.lastSeen
+    ? (offline
+        ? \`<span style="color:var(--muted);font-family:var(--mono);font-size:9px">⬤ offline</span>\`
+        : \`<span style="color:var(--accent);font-family:var(--mono);font-size:9px">⬤ online</span>\`)
+    : \`<span style="color:var(--muted);font-family:var(--mono);font-size:9px">⬤ –</span>\`;
+
+  if (dev.type === 'ambiente') {
+    el.innerHTML = _renderAmbienteCard(dev, d, onlineDot, offline);
+  } else {
+    el.innerHTML = _renderFluxoCard(dev, d, onlineDot, offline);
+  }
+}
+
+function _renderAmbienteCard(dev, d, onlineDot, offline) {
+  const sl = smokeLevel(d.smoke !== null && d.smoke !== undefined ? d.smoke : null);
+  const lampOn = d.lamp === true;
+  // Alerta de temp
+  let tempAlert = '';
+  if (d.temp !== null && d.temp > 35) tempAlert = \`<span style="color:var(--danger);font-size:9px;font-family:var(--mono)">⚠ alta</span>\`;
+  return \`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:16px">\${dev.icon}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">\${dev.name}</span>
+      \${onlineDot}
+      <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
+        border:1px solid var(--border);border-radius:4px;padding:1px 5px">\${dev.id}</span>
+      <button onclick="editAutoflowDevice('\${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
+      <button onclick="removeAutoflowDevice('\${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      \${d.temp !== null && d.temp !== undefined ? \`<div style="display:flex;align-items:baseline;gap:2px">
+        <span style="font-size:10px">🌡️</span>
+        <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:\${d.temp>35?'var(--danger)':'var(--text)'}">\${d.temp.toFixed(1)}<span style="font-size:10px;color:var(--muted)">°C</span></span>
+        \${tempAlert}
+      </div>\` : ''}
+      \${d.hum !== null && d.hum !== undefined ? \`<div style="display:flex;align-items:baseline;gap:2px">
+        <span style="font-size:10px">💧</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--muted)">\${Math.round(d.hum)}<span style="font-size:10px">%</span></span>
+      </div>\` : ''}
+      \${d.smoke !== null && d.smoke !== undefined ? \`<div style="display:flex;align-items:baseline;gap:2px">
+        <span style="font-size:10px">🔥</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:\${sl.color}">\${d.smoke}<span style="font-size:9px">%</span></span>
+        <span style="font-family:var(--mono);font-size:7px;font-weight:700;color:\${sl.color}">\${sl.label}</span>
+      </div>\` : ''}
+      <div class="room-relay-wrap" title="Lâmpada — \${lampOn?'ON':'OFF'}" style="margin-left:auto">
+        <span style="font-size:14px">\${lampOn?'💡':'🔦'}</span>
+        <label class="room-relay-switch">
+          <input type="checkbox" \${lampOn?'checked':''}
+            onchange="setAutoflowLamp(autoflowDevices.find(x=>x.id==='\${dev.id}'),this.checked)">
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>
+    </div>
+    \${d.lastSeen ? \`<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ \${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}\${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>\` : ''}
+  \`;
+}
+
+function _renderFluxoCard(dev, d, onlineDot, offline) {
+  const flowColor = (d.flowLpm || 0) > 0 ? 'var(--accent2)' : 'var(--muted)';
+  return \`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:16px">\${dev.icon}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">\${dev.name}</span>
+      \${onlineDot}
+      <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
+        border:1px solid var(--border);border-radius:4px;padding:1px 5px">\${dev.id}</span>
+      <button onclick="editAutoflowDevice('\${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
+      <button onclick="removeAutoflowDevice('\${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:\${flowColor};line-height:1">
+          \${(d.flowLpm||0).toFixed(2)}<span style="font-size:11px;color:var(--muted)"> L/min</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">Fluxo atual</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
+          Sessão: <strong>\${(d.sessionL||0).toFixed(2)} L</strong>
+        </div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
+          Total: <strong>\${(d.totalL||0).toFixed(2)} L</strong>
+        </div>
+      </div>
+    </div>
+    \${d.lastSeen ? \`<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ \${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}\${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>\` : ''}
+  \`;
+}
+
+// ── Render widget completo de dispositivos AutoFlow ──────────────────────────
+function renderAutoflowWidget(w) {
+  if (!autoflowDevices.length) {
+    return \`<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
+      Nenhum dispositivo cadastrado.<br>Clique em "+ Adicionar dispositivo".
+    </div>\`;
+  }
+  return autoflowDevices.map(dev => \`
+    <div id="af-card-\${dev.id}"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
+      padding:12px 14px;margin-bottom:8px;transition:border-color .2s"
+      onmouseover="this.style.borderColor='var(--border2)'"
+      onmouseout="this.style.borderColor='var(--border)'">
+      \${dev.type === 'ambiente' ? _renderAmbienteCard(dev, dev.data||{},
+          (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
+                            : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)
+        : _renderFluxoCard(dev, dev.data||{},
+          (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
+                            : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)}
+    </div>
+  \`).join('');
+}
+
 function handleRoomMessage(topic, payload) {
   rooms.forEach(room => {
     const devId = room.deviceId || room.tempDeviceId || '';
@@ -3913,6 +4295,9 @@ function _updateLoginBtn() {
   }
 }
 
+// Ao carregar, restaura sessão
+document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { once: false });
+
 // ════════════════════════════════════════════════════════════════════
 // SISTEMA DE WIDGETS GENÉRICOS
 // ════════════════════════════════════════════════════════════════════
@@ -3920,10 +4305,7 @@ function _updateLoginBtn() {
 let widgets = [];
 
 function saveWidgets() {
-  try {
-    localStorage.setItem('autoflow_widgets', JSON.stringify(widgets));
-    localStorage.setItem('autoflow_widgets_ts', String(Date.now()));
-  } catch(e) {}
+  try { localStorage.setItem('autoflow_widgets', JSON.stringify(widgets)); } catch(e) {}
 }
 
 function loadWidgets() {
@@ -4214,63 +4596,59 @@ function renderWidgetAmbiente(w) {
     <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
 }
 
-function renderTankBox(t) {
-  const pct     = t.level;
-  const offline = !t.online;
-  const col     = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-  const subCol  = pct === null ? 'var(--muted)' : col;
-  const sub     = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
-  const pumpsHtml = t.pumps && t.pumps.length ? `
-    <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
-      ${t.pumps.map(p => {
-        const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
-        const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
-        const isManual = mode === 'manual';
-        return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
-            class="pump-btn ${on ? 'on' : 'off'}"
-            style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
-            title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático'}">
-            <span class="pump-icon">⚙</span>
-            <span style="font-size:11px">${p.name || 'Bomba'}</span>
-            <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${on?'rgba(0,212,160,0.2)':'rgba(255,255,255,0.05)'}">${on ? '● ON' : '○ OFF'}</span>
-          </button>
-          <div class="pump-mode-toggle">
-            <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','auto')">AUTO</button>
-            <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','manual')">MAN</button>
-          </div>
-        </div>
-        <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${isManual ? '🔧 Controle manual ativado' : `⚡ Auto: liga ≤${p.triggerOn}% / desliga ≥${p.triggerOff}%`}</div>`;
-      }).join('')}
-    </div>` : '';
-  return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
-    onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-          <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
-          ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
-          <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
-          <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:5px">
-          <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
-          ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
-        </div>
-        <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
-      </div>
-    </div>
-    ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
-    ${pumpsHtml}
-  </div>`;
-}
-
 function renderWidgetCaixaAguaGrid(w) {
   if (!waterTanks.length) {
     return `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>`;
   }
-  return waterTanks.map(t => renderTankBox(t)).join('');
+  return waterTanks.map(t => {
+    const pct = t.level;
+    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pumpsHtml = t.pumps && t.pumps.length ? `
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
+        ${t.pumps.map(p => {
+          const on   = (t.pumpState && t.pumpState[p.relayId]) || false;
+          const mode = (t.pumpModes && t.pumpModes[p.relayId]) || 'auto';
+          const isManual = mode === 'manual';
+          return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button onclick="${isManual ? `setTankRelay(waterTanks.find(x=>x.id==='${t.id}'),'${p.relayId}',${!on})` : 'void(0)'}"
+              class="pump-btn ${on ? 'on' : 'off'}"
+              style="${!isManual ? 'cursor:default;opacity:0.7' : ''}"
+              title="${isManual ? (on ? 'Clique para desligar' : 'Clique para ligar') : 'Modo automático'}">
+              <span class="pump-icon">⚙</span>
+              <span style="font-size:11px">${p.name || 'Bomba'}</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${on?'rgba(0,212,160,0.2)':'rgba(255,255,255,0.05)'}">${on ? '● ON' : '○ OFF'}</span>
+            </button>
+            <div class="pump-mode-toggle">
+              <button class="pump-mode-btn ${!isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','auto')">AUTO</button>
+              <button class="pump-mode-btn ${isManual ? 'active' : ''}" onclick="togglePumpMode('${t.id}','${p.relayId}','manual')">MAN</button>
+            </div>
+          </div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${isManual ? '🔧 Controle manual ativado' : `⚡ Auto: liga ≤${p.triggerOn}% / desliga ≥${p.triggerOff}%`}</div>`;
+        }).join('')}
+      </div>` : '';
+    return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
+      onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
+            <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
+            <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:5px">
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
+        </div>
+      </div>
+      ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
+      ${pumpsHtml}
+    </div>`;
+  }).join('');
 }
 
 function renderWidgetCaixaAgua(w) {
@@ -4869,13 +5247,6 @@ function irrigSchedRemove(sid) {
 }
 
 
-// ── Debounce map para evitar re-render excessivo por mensagens rápidas ──
-const _widgetRenderDebounce = {};
-function _debouncePatch(w, delay) {
-  clearTimeout(_widgetRenderDebounce[w.id]);
-  _widgetRenderDebounce[w.id] = setTimeout(() => patchWidgetCard(w), delay || 80);
-}
-
 function handleWidgetMessage(topic, payload) {
   widgets.forEach(w => {
     // Portão — atualiza indicador de estado diretamente no DOM
@@ -4982,13 +5353,23 @@ function handleWidgetMessage(topic, payload) {
       if (cb)   cb.checked = on;
       if (stEl) { stEl.textContent=on?'LIGADO':'DESLIGADO'; stEl.style.color=on?'var(--accent)':'var(--muted)'; }
     }
-    // Ambiente — patch com debounce para evitar flickering com múltiplos sensores
+    // Ambiente — patch cirúrgico apenas no grid de ambientes deste widget
     if (w.type === 'ambiente') {
-      _debouncePatch(w, 80);
+      const grid = document.getElementById('rooms-grid-w' + w.id);
+      if (grid) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderWidgetAmbienteGrid(w);
+        grid.innerHTML = tmp.innerHTML;
+      }
     }
-    // Caixa d'água — patch com debounce para evitar flickering
+    // Caixa d'água — patch cirúrgico apenas no grid de tanques deste widget
     if (w.type === 'caixa_agua') {
-      _debouncePatch(w, 80);
+      const grid = document.getElementById('tanks-grid-w' + w.id);
+      if (grid) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderWidgetCaixaAguaGrid(w);
+        grid.innerHTML = tmp.innerHTML;
+      }
     }
   });
 }
@@ -5643,5 +6024,114 @@ function toggleWidgetRelayStandalone(wid, state) {
   </div>
 </div>
 
+
+<!-- MODAL DISPOSITIVO AUTOFLOW -->
+<div class="modal-overlay" id="autoflow-modal">
+  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+      <span>📲</span> Cadastrar dispositivo AutoFlow
+    </div>
+
+    <!-- Dispositivos detectados -->
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+      letter-spacing:.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
+      Dispositivos detectados na rede
+    </div>
+    <div id="af-discovered-list"
+      style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px">
+      Nenhum dispositivo detectado ainda.
+    </div>
+
+    <div class="modal-fields">
+      <!-- ID -->
+      <div class="field">
+        <label>Device ID <span style="font-weight:400;opacity:.6;font-size:9px">(6 dígitos hex do MAC — exibido no portal AP)</span></label>
+        <input id="af-device-id" placeholder="ex: AE4F3C" maxlength="12"
+          style="font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase"/>
+        <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono);line-height:1.8">
+          📶 Conecte ao Wi-Fi <b style="color:var(--text)">AutoFlow-XXXXXX</b> e acesse <b>192.168.4.1</b><br>
+          📥 <span style="color:var(--accent2)" id="af-topic-preview">autoflow/.../data</span>
+        </div>
+      </div>
+
+      <!-- Nome + ícone -->
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field" style="flex:0">
+          <label>Ícone</label>
+          <input id="af-device-icon" value="🏠" maxlength="2" style="width:56px"/>
+        </div>
+        <div class="field" style="flex:1">
+          <label>Nome</label>
+          <input id="af-device-name" placeholder="ex: Sala, Garagem, Quintal"/>
+        </div>
+      </div>
+
+      <!-- Tipo -->
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+          letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Tipo de dispositivo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+            padding:14px 10px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:var(--radius-lg);transition:all .15s"
+            onmouseover="this.style.borderColor='var(--accent)'"
+            onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border2)'">
+            <input type="radio" name="af-type" value="ambiente" checked style="display:none"
+              onchange="document.getElementById('af-device-icon').value='🏠'">
+            <span style="font-size:24px">🌡️</span>
+            <span style="font-size:12px;font-weight:600">Ambiente</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Temp · Umid · Gás · Lâmpada</span>
+          </label>
+          <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+            padding:14px 10px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:var(--radius-lg);transition:all .15s"
+            onmouseover="this.style.borderColor='var(--accent)'"
+            onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border2)'">
+            <input type="radio" name="af-type" value="fluxo" style="display:none"
+              onchange="document.getElementById('af-device-icon').value='💧'">
+            <span style="font-size:24px">💧</span>
+            <span style="font-size:12px;font-weight:600">Fluxo d'água</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">L/min · Total · Sessão</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Senha -->
+      <div class="field">
+        <label>Senha do dispositivo</label>
+        <div style="display:flex;gap:6px">
+          <input id="af-device-pass" type="password" placeholder="Senha criada no portal AP"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
+            color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
+          <button type="button" onclick="togglePassVis('af-device-pass',this)"
+            style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 Usada para autenticar comandos enviados ao ESP32</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="af-edit-id" value="">
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn" onclick="closeAutoflowModal()">Cancelar</button>
+      <button class="btn primary" onclick="confirmAddAutoflowDevice()">Salvar dispositivo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auto-update topic preview no modal ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const idEl = document.getElementById('af-device-id');
+  if (idEl) idEl.addEventListener('input', () => {
+    const id = idEl.value.toUpperCase().replace(/[^A-Z0-9]/g,'') || '...';
+    const prev = document.getElementById('af-topic-preview');
+    if (prev) prev.textContent = \`autoflow/\${id}/data\`;
+  });
+  // Periodic discovery badge update
+  setInterval(renderDiscoveryBadge, 5000);
+});
+</script>
 </body>
 </html>
