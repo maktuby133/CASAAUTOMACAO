@@ -866,14 +866,7 @@ body::before {
       <span>📡</span> Dispositivos novos: <span class="af-badge" style="background:var(--accent2);color:#000;
         border-radius:10px;padding:0 6px;font-size:10px">0</span>
     </button>
-    <button onclick="openAutoflowModal('')"
-      style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--bg2);
-      border:1px solid var(--border2);border-radius:10px;color:var(--subtle);
-      font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s"
-      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--subtle)'">
-      <span>📲</span> Dispositivo AutoFlow
-    </button>
+
   </div>
 
   <!-- Containers ocultos para lógica existente (tanks, sched, rooms) -->
@@ -3888,12 +3881,20 @@ function _renderFluxoCard(dev, d, onlineDot, offline) {
 
 // ── Render widget completo de dispositivos AutoFlow ──────────────────────────
 function renderAutoflowWidget(w) {
+  const addBtn = `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button onclick="openAutoflowModal('')"
+      style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(59,130,246,.1);
+      border:1px solid rgba(59,130,246,.3);border-radius:8px;color:var(--accent2);
+      font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer">
+      ＋ Dispositivo
+    </button>
+  </div>`;
   if (!autoflowDevices.length) {
-    return `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
-      Nenhum dispositivo cadastrado.<br>Clique em "+ Adicionar dispositivo".
+    return addBtn + `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
+      Nenhum dispositivo cadastrado.<br>Clique em "+ Dispositivo" para adicionar.
     </div>`;
   }
-  return autoflowDevices.map(dev => `
+  return addBtn + autoflowDevices.map(dev => `
     <div id="af-card-${dev.id}"
       style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
       padding:12px 14px;margin-bottom:8px;transition:border-color .2s"
@@ -3910,6 +3911,12 @@ function renderAutoflowWidget(w) {
 }
 
 function handleRoomMessage(topic, payload) {
+  // Só processa se há ao menos uma room com deviceId correspondente ao tópico
+  const topicMatchesAnyRoom = rooms.some(room => {
+    const devId = room.deviceId || room.tempDeviceId || '';
+    return devId && (topic.includes(devId));
+  });
+  if (!topicMatchesAnyRoom) return;
   rooms.forEach(room => {
     const devId = room.deviceId || room.tempDeviceId || '';
     if (!devId) return;
@@ -5432,13 +5439,27 @@ const WIDGET_TYPE_LABELS = {
   rele:       { label: 'Relé genérico',    icon: '⚡' },
   alarme:     { label: 'Alarme',           icon: '🚨' },
   medidor:    { label: 'Medidor',          icon: '📊' },
+  autoflow:   { label: 'Dispositivos AutoFlow', icon: '📲' },
 };
 
 function selectWidgetType(type) {
   closeWidgetPicker();
   if (type === 'caixa_agua') {
-    // Abre o modal de caixa d'água diretamente, já no fluxo de criar widget
     openTankModal(null, true);
+    return;
+  }
+  if (type === 'autoflow') {
+    // Widget autoflow é singleton — só um por painel
+    if (widgets.find(w => w.type === 'autoflow')) {
+      alert('Já existe um widget de Dispositivos AutoFlow no painel.');
+      return;
+    }
+    const w = { id: 'w_autoflow', type: 'autoflow', name: 'Dispositivos AutoFlow', icon: '📲', sz: 'full' };
+    widgets.push(w);
+    saveWidgets();
+    renderWidgetPanel();
+    publishPersist();
+    log('🧩 Widget "Dispositivos AutoFlow" adicionado', 'ok');
     return;
   }
   openWidgetCfgModal(null, type);
@@ -5919,6 +5940,11 @@ function toggleWidgetRelayStandalone(wid, state) {
         <span class="wt-icon">⚡</span>
         <span class="wt-label">Relé genérico</span>
         <span class="wt-sub">Lista ou ESP32 independente</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('autoflow')">
+        <span class="wt-icon">📲</span>
+        <span class="wt-label">Dispositivos AutoFlow</span>
+        <span class="wt-sub">Ambiente · Fluxo d'água</span>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:16px">
