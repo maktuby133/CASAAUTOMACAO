@@ -2070,6 +2070,11 @@ function subscribeAll() {
 
 // ============ MENSAGENS MQTT ============
 function handleMsg(topic, payload, pkt) {
+  // Silencia sensors/ sem room cadastrada (retained do broker)
+  if (topic.startsWith('sensors/')) {
+    const tid = topic.split('/')[1];
+    if (!rooms.some(r => (r.deviceId || r.tempDeviceId) === tid)) return;
+  }
   // Log bruto de TODAS as mensagens
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
   // Config persistida no broker
@@ -3475,9 +3480,12 @@ function confirmAddRoom() {
   const deviceId = (document.getElementById('rm-device-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'')) || '';
   const devPass  = document.getElementById('rm-temp-pass')?.value || '';
 
-  if (!name) { log('Preencha o nome do ambiente', 'warn'); return; }
-  if (!deviceId) { log('Preencha o Device ID do ESP32', 'warn'); return; }
-  if (!hasTemp && !hasSmoke && !hasLamp) { log('Selecione pelo menos uma capacidade', 'warn'); return; }
+  if (!name) {
+    const el = document.getElementById('rm-room-name');
+    if (el) { el.style.borderColor = 'var(--danger)'; el.focus(); setTimeout(() => el.style.borderColor = '', 2000); }
+    log('Preencha o nome do ambiente', 'warn'); return;
+  }
+  // deviceId é opcional — ambiente pode ser criado sem ESP32 ainda vinculado
 
   // Campos de compatibilidade preenchidos automaticamente
   const roomData = {
