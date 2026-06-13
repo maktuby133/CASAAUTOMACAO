@@ -4427,6 +4427,7 @@ function patchWidgetCard(w, wrap) {
     case 'rele':       tmp.innerHTML = renderWidgetRele(w);      break;
     case 'alarme':     tmp.innerHTML = renderWidgetAlarme(w);    break;
     case 'medidor':    tmp.innerHTML = renderWidgetMedidor(w);   break;
+    case 'autoflow':   tmp.innerHTML = renderAutoflowWidget(w);  break;
     default: return;
   }
   while (tmp.firstChild) wrap.appendChild(tmp.firstChild);
@@ -4443,7 +4444,7 @@ function buildWidgetCard(w) {
     `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}">${W_SIZE_LABELS[s]}</button>`
   ).join('');
 
-  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue' };
+  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue', autoflow:'teal' };
   const iconClr = iconClrMap[w.type] || 'teal';
   wrap.innerHTML = `
     <div class="w-card-header">
@@ -4463,6 +4464,7 @@ function buildWidgetCard(w) {
     case 'rele':       body = renderWidgetRele(w);      break;
     case 'alarme':     body = renderWidgetAlarme(w);    break;
     case 'medidor':    body = renderWidgetMedidor(w);   break;
+    case 'autoflow':   body = renderAutoflowWidget(w);  break;
     default: return null;
   }
   const bodyDiv = document.createElement('div');
