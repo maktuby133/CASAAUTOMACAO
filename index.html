@@ -1633,6 +1633,7 @@ function loadFromBrokerPayload(payload) {
 
     // Agendamentos
     if (d.schedules) { schedules = d.schedules; }
+    setTimeout(purgeOrphanRules, 200); // remove regras cujos equipamentos não existem mais
     // Caixas d'água — restaura lista completa do broker (inclui credenciais)
     // O broker é a fonte de verdade — garante sincronização entre PC e celular
     if (d.waterTanks !== undefined) {
@@ -1846,6 +1847,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const ss = JSON.parse(localStorage.getItem('autoflow_schedules') || '[]');
     if (ss.length) schedules = ss;
+    setTimeout(purgeOrphanRules, 300);
   } catch(e) {}
 
   // ── 4. Restaura ambientes ─────────────────────────────────────────────
@@ -3166,6 +3168,42 @@ function removeSchedule(id) {
   log('Agendamento removido', 'sys');
 }
 
+// ── Limpeza de regras órfãs ────────────────────────────────────────
+// Remove schedules cujo relay não existe mais em relays[]
+// Remove schedules de widgets de irrigação cujo relay não existe
+function purgeOrphanRules() {
+  const before = schedules.length;
+
+  // IDs de relés ainda existentes e habilitados
+  const validRelayIds = new Set(relays.filter(r => r.enabled).map(r => r.id));
+
+  // IDs de relés usados por widgets de irrigação ativos
+  const irrigWidgets = widgets.filter(w => w.type === 'irrigacao');
+
+  schedules = schedules.filter(s => {
+    // Schedule sem relay definido (irrigação global da bomba) — mantém
+    if (!s.relay) return true;
+
+    // Relay ainda existe?
+    if (validRelayIds.has(s.relay)) return true;
+
+    // Relay era de um widget de irrigação que ainda existe?
+    const linkedToIrrig = irrigWidgets.some(w => w.relayId === s.relay);
+    if (linkedToIrrig) return true;
+
+    // Relay não existe mais → órfã
+    log(`🗑 Agendamento "${s.time}" removido — relé não encontrado`, 'sys');
+    return false;
+  });
+
+  if (schedules.length !== before) {
+    try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
+    renderSchedules();
+    publishPersist();
+    log(`🧹 ${before - schedules.length} regra(s) órfã(s) removida(s)`, 'sys');
+  }
+}
+
 function startScheduleEngine() {
   setInterval(() => {
     const now = new Date();
@@ -3489,6 +3527,7 @@ function deleteRoomFromModal() {
   saveRooms();
   publishPersist();
   renderRooms();
+  purgeOrphanRules();
   log(`Ambiente "${r.name}" removido`, 'sys');
   closeRoomModal();
 }
@@ -5640,6 +5679,7 @@ function deleteWidgetFromModal() {
   saveWidgets();
   renderWidgetPanel();
   publishPersist();
+  purgeOrphanRules();
   closeWidgetCfgModal();
   log(`🧩 Widget removido`, 'sys');
 }
