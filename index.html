@@ -3702,15 +3702,43 @@ function setRoomLamp(room, state) {
   if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
   const devId = room.deviceId || room.tempDeviceId || '';
   if (!devId) return;
-  const topic   = `sensors/${devId}/lamp/set`;
-  const payload = JSON.stringify({ lamp: state });
-  // retain: true — broker guarda o último estado
-  // Quando o ESP32 reinicia e subscreve sensors/{id}/lamp/set,
-  // recebe imediatamente o último comando e restaura o estado
-  client.publish(topic, payload, { qos: 1, retain: true });
-  room.data.lamp = state; // optimistic update
+  client.publish(`sensors/${devId}/lamp/set`, JSON.stringify({ lamp: state }), { qos:1, retain:true });
+  room.data.lamp = state;
   renderRooms();
   log(`💡 ${room.name} → lâmpada ${state ? 'ON' : 'OFF'}`, state ? 'ok' : 'sys');
+}
+
+function toggleRoomLamp(roomId) {
+  const room = rooms.find(x => x.id === roomId);
+  if (!room) return;
+  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
+  const d = room.data || {};
+  const secAgo = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
+  if (secAgo !== null && secAgo > 90) { log(`${room.name} está offline`, 'warn'); return; }
+  const newState = !d.lamp;
+  // Loading imediato
+  const btn = document.getElementById('lamp-btn-' + roomId);
+  if (btn) {
+    btn.className = 'lamp-btn loading';
+    btn.querySelector('.lamp-dot').className   = 'lamp-dot loading';
+    btn.querySelector('.lamp-label').textContent = '...';
+  }
+  const devId = room.deviceId || room.tempDeviceId || '';
+  if (!devId) return;
+  client.publish(`sensors/${devId}/lamp/set`, JSON.stringify({ lamp: newState }), { qos:1, retain:true });
+  // Optimistic update após 600ms
+  setTimeout(() => {
+    room.data.lamp = newState;
+    const b = document.getElementById('lamp-btn-' + roomId);
+    if (b) {
+      b.className = 'lamp-btn ' + (newState ? 'on' : 'off');
+      b.title = newState ? 'Clique para desligar' : 'Clique para ligar';
+      b.querySelector('.lamp-dot').className    = 'lamp-dot online';
+      b.querySelector('.lamp-emoji').textContent = newState ? '💡' : '🔦';
+      b.querySelector('.lamp-label').textContent = newState ? 'ON' : 'OFF';
+    }
+    log(`💡 ${room.name} → lâmpada ${newState ? 'ON' : 'OFF'}`, newState ? 'ok' : 'sys');
+  }, 600);
 }
 
 function smokeLevel(pct) {
@@ -3796,17 +3824,19 @@ function renderRooms() {
     // Relé nativo do AmbientWatch — toggle da lâmpada embutida
     if (r.hasLamp) {
       if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
-      const lampOn = d.lamp === true;
+      const lampOn  = d.lamp === true;
+      const lampCls = _offline ? 'offline' : (lampOn ? 'on' : 'off');
       rowItems.push(`
-        <div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
-          <span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span>
-          <label class="room-relay-switch">
-            <input type="checkbox" ${lampOn ? 'checked' : ''}
-              onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
-            <div class="rrs-track"></div>
-            <div class="rrs-knob"></div>
-          </label>
-        </div>`);
+        <button
+          class="lamp-btn ${lampCls}"
+          id="lamp-btn-${r.id}"
+          onclick="toggleRoomLamp('${r.id}')"
+          title="${_offline ? 'Dispositivo offline' : (lampOn ? 'Clique para desligar' : 'Clique para ligar')}">
+          <span class="lamp-dot ${_offline ? 'offline' : 'online'}"></span>
+          <span class="lamp-emoji">${lampOn ? '💡' : '🔦'}</span>
+          <span class="lamp-label">${lampOn ? 'ON' : 'OFF'}</span>
+          <span class="lamp-toggle"></span>
+        </button>`);
     }
 
     // Relés globais vinculados (se houver — retrocompatibilidade)
