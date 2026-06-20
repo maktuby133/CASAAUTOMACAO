@@ -1207,21 +1207,6 @@ body::before {
             📡 <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
           </div>
         </div>
-        <div class="field" style="margin-bottom:8px">
-          <label>Senha do dispositivo</label>
-          <div style="display:flex;gap:6px">
-            <input id="tank-pass" type="password" placeholder="Senha do portal AP do ESP32"
-              style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
-            <button type="button" onclick="togglePassVis('tank-pass',this)"
-              style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--mono)">🔑 Autenticação dos comandos para o ESP32</div>
-        </div>
-      <div class="field" style="margin-bottom:0">
-          <label>Capacidade total (litros)</label>
-          <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"
-            style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;width:100%"/>
-        </div>
       </div>
 
       <!-- Broker compartilhado -->
@@ -2360,8 +2345,6 @@ function openTankModal(editId, fromWidget) {
   if (saveBtn) saveBtn.textContent = fromWidget ? '＋ Criar e adicionar widget' : 'Salvar';
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
-  const _tpe = document.getElementById('tank-pass'); if (_tpe) _tpe.value = t?.pass || '';
-  document.getElementById('tank-capacity').value = t?.capacity || '';
   updateTankPreview();
   // Pump rows
   tankPumpRows = (t?.pumps || []).map(p => ({
@@ -2479,8 +2462,7 @@ function renderTankPumpRows() {
 function confirmSaveTank() {
   const name     = document.getElementById('tank-name').value.trim();
   const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
-  const pass     = document.getElementById('tank-pass')?.value || '';
-  const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
+  const pass     = ''; // senha do dispositivo — desativada por enquanto, somente ID é usado
   const editId   = document.getElementById('tank-edit-id').value;
 
   // Usa o broker global (configurado no painel principal)
@@ -2492,7 +2474,7 @@ function confirmSaveTank() {
   if (!name) { log('Preencha o nome da caixa', 'warn'); return; }
   if (!code) { log('Preencha o código do sensor', 'warn'); return; }
   if (!mqttHost) { log('Configure o broker MQTT global primeiro (botão Broker na topbar)', 'warn'); return; }
-  if (!editId && waterTanks.length >= 2) { alert('Máximo de 2 caixas de água.'); return; }
+  if (!editId && waterTanks.length >= 2) { alert('Você já tem 2 caixas cadastradas. Abra o widget "Caixa d\'água" no painel para editar ou remover uma delas antes de adicionar outra.'); return; }
 
   const pumps = tankPumpRows.map(r => ({
     relayId:    r.relayId,
@@ -2502,7 +2484,7 @@ function confirmSaveTank() {
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
-  const tankData = { id: editId || 'tank_'+Date.now(), name, code, pass, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, pass, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
   pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
 
   if (editId) {
@@ -5376,6 +5358,20 @@ const WIDGET_TYPE_LABELS = {
 function selectWidgetType(type) {
   closeWidgetPicker();
   if (type === 'caixa_agua') {
+    const hasWidget = widgets.some(w => w.type === 'caixa_agua');
+    if (!hasWidget && waterTanks.length > 0) {
+      // Já existem caixas cadastradas (provavelmente o widget foi removido antes,
+      // mas o cadastro da(s) caixa(s) continuou salvo) — apenas recria o widget
+      // para exibi-las, em vez de bloquear a criação de uma caixa nova.
+      const newWidget = { id: 'w_' + Date.now(), type: 'caixa_agua', name: "Caixa d'água", icon: '🪣', sz: 'med' };
+      widgets.push(newWidget);
+      saveWidgets();
+      renderWidgetPanel();
+      subscribeWidgetTopics();
+      publishPersist();
+      log(`🧩 Widget "Caixa d'água" recriado — ${waterTanks.length} caixa(s) já cadastrada(s) encontrada(s)`, 'ok');
+      return;
+    }
     openTankModal(null, true);
     return;
   }
