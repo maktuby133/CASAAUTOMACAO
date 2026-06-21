@@ -562,6 +562,41 @@ input, select{font-family:inherit; color:var(--text);}
 .add-env-card .plus{font-size:28px;}
 .add-env-card span{font-family:var(--font-head); font-weight:600; font-size:13.5px; letter-spacing:0.5px;}
 
+
+/* ============================================================
+   WATER VIEW
+   ============================================================ */
+.water-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px;}
+.water-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;margin-bottom:20px;}
+.water-card{padding:20px;position:relative;overflow:hidden;}
+.water-card.offline{opacity:.72;}
+.water-card .water-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.water-title{display:flex;align-items:center;gap:12px;}
+.water-ic{width:44px;height:44px;border-radius:12px;background:var(--cyan-dim);border:1px solid rgba(45,212,255,.25);display:flex;align-items:center;justify-content:center;font-size:21px;}
+.water-name{font-family:var(--font-head);font-size:17px;font-weight:700;}
+.water-id{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin-top:2px;}
+.water-level-wrap{display:flex;align-items:center;gap:18px;margin:12px 0 14px;}
+.water-ring{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;background:conic-gradient(var(--cyan) var(--water-deg,0deg), rgba(255,255,255,.07) 0deg);box-shadow:0 0 24px rgba(45,212,255,.14);}
+.water-ring::after{content:'';position:absolute;inset:8px;border-radius:50%;background:rgba(12,19,32,.95);border:1px solid var(--line);}
+.water-ring span{position:relative;z-index:1;font-family:var(--font-display);font-size:20px;}
+.water-meta{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.water-kpi{padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);}
+.water-kpi small{display:block;font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint);letter-spacing:.6px;text-transform:uppercase;}
+.water-kpi strong{display:block;margin-top:3px;font-family:var(--font-head);font-size:15px;}
+.water-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.water-actions .btn{padding:8px 8px;font-size:12px;}
+.water-thresholds{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
+.water-bar{height:7px;border-radius:8px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:8px;}
+.water-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:8px;box-shadow:0 0 10px rgba(45,212,255,.35);}
+.add-water-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:245px;border:1.5px dashed var(--line);border-radius:var(--radius);color:var(--text-dim);transition:border-color .2s ease,color .2s ease,background .2s ease;}
+.add-water-card:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(45,212,255,.03);}
+.water-history-panel{padding:22px;margin-top:10px;}
+.water-history-list{display:flex;flex-direction:column;gap:9px;max-height:240px;overflow:auto;}
+.water-history-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);font-size:13px;}
+.water-history-item time{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
+.danger-zone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
+@media(max-width:560px){.water-level-wrap{flex-direction:column;align-items:flex-start}.water-meta{width:100%}.water-actions{grid-template-columns:1fr}}
+
 /* ============================================================
    DEVICE LIST
    ============================================================ */
@@ -821,6 +856,7 @@ input, select{font-family:inherit; color:var(--text);}
       <button class="nav-item active" data-view="dashboard"><span class="ic">🏠</span> Dashboard</button>
       <button class="nav-item" data-view="ambientes"><span class="ic">➕</span> Ambientes</button>
       <button class="nav-item" data-view="dispositivos"><span class="ic">📡</span> Dispositivos</button>
+      <button class="nav-item" data-view="agua"><span class="ic">🚰</span> Água</button>
       <button class="nav-item" data-view="configuracoes"><span class="ic">⚙️</span> Configurações</button>
       <button class="nav-item" data-view="meteorologia"><span class="ic">🌦️</span> Meteorologia</button>
       <button class="nav-item" data-view="historico"><span class="ic">📊</span> Histórico</button>
@@ -941,6 +977,26 @@ input, select{font-family:inherit; color:var(--text);}
         </div>
       </section>
 
+      <!-- ===================== ÁGUA ===================== -->
+      <section class="view" id="view-agua">
+        <div class="view-head">
+          <div>
+            <h2>ÁGUA DA RESIDÊNCIA</h2>
+            <p>Reservatórios, bomba, níveis automáticos e histórico de abastecimento</p>
+          </div>
+          <button class="btn btn-primary" id="addWaterBtn">➕ Adicionar reservatório</button>
+        </div>
+
+        <div class="water-summary-grid" id="waterSummaryGrid"></div>
+        <div class="water-grid" id="waterGrid"></div>
+
+        <div class="glass water-history-panel">
+          <div class="panel-title"><span class="pic">📈</span> Histórico de abastecimento / consumo</div>
+          <svg id="waterLevelChart" viewBox="0 0 640 150" preserveAspectRatio="none" style="width:100%;height:150px;margin-bottom:14px;"></svg>
+          <div class="water-history-list" id="waterHistoryList"></div>
+        </div>
+      </section>
+
       <!-- ===================== CONFIGURAÇÕES ===================== -->
       <section class="view" id="view-configuracoes">
         <div class="view-head">
@@ -1051,6 +1107,7 @@ input, select{font-family:inherit; color:var(--text);}
       <button class="bn-item active" data-view="dashboard"><span class="bnic">🏠</span>Início</button>
       <button class="bn-item" data-view="ambientes"><span class="bnic">➕</span>Ambientes</button>
       <button class="bn-item" data-view="dispositivos"><span class="bnic">📡</span>Dispos.</button>
+      <button class="bn-item" data-view="agua"><span class="bnic">🚰</span>Água</button>
       <button class="bn-item" data-view="alertas"><span class="bnic">🚨</span>Alertas<span id="bnAlertDot" class="bn-dot hidden"></span></button>
       <button class="bn-item" id="bnMore"><span class="bnic">☰</span>Mais</button>
     </nav>
@@ -1136,6 +1193,64 @@ input, select{font-family:inherit; color:var(--text);}
       <div class="danger-zone">
         <button type="button" class="btn btn-danger btn-block" id="dcDeleteBtn">🗑️ Excluir ambiente</button>
         <div class="hint">Remove somente este ambiente do painel. O ESP32 continua configurado normalmente.</div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: ADD WATER RESERVOIR
+     ============================================================ -->
+<div class="modal-overlay hidden" id="addWaterOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>🚰 Adicionar reservatório</h3>
+      <button class="modal-close" data-close="addWaterOverlay">✕</button>
+    </div>
+    <form id="addWaterForm">
+      <div class="field"><label>Nome</label><input type="text" id="newWaterName" placeholder="Ex.: Caixa principal, Cisterna..." required></div>
+      <div class="field-row">
+        <div class="field"><label>ID do módulo</label><input type="text" id="newWaterId" placeholder="caixa01" required></div>
+        <div class="field"><label>Senha</label><input type="password" id="newWaterPass" placeholder="reservado"></div>
+      </div>
+      <div class="field"><label>Tópico MQTT de dados</label><input type="text" id="newWaterTopic" value="casa/caixa01/dados" disabled style="opacity:.65;"></div>
+      <div class="hint">A senha fica salva apenas no painel por enquanto. O painel irá escutar o tópico casa/ID/dados.</div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close="addWaterOverlay">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: WATER CONFIG
+     ============================================================ -->
+<div class="modal-overlay hidden" id="waterConfigOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>⚙️ Configurar reservatório</h3>
+      <button class="modal-close" data-close="waterConfigOverlay">✕</button>
+    </div>
+    <form id="waterConfigForm">
+      <input type="hidden" id="wcReservoirId">
+      <div class="field"><label>Nome</label><input type="text" id="wcName" required></div>
+      <div class="field-row">
+        <div class="field"><label>ID do módulo</label><input type="text" id="wcDeviceId" required></div>
+        <div class="field"><label>Senha</label><input type="password" id="wcPass" placeholder="reservado"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Nível para ligar bomba (%)</label><input type="number" id="wcLevelOn" min="0" max="100" value="20"></div>
+        <div class="field"><label>Nível para desligar bomba (%)</label><input type="number" id="wcLevelOff" min="0" max="100" value="80"></div>
+      </div>
+      <div class="field"><label>Tópico</label><input type="text" id="wcTopic" disabled style="opacity:.65;"></div>
+      <div class="hint">Ao salvar níveis, o painel publica em casa/ID/config. Comandos manuais usam casa/ID/comando.</div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close="waterConfigOverlay">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+      <div class="danger-zone">
+        <button type="button" class="btn btn-danger btn-block" id="wcDeleteBtn">🗑️ Excluir reservatório</button>
       </div>
     </form>
   </div>
@@ -1282,6 +1397,10 @@ input, select{font-family:inherit; color:var(--text);}
       snr:null,
       lastSeen:null
     },
+    waterReservoirs:[
+      {uid:"water-caixa01", name:"Caixa principal", id:"caixa01", pass:"", topic:"casa/caixa01/dados", level:null, liters:null, distance:null, sensorOK:null, pumpOn:null, autoMode:null, levelOn:20, levelOff:80, rssi:null, snr:null, lastSeen:null}
+    ],
+    waterHistory:[],
     energy:{daily:[3.2,4.1,3.8,5.0,4.4,3.6,4.8], unit:"kWh"},
     water:{daily:[210,180,260,300,190,220,250], unit:"L"}
   };
@@ -1317,6 +1436,7 @@ input, select{font-family:inherit; color:var(--text);}
       document.getElementById("loginScreen").classList.add("hidden");
       document.getElementById("app").classList.remove("hidden");
       restoreEnvironments();
+      loadWaterState();
       renderAll();
       if(restoreBrokerConfig()) connectMqtt();
     }, 320);
@@ -1947,27 +2067,35 @@ input, select{font-family:inherit; color:var(--text);}
   function handleWaterTankMessage(topic, payloadBuf){
     var parts = topic.split("/");
     if(parts.length < 3 || parts[0] !== "casa" || parts[2] !== "dados") return;
-    var moduleId = parts[1] || "caixa01";
+    var moduleId = normalizeWaterId(parts[1] || "caixa01");
     var data;
     try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
 
-    var tank = state.waterTank || (state.waterTank = {});
-    tank.id = moduleId;
-    tank.topic = topic;
-    if(typeof data.percentage === "number") tank.level = data.percentage;
-    if(typeof data.nivel === "number") tank.level = data.nivel;
-    if(typeof data.liters === "number") tank.liters = data.liters;
-    if(typeof data.litros === "number") tank.liters = data.litros;
-    if(typeof data.distance === "number") tank.distance = data.distance;
-    if(typeof data.distancia === "number") tank.distance = data.distancia;
-    if(typeof data.sensorOK === "boolean") tank.sensorOK = data.sensorOK;
-    if(typeof data.bomba_ligada === "boolean") tank.pumpOn = data.bomba_ligada;
-    if(typeof data.modo_auto === "boolean") tank.autoMode = data.modo_auto;
-    if(typeof data.nivel_ligar === "number") tank.levelOn = data.nivel_ligar;
-    if(typeof data.nivel_desligar === "number") tank.levelOff = data.nivel_desligar;
-    if(typeof data.rssi === "number") tank.rssi = data.rssi;
-    if(typeof data.snr === "number") tank.snr = data.snr;
-    tank.lastSeen = new Date();
+    var r = ensureReservoir(moduleId);
+    r.topic = topic;
+    if(typeof data.percentage === "number") r.level = data.percentage;
+    if(typeof data.nivel === "number") r.level = data.nivel;
+    if(typeof data.liters === "number") r.liters = data.liters;
+    if(typeof data.litros === "number") r.liters = data.litros;
+    if(typeof data.distance === "number") r.distance = data.distance;
+    if(typeof data.distancia === "number") r.distance = data.distancia;
+    if(typeof data.sensorOK === "boolean") r.sensorOK = data.sensorOK;
+    if(typeof data.bomba_ligada === "boolean") r.pumpOn = data.bomba_ligada;
+    if(typeof data.modo_auto === "boolean") r.autoMode = data.modo_auto;
+    if(typeof data.nivel_ligar === "number") r.levelOn = data.nivel_ligar;
+    if(typeof data.nivel_desligar === "number") r.levelOff = data.nivel_desligar;
+    if(typeof data.rssi === "number") r.rssi = data.rssi;
+    if(typeof data.snr === "number") r.snr = data.snr;
+    r.lastSeen = new Date();
+
+    state.waterTank = r;
+    if(hasNumber(r.level)){
+      state.waterHistory = state.waterHistory || [];
+      state.waterHistory.unshift({id:r.id, name:r.name, level:r.level, liters:r.liters, pumpOn:r.pumpOn, time:new Date()});
+      state.waterHistory = state.waterHistory.slice(0,60);
+    }
+    saveWaterState();
+
 
     var idEl = document.getElementById("waterDeviceId");
     var topicEl = document.getElementById("waterTopic");
@@ -2364,6 +2492,216 @@ input, select{font-family:inherit; color:var(--text);}
   });
 
   /* ============================================================
+     WATER: RESERVOIRS VIEW
+     ============================================================ */
+  function normalizeWaterId(id){
+    id = String(id || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    return id || "caixa01";
+  }
+
+  function waterTopicFor(id, suffix){
+    return "casa/" + normalizeWaterId(id) + "/" + suffix;
+  }
+
+  function findReservoirById(id){
+    id = normalizeWaterId(id);
+    return (state.waterReservoirs || []).find(function(r){ return normalizeWaterId(r.id) === id; });
+  }
+
+  function ensureReservoir(id){
+    id = normalizeWaterId(id);
+    var r = findReservoirById(id);
+    if(!r){
+      r = {uid:"water-"+id, name:id === "caixa01" ? "Caixa principal" : id, id:id, pass:"", topic:waterTopicFor(id,"dados"), level:null, liters:null, distance:null, sensorOK:null, pumpOn:null, autoMode:null, levelOn:20, levelOff:80, rssi:null, snr:null, lastSeen:null};
+      state.waterReservoirs.push(r);
+    }
+    return r;
+  }
+
+  function saveWaterState(){
+    try{
+      localStorage.setItem("smartHomeWaterReservoirs", JSON.stringify(state.waterReservoirs || []));
+      localStorage.setItem("smartHomeWaterHistory", JSON.stringify((state.waterHistory || []).slice(0,60)));
+    }catch(e){}
+  }
+
+  function loadWaterState(){
+    try{
+      var saved = JSON.parse(localStorage.getItem("smartHomeWaterReservoirs") || "null");
+      if(Array.isArray(saved) && saved.length) state.waterReservoirs = saved;
+      var hist = JSON.parse(localStorage.getItem("smartHomeWaterHistory") || "[]");
+      if(Array.isArray(hist)) state.waterHistory = hist;
+    }catch(e){}
+    if(!state.waterReservoirs || !state.waterReservoirs.length){
+      state.waterReservoirs = [{uid:"water-caixa01", name:"Caixa principal", id:"caixa01", pass:"", topic:"casa/caixa01/dados", level:null, liters:null, distance:null, sensorOK:null, pumpOn:null, autoMode:null, levelOn:20, levelOff:80, rssi:null, snr:null, lastSeen:null}];
+    }
+  }
+
+  function renderWaterView(){
+    var list = state.waterReservoirs || [];
+    var grid = document.getElementById("waterGrid");
+    var summary = document.getElementById("waterSummaryGrid");
+    if(!grid || !summary) return;
+
+    var withData = list.filter(function(r){ return hasNumber(r.level); });
+    var avg = withData.length ? Math.round(withData.reduce(function(a,r){return a+r.level;},0)/withData.length) : null;
+    var liters = list.reduce(function(a,r){ return a + (hasNumber(r.liters) ? Number(r.liters) : 0); },0);
+    var pumpsOn = list.filter(function(r){ return r.pumpOn === true; }).length;
+    var sensorBad = list.filter(function(r){ return r.sensorOK === false; }).length;
+
+    var summaryCards = [
+      {cls:avg!==null && avg<=20 ? "glow-red" : "glow-cyan", ic:"🚰", val:avg!==null ? avg+"%" : "—", lbl:"Nível médio", sub:withData.length ? withData.length+" reservatório(s) com dados" : "Aguardando dados"},
+      {cls:"glow-green", ic:"💧", val:liters ? Math.round(liters)+" L" : "—", lbl:"Volume total", sub:liters ? "Soma dos reservatórios" : "Aguardando litros"},
+      {cls:pumpsOn ? "glow-amber" : "glow-violet", ic:"⚙️", val:pumpsOn, lbl:"Bombas ligadas", sub:pumpsOn ? "Abastecimento em andamento" : "Nenhuma bomba ligada"},
+      {cls:sensorBad ? "glow-red" : "glow-green", ic:"🛰️", val:sensorBad, lbl:"Falhas de sensor", sub:sensorBad ? "Verifique o LoRa/sensor" : "Sensores OK ou aguardando"}
+    ];
+    summary.innerHTML = summaryCards.map(function(c){
+      return '<div class="stat-card glass '+c.cls+'"><div class="sic">'+c.ic+'</div><div class="val">'+escapeHtml(c.val)+'</div><div class="lbl">'+escapeHtml(c.lbl)+'</div><div class="sub">'+escapeHtml(c.sub)+'</div></div>';
+    }).join("");
+
+    grid.innerHTML = "";
+    list.forEach(function(r){
+      var has = hasNumber(r.level);
+      var pct = has ? Math.max(0, Math.min(100, Math.round(r.level))) : 0;
+      var online = r.lastSeen && (Date.now() - new Date(r.lastSeen).getTime() < 120000);
+      var badge = online ? '<span class="badge badge-online"><span class="badge-dot"></span> online</span>' : '<span class="badge badge-offline"><span class="badge-dot"></span> offline</span>';
+      var card = document.createElement("div");
+      card.className = "water-card glass" + (online ? "" : " offline");
+      card.style.setProperty("--water-deg", (pct*3.6) + "deg");
+      card.innerHTML =
+        '<div class="water-top"><div class="water-title"><div class="water-ic">🚰</div><div><div class="water-name">'+escapeHtml(r.name || r.id)+'</div><div class="water-id">ID '+escapeHtml(r.id)+' · '+escapeHtml(r.topic || waterTopicFor(r.id,"dados"))+'</div></div></div>'+badge+'</div>'+ 
+        '<div class="water-level-wrap"><div class="water-ring"><span>'+(has ? pct+'%' : '—')+'</span></div><div class="water-meta">'+
+          '<div class="water-kpi"><small>Litros</small><strong>'+(hasNumber(r.liters)?Math.round(r.liters)+' L':'—')+'</strong></div>'+ 
+          '<div class="water-kpi"><small>Distância</small><strong>'+(hasNumber(r.distance)?Number(r.distance).toFixed(1)+' cm':'—')+'</strong></div>'+ 
+          '<div class="water-kpi"><small>Bomba</small><strong>'+(r.pumpOn===true?'Ligada':(r.pumpOn===false?'Desligada':'—'))+'</strong></div>'+ 
+          '<div class="water-kpi"><small>Modo</small><strong>'+(r.autoMode===true?'Auto':(r.autoMode===false?'Manual':'—'))+'</strong></div>'+ 
+        '</div></div>'+ 
+        '<div class="water-bar"><span style="width:'+pct+'%"></span></div>'+ 
+        '<div class="water-thresholds"><span>Liga '+(hasNumber(r.levelOn)?r.levelOn:20)+'%</span><span>Desliga '+(hasNumber(r.levelOff)?r.levelOff:80)+'%</span><span>'+(r.lastSeen?fmtRelative(r.lastSeen):'sem dados')+'</span></div>'+ 
+        '<div class="water-actions"><button class="btn btn-ghost btn-sm" data-water-cmd="ligar" data-water-id="'+escapeHtml(r.id)+'">Ligar</button><button class="btn btn-ghost btn-sm" data-water-cmd="desligar" data-water-id="'+escapeHtml(r.id)+'">Desligar</button><button class="btn btn-ghost btn-sm" data-water-cmd="auto" data-water-id="'+escapeHtml(r.id)+'">Auto</button></div>'+ 
+        '<button class="modal-close" style="position:absolute;right:12px;bottom:12px;" data-water-config="'+escapeHtml(r.id)+'">⚙️</button>';
+      grid.appendChild(card);
+    });
+
+    var add = document.createElement("button");
+    add.className = "add-water-card";
+    add.id = "addWaterCardBtn";
+    add.innerHTML = '<div class="plus">＋</div><span>Adicionar reservatório</span><small>Caixa principal, cisterna, piscina...</small>';
+    grid.appendChild(add);
+
+    renderWaterHistory();
+  }
+
+  function renderWaterHistory(){
+    var svg = document.getElementById("waterLevelChart");
+    var listEl = document.getElementById("waterHistoryList");
+    if(!svg || !listEl) return;
+    var hist = (state.waterHistory || []).slice(0,30).reverse();
+    if(!hist.length){
+      svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(134,150,173,.8)" font-size="12">Aguardando leituras da caixa d\'água</text>';
+      listEl.innerHTML = '<div class="feed-empty">Sem histórico ainda. Quando chegar dado MQTT, aparece aqui.</div>';
+      return;
+    }
+    var vals = hist.map(function(h){ return Math.max(0,Math.min(100,Number(h.level)||0)); });
+    var step = vals.length > 1 ? 620/(vals.length-1) : 620;
+    var pts = vals.map(function(v,i){ return (10+i*step)+','+(135-(v*1.2)); }).join(' ');
+    svg.innerHTML = '<polyline points="'+pts+'" fill="none" stroke="rgba(45,212,255,.9)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="10" y1="135" x2="630" y2="135" stroke="rgba(140,180,220,.14)"/><line x1="10" y1="15" x2="630" y2="15" stroke="rgba(140,180,220,.08)"/>';
+    listEl.innerHTML = (state.waterHistory || []).slice(0,12).map(function(h){
+      return '<div class="water-history-item"><div><strong>'+escapeHtml(h.name || h.id)+'</strong> · nível '+Math.round(h.level)+'%'+(hasNumber(h.liters)?' · '+Math.round(h.liters)+' L':'')+'</div><time>'+fmtRelative(h.time)+'</time></div>';
+    }).join('');
+  }
+
+  function publishWaterCommand(id, cmd){
+    if(!mqttClient || !mqttClient.connected()){ toast("Broker MQTT desconectado", "error"); return; }
+    mqttClient.publish(waterTopicFor(id,"comando"), cmd, {qos:1, retain:false}, function(err){
+      if(err) toast("Falha ao enviar comando da bomba", "error");
+      else toast("Comando enviado: "+cmd, "success");
+    });
+  }
+
+  function publishWaterConfig(r){
+    if(!mqttClient || !mqttClient.connected()){ toast("Configuração salva no painel. Broker desconectado.", "info"); return; }
+    var payload = JSON.stringify({nivel_ligar:Number(r.levelOn)||20, nivel_desligar:Number(r.levelOff)||80});
+    mqttClient.publish(waterTopicFor(r.id,"config"), payload, {qos:1, retain:false}, function(err){
+      if(err) toast("Falha ao enviar configuração", "error");
+      else toast("Configuração enviada ao módulo", "success");
+    });
+  }
+
+  var addWaterBtn = document.getElementById("addWaterBtn");
+  if(addWaterBtn) addWaterBtn.addEventListener("click", function(){ document.getElementById("addWaterOverlay").classList.remove("hidden"); });
+  var newWaterIdEl = document.getElementById("newWaterId");
+  if(newWaterIdEl) newWaterIdEl.addEventListener("input", function(){ var t=document.getElementById("newWaterTopic"); if(t) t.value=waterTopicFor(this.value,"dados"); });
+  var addWaterForm = document.getElementById("addWaterForm");
+  if(addWaterForm) addWaterForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var id = normalizeWaterId(document.getElementById("newWaterId").value);
+    var r = ensureReservoir(id);
+    r.name = document.getElementById("newWaterName").value.trim() || id;
+    r.pass = document.getElementById("newWaterPass").value || "";
+    r.topic = waterTopicFor(id,"dados");
+    saveWaterState();
+    document.getElementById("addWaterOverlay").classList.add("hidden");
+    addWaterForm.reset();
+    var t=document.getElementById("newWaterTopic"); if(t) t.value="casa/caixa01/dados";
+    toast("Reservatório adicionado", "success");
+    renderAll();
+  });
+
+  document.addEventListener("click", function(e){
+    var addCard = e.target.closest && e.target.closest("#addWaterCardBtn");
+    if(addCard){ document.getElementById("addWaterOverlay").classList.remove("hidden"); return; }
+    var cmdBtn = e.target.closest && e.target.closest("[data-water-cmd]");
+    if(cmdBtn){ publishWaterCommand(cmdBtn.getAttribute("data-water-id"), cmdBtn.getAttribute("data-water-cmd")); return; }
+    var cfgBtn = e.target.closest && e.target.closest("[data-water-config]");
+    if(cfgBtn){
+      var r = findReservoirById(cfgBtn.getAttribute("data-water-config"));
+      if(!r) return;
+      document.getElementById("wcReservoirId").value = r.id;
+      document.getElementById("wcName").value = r.name || r.id;
+      document.getElementById("wcDeviceId").value = r.id;
+      document.getElementById("wcPass").value = r.pass || "";
+      document.getElementById("wcLevelOn").value = hasNumber(r.levelOn) ? r.levelOn : 20;
+      document.getElementById("wcLevelOff").value = hasNumber(r.levelOff) ? r.levelOff : 80;
+      document.getElementById("wcTopic").value = waterTopicFor(r.id,"dados");
+      document.getElementById("waterConfigOverlay").classList.remove("hidden");
+    }
+  });
+
+  var waterConfigForm = document.getElementById("waterConfigForm");
+  if(waterConfigForm) waterConfigForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var oldId = normalizeWaterId(document.getElementById("wcReservoirId").value);
+    var r = findReservoirById(oldId);
+    if(!r) return;
+    var newId = normalizeWaterId(document.getElementById("wcDeviceId").value);
+    r.id = newId;
+    r.uid = "water-" + newId;
+    r.name = document.getElementById("wcName").value.trim() || newId;
+    r.pass = document.getElementById("wcPass").value || "";
+    r.levelOn = Number(document.getElementById("wcLevelOn").value) || 20;
+    r.levelOff = Number(document.getElementById("wcLevelOff").value) || 80;
+    r.topic = waterTopicFor(newId,"dados");
+    state.waterTank = r;
+    saveWaterState();
+    publishWaterConfig(r);
+    document.getElementById("waterConfigOverlay").classList.add("hidden");
+    renderAll();
+  });
+
+  var wcDeleteBtn = document.getElementById("wcDeleteBtn");
+  if(wcDeleteBtn) wcDeleteBtn.addEventListener("click", function(){
+    var id = normalizeWaterId(document.getElementById("wcReservoirId").value);
+    if(!confirm("Excluir este reservatório do painel?")) return;
+    state.waterReservoirs = (state.waterReservoirs || []).filter(function(r){ return normalizeWaterId(r.id) !== id; });
+    if(!state.waterReservoirs.length) state.waterReservoirs = [];
+    saveWaterState();
+    document.getElementById("waterConfigOverlay").classList.add("hidden");
+    toast("Reservatório excluído", "info");
+    renderAll();
+  });
+
+  /* ============================================================
      HISTORY CHARTS (inline SVG, no libraries)
      ============================================================ */
   function buildSparkline(svgId, data, colorVar){
@@ -2568,6 +2906,7 @@ input, select{font-family:inherit; color:var(--text);}
     safeRender(renderFeed, "eventos");
     safeRender(renderEnvironments, "ambientes");
     safeRender(renderDevices, "dispositivos");
+    safeRender(renderWaterView, "agua");
     safeRender(renderHistory, "historico");
     safeRender(renderAlertsView, "alertas");
   }
