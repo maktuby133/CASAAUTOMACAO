@@ -1344,6 +1344,10 @@ let _logFilter  = 'all';
 let _loginMode  = 'login'; // modo do modal de login: 'login' ou 'register'
 let alertRules  = [];      // regras de alerta configuráveis
 const alertRuleState = {}; // estado runtime de cada regra (firstTrigger, notified, active)
+
+// Tamanhos dos cards de widget: 'small'(4col) | 'med'(6col) | 'large'(8col) | 'full'(12col)
+const W_SIZES = ['small','med','large','full'];
+const W_SIZE_LABELS = { small:'1/3', med:'1/2', large:'2/3', full:'■' };
 // Relés dinâmicos — cada ambiente (ESP32) registra seus próprios relés
 // Não há mais "saídas digitais" fixas globais; o array é populado pelos ambientes
 let RELAY_PREFIX = 'home/relay';
@@ -3811,14 +3815,36 @@ function saveWidgets() {
 function loadWidgets() {
   try {
     const raw = localStorage.getItem('autoflow_widgets');
-    if (raw) widgets = JSON.parse(raw);
+    if (raw) {
+      widgets = JSON.parse(raw);
+    } else {
+      // Primeira vez — aplica layout padrão de fábrica (sugestão por criticidade)
+      widgets = getDefaultWidgetLayout();
+      saveWidgets();
+    }
   } catch(e) { widgets = []; }
 }
 
-// ── TAMANHOS DOS CARDS ────────────────────────────────────────────
-// sz: 'small'(4col) | 'med'(6col) | 'large'(8col) | 'full'(12col)
-const W_SIZES = ['small','med','large','full'];
-const W_SIZE_LABELS = { small:'1/3', med:'1/2', large:'2/3', full:'■' };
+// ── LAYOUT PADRÃO DE FÁBRICA ──────────────────────────────────────────
+// Ordem por criticidade: Alarme primeiro (segurança), Ambiente em
+// destaque (linha única precisa de espaço), depois automação em pares,
+// e por fim os widgets de ação rápida em 1/3 (portão, relé, medidor).
+// Só é aplicado na primeira vez — usuário pode reordenar livremente depois.
+function getDefaultWidgetLayout() {
+  return [
+    { id: 'w_default_alarme',   type: 'alarme',     name: 'Alarme',          icon: '🚨', sz: 'full',
+      sensorTopic: '', sirenTopic: '', sirenOnPayload: 'ON', sirenOffPayload: 'OFF' },
+    { id: 'w_default_ambiente', type: 'ambiente',   name: 'Ambientes',       icon: '🌡️', sz: 'full', roomId: '' },
+    { id: 'w_default_caixa',    type: 'caixa_agua', name: "Caixa d'água",    icon: '🪣', sz: 'med', tankId: '' },
+    { id: 'w_default_irrig',    type: 'irrigacao',  name: 'Irrigação',       icon: '💧', sz: 'med' },
+    { id: 'w_default_portao',   type: 'portao',     name: 'Portão',          icon: '🚗', sz: 'small',
+      triggerMode: 'pulse', payloadOpen: 'OPEN', payloadClose: 'CLOSE', payload: '1',
+      deviceId: '', devicePass: '', topic: 'home/garagem/cmd', stateTopic: 'home/garagem/state', obstTopic: 'home/garagem/obstaculo' },
+    { id: 'w_default_rele',     type: 'rele',       name: 'Relé genérico',   icon: '⚡', sz: 'small', relayId: '' },
+    { id: 'w_default_medidor',  type: 'medidor',    name: 'Medidor',         icon: '📊', sz: 'small',
+      topic: '', jsonKey: '', unit: '', max: 100, decimals: 1 },
+  ];
+}
 
 function getWidgetSize(w) { return w.sz || 'med'; }
 
