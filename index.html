@@ -373,26 +373,31 @@ body::before {
   width: 3px; height: 12px;
   background: var(--accent); border-radius: 2px; flex-shrink: 0;
 }
-/* Botões de resize */
+/* Controle de resize — botão + e bolinhas de tamanho */
 .w-resize-btns {
-  display: flex; gap: 2px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
 }
+.w-resize-add {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: var(--accent); color: #000;
+  font-size: 15px; font-weight: 700; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.15s, transform 0.15s; padding: 0;
+}
+.w-resize-add:hover { background: #1fc090; transform: scale(1.1); }
+.w-resize-sep { width: 1px; height: 14px; background: var(--border2); flex-shrink: 0; }
+.w-resize-dots { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .w-resize-btn {
-  width: 22px; height: 20px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-family: var(--mono);
-  font-size: 9px;
-  font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-  padding: 0;
+  border-radius: 50%; border: 1.5px solid var(--border2); background: var(--bg3);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; padding: 0; flex-shrink: 0;
 }
-.w-resize-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.06); }
-.w-resize-btn.active { background: rgba(0,212,160,0.12); border-color: rgba(0,212,160,0.4); color: var(--accent); }
+.w-resize-btn[data-sz="small"] { width: 6px;  height: 6px;  }
+.w-resize-btn[data-sz="med"]   { width: 9px;  height: 9px;  }
+.w-resize-btn[data-sz="large"] { width: 12px; height: 12px; }
+.w-resize-btn[data-sz="full"]  { width: 14px; height: 14px; }
+.w-resize-btn:hover { border-color: var(--accent); background: rgba(0,212,160,0.2); }
+.w-resize-btn.active { background: var(--accent); border-color: var(--accent); }
 .w-edit-btn {
   background: transparent; border: 1px solid var(--border);
   border-radius: 6px; color: var(--muted); cursor: pointer;
@@ -457,7 +462,8 @@ body::before {
   .w-card, .w-card.sz-small, .w-card.sz-med, .w-card.sz-large, .w-card.sz-full {
     grid-column: span 1 !important;
   }
-  .w-resize-btns { display: none; }
+  .w-resize-btns { display: flex; }
+  .w-resize-add { width: 20px; height: 20px; font-size: 13px; }
 }
 
 /* ══════════════════════════════════════════
@@ -605,12 +611,12 @@ body::before {
 .rooms-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 6px 22px 6px 9px;
+  border-radius: var(--radius); padding: 6px 20px 6px 9px;
   transition: border-color 0.2s; position:relative; min-width:0;
   box-sizing: border-box;
   display: flex; flex-direction: column; justify-content: center;
-  min-height: 0;
-  /* SEM height fixo, SEM overflow:hidden — botões nunca somem */
+  min-height: 0; overflow: visible;
+  /* SEM height fixo — botões nunca somem */
 }
 .room-card:hover { border-color: var(--border2); }
 .room-card:hover .room-del-btn { opacity: 1; }
@@ -644,12 +650,11 @@ body::before {
 
 /* sensores + lâmpada ficam todos na mesma linha do header agora */
 .room-main-row {
-  display: flex; align-items: center; gap: 8px;
-  flex-wrap: nowrap; min-width: 0; overflow-x: auto; overflow-y: hidden;
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap; min-width: 0;
   flex: 1; line-height: 1;
-  scrollbar-width: none;
+  row-gap: 0;
 }
-.room-main-row::-webkit-scrollbar { display: none; }
 
 .room-relay-row {
   display: flex; align-items: center; gap: 5px;
@@ -695,7 +700,7 @@ body::before {
 
 /* ── EFEITO DE LÂMPADA — maior, cinza apagada / amarelo pulsante acesa ─── */
 .lamp-bulb {
-  font-size: 26px; line-height: 1;
+  font-size: 22px; line-height: 1;
   display: inline-block;
   transition: filter 0.35s ease, transform 0.25s ease;
   filter: grayscale(1) brightness(0.55) contrast(0.9);
@@ -4027,9 +4032,10 @@ function buildWidgetCard(w) {
   wrap.className = `w-card sz-${sz}`;
   wrap.id = 'wcard-' + w.id;
 
-  // Resize buttons
-  const resizeBtns = W_SIZES.map(s =>
-    `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}">${W_SIZE_LABELS[s]}</button>`
+  // Resize — botão verde + (abre config) e 3 bolinhas de tamanho
+  const dotSizes = ['small','med','large'];
+  const resizeDots = dotSizes.map(s =>
+    `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}"></button>`
   ).join('');
 
   const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue' };
@@ -4039,8 +4045,11 @@ function buildWidgetCard(w) {
       <span class="w-drag-handle" title="Arrastar para mover">⠿</span>
       <div class="card-icon ${iconClr}" style="width:24px;height:24px;border-radius:6px;font-size:12px;flex-shrink:0">${w.icon || ''}</div>
       <span class="w-card-title">${w.name}</span>
-      <div class="w-resize-btns">${resizeBtns}</div>
-      <button class="w-edit-btn" onclick="openWidgetCfgModal('${w.id}')">✎</button>
+      <div class="w-resize-btns">
+        <button class="w-resize-add" onclick="openWidgetCfgModal('${w.id}')" title="Configurar widget">＋</button>
+        <div class="w-resize-sep"></div>
+        <div class="w-resize-dots">${resizeDots}</div>
+      </div>
     </div>`;
 
   let body = '';
