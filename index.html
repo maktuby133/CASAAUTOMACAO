@@ -679,6 +679,7 @@ input, select{font-family:inherit; color:var(--text);}
 }
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 </head>
 <body>
 
@@ -864,16 +865,18 @@ input, select{font-family:inherit; color:var(--text);}
 
         <div class="config-grid">
           <div class="glass panel-pad">
-            <div class="panel-title"><span class="pic">📶</span> Configuração do Broker MQTT</div>
+            <div class="panel-title"><span class="pic">📶</span> Configuração do Broker MQTT
+              <span id="brokerStatus" class="badge badge-offline" style="margin-left:auto; font-size:10px;">● desconectado</span>
+            </div>
             <form id="brokerForm">
               <div class="field"><label>Servidor MQTT</label><input type="text" id="brokerHost" placeholder="xxxxxxxx.s1.eu.hivemq.cloud"></div>
               <div class="field-row">
-                <div class="field"><label>Porta</label><input type="text" id="brokerPort" placeholder="8883"></div>
+                <div class="field"><label>Porta WebSocket (TLS)</label><input type="text" id="brokerPort" placeholder="8884"></div>
                 <div class="field"><label>Usuário</label><input type="text" id="brokerUser" placeholder="usuario_mqtt"></div>
               </div>
               <div class="field"><label>Senha</label><input type="password" id="brokerPass" placeholder="••••••••"></div>
-              <div class="hint">Todos os ESP32 cadastrados utilizarão este broker como padrão.</div>
-              <button type="submit" class="btn btn-primary btn-block">💾 Salvar configuração</button>
+              <div class="hint">Conexão do painel é feita via MQTT sobre WebSocket (porta WS/TLS do broker, ex: 8884 na HiveMQ Cloud) — controla e recebe status em tempo real dos ESP32 cadastrados.</div>
+              <button type="submit" class="btn btn-primary btn-block">💾 Salvar e conectar</button>
             </form>
           </div>
 
@@ -1125,7 +1128,7 @@ input, select{font-family:inherit; color:var(--text);}
         {day:"Qui", icon:"☀️", hi:28, lo:20, rain:10}
       ]
     },
-    broker:{host:"", port:"8883", user:"", pass:""},
+    broker:{host:"", port:"", user:"", pass:""},
     energy:{daily:[3.2,4.1,3.8,5.0,4.4,3.6,4.8], unit:"kWh"},
     water:{daily:[210,180,260,300,190,220,250], unit:"L"}
   };
@@ -1443,9 +1446,11 @@ input, select{font-family:inherit; color:var(--text);}
         var id = this.getAttribute("data-toggle-light");
         var env = findEnv(id);
         if(!env) return;
-        env.lighting.on = !env.lighting.on;
-        toast(env.name+": iluminação "+(env.lighting.on?"ligada":"desligada"), "success");
+        var newState = !env.lighting.on;
+        env.lighting.on = newState;
+        toast(env.name+": iluminação "+(newState?"ligada":"desligada"), "success");
         renderEnvironments();
+        publishLightCommand(env, newState);
       });
     }
     var configBtns = document.querySelectorAll("[data-config-device]");
@@ -1463,6 +1468,110 @@ input, select{font-family:inherit; color:var(--text);}
       if(state.environments[i].id === id) return state.environments[i];
     }
     return null;
+  }
+
+  /* ============================================================
+     INTEGRAÇÃO MQTT REAL (controle + status dos ESP32 físicos)
+     Tópicos usados pelo firmware:
+       sensors/{deviceId}/data  -> status publicado pelo ESP32 (temp, humidity, light)
+       sensors/{deviceId}/cmd   -> comandos enviados pelo painel (ex: ligar lâmpada)
+     deviceId = idFromMac(env.mac) em minúsculas (6 últimos chars do MAC)
+     ============================================================ */
+  var mqttClient = null;
+  var mqttConnected = false;
+
+  function setBrokerStatus(connected){
+    mqttConnected = connected;
+    var el = document.getElementById("brokerStatus");
+    if(!el) return;
+    el.className = "badge " + (connected ? "badge-online" : "badge-offline");
+    el.textContent = connected ? "● conectado" : "● desconectado";
+  }
+
+  function findEnvByDeviceId(devId){
+    if(!devId) return null;
+    var idLower = devId.toLowerCase();
+    for(var i=0;i<state.environments.length;i++){
+      if(idFromMac(state.environments[i].mac).toLowerCase() === idLower) return state.environments[i];
+    }
+    return null;
+  }
+
+  function connectMqtt(){
+    if(typeof mqtt === "undefined"){
+      console.warn("Biblioteca mqtt.js não carregou.");
+      return;
+    }
+    if(!state.broker.host || !state.broker.port){
+      setBrokerStatus(false);
+      toast("Preencha servidor e porta do broker em Configurações", "error");
+      return;
+    }
+    if(mqttClient){
+      try{ mqttClient.end(true); }catch(e){}
+      mqttClient = null;
+    }
+
+    var url = "wss://" + state.broker.host + ":" + state.broker.port + "/mqtt";
+    try{
+      mqttClient = mqtt.connect(url, {
+        username: state.broker.user || undefined,
+        password: state.broker.pass || undefined,
+        clientId: "painel_" + Math.random().toString(16).slice(2),
+        reconnectPeriod: 4000,
+        connectTimeout: 8000
+      });
+    }catch(e){
+      console.error("[MQTT] erro ao conectar:", e);
+      setBrokerStatus(false);
+      return;
+    }
+
+    mqttClient.on("connect", function(){
+      setBrokerStatus(true);
+      toast("Conectado ao broker MQTT", "success");
+      mqttClient.subscribe("sensors/+/data", {qos:1});
+    });
+
+    mqttClient.on("reconnect", function(){ setBrokerStatus(false); });
+    mqttClient.on("close", function(){ setBrokerStatus(false); });
+    mqttClient.on("error", function(err){
+      console.error("[MQTT] erro:", err);
+      setBrokerStatus(false);
+    });
+
+    mqttClient.on("message", function(topic, payloadBuf){
+      var parts = topic.split("/");
+      if(parts.length < 3 || parts[0] !== "sensors" || parts[2] !== "data") return;
+      var devId = parts[1];
+      var env = findEnvByDeviceId(devId);
+      if(!env) return; // dispositivo ainda não cadastrado em nenhum ambiente
+
+      var data;
+      try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
+
+      if(data.sensor_error){
+        env.status = "alert";
+      } else {
+        if(typeof data.temperature === "number") env.temp = data.temperature;
+        if(typeof data.humidity === "number") env.humidity = data.humidity;
+        if(typeof data.light === "boolean") env.lighting.on = data.light;
+        env.status = "online";
+      }
+      env.lastSeen = new Date();
+      renderAll();
+    });
+  }
+
+  function publishLightCommand(env, turnOn){
+    if(!mqttClient || !mqttConnected){
+      toast("Broker MQTT desconectado — configure em Configurações", "error");
+      return;
+    }
+    var devId = idFromMac(env.mac).toLowerCase();
+    var topic = "sensors/" + devId + "/cmd";
+    var payload = JSON.stringify({action:"light", state:turnOn});
+    mqttClient.publish(topic, payload, {qos:1});
   }
 
   /* ============================================================
@@ -1595,7 +1704,8 @@ input, select{font-family:inherit; color:var(--text);}
     state.broker.port = document.getElementById("brokerPort").value;
     state.broker.user = document.getElementById("brokerUser").value;
     state.broker.pass = document.getElementById("brokerPass").value;
-    toast("Configuração do broker salva", "success");
+    toast("Configuração salva — conectando ao broker...", "success");
+    connectMqtt();
   });
 
   document.getElementById("saveDevicePrefsBtn").addEventListener("click", function(){
