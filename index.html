@@ -431,6 +431,16 @@ input, select{font-family:inherit; color:var(--text);}
 .env-card{padding:20px 20px 18px; position:relative; transition:transform .2s ease, border-color .2s ease;}
 .env-card:hover{transform:translateY(-3px); border-color:rgba(45,212,255,0.3);}
 .env-card.is-alert{border-color:rgba(255,77,106,0.45); box-shadow:0 0 0 1px rgba(255,77,106,0.2), 0 8px 30px rgba(255,77,106,0.12);}
+.env-gear{
+  width:34px; height:34px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.035); border:1px solid var(--line);
+  color:var(--text-dim); font-size:16px; flex-shrink:0;
+  transition:background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.env-gear:hover{background:var(--cyan-dim); color:var(--cyan); border-color:rgba(45,212,255,0.45); transform:rotate(25deg);}
+.danger-zone{margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,77,106,0.25);}
+.danger-zone .hint{margin-top:6px; margin-bottom:0;}
 .env-head{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;}
 .env-id{display:flex; align-items:center; gap:12px;}
 .env-icon{
@@ -991,13 +1001,13 @@ input, select{font-family:inherit; color:var(--text);}
         <div class="icon-picker" id="iconPicker"></div>
       </div>
 
-      <div class="field"><label>Endereço MAC do ESP32 (opcional)</label><input type="text" id="newEnvMac" placeholder="A4:C1:38:92:AB:55" maxlength="17"></div>
+      <div class="field"><label>ID de 6 dígitos ou MAC do ESP32 (opcional)</label><input type="text" id="newEnvMac" placeholder="Ex.: A4C1B2 ou A4:C1:38:92:AB:55" maxlength="17"></div>
       <div class="mac-preview">
         <span>ID do dispositivo:</span>
         <span class="id" id="macPreviewId">------</span>
       </div>
       <div class="field"><label>Senha de acesso do dispositivo</label><input type="password" id="newEnvPass" placeholder="Definida no modo AP do ESP32"></div>
-      <div class="hint">Informe o MAC do ESP32 e a senha definida na configuração dele (modo AP) para vincular um dispositivo real — o painel autentica direto com o aparelho via MQTT. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
+      <div class="hint">Informe o ID de 6 dígitos que aparece no portal do ESP32 ou o MAC completo, junto com a senha definida no modo AP. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="addEnvOverlay">Cancelar</button>
@@ -1022,16 +1032,22 @@ input, select{font-family:inherit; color:var(--text);}
         <span>ID · MAC</span>
         <span class="id" id="dcIdMac">------ · --:--:--:--:--:--</span>
       </div>
-      <div class="field"><label>Nome do dispositivo</label><input type="text" id="dcName" required></div>
-      <div class="field"><label>Senha de acesso do dispositivo</label><input type="text" id="dcPass"></div>
+      <div class="field"><label>Nome do ambiente</label><input type="text" id="dcName" required></div>
+      <div class="field"><label>ID de 6 dígitos ou MAC do ESP32</label><input type="text" id="dcDeviceInput" placeholder="Ex.: A4C1B2 ou A4:C1:38:92:AB:55"></div>
+      <div class="field"><label>Senha de acesso do dispositivo</label><input type="text" id="dcPass" placeholder="Preencha somente se quiser trocar no painel"></div>
       <div class="field-row">
-        <div class="field"><label>Status</label><input type="text" id="dcStatus" disabled style="opacity:.65;"></div>
+        <div class="field"><label>Status MQTT</label><input type="text" id="dcStatus" disabled style="opacity:.65;"></div>
         <div class="field"><label>Firmware</label><input type="text" id="dcFirmware"></div>
       </div>
       <div class="field"><label>Última comunicação</label><input type="text" id="dcLastSeen" disabled style="opacity:.65;"></div>
+      <div class="field"><label>Últimos dados recebidos</label><input type="text" id="dcLastData" disabled style="opacity:.65;"></div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="deviceConfigOverlay">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Salvar dispositivo</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+      <div class="danger-zone">
+        <button type="button" class="btn btn-danger btn-block" id="dcDeleteBtn">🗑️ Excluir ambiente</button>
+        <div class="hint">Remove somente este ambiente do painel. O ESP32 continua configurado normalmente.</div>
       </div>
     </form>
   </div>
@@ -1452,7 +1468,7 @@ input, select{font-family:inherit; color:var(--text);}
             '<div><div class="env-name">'+env.name.toUpperCase()+'</div>'+
             '<div class="env-device">ESP32-'+env.name.toUpperCase().replace(/\s+/g,"")+' · '+getEnvDeviceId(env).toUpperCase()+'</div></div>'+
           '</div>'+
-          statusBadge(env.status)+
+          '<div style="display:flex; align-items:center; gap:8px;">'+statusBadge(env.status)+'<button class="env-gear" title="Configurar ambiente" data-config-device="'+env.id+'">⚙️</button></div>'+
         '</div>'+
         '<div class="env-controls">'+
           '<div class="ctrl">'+
@@ -1465,10 +1481,7 @@ input, select{font-family:inherit; color:var(--text);}
         '</div>'+
         '<div class="env-foot">'+
           '<span class="badge '+(env.status==="online"?"badge-online":(env.status==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(env.lastSeen)+'</span>'+
-          '<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">'+
-            '<button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">⚙ Configurar</button>'+
-            '<button class="btn btn-danger btn-sm" data-delete-env="'+env.id+'">🗑 Excluir</button>'+
-          '</div>'+
+          '<span class="eyebrow">TOQUE NA ENGRENAGEM</span>'+
         '</div>';
       grid.appendChild(card);
     });
@@ -1775,7 +1788,7 @@ input, select{font-family:inherit; color:var(--text);}
         '<td data-label="Status">'+statusBadge(env.status)+'</td>'+
         '<td data-label="Última comunicação">'+(env.lastSeen ? fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen) : 'sem dados')+'</td>'+
         '<td data-label="Firmware" class="dev-mac">'+env.firmware+'</td>'+
-        '<td data-label="Ações"><button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">Configurar</button> <button class="btn btn-danger btn-sm" data-delete-env="'+env.id+'">Excluir</button></td>';
+        '<td data-label="Ações"><button class="env-gear" title="Configurar ambiente" data-config-device="'+env.id+'">⚙️</button></td>';
       body.appendChild(tr);
     });
     var btns = document.querySelectorAll("#deviceTableBody [data-config-device]");
@@ -1941,12 +1954,15 @@ input, select{font-family:inherit; color:var(--text);}
     var env = findEnv(envId);
     if(!env) return;
     document.getElementById("dcEnvId").value = env.id;
-    document.getElementById("dcIdMac").textContent = getEnvDeviceId(env).toUpperCase() + " · " + env.mac;
-    document.getElementById("dcName").value = "ESP32-"+env.name.toUpperCase().replace(/\s+/g,"");
+    document.getElementById("dcIdMac").textContent = getEnvDeviceId(env).toUpperCase() + " · " + (env.mac || "--:--:--:--:--:--");
+    document.getElementById("dcName").value = env.name || "";
+    document.getElementById("dcDeviceInput").value = getEnvDeviceId(env).toUpperCase();
     document.getElementById("dcPass").value = "";
     document.getElementById("dcStatus").value = env.status === "online" ? "Online" : (env.status === "alert" ? "Alerta ativo" : "Offline");
-    document.getElementById("dcFirmware").value = env.firmware;
+    document.getElementById("dcFirmware").value = env.firmware || "";
     document.getElementById("dcLastSeen").value = env.lastSeen ? (fmtTime(env.lastSeen) + " · " + fmtRelative(env.lastSeen)) : "sem dados";
+    var lastData = "Temperatura: " + fmtTemp(env.temp) + " · Umidade: " + fmtHum(env.humidity) + " · Fumaça: " + fmtSmoke(env.smoke);
+    document.getElementById("dcLastData").value = lastData;
     document.getElementById("deviceConfigOverlay").classList.remove("hidden");
   }
 
@@ -1954,10 +1970,36 @@ input, select{font-family:inherit; color:var(--text);}
     e.preventDefault();
     var env = findEnv(document.getElementById("dcEnvId").value);
     if(!env) return;
+    var newName = document.getElementById("dcName").value.trim();
+    var devInput = document.getElementById("dcDeviceInput").value.trim();
+    var newPass = document.getElementById("dcPass").value;
+    if(newName) env.name = newName;
+    if(devInput){
+      var normalized = normalizeDeviceInput(devInput);
+      if(!normalized.ok){ toast("ID/MAC inválido. Use 6 dígitos do ID ou o MAC completo.", "error"); return; }
+      env.deviceId = normalized.deviceId;
+      env.mac = normalized.mac;
+      env.isRealDevice = true;
+      env.sensorReady = false;
+      env.temp = null;
+      env.humidity = null;
+      env.smoke = null;
+      env.lastSeen = null;
+      env.status = "offline";
+    }
+    if(newPass) env.passHash = sha256(newPass);
     env.firmware = document.getElementById("dcFirmware").value || env.firmware;
+    saveEnvironments();
+    setupMqttSubscriptions();
     document.getElementById("deviceConfigOverlay").classList.add("hidden");
-    toast("Dispositivo "+env.name+" atualizado", "success");
+    toast("Ambiente atualizado", "success");
     renderAll();
+  });
+
+  document.getElementById("dcDeleteBtn").addEventListener("click", function(){
+    var envId = document.getElementById("dcEnvId").value;
+    document.getElementById("deviceConfigOverlay").classList.add("hidden");
+    deleteEnvironment(envId);
   });
 
   /* ============================================================
