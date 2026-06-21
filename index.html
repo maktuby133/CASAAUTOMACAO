@@ -1330,6 +1330,20 @@ body::before {
 <script>
 // ============ STATE ============
 let client = null;
+
+// ── Estado global movido para o topo (evita TDZ — Temporal Dead Zone) ──
+// Essas variáveis são usadas por loadRooms()/renderTanks()/loadWidgets()
+// dentro do DOMContentLoaded, que roda antes de chegar nas declarações
+// originais mais abaixo no arquivo. Declarar aqui evita ReferenceError
+// que travava TODO o listener (incluindo auto-conexão MQTT e login).
+let rooms      = [];
+let waterTanks = []; // max 2
+let widgets    = [];
+let _logEntries = []; // histórico completo do log (usado por log()/exportLog()/setLogFilter())
+let _logFilter  = 'all';
+let _loginMode  = 'login'; // modo do modal de login: 'login' ou 'register'
+let alertRules  = [];      // regras de alerta configuráveis
+const alertRuleState = {}; // estado runtime de cada regra (firstTrigger, notified, active)
 // Relés dinâmicos — cada ambiente (ESP32) registra seus próprios relés
 // Não há mais "saídas digitais" fixas globais; o array é populado pelos ambientes
 let RELAY_PREFIX = 'home/relay';
@@ -1650,6 +1664,7 @@ function loadFromBrokerPayload(payload) {
 
 // ── PWA — gera manifest e registra service worker inline ─────────────────
 function initPWA() {
+ try {
   // Manifest dinâmico
   const manifest = {
     name: 'AutoFlow — Automação',
@@ -1727,6 +1742,9 @@ self.addEventListener('message', e => {
     const swUrl  = URL.createObjectURL(swBlob);
     navigator.serviceWorker.register(swUrl).catch(() => {});
   }
+ } catch(e) {
+   console.warn('initPWA falhou (não bloqueante):', e.message);
+ }
 }
 
 function updateMainBtn() {
@@ -2254,7 +2272,6 @@ async function setCity(cityName) {
 }
 
 // ============ CAIXAS D'ÁGUA ============
-let waterTanks = []; // max 2
 let tankPumpRows = []; // pump rows in modal
 
 function saveTanks() {
@@ -3080,7 +3097,6 @@ function log(msg, type = 'sys') {
 
 
 // ============ AMBIENTES ============
-let rooms = [];
 
 function saveRooms() {
   try {
@@ -3650,8 +3666,6 @@ function _getSession() {
 function _saveSession(s) { localStorage.setItem(_sessionKey(), JSON.stringify(s)); }
 function _clearSession() { localStorage.removeItem(_sessionKey()); }
 
-// Modo do modal: 'login' ou 'register'
-let _loginMode = 'login';
 
 function openLoginModal() {
   _loginMode = 'login';
@@ -3696,9 +3710,6 @@ function _refreshLoginModal() {
   document.getElementById('login-modal-heading').textContent = isReg ? 'Criar conta' : 'Entrar no AutoFlow';
   const actionBtn = document.getElementById('login-action-btn');
   actionBtn.textContent = isReg ? 'Criar conta' : 'Entrar';
-  actionBtn.onclick = null;
-  actionBtn.addEventListener('click', isReg ? doRegister : doLogin, { once: false });
-  // Remove listener anterior para evitar duplicação
   actionBtn.onclick = isReg ? doRegister : doLogin;
   document.getElementById('login-switch-btn').textContent = isReg ? '← Já tenho conta' : 'Criar conta';
   document.getElementById('login-msg').style.display = 'none';
@@ -3792,7 +3803,6 @@ document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { on
 // SISTEMA DE WIDGETS GENÉRICOS
 // ════════════════════════════════════════════════════════════════════
 
-let widgets = [];
 
 function saveWidgets() {
   try { localStorage.setItem('autoflow_widgets', JSON.stringify(widgets)); } catch(e) {}
@@ -4928,7 +4938,282 @@ function deleteWidgetFromModal() {
   log(`🧩 Widget removido`, 'sys');
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// FUNÇÕES QUE FALTAVAM — restauradas (estavam referenciadas mas ausentes)
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Feedback tátil ───────────────────────────────────────────────────
+function haptic(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern || [40]); } catch(e) {}
+}
+
+// ── Permissões de usuário ────────────────────────────────────────────
+function applyRoleRestrictions() {
+  try {
+    const session = _getSession();
+    const role = session?.role || 'admin';
+    const isViewer = role === 'viewer';
+    document.querySelectorAll('[data-role-cfg]').forEach(el => {
+      el.style.display = (role === 'viewer' || role === 'operator') ? 'none' : '';
+    });
+    document.querySelectorAll('[data-role-ctrl]').forEach(el => {
+      el.style.pointerEvents = isViewer ? 'none' : '';
+      el.style.opacity = isViewer ? '0.4' : '';
+    });
+  } catch(e) {}
+}
+
+// ── Histórico de leituras (sparklines) ───────────────────────────────
+const MAX_HISTORY = 40;
+function pushHistory(roomId, field, value) {
+  try {
+    const key = `hist_${roomId}_${field}`;
+    let arr = [];
+    try { arr = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch(_) {}
+    arr.push({ t: Date.now(), v: value });
+    if (arr.length > MAX_HISTORY) arr = arr.slice(-MAX_HISTORY);
+    sessionStorage.setItem(key, JSON.stringify(arr));
+  } catch(e) {}
+}
+function getHistory(roomId, field) {
+  try { return JSON.parse(sessionStorage.getItem(`hist_${roomId}_${field}`) || '[]'); }
+  catch(e) { return []; }
+}
+function buildSparklineSVG(data, color, width, height) {
+  color = color || 'var(--accent)'; width = width || 60; height = height || 20;
+  if (!data || data.length < 2) return '';
+  const vals = data.map(d => d.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  const pts = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 2) - 1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const lastPt = pts.split(' ').pop().split(',');
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display:block;overflow:visible">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="2" fill="${color}"/>
+  </svg>`;
+}
+
+// ── Log: filtro por tipo ──────────────────────────────────────────────
+function setLogFilter(type) {
+  _logFilter = type;
+  document.querySelectorAll('.log-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.f === type);
+  });
+  const box = document.getElementById('log-box');
+  if (!box) return;
+  const filtered = type === 'all' ? _logEntries : _logEntries.filter(e => e.type === type);
+  box.innerHTML = '';
+  filtered.slice(-120).forEach(e => {
+    const cls = { ok:'log-ok', warn:'log-warn', info:'log-info', sys:'log-sys' }[e.type] || 'log-sys';
+    const el = document.createElement('span');
+    el.className = 'log-line ' + cls;
+    el.innerHTML = `<span class="ts">${e.ts}</span><span class="log-dot"></span><span class="msg">${e.msg}</span>`;
+    box.appendChild(el);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Log: exportação ───────────────────────────────────────────────────
+function exportLog() {
+  try {
+    const txt = _logEntries.map(e => `[${e.ts}] [${e.type.toUpperCase()}] ${e.msg}`).join('\n');
+    const blob = new Blob([txt], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `autoflow-log-${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch(e) { log('Erro ao exportar log: ' + e.message, 'warn'); }
+}
+
+// ── Alertas configuráveis ──────────────────────────────────────────────
+
+function saveAlertRules() {
+  try { localStorage.setItem('autoflow_alert_rules', JSON.stringify(alertRules)); } catch(e) {}
+}
+function loadAlertRules() {
+  try { alertRules = JSON.parse(localStorage.getItem('autoflow_alert_rules') || '[]'); } catch(e) { alertRules = []; }
+}
+
+function evalAlertRules() {
+  const now = Date.now();
+  alertRules.forEach(rule => {
+    if (!rule.enabled) return;
+    const room = rooms.find(r => r.id === rule.deviceId || r.deviceId === rule.deviceId);
+    if (!room || !room.data) return;
+    const val = { temp: room.data.temp, hum: room.data.hum, smoke: room.data.smoke }[rule.field];
+    if (val === null || val === undefined) return;
+
+    const ops = { '>': (a,b)=>a>b, '<': (a,b)=>a<b, '>=': (a,b)=>a>=b, '<=': (a,b)=>a<=b };
+    const triggered = ops[rule.op] ? ops[rule.op](val, rule.threshold) : false;
+
+    if (!alertRuleState[rule.id]) alertRuleState[rule.id] = { firstTrigger: null, notified: false, active: false };
+    const state = alertRuleState[rule.id];
+
+    if (triggered) {
+      if (!state.firstTrigger) state.firstTrigger = now;
+      const elapsed = now - state.firstTrigger;
+      if (elapsed >= (rule.duration * 1000) && !state.notified) {
+        state.notified = true;
+        state.active   = true;
+        const fieldLabel = { temp:'Temperatura', hum:'Umidade', smoke:'Gás' }[rule.field] || rule.field;
+        log(`🔔 Alerta "${rule.name}" — ${room.name}: ${fieldLabel} ${rule.op} ${rule.threshold} por ${rule.duration}s`, 'warn');
+        if (rule.notif && typeof sendGasNotification === 'function') {
+          sendGasNotification({ id: rule.id, name: rule.name }, val, true);
+        }
+      }
+    } else {
+      state.firstTrigger = null;
+      state.notified = false;
+      state.active = false;
+    }
+  });
+}
+setInterval(evalAlertRules, 10000);
+
+function openAlertRulesModal() {
+  renderAlertRulesModal();
+  refreshAlertDeviceSelect();
+  document.getElementById('alert-rules-modal')?.classList.add('open');
+}
+function closeAlertRulesModal() {
+  document.getElementById('alert-rules-modal')?.classList.remove('open');
+}
+function renderAlertRulesModal() {
+  const list = document.getElementById('alert-rules-list');
+  if (!list) return;
+  if (!alertRules.length) {
+    list.innerHTML = `<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma regra. Crie uma abaixo.</div>`;
+    return;
+  }
+  list.innerHTML = alertRules.map(r => {
+    const room = rooms.find(x => x.id === r.deviceId || x.deviceId === r.deviceId);
+    const fieldLabel = { temp:'🌡️ Temp', hum:'💧 Umidade', smoke:'🔥 Gás' }[r.field] || r.field;
+    const state = alertRuleState[r.id];
+    const isActive = state?.active;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:0.5px solid ${isActive?'var(--warn)':'var(--border)'};border-radius:var(--radius);margin-bottom:6px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${r.name} ${isActive?'<span style="color:var(--warn)">● ativo</span>':''}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">${room?.name||'?'} · ${fieldLabel} ${r.op} ${r.threshold} por ${r.duration}s</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+        <input type="checkbox" ${r.enabled?'checked':''} onchange="toggleAlertRule('${r.id}',this.checked)" style="accent-color:var(--accent)">
+      </label>
+      <button onclick="deleteAlertRule('${r.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px">✕</button>
+    </div>`;
+  }).join('');
+}
+function addAlertRule() {
+  const name      = document.getElementById('ar-name')?.value.trim();
+  const deviceId  = document.getElementById('ar-device')?.value;
+  const field     = document.getElementById('ar-field')?.value;
+  const op        = document.getElementById('ar-op')?.value;
+  const threshold = parseFloat(document.getElementById('ar-threshold')?.value);
+  const duration  = parseInt(document.getElementById('ar-duration')?.value) || 30;
+  const notif     = document.getElementById('ar-notif')?.checked;
+  if (!name || !deviceId || isNaN(threshold)) { log('Preencha todos os campos da regra', 'warn'); return; }
+  alertRules.push({ id: 'rule_'+Date.now(), name, enabled: true, deviceId, field, op, threshold, duration, notif });
+  saveAlertRules();
+  renderAlertRulesModal();
+  ['ar-name','ar-threshold'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  log(`✅ Regra "${name}" criada`, 'ok');
+}
+function toggleAlertRule(id, enabled) {
+  const r = alertRules.find(x => x.id === id);
+  if (r) { r.enabled = enabled; saveAlertRules(); }
+}
+function deleteAlertRule(id) {
+  alertRules = alertRules.filter(x => x.id !== id);
+  delete alertRuleState[id];
+  saveAlertRules();
+  renderAlertRulesModal();
+}
+function refreshAlertDeviceSelect() {
+  const sel = document.getElementById('ar-device');
+  if (!sel) return;
+  sel.innerHTML = rooms.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+}
+
+// ── QR Scanner ───────────────────────────────────────────────────────
+let _qrStream = null;
+async function openQrScanner(targetInputId) {
+  const modal = document.getElementById('qr-scanner-modal');
+  if (!modal) return;
+  modal._targetInput = targetInputId;
+  modal.classList.add('open');
+  const video = document.getElementById('qr-video');
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = _qrStream;
+    video.play();
+    _startQrDecode(targetInputId);
+  } catch(e) {
+    log('Câmera não disponível: ' + e.message, 'warn');
+    closeQrScanner();
+  }
+}
+function closeQrScanner() {
+  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
+  document.getElementById('qr-scanner-modal')?.classList.remove('open');
+  if (window._qrInterval) { clearInterval(window._qrInterval); window._qrInterval = null; }
+}
+function _startQrDecode(targetInputId) {
+  const video  = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  const ctx    = canvas?.getContext('2d');
+  if (!ctx) return;
+  window._qrInterval = setInterval(() => {
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    if ('BarcodeDetector' in window) {
+      const bd = new BarcodeDetector({ formats: ['qr_code'] });
+      bd.detect(canvas).then(codes => {
+        if (codes.length) {
+          const raw = codes[0].rawValue;
+          const match = raw.match(/([0-9a-f]{6})/i);
+          if (match) {
+            const inp = document.getElementById(targetInputId);
+            if (inp) { inp.value = match[1].toLowerCase(); inp.dispatchEvent(new Event('input')); }
+            log('QR lido: Device ID ' + match[1], 'ok');
+            closeQrScanner();
+          }
+        }
+      }).catch(() => {});
+    }
+  }, 500);
+}
+
+// ── Watchdog: status offline por dispositivo ──────────────────────────
+const WATCHDOG_INTERVAL = 15000;
+const WATCHDOG_TIMEOUT  = 90000;
+function runWatchdog() {
+  const now = Date.now();
+  let changed = false;
+  rooms.forEach(room => {
+    if (!room.data) return;
+    const ls = room.data.lastSeen ? new Date(room.data.lastSeen).getTime() : 0;
+    const wasOnline = room.data.online;
+    room.data.online = ls > 0 && (now - ls) < WATCHDOG_TIMEOUT;
+    if (wasOnline && !room.data.online) {
+      log(`📴 ${room.name} — sensor offline`, 'warn');
+      changed = true;
+    }
+  });
+  if (changed && typeof renderWidgetPanel === 'function') renderWidgetPanel();
+}
+setTimeout(() => { runWatchdog(); setInterval(runWatchdog, WATCHDOG_INTERVAL); }, 5000);
+
+// Inicializa alertRules ao carregar
+try { loadAlertRules(); } catch(e) {}
+
 </script>
+
 
 <!-- ═══ MODAL: AGENDAMENTOS DE IRRIGAÇÃO ════════════════════════════ -->
 <div class="modal-overlay" id="irrig-sched-modal">
