@@ -48,18 +48,21 @@ body::before {
 .app { position: relative; z-index: 1; max-width: 100%; margin: 0; padding: 0 20px 60px; }
 
 /* TOPBAR */
-.topbar { display: flex; align-items: center; gap: 10px; padding: 11px 0 11px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: nowrap; }
-.logo { display: flex; align-items: baseline; gap: 6px; flex-shrink: 0; }
+.topbar { display: flex; align-items: center; gap: 0; padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: nowrap; }
+.logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-right: 20px; }
 .logo-text { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; font-family: var(--mono); }
 .logo-text span { color: var(--accent); }
 .logo-tag { font-family: var(--mono); font-size: 9px; color: var(--muted); border: 0.5px solid var(--border2); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
-.topbar-sep { width: 1px; height: 18px; background: var(--border2); flex-shrink: 0; }
-.topbar-weather { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; overflow: hidden; }
-.topbar-weather-item { display: flex; flex-direction: column; align-items: center; white-space: nowrap; flex-shrink: 0; }
-.topbar-weather-val { font-family: var(--mono); font-weight: 700; color: var(--text); font-size: 13px; line-height: 1; }
-.topbar-weather-unit { font-size: 9px; color: var(--muted); margin-top: 1px; }
-.topbar-weather-city { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; flex-shrink: 1; }
-.topbar-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.topbar-sep { width: 1px; height: 28px; background: var(--border2); flex-shrink: 0; }
+.topbar-weather { display: flex; align-items: center; justify-content: space-evenly; flex: 1; min-width: 0; overflow: hidden; padding: 0 12px; }
+.topbar-weather-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; white-space: nowrap; flex-shrink: 0; padding: 0 14px; }
+.topbar-weather-val { font-family: var(--mono); font-weight: 700; color: var(--text); font-size: 16px; line-height: 1; letter-spacing: -0.5px; }
+.topbar-weather-unit { font-size: 9px; color: var(--muted); }
+.topbar-weather-lbl { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.topbar-weather-city { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 14px; flex-shrink: 0; }
+.topbar-weather-city-name { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.topbar-weather-city-lbl { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding-left: 16px; border-left: 1px solid var(--border2); }
 
 /* MQTT chip — substitui o dot sozinho */
 .mqtt-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-family: var(--mono); font-size: 10px; font-weight: 600; border: 0.5px solid; transition: all 0.2s; cursor: default; letter-spacing: 0.04em; }
@@ -301,12 +304,13 @@ body::before {
 #widget-panel {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
+  grid-auto-flow: dense;
   gap: 14px;
   align-items: start;
   margin-bottom: 14px;
 }
 
-/* Tamanhos de coluna dos cards */
+/* Tamanhos de coluna dos cards — dense packing: cards menores preenchem buracos */
 .w-card          { grid-column: span 6; }   /* padrão: meia largura */
 .w-card.sz-small { grid-column: span 4; }   /* 1/3 */
 .w-card.sz-med   { grid-column: span 6; }   /* 1/2 */
@@ -326,21 +330,17 @@ body::before {
 }
 .w-card:hover { border-color: var(--border2); }
 .w-card.patched { animation: none !important; }
+.w-card.drag-over {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(0,212,160,0.18);
+  outline: 2px dashed rgba(0,212,160,0.35);
+  outline-offset: 2px;
+}
+.w-card.drag-over-before { box-shadow: -4px 0 0 0 var(--accent), 0 0 0 1px rgba(0,212,160,0.2); }
+.w-card.drag-over-after  { box-shadow:  4px 0 0 0 var(--accent), 0 0 0 1px rgba(0,212,160,0.2); }
 .w-card.dragging {
-  opacity: 0.35;
+  opacity: 0.45;
   border-style: dashed;
-  border-color: var(--accent);
-}
-.w-drop-placeholder {
-  border: 2px dashed var(--accent);
-  border-radius: var(--radius-lg);
-  background: rgba(34,211,160,0.06);
-  min-height: 70px;
-  transition: grid-column 0.15s ease;
-  pointer-events: none;
-}
-#widget-panel.dnd-active .w-card:not(.dragging) {
-  transition: transform 0.15s ease;
 }
 
 /* Header do card */
@@ -373,31 +373,26 @@ body::before {
   width: 3px; height: 12px;
   background: var(--accent); border-radius: 2px; flex-shrink: 0;
 }
-/* Controle de resize — botão + e bolinhas de tamanho */
+/* Botões de resize */
 .w-resize-btns {
-  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+  display: flex; gap: 2px; flex-shrink: 0;
 }
-.w-resize-add {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: none; background: var(--accent); color: #000;
-  font-size: 15px; font-weight: 700; line-height: 1;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: background 0.15s, transform 0.15s; padding: 0;
-}
-.w-resize-add:hover { background: #1fc090; transform: scale(1.1); }
-.w-resize-sep { width: 1px; height: 14px; background: var(--border2); flex-shrink: 0; }
-.w-resize-dots { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .w-resize-btn {
-  border-radius: 50%; border: 1.5px solid var(--border2); background: var(--bg3);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s; padding: 0; flex-shrink: 0;
+  width: 22px; height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
 }
-.w-resize-btn[data-sz="small"] { width: 6px;  height: 6px;  }
-.w-resize-btn[data-sz="med"]   { width: 9px;  height: 9px;  }
-.w-resize-btn[data-sz="large"] { width: 12px; height: 12px; }
-.w-resize-btn[data-sz="full"]  { width: 14px; height: 14px; }
-.w-resize-btn:hover { border-color: var(--accent); background: rgba(0,212,160,0.2); }
-.w-resize-btn.active { background: var(--accent); border-color: var(--accent); }
+.w-resize-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.06); }
+.w-resize-btn.active { background: rgba(0,212,160,0.12); border-color: rgba(0,212,160,0.4); color: var(--accent); }
 .w-edit-btn {
   background: transparent; border: 1px solid var(--border);
   border-radius: 6px; color: var(--muted); cursor: pointer;
@@ -462,8 +457,7 @@ body::before {
   .w-card, .w-card.sz-small, .w-card.sz-med, .w-card.sz-large, .w-card.sz-full {
     grid-column: span 1 !important;
   }
-  .w-resize-btns { display: flex; }
-  .w-resize-add { width: 20px; height: 20px; font-size: 13px; }
+  .w-resize-btns { display: none; }
 }
 
 /* ══════════════════════════════════════════
@@ -473,21 +467,19 @@ body::before {
   .app { padding: 0 10px 80px; }
 
   /* ── Topbar ── */
-  .topbar { padding: 10px 0; gap: 6px; flex-wrap: nowrap; }
+  .topbar { padding: 8px 0; gap: 0; }
   .logo-tag { display: none; }
-  .logo-text { font-size: 16px; flex-shrink: 0; }
-  .topbar-sep { display: none; }
-  /* Clima: só ícone + temp no mobile */
-  .topbar-weather { gap: 5px; }
-  .topbar-weather-city,
-  #wi-irrig-status,
+  .logo-text { font-size: 15px; flex-shrink: 0; }
+  .topbar-sep { display: none !important; }
+  /* Clima mobile: só cidade + temp */
+  .topbar-weather { justify-content: flex-start; padding: 0 8px; gap: 0; }
+  #wi-city-inline-wrap,
   #mb-rain-inline,
-  #wi-hum-inline-wrap,
-  .topbar-weather-item:not(:first-of-type) { display: none !important; }
-  /* Mostrar só temp */
-  .topbar-weather-item:first-of-type { display: flex !important; }
-  .topbar-weather-val { font-size: 13px; }
-  .topbar-right { gap: 5px; flex-shrink: 0; }
+  .topbar-weather-item:not(:nth-child(3)) { display: none !important; }
+  /* Mostrar só temp no mobile */
+  .topbar-weather-item:nth-child(3) { display: flex !important; padding: 0 6px; }
+  .topbar-weather-val { font-size: 15px; }
+  .topbar-right { gap: 5px; flex-shrink: 0; border-left: none; padding-left: 0; }
   .conn-status { display: none; }
   .login-btn-lbl { display: none; }
   #login-btn { padding: 4px !important; min-width: 30px; }
@@ -510,9 +502,9 @@ body::before {
   }
   .room-card {
     height: auto !important;
-    min-height: 0 !important;
+    min-height: 44px !important;
     overflow: visible !important;
-    padding: 6px 26px 6px 9px !important;
+    padding: 8px 28px 8px 10px !important;
     flex-direction: row !important;
     align-items: center !important;
     gap: 8px !important;
@@ -527,33 +519,32 @@ body::before {
     border: 1px solid var(--border) !important;
   }
   .room-header {
-    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 5px !important;
     margin-bottom: 0 !important;
-    padding-right: 14px !important;
-    width: 100% !important;
+    max-width: 45% !important;
+    padding-right: 0 !important;
   }
-  .room-icon { font-size: 16px !important; flex-shrink:0; }
-  .room-name {
-    font-size: 13px !important; white-space: nowrap !important;
-    overflow: hidden !important; text-overflow: ellipsis !important;
-    max-width: 80px !important; flex-shrink:0;
-  }
+  .room-icon { font-size: 15px !important; }
+  .room-name { font-size: 12px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
   .room-ts { display: none !important; }
+  /* Separador vertical entre nome e dados */
+  .room-header::after {
+    content: ''; display: inline-block;
+    width: 1px; height: 16px;
+    background: var(--border);
+    margin: 0 6px; flex-shrink: 0;
+  }
   .room-main-row {
     flex: 1 !important; min-width: 0 !important;
-    flex-wrap: nowrap !important; gap: 7px !important;
-    align-items: center !important;
-    overflow-x: auto !important; overflow-y: hidden !important;
+    flex-wrap: wrap !important; gap: 5px !important;
+    align-items: center !important; overflow: visible !important;
   }
-  .room-val  { font-size: 17px !important; }
+  .room-val  { font-size: 13px !important; }
   .room-unit { font-size: 9px !important; }
-  .room-relay-wrap { flex-shrink: 0 !important; gap: 4px !important; }
-  .room-relay-switch { width: 38px !important; height: 21px !important; }
-  .rrs-knob { width: 14px !important; height: 14px !important; }
-  .room-relay-switch input:checked ~ .rrs-knob { transform: translateX(17px) !important; }
-  .lamp-bulb { font-size: 22px !important; }
+  .room-relay-wrap { flex-shrink: 0 !important; gap: 3px !important; }
 
   /* ── Row 2 (caixas + irrigação) — 1 coluna ── */
   .row-2 { grid-template-columns: 1fr !important; }
@@ -611,12 +602,11 @@ body::before {
 .rooms-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 6px 20px 6px 9px;
+  border-radius: var(--radius); padding: 7px 22px 7px 9px;
   transition: border-color 0.2s; position:relative; min-width:0;
   box-sizing: border-box;
-  display: flex; flex-direction: column; justify-content: center;
-  min-height: 0; overflow: visible;
-  /* SEM height fixo — botões nunca somem */
+  display: flex; flex-direction: column; gap: 4px;
+  /* SEM height fixo, SEM overflow:hidden — botões nunca somem */
 }
 .room-card:hover { border-color: var(--border2); }
 .room-card:hover .room-del-btn { opacity: 1; }
@@ -634,102 +624,47 @@ body::before {
   z-index: 2;
 }
 .room-del-btn:hover { background: rgba(239,68,68,0.15); color: var(--danger); opacity: 1 !important; }
-/* ── LINHA ÚNICA: ícone + nome + sensores + lâmpada ──────────────── */
-.room-header {
-  display:flex; align-items:center; gap:9px;
-  flex-wrap: nowrap; padding-right:18px; width:100%;
-  line-height: 1;
-}
-.room-icon   { font-size:17px; flex-shrink:0; line-height:1; }
-.room-name   {
-  font-size:14px; font-weight:700; color:var(--text);
-  flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  max-width:108px; letter-spacing:-0.01em; line-height:1;
-}
+/* header */
+.room-header { display:flex; align-items:center; gap:4px; flex-shrink:0; padding-right:14px; }
+.room-icon   { font-size:12px; flex-shrink:0; }
+.room-name   { font-size:11px; font-weight:600; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .room-ts     { font-family:var(--mono); font-size:7px; color:var(--muted); flex-shrink:0; }
-
-/* sensores + lâmpada ficam todos na mesma linha do header agora */
+/* sensor row — dados de sensor, pode truncar se estreito */
 .room-main-row {
-  display: flex; align-items: center; gap: 6px;
-  flex-wrap: nowrap; min-width: 0; overflow: hidden;
-  flex: 1; line-height: 1;
+  display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap; min-width: 0; overflow: visible;
 }
-/* Garante que a lâmpada nunca suma por overflow */
-.room-main-row .room-relay-wrap { flex-shrink: 0 !important; }
-.room-main-row > span[style*="inline-flex"] { flex-shrink: 1; min-width: 0; }
-
+/* relay row — botões, NUNCA cortados */
 .room-relay-row {
   display: flex; align-items: center; gap: 5px;
   flex-wrap: wrap; flex-shrink: 0;
 }
-.room-sep { width:1px; height:16px; background:var(--border); flex-shrink:0; }
-
-/* valores de sensor — fonte vertical maior (alongada), card compacto */
-.room-val  {
-  font-family: var(--mono); font-weight: 800; color: var(--text);
-  font-size: 20px; line-height: 1;
-  letter-spacing: -0.02em;
-  transform: scaleY(1.15);
-  transform-origin: center;
-  white-space: nowrap;
-}
-.room-unit { font-size: 10px; color: var(--muted); font-weight: 500; margin-left: 1px; }
-
-/* ── SWITCH DA LÂMPADA — maior, mais robusto ─────────────────────── */
+.room-sep { width:1px; height:12px; background:var(--border); flex-shrink:0; }
+.room-val  { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--text); letter-spacing:-0.5px; white-space:nowrap; }
+.room-unit { font-size:8px; color:var(--muted); font-weight:400; }
+/* relay toggle switch */
 .room-relay-switch {
   position: relative; display: inline-flex; align-items: center;
-  width: 42px; height: 23px; flex-shrink: 0; cursor: pointer;
+  width: 32px; height: 17px; flex-shrink: 0; cursor: pointer;
 }
 .room-relay-switch input { opacity:0; width:0; height:0; position:absolute; }
 .rrs-track {
   position: absolute; inset: 0;
-  background: var(--bg2); border: 1.5px solid var(--border2);
-  border-radius: 13px; transition: all 0.25s ease;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 9px; transition: all 0.22s ease;
 }
 .rrs-knob {
-  position: absolute; width: 15px; height: 15px;
+  position: absolute; width: 11px; height: 11px;
   background: var(--muted); border-radius: 50%;
   top: 3px; left: 3px;
-  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.25s, box-shadow 0.25s;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), background 0.22s;
   pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 .room-relay-switch input:checked ~ .rrs-track { background: rgba(0,212,160,0.18); border-color: rgba(0,212,160,0.5); }
-.room-relay-switch input:checked ~ .rrs-knob  { transform: translateX(19px); background: var(--accent); box-shadow: 0 0 6px rgba(0,212,160,0.6); }
-
-.room-relay-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; white-space: nowrap; }
+.room-relay-switch input:checked ~ .rrs-knob  { transform: translateX(15px); background: var(--accent); box-shadow: 0 0 6px rgba(0,212,160,0.6); }
+.room-relay-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; white-space: nowrap; }
 .room-relay-lbl { font-family: var(--mono); font-size: 8px; color: var(--muted); max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.room-nodata { font-family:var(--mono); font-size:11px; color:var(--muted); padding:0; white-space:nowrap; }
-
-/* ── EFEITO DE LÂMPADA — maior, cinza apagada / amarelo pulsante acesa ─── */
-.lamp-bulb {
-  font-size: 22px; line-height: 1;
-  display: inline-block;
-  transition: filter 0.35s ease, transform 0.25s ease;
-  filter: grayscale(1) brightness(0.55) contrast(0.9);
-  transform: scale(0.92);
-}
-.lamp-bulb.lamp-on {
-  filter: grayscale(0) brightness(1.25) saturate(1.5)
-    drop-shadow(0 0 5px rgba(255,205,70,0.95))
-    drop-shadow(0 0 13px rgba(255,180,40,0.7))
-    drop-shadow(0 0 22px rgba(255,160,30,0.35));
-  transform: scale(1);
-  animation: lampGlow 2s ease-in-out infinite;
-}
-@keyframes lampGlow {
-  0%, 100% {
-    filter: grayscale(0) brightness(1.25) saturate(1.5)
-      drop-shadow(0 0 5px rgba(255,205,70,0.95))
-      drop-shadow(0 0 13px rgba(255,180,40,0.7))
-      drop-shadow(0 0 22px rgba(255,160,30,0.35));
-  }
-  50% {
-    filter: grayscale(0) brightness(1.45) saturate(1.6)
-      drop-shadow(0 0 8px rgba(255,215,90,1))
-      drop-shadow(0 0 20px rgba(255,195,60,0.9))
-      drop-shadow(0 0 32px rgba(255,170,40,0.5));
-  }
-}
+.room-nodata { font-family:var(--mono); font-size:9px; color:var(--muted); padding:2px 0; }
 
 /* Room modal sensor options */
 .rm-sensor-opt {
@@ -744,22 +679,11 @@ body::before {
 /* ══ rooms-scroll dentro do widget ══ */
 #widget-panel .rooms-scroll {
   grid-template-columns: 1fr; /* coluna única dentro do widget */
-  gap: 4px;
+  gap: 5px;
 }
 
-/* sz-small: valores menores para tudo caber em uma linha */
+/* sz-small: mesma coisa mas mais compacto */
 .sz-small .rooms-scroll { gap: 4px; }
-.sz-small .room-val  { font-size: 14px !important; }
-.sz-small .room-unit { font-size: 9px !important; }
-.sz-small .lamp-bulb { font-size: 16px !important; }
-.sz-small .room-relay-switch { width: 34px !important; height: 19px !important; }
-.sz-small .rrs-knob  { width: 12px !important; height: 12px !important; top:2px !important; left:2px !important; }
-.sz-small .room-relay-switch input:checked ~ .rrs-knob { transform: translateX(15px) !important; }
-.sz-small .room-name { max-width: 72px !important; font-size: 12px !important; }
-.sz-small .room-icon { font-size: 14px !important; }
-.sz-small .room-sep  { height: 12px !important; }
-.sz-med   .room-val  { font-size: 16px !important; }
-.sz-med   .lamp-bulb { font-size: 18px !important; }
 
 /* ══ Irrigação: status bomba botões ══ */
 .irrig-pump-status {
@@ -782,6 +706,27 @@ body::before {
   justify-content: space-between;
 }
 .irrig-sched-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,160,0.04); }
+
+/* ── Medidor modes ───────────────────────────────────────────── */
+.meter-mode-card { display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 6px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);text-align:center;transition:border-color .15s,background .15s; }
+.meter-mode-card:has(input:checked),.meter-mode-card.selected { border-color:var(--accent);background:rgba(34,211,160,.07); }
+.meter-energy-grid { display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px; }
+.energy-cell { background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px; }
+.energy-cell .ec-val { font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text); }
+.energy-cell .ec-lbl { font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px; }
+.flow-rate-big { font-family:var(--mono);font-size:32px;font-weight:700;color:#3b82f6;line-height:1; }
+.flow-unit-lbl { font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:4px; }
+.flow-row { display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border-radius:var(--radius);margin-top:6px; }
+.flow-row .fr-val { font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text); }
+.flow-row .fr-lbl { font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto; }
+/* ── device-id section block ─────────────────────────────────── */
+.dev-section { padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px; }
+.dev-section-label { font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px; }
+.dev-section-label .dsb { display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px; }
+/* ── relay mode toggle ────────────────────────────────────────── */
+.rel-mode-card { flex:1;display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);transition:border-color .15s; }
+.rel-mode-card:has(input:checked) { border-color:var(--accent); }
+
 </style>
 </head>
 <body>
@@ -798,41 +743,70 @@ body::before {
 
     <!-- Clima inline na topbar -->
     <div class="topbar-weather" id="topbar-weather">
-      <span id="wi-icon-inline" style="font-size:16px;flex-shrink:0">🌍</span>
-      <span class="topbar-weather-city" id="wi-city-inline">configure →</span>
-      <span id="wi-irrig-status" style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(107,114,128,0.12);color:var(--muted);flex-shrink:0">clima</span>
 
-      <!-- Temp -->
-      <span class="topbar-sep" style="height:14px"></span>
-      <span class="topbar-weather-item" title="Temperatura">
-        🌡️ <span class="topbar-weather-val" id="wi-temp-inline">—</span><span class="topbar-weather-unit">°C</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-feels-inline"></span>
-      </span>
+      <!-- Cidade + ícone -->
+      <div class="topbar-weather-city" id="wi-city-inline-wrap">
+        <span id="wi-icon-inline" style="font-size:18px;line-height:1">🌍</span>
+        <span class="topbar-weather-city-name" id="wi-city-inline">configure</span>
+        <span class="topbar-weather-city-lbl">cidade</span>
+      </div>
+
+      <div class="topbar-sep"></div>
+
+      <!-- Temperatura -->
+      <div class="topbar-weather-item" title="Temperatura">
+        <span class="topbar-weather-lbl">temp</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-temp-inline">—</span><span class="topbar-weather-unit">°C</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="wi-feels-inline"></span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- Umidade -->
-      <span class="topbar-weather-item" title="Umidade">
-        💧<span class="topbar-weather-val" id="wi-hum-inline">—</span><span class="topbar-weather-unit">%</span>
-      </span>
+      <div class="topbar-weather-item" title="Umidade">
+        <span class="topbar-weather-lbl">umidade</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-hum-inline">—</span><span class="topbar-weather-unit">%</span>
+        </span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- Chuva -->
-      <span class="topbar-weather-item" id="mb-rain-inline" title="Chuva">
-        🌧<span class="topbar-weather-val" id="wi-rain-inline">—</span><span class="topbar-weather-unit">mm</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-prob-inline"></span>
-      </span>
+      <div class="topbar-weather-item" id="mb-rain-inline" title="Chuva">
+        <span class="topbar-weather-lbl">chuva</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-rain-inline">—</span><span class="topbar-weather-unit">mm</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="wi-prob-inline"></span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- Vento -->
-      <span class="topbar-weather-item" title="Vento">
-        💨<span class="topbar-weather-val" id="wi-wind-inline">—</span><span class="topbar-weather-unit">km/h</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px" id="wi-winddir-inline"></span>
-      </span>
+      <div class="topbar-weather-item" title="Vento">
+        <span class="topbar-weather-lbl">vento</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-wind-inline">—</span><span class="topbar-weather-unit">km/h</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="wi-winddir-inline"></span>
+      </div>
+
+      <div class="topbar-sep"></div>
 
       <!-- UV -->
-      <span class="topbar-weather-item" title="Índice UV">
-        ☀️<span class="topbar-weather-val" id="wi-uv-inline">—</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:1px" id="wi-uvlbl-inline">UV</span>
-      </span>
+      <div class="topbar-weather-item" title="Índice UV">
+        <span class="topbar-weather-lbl">índice uv</span>
+        <span style="display:inline-flex;align-items:baseline;gap:1px">
+          <span class="topbar-weather-val" id="wi-uv-inline">—</span>
+          <span class="topbar-weather-unit" id="wi-uvlbl-inline"></span>
+        </span>
+      </div>
 
-      <span id="live-ts" style="font-family:var(--mono);font-size:9px;color:var(--muted);flex-shrink:0;display:none">aguardando...</span>
+      <span id="wi-irrig-status" style="display:none"></span>
+      <span id="live-ts" style="display:none"></span>
       <span id="wi-status-inline" style="display:none"></span>
     </div>
 
@@ -886,10 +860,18 @@ body::before {
   <div id="widget-panel"></div>
 
   <!-- Barra de adicionar widget -->
-  <div class="add-widget-bar">
+  <div class="add-widget-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <button class="add-widget-btn" onclick="openWidgetPicker()">
       <span style="font-size:16px">＋</span> Adicionar widget
     </button>
+    <button id="af-discover-btn" onclick="openAutoflowModal('')"
+      style="display:none;align-items:center;gap:6px;padding:8px 14px;background:rgba(59,130,246,.12);
+      border:1px solid rgba(59,130,246,.35);border-radius:10px;color:var(--accent2);
+      font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+      <span>📡</span> Dispositivos novos: <span class="af-badge" style="background:var(--accent2);color:#000;
+        border-radius:10px;padding:0 6px;font-size:10px">0</span>
+    </button>
+
   </div>
 
   <!-- Containers ocultos para lógica existente (tanks, sched, rooms) -->
@@ -1209,7 +1191,17 @@ body::before {
             📡 <span style="color:var(--accent2)" id="tank-status-preview">caixas/agua/.../status</span>
           </div>
         </div>
-        <div class="field" style="margin-bottom:0">
+        <div class="field" style="margin-bottom:8px">
+          <label>Senha do dispositivo</label>
+          <div style="display:flex;gap:6px">
+            <input id="tank-pass" type="password" placeholder="Senha do portal AP do ESP32"
+              style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
+            <button type="button" onclick="togglePassVis('tank-pass',this)"
+              style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--mono)">🔑 Autenticação dos comandos para o ESP32</div>
+        </div>
+      <div class="field" style="margin-bottom:0">
           <label>Capacidade total (litros)</label>
           <input id="tank-capacity" type="number" placeholder="ex: 1000" min="1"
             style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;width:100%"/>
@@ -1244,7 +1236,7 @@ body::before {
         onclick="deleteTankFromModal()">🗑 Excluir</button>
       <div style="display:flex;gap:10px;margin-left:auto">
         <button class="btn" onclick="closeTankModal()">Cancelar</button>
-        <button class="btn primary" onclick="confirmSaveTank()">Salvar</button>
+        <button class="btn primary" id="tank-save-btn" onclick="confirmSaveTank()">Salvar</button>
       </div>
     </div>
   </div>
@@ -1354,24 +1346,6 @@ body::before {
 <script>
 // ============ STATE ============
 let client = null;
-
-// ── Estado global movido para o topo (evita TDZ — Temporal Dead Zone) ──
-// Essas variáveis são usadas por loadRooms()/renderTanks()/loadWidgets()
-// dentro do DOMContentLoaded, que roda antes de chegar nas declarações
-// originais mais abaixo no arquivo. Declarar aqui evita ReferenceError
-// que travava TODO o listener (incluindo auto-conexão MQTT e login).
-let rooms      = [];
-let waterTanks = []; // max 2
-let widgets    = [];
-let _logEntries = []; // histórico completo do log (usado por log()/exportLog()/setLogFilter())
-let _logFilter  = 'all';
-let _loginMode  = 'login'; // modo do modal de login: 'login' ou 'register'
-let alertRules  = [];      // regras de alerta configuráveis
-const alertRuleState = {}; // estado runtime de cada regra (firstTrigger, notified, active)
-
-// Tamanhos dos cards de widget: 'small'(4col) | 'med'(6col) | 'large'(8col) | 'full'(12col)
-const W_SIZES = ['small','med','large','full'];
-const W_SIZE_LABELS = { small:'1/3', med:'1/2', large:'2/3', full:'■' };
 // Relés dinâmicos — cada ambiente (ESP32) registra seus próprios relés
 // Não há mais "saídas digitais" fixas globais; o array é populado pelos ambientes
 let RELAY_PREFIX = 'home/relay';
@@ -1666,11 +1640,10 @@ function loadFromBrokerPayload(payload) {
     }
     // Prefixo
     if (d.relayPrefix) RELAY_PREFIX = d.relayPrefix;
-    // Widgets genéricos — sincroniza entre dispositivos
-    if (d.widgets && d.widgets.length) {
-      d.widgets.forEach(bw => {
-        if (!widgets.some(w => w.id === bw.id)) widgets.push(bw);
-      });
+    // Widgets genéricos — broker é a fonte de verdade única
+    // Qualquer navegador/dispositivo recebe exatamente o que está no broker
+    if (d.widgets !== undefined) {
+      widgets = d.widgets || [];
       saveWidgets();
       renderWidgetPanel();
     }
@@ -1692,7 +1665,6 @@ function loadFromBrokerPayload(payload) {
 
 // ── PWA — gera manifest e registra service worker inline ─────────────────
 function initPWA() {
- try {
   // Manifest dinâmico
   const manifest = {
     name: 'AutoFlow — Automação',
@@ -1770,9 +1742,6 @@ self.addEventListener('message', e => {
     const swUrl  = URL.createObjectURL(swBlob);
     navigator.serviceWorker.register(swUrl).catch(() => {});
   }
- } catch(e) {
-   console.warn('initPWA falhou (não bloqueante):', e.message);
- }
 }
 
 function updateMainBtn() {
@@ -1825,6 +1794,8 @@ function closeBrokerModal() {
 }
 
 function smartConnect() {
+  // Clique no chip sempre abre o modal (conectado ou não)
+  // Auto-connect silencioso só acontece no DOMContentLoaded
   openBrokerModal();
 }
 
@@ -1863,6 +1834,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 4. Restaura ambientes ─────────────────────────────────────────────
   loadRooms();
+  // ── AutoFlow devices ──────────────────────────────────────────────────────
+  loadAutoflowDevices();
 
   // ── 4b. Restaura caixas d'água ────────────────────────────────────────
   loadTanks();
@@ -1928,11 +1901,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 8. Auto-login: conecta se tiver credenciais salvas ──────────────
     updateMainBtn();
     const s = getCfg();
-    const hasCloud = !!(s.host && s.pass);
+    // Restaura brokerMode ANTES de checar credenciais
+    const savedMode = s.brokerMode || 'cloud';
+    brokerMode = savedMode;
+    switchBrokerTab(savedMode);
+    const hasCloud = !!(s.host);       // host basta; senha pode ser opcional
     const hasLocal = !!(s.localHost);
-    if (hasCloud || hasLocal) {
-      // Garante que o brokerMode correto está ativo antes de conectar
-      if (s.brokerMode) { brokerMode = s.brokerMode; switchBrokerTab(s.brokerMode); }
+    if ((savedMode === 'local' && hasLocal) || (savedMode !== 'local' && hasCloud)) {
       log('🔑 Credenciais encontradas — conectando automaticamente...', 'info');
       connectMQTT();
     }
@@ -1958,36 +1933,55 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(_updateLoginBtn, 0);
 });
 
+function _updateBrokerModalStatus(cls, txt) {
+  const dot = document.getElementById('broker-modal-dot');
+  const lbl = document.getElementById('broker-modal-status');
+  if (!dot || !lbl) return;
+  if (cls === 'connecting') {
+    dot.className = 'dot connecting'; lbl.textContent = txt; lbl.style.color = 'var(--warn)';
+  } else if (cls === 'on') {
+    dot.className = 'dot on'; lbl.textContent = txt; lbl.style.color = 'var(--accent)';
+  } else if (cls === 'error') {
+    dot.className = 'dot'; lbl.textContent = txt; lbl.style.color = 'var(--danger)';
+  } else {
+    dot.className = 'dot'; lbl.textContent = txt; lbl.style.color = '';
+  }
+}
+
 function connectMQTT() {
   const isLocal = brokerMode === 'local';
 
+  // Lê do DOM primeiro (modal aberto) — captura o que o usuário digitou mesmo sem oninput
+  // Fallback para localStorage se os campos não existirem no DOM
+  const domVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : null; };
+  const domPass = (id) => { const el = document.getElementById(id); return el ? el.value : null; };
+
   const s = getCfg();
 
-  // Lê sempre do DOM quando os campos existem — broker-modal está sempre no DOM
-  const dom = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  const domPass = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  let host, port, user, pass, water, temp, gas;
+  if (isLocal) {
+    host  = domVal('cfg-local-host')  ?? s.localHost  ?? '';
+    port  = parseInt(domVal('cfg-local-port') ?? s.localPort) || 9001;
+    user  = domVal('cfg-local-user')  ?? s.localUser  ?? '';
+    pass  = domPass('cfg-local-pass') ?? s.localPass  ?? '';
+    water = domVal('cfg-local-water') ?? s.localWater ?? '';
+    temp  = (domVal('cfg-local-temp') ?? s.localTemp  ?? '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  } else {
+    host  = domVal('cfg-host')  ?? s.host  ?? '';
+    port  = parseInt(domVal('cfg-port') ?? s.port) || 8884;
+    user  = domVal('cfg-user')  ?? s.user  ?? '';
+    pass  = domPass('cfg-pass') ?? s.pass  ?? '';
+    water = domVal('cfg-water') ?? s.water ?? '';
+    temp  = (domVal('cfg-temp') ?? s.temp  ?? '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  }
 
-  const host  = isLocal
-    ? (dom('cfg-local-host') || s.localHost || '')
-    : (dom('cfg-host')       || s.host       || '');
-  const port  = isLocal
-    ? (parseInt(dom('cfg-local-port') || s.localPort) || 9001)
-    : (parseInt(dom('cfg-port')       || s.port)      || 8884);
-  const user  = isLocal
-    ? (dom('cfg-local-user') || s.localUser || '')
-    : (dom('cfg-user')       || s.user       || '');
-  const pass  = isLocal
-    ? (domPass('cfg-local-pass') || s.localPass || '')
-    : (domPass('cfg-pass')       || s.pass       || '');
-  const water = isLocal
-    ? (dom('cfg-local-water') || s.localWater || '')
-    : (s.water || '');
-  const temp  = (isLocal ? (s.localTemp || '') : (s.temp || ''))
-    .toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  const gas   = (s.gas || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
-
-  if (!host) { log('Preencha o host do broker', 'warn'); return; }
-  if (!isLocal && !pass) { log('Preencha a senha MQTT', 'warn'); return; }
+  if (!host) {
+    log('Preencha o host do broker', 'warn');
+    _updateBrokerModalStatus('error', 'Host não preenchido');
+    return;
+  }
 
   // Salva tudo antes de conectar
   setCfg(isLocal
@@ -2009,20 +2003,32 @@ function connectMQTT() {
   if (client) { try { client.end(true); } catch(e) {} }
 
   setConnStatus('connecting', 'Conectando...');
+  _updateBrokerModalStatus('connecting', 'Conectando…');
   log(`Conectando a ${host} | água:${water||'—'} | temp:${temp||'—'}`, 'info');
+
+  // Timeout de segurança: se após 15s nenhum evento disparar, volta para desconectado
+  const _connTimeout = setTimeout(() => {
+    if (!window._mqttConnected) {
+      setConnStatus('off', 'Timeout');
+      _updateBrokerModalStatus('error', 'Timeout — verifique host/porta');
+      log('Conexão MQTT: timeout (15s)', 'warn');
+    }
+  }, 15000);
 
   client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
     username: user,
     password: pass,
     clientId: 'autoflow_' + Math.random().toString(36).substr(2, 8),
     clean: true,
-    connectTimeout: 10000,
-    reconnectPeriod: 5000,
+    connectTimeout: 8000,
+    reconnectPeriod: 30000,  // tenta reconectar após 30s se cair; 0 causa bug no MQTT.js v5
   });
 
   client.on('connect', () => {
+    clearTimeout(_connTimeout);
     window._mqttConnected = true;
     setConnStatus('on', 'Conectado');
+    _updateBrokerModalStatus('on', 'Conectado');
     log('Broker MQTT conectado!', 'ok');
     try { document.getElementById('cfg-panel').style.setProperty('display','none','important'); } catch(e){}
     closeBrokerModal();
@@ -2032,20 +2038,30 @@ function connectMQTT() {
     saveTanks();
     irrigPump.mqttHost = host; irrigPump.mqttUser = user; irrigPump.mqttPass = pass;
     saveIrrigPump();
+    // Cancela assinaturas sensors/ de sessões anteriores que não têm room ativa
+    _unsubscribeOrphanSensorTopics();
     subscribeAll();
     startScheduleEngine();
     subscribeTanks();
   });
-  client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); log('Erro MQTT: ' + e.message, 'warn'); });
-  client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); log('MQTT offline', 'warn'); });
+  client.on('error',   (e) => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Erro'); _updateBrokerModalStatus('error', 'Erro: ' + (e.message || 'verifique credenciais')); log('Erro MQTT: ' + e.message, 'warn'); });
+  client.on('offline', ()  => { window._mqttConnected = false; updateMainBtn(); setConnStatus('off', 'Offline'); _updateBrokerModalStatus('error', 'Offline — sem rota para o broker'); log('MQTT offline', 'warn'); });
+  client.on('close',   ()  => { if (!window._mqttConnected) { updateMainBtn(); setConnStatus('off', 'Desconectado'); } });
   client.on('message', (t, m, pkt) => handleMsg(t, m.toString(), pkt));
 }
 
 function subscribeAll() {
   const subs = [];
   if (TOPICS_WATER.dados) { subs.push(TOPICS_WATER.dados); subs.push(TOPICS_WATER.status); }
-  // Wildcard para capturar retained de temperatura independente de timing
-  subs.push('sensors/#');
+  // Ambientes legados (sensors/ prefix)
+  rooms.forEach(r => {
+    if (r.deviceId) {
+      subs.push(`sensors/${r.deviceId}/data`);
+      subs.push(`sensors/${r.deviceId}/gas`);
+    }
+  });
+  // ── Wildcard AutoFlow: descoberta automática de ESP32 ──────────────────
+  subs.push('autoflow/#');
   // Caixas d'água cadastradas
   subs.push('caixas/agua/#');
   // Assina estado apenas dos relés dos ambientes — bombas têm brokers/tópicos próprios
@@ -2061,10 +2077,18 @@ function subscribeAll() {
 
 // ============ MENSAGENS MQTT ============
 function handleMsg(topic, payload, pkt) {
+  // Silencia sensors/ sem room cadastrada com esse deviceId
+  if (topic.startsWith('sensors/')) {
+    const tid = topic.split('/')[1];
+    const hasRoom = rooms.some(r => (r.deviceId || r.tempDeviceId) === tid);
+    if (!hasRoom) return;
+  }
   // Log bruto de TODAS as mensagens
   log(`↓ [${topic}] ${payload.substring(0, 80)}${payload.length > 80 ? '…' : ''}`, 'sys');
   // Config persistida no broker
   if (topic === PERSIST_TOPIC) { loadFromBrokerPayload(payload); return; }
+  // ── AutoFlow unified protocol ──────────────────────────────────────────────
+  if (topic.startsWith('autoflow/')) { handleAutoflowMessage(topic, payload); return; }
   handleRoomMessage(topic, payload);
   handleWidgetMessage(topic, payload);
 
@@ -2300,6 +2324,7 @@ async function setCity(cityName) {
 }
 
 // ============ CAIXAS D'ÁGUA ============
+let waterTanks = []; // max 2
 let tankPumpRows = []; // pump rows in modal
 
 function saveTanks() {
@@ -2309,14 +2334,21 @@ function loadTanks() {
   try { waterTanks = JSON.parse(localStorage.getItem('autoflow_tanks') || '[]'); } catch(e) { waterTanks = []; }
 }
 
-function openTankModal(editId) {
+function openTankModal(editId, fromWidget) {
   const t = editId ? waterTanks.find(x => x.id === editId) : null;
   document.getElementById('tank-edit-id').value = editId || '';
-  document.getElementById('tank-modal-title').textContent = t ? 'Editar caixa' : 'Nova caixa d\'água';
-    const delBtn = document.getElementById('tank-delete-btn');
-    if (delBtn) delBtn.style.display = editId ? 'flex' : 'none';
+  // flag para saber se veio do fluxo de widget
+  document.getElementById('tank-modal').dataset.fromWidget = fromWidget ? '1' : '';
+  const titleEl = document.getElementById('tank-modal-title');
+  titleEl.textContent = fromWidget ? '🪣 Nova caixa d\'água' : (t ? 'Editar caixa' : 'Nova caixa d\'água');
+  const delBtn = document.getElementById('tank-delete-btn');
+  if (delBtn) delBtn.style.display = editId ? 'flex' : 'none';
+  // Botão salvar vira "Salvar e adicionar widget" quando fromWidget
+  const saveBtn = document.getElementById('tank-save-btn');
+  if (saveBtn) saveBtn.textContent = fromWidget ? '＋ Criar e adicionar widget' : 'Salvar';
   document.getElementById('tank-name').value = t?.name || '';
   document.getElementById('tank-code').value = t?.code || '';
+  const _tpe = document.getElementById('tank-pass'); if (_tpe) _tpe.value = t?.pass || '';
   document.getElementById('tank-capacity').value = t?.capacity || '';
   updateTankPreview();
   // Pump rows
@@ -2435,6 +2467,7 @@ function renderTankPumpRows() {
 function confirmSaveTank() {
   const name     = document.getElementById('tank-name').value.trim();
   const code     = document.getElementById('tank-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+  const pass     = document.getElementById('tank-pass')?.value || '';
   const capacity = parseInt(document.getElementById('tank-capacity').value) || 0;
   const editId   = document.getElementById('tank-edit-id').value;
 
@@ -2457,7 +2490,7 @@ function confirmSaveTank() {
     triggerOff: r.triggerOff,
   })).filter(p => p.relayId);
 
-  const tankData = { id: editId || 'tank_'+Date.now(), name, code, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
+  const tankData = { id: editId || 'tank_'+Date.now(), name, code, pass, capacity, mqttHost, mqttUser, mqttPass, pumps, level: null, liters: null, lastSeen: null, online: false, pumpState: {} };
   pumps.forEach(p => { if (!tankData.pumpState[p.relayId]) tankData.pumpState[p.relayId] = false; });
 
   if (editId) {
@@ -2474,20 +2507,28 @@ function confirmSaveTank() {
 
   renderTanks();
   log(`Caixa "${name}" salva (sensor: caixas/agua/${code}/dados)`, 'ok');
-  closeTankModal();
-}
 
-function _destroyTankClient(id) {
-  if (tankClients[id]) {
-    try { tankClients[id].end(true); } catch(e) {}
-    delete tankClients[id];
+  // Se veio do fluxo de widget, cria o widget automaticamente
+  const fromWidget = document.getElementById('tank-modal').dataset.fromWidget === '1';
+  if (fromWidget) {
+    const wName = name + ' — nível';
+    const newWidget = {
+      id:     'w_' + Date.now(),
+      type:   'caixa_agua',
+      name:   wName,
+      icon:   '🪣',
+      tankId: tankData.id,
+      sz:     'med',
+    };
+    widgets.push(newWidget);
+    saveWidgets();
+    renderWidgetPanel();
+    subscribeWidgetTopics();
+    publishPersist();
+    log(`🧩 Widget "${wName}" criado junto com a caixa`, 'ok');
   }
-  // Se não há mais caixas após exclusão, zera liveData de água e esconde alertas
-  if (!waterTanks.find(x => x.id !== id)) {
-    liveData.water = null;
-    liveData.liters = null;
-  }
-  hideAlert();
+
+  closeTankModal();
 }
 
 function deleteTankFromModal() {
@@ -2496,17 +2537,10 @@ function deleteTankFromModal() {
   const t = waterTanks.find(x => x.id === id);
   if (!t) return;
   if (!confirm(`Remover caixa "${t.name}"?`)) return;
-  _destroyTankClient(id);
-  const tDel = waterTanks.find(x => x.id === id);
-  if (tDel && tDel.code && client && client.connected) {
-    try { client.unsubscribe(`caixas/agua/${tDel.code}/dados`); } catch(e) {}
-    try { client.unsubscribe(`caixas/agua/${tDel.code}/status`); } catch(e) {}
-  }
   waterTanks = waterTanks.filter(x => x.id !== id);
   saveTanks();
   publishPersist();
   renderTanks();
-  hideAlert();
   closeTankModal();
   log(`Caixa "${t.name}" removida`, 'sys');
 }
@@ -2514,32 +2548,56 @@ function deleteTankFromModal() {
 function removeTank(id) {
   const t = waterTanks.find(x => x.id === id);
   if (!t || !confirm(`Remover "${t.name}"?`)) return;
-  _destroyTankClient(id);
-  if (t.code && client && client.connected) {
-    try { client.unsubscribe(`caixas/agua/${t.code}/dados`); } catch(e) {}
-    try { client.unsubscribe(`caixas/agua/${t.code}/status`); } catch(e) {}
-  }
   waterTanks = waterTanks.filter(x => x.id !== id);
   saveTanks();
   publishPersist();
   renderTanks();
-  hideAlert();
   log(`Caixa "${t.name}" removida`, 'sys');
 }
 
-function tankSvg(level, id) {
-  const pct = Math.min(Math.max(level || 0, 0), 100);
-  const fillH = Math.round((pct / 100) * 28);
-  const fillY = 33 - fillH;
-  const col = pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+function tankSvg(level, id, offline) {
+  const pct     = Math.min(Math.max(level || 0, 0), 100);
+  const fillH   = Math.round((pct / 100) * 28);
+  const fillY   = 33 - fillH;
+  const col     = offline ? 'rgba(107,114,128,0.5)'
+                : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+  const stroke  = offline ? 'rgba(107,114,128,0.35)' : 'rgba(255,255,255,0.2)';
+  const fillOp  = offline ? '0.18' : '0.35';
+  const lineOp  = offline ? '0.35' : '0.7';
+
+  // Triângulo de alerta offline no topo da barra de nível
+  const warnTriangle = offline ? `
+    <!-- triângulo de sinal sem conexão no centro da caixa -->
+    <polygon points="17,10 11,22 23,22" fill="none" stroke="rgba(107,114,128,0.5)" stroke-width="1.2" stroke-linejoin="round"/>
+    <line x1="17" y1="13.5" x2="17" y2="18" stroke="rgba(107,114,128,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="17" cy="20" r="0.8" fill="rgba(107,114,128,0.5)"/>
+    <!-- linha diagonal de "sem sinal" no topo da tampa -->
+    <line x1="8" y1="1" x2="26" y2="3" stroke="rgba(107,114,128,0.4)" stroke-width="1" stroke-linecap="round"/>` : '';
+
+  // Linha tracejada no nível atual quando offline (mostra último valor conhecido)
+  const dashedLine = (!offline && fillH > 0) ? `
+    <rect x="3" y="${Math.max(fillY,5)}" width="28" height="2" rx="1" fill="${col}" opacity="${lineOp}" clip-path="url(#wClip${id})"/>` : '';
+
+  const offlineDash = (offline && fillH > 0) ? `
+    <!-- última leitura tracejada — dado desatualizado -->
+    <line x1="4" y1="${Math.max(fillY+1,6)}" x2="31" y2="${Math.max(fillY+1,6)}"
+      stroke="rgba(107,114,128,0.4)" stroke-width="1.5" stroke-dasharray="3,2"
+      clip-path="url(#wClip${id})"/>` : '';
+
   return `<svg viewBox="0 0 34 38" width="34" height="38" xmlns="http://www.w3.org/2000/svg">
-    <rect x="5" y="0" width="24" height="4" rx="1.5" fill="rgba(255,255,255,0.15)"/>
-    <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+    <!-- tampa -->
+    <rect x="5" y="0" width="24" height="4" rx="1.5" fill="${offline ? 'rgba(107,114,128,0.1)' : 'rgba(255,255,255,0.15)'}"/>
+    <!-- corpo -->
+    <rect x="2" y="4" width="30" height="30" rx="3" fill="none" stroke="${stroke}" stroke-width="1.5"/>
     <clipPath id="wClip${id}"><rect x="3" y="5" width="28" height="28" rx="2"/></clipPath>
-    <rect x="3" y="${fillY}" width="28" height="${fillH}" rx="2" fill="${col}" opacity="0.35" clip-path="url(#wClip${id})"/>
-    <rect x="3" y="${Math.max(fillY,5)}" width="28" height="2" rx="1" fill="${col}" opacity="0.7" clip-path="url(#wClip${id})"/>
-    <rect x="2" y="34" width="30" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
-    <rect x="13" y="35" width="8" height="3" rx="1" fill="rgba(255,255,255,0.15)"/>
+    <!-- preenchimento -->
+    <rect x="3" y="${fillY}" width="28" height="${fillH}" rx="2" fill="${col}" opacity="${fillOp}" clip-path="url(#wClip${id})"/>
+    ${dashedLine}
+    ${offlineDash}
+    ${warnTriangle}
+    <!-- base -->
+    <rect x="2" y="34" width="30" height="4" rx="2" fill="${offline ? 'rgba(107,114,128,0.08)' : 'rgba(255,255,255,0.1)'}"/>
+    <rect x="13" y="35" width="8" height="3" rx="1" fill="${offline ? 'rgba(107,114,128,0.12)' : 'rgba(255,255,255,0.15)'}"/>
   </svg>`;
 }
 
@@ -2567,9 +2625,14 @@ function renderTanks() {
   }
 
   grid.innerHTML = waterTanks.map(t => {
-    const pct = t.level;
-    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pct      = t.level;
+    const secAgo   = t.lastSeen ? Math.round((Date.now() - new Date(t.lastSeen)) / 1000) : null;
+    const offline  = !t.online || (secAgo !== null && secAgo > 90) || (!t.lastSeen);
+    const col      = offline ? 'var(--muted)' : pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub      = offline
+      ? (secAgo !== null ? `⚡ sem sinal · ${secAgo < 3600 ? Math.floor(secAgo/60)+'min' : Math.floor(secAgo/3600)+'h'} atrás` : '⚡ sem sinal')
+      : pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const subCol   = offline ? 'var(--muted)' : col;
 
     const pumpsHtml = t.pumps && t.pumps.length ? `
       <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
@@ -2607,18 +2670,19 @@ function renderTanks() {
     return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
       onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
             <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
             <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
             <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
           </div>
           <div style="display:flex;align-items:baseline;gap:5px">
-            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
             ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
           </div>
-          <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
         </div>
       </div>
       ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
@@ -2663,7 +2727,6 @@ function connectTankBroker(tank) {
 
   tc.on('message', (topic, msg) => {
     try {
-      if (!waterTanks.find(x => x.id === tank.id)) return; // caixa já excluída
       const data = JSON.parse(msg.toString());
       handleTankMessage(topic, msg.toString(), data);
       // Atualiza liveData se for a caixa principal (TOPICS_WATER)
@@ -2750,16 +2813,14 @@ function handleTankMessage(topic, payload, data) {
       }
       if (!isNaN(lit)) t.liters = lit;
       const sensorOK = data.sensor_ok !== false;
-      if (waterTanks.find(x => x.id === t.id)) {
-        if (!sensorOK) showAlert(`⚠ Falha no sensor: ${t.name}`);
-        else if (pct <= 10) showAlert(`⚠ "${t.name}" crítico: ${pct}%`);
-      }
+      if (!sensorOK) showAlert(`⚠ Falha no sensor: ${t.name}`);
+      else if (pct <= 10) showAlert(`⚠ "${t.name}" crítico: ${pct}%`);
       renderTanks();
       updateLiveBar(topic, data.cached);
     }
     if (topic === statusTopic) {
       t.online = data.online !== false;
-      if (!t.online && waterTanks.find(x => x.id === t.id)) showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
+      if (!t.online) showAlert(`⚠ "${t.name}" offline — verifique o receptor.`);
     }
   });
 }
@@ -2957,8 +3018,8 @@ function getNotifStatus() {
 }
 
 function checkRules() {
-  // Regra: nível baixo — só alerta se ainda existir caixa cadastrada
-  if (waterTanks.length && liveData.water !== null && liveData.water < 20) {
+  // Regra: nível baixo — apenas alerta, não desliga irrigação
+  if (liveData.water !== null && liveData.water < 20) {
     showAlert(`⚠ Nível da caixa crítico (${liveData.water}%) — verifique o abastecimento.`);
   } else {
     hideAlert();
@@ -3134,6 +3195,8 @@ function startScheduleEngine() {
 }
 
 // ============ LOG ============
+let _logEntries = [];
+let _logFilter  = 'all';
 function log(msg, type = 'sys') {
   const ts = new Date().toLocaleTimeString('pt-BR');
   _logEntries.push({ ts, msg, type });
@@ -3154,6 +3217,7 @@ function log(msg, type = 'sys') {
 
 
 // ============ AMBIENTES ============
+let rooms = [];
 
 function saveRooms() {
   try {
@@ -3165,7 +3229,8 @@ function saveRooms() {
 function loadRooms() {
   try {
     rooms = JSON.parse(localStorage.getItem('autoflow_rooms') || '[]');
-    // Restore Date objects
+    // Remove entradas inválidas (sem nome ou sem id — lixo de sessões antigas)
+    rooms = rooms.filter(r => r && r.id && r.name);
     rooms.forEach(r => {
       if (r.data?.lastSeen) r.data.lastSeen = new Date(r.data.lastSeen);
       if (!r.data) r.data = { temp:null, hum:null, smoke:null, smokeRaw:0, lastSeen:null, online:false };
@@ -3413,52 +3478,52 @@ function deleteRoomFromModal() {
 }
 
 function confirmAddRoom() {
-  const name    = document.getElementById('rm-room-name').value.trim();
-  const icon    = document.getElementById('rm-room-icon').value.trim() || '🏠';
-  const editId  = document.getElementById('rm-room-modal-edit-id').value;
+  const name     = document.getElementById('rm-room-name')?.value.trim() || '';
+  const icon     = document.getElementById('rm-room-icon')?.value.trim() || '🏠';
+  const editId   = document.getElementById('rm-room-modal-edit-id')?.value || '';
   const hasTemp  = document.getElementById('rm-has-temp')?.checked ?? true;
   const hasSmoke = document.getElementById('rm-has-smoke')?.checked ?? true;
   const hasLamp  = document.getElementById('rm-has-lamp')?.checked ?? true;
-
-  // Device ID unificado — um ESP32 serve temp + gás + relé
-  const deviceId = (document.getElementById('rm-device-id')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'')) || '';
+  const deviceId = (document.getElementById('rm-device-id')?.value || '').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
   const devPass  = document.getElementById('rm-temp-pass')?.value || '';
 
-  if (!name) { log('Preencha o nome do ambiente', 'warn'); return; }
-  if (!deviceId) { log('Preencha o Device ID do ESP32', 'warn'); return; }
-  if (!hasTemp && !hasSmoke && !hasLamp) { log('Selecione pelo menos uma capacidade', 'warn'); return; }
+  if (!name) {
+    const el = document.getElementById('rm-room-name');
+    if (el) { el.style.borderColor = 'var(--danger)'; el.focus(); setTimeout(() => el.style.borderColor = '', 2000); }
+    log('Preencha o nome do ambiente', 'warn');
+    return;
+  }
 
-  // Campos de compatibilidade preenchidos automaticamente
   const roomData = {
-    name, icon, hasTemp, hasSmoke, hasLamp,
-    deviceId,
-    tempDeviceId: deviceId, tempDevPass: devPass,
-    gasDeviceId:  deviceId, gasDevPass:  devPass,
-    devPass,
-    topic: '',
-    relays: [], // relé é do próprio ESP32
+    id: editId || ('room_' + Date.now()),
+    name, icon,
+    hasTemp: !!hasTemp, hasSmoke: !!hasSmoke, hasLamp: !!hasLamp,
+    deviceId, tempDeviceId: deviceId, gasDeviceId: deviceId,
+    devPass, tempDevPass: devPass, gasDevPass: devPass,
+    topic: '', relays: [],
     data: { temp:null, hum:null, smoke:null, smokeRaw:0, lamp:false, gasAlert:false, lastSeen:null, online:false }
   };
 
   if (editId) {
-    const r = rooms.find(x => x.id === editId);
-    if (r) {
-      // preserva dados ao vivo
-      const live = r.data;
-      Object.assign(r, roomData);
-      r.id = editId;
-      r.data = live || roomData.data;
+    const idx = rooms.findIndex(x => x.id === editId);
+    if (idx >= 0) {
+      const live = rooms[idx].data;
+      rooms[idx] = { ...roomData, data: live || roomData.data };
     }
   } else {
-    roomData.id = 'room_' + Date.now();
     rooms.push(roomData);
   }
-  saveRooms();
-  publishPersist();
-  renderRooms();
-  const saved = editId ? rooms.find(x => x.id === editId) : rooms[rooms.length - 1];
-  if (client && client.connected && saved) subscribeRoom(saved);
-  log(`Ambiente "${name}" salvo — ESP32: ${deviceId}`, 'ok');
+
+  try { saveRooms(); } catch(e) { console.error('saveRooms', e); }
+  try { renderRooms(); } catch(e) { console.error('renderRooms', e); }
+  try { renderWidgetPanel(); } catch(e) { console.error('renderWidgetPanel', e); }
+  try { publishPersist(); } catch(e) {}
+  try {
+    const saved = rooms.find(x => x.id === roomData.id);
+    if (client && client.connected && saved && saved.deviceId) subscribeRoom(saved);
+  } catch(e) {}
+
+  log(`Ambiente "${name}" salvo`, 'ok');
   closeRoomModal();
 }
 
@@ -3471,23 +3536,423 @@ function subscribeRoom(room) {
   if (!room || !client || !client.connected) return;
   const devId = room.deviceId || room.tempDeviceId || '';
   if (!devId) return;
+  // Só assina se a room está de fato no array rooms (evita subscrições fantasma)
+  if (!rooms.find(r => r.id === room.id)) return;
   // sensors/{id}/data — temperatura + umidade
-  if (room.hasTemp) {
+  if (room.hasTemp !== false) {
     const t = `sensors/${devId}/data`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
+    _activeSensorTopics.add(t);
   }
   // sensors/{id}/gas — MQ-2 raw + gas_alert + lamp state
-  if (room.hasSmoke || room.hasLamp) {
+  if (room.hasSmoke !== false || room.hasLamp !== false) {
     const t = `sensors/${devId}/gas`;
     client.subscribe(t, { qos:1 }, () => log(`↳ ${t}`, 'sys'));
+    _activeSensorTopics.add(t);
   }
 }
 
 function subscribeAllRooms() {
+  if (!client || !client.connected) return;
   rooms.forEach(r => subscribeRoom(r));
 }
 
+function unsubscribeOrphanSensors() {}
+
+// Rastreia tópicos sensors/ ativamente assinados
+let _activeSensorTopics = new Set();
+
+function _unsubscribeOrphanSensorTopics() {
+  if (!client || !client.connected) return;
+  const validIds = new Set(rooms.map(r => r.deviceId || r.tempDeviceId).filter(Boolean));
+  _activeSensorTopics.forEach(t => {
+    const tid = t.split('/')[1];
+    if (!validIds.has(tid)) {
+      try { client.unsubscribe(t); } catch(e) {}
+      _activeSensorTopics.delete(t);
+    }
+  });
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+// SISTEMA DE DESCOBERTA AUTOMÁTICA DE DISPOSITIVOS (autoflow/{id}/*)
+// ════════════════════════════════════════════════════════════════════
+// Mapa de dispositivos vistos via autoflow/+/data antes do cadastro
+const _discoveredDevices = {};   // id → { id, lastSeen, data }
+
+// Dispositivos AutoFlow cadastrados pelo usuário (persiste em localStorage)
+// Estrutura: [{ id, name, type:'ambiente'|'fluxo', icon, data:{...} }]
+let autoflowDevices = [];
+
+function loadAutoflowDevices() {
+  try { autoflowDevices = JSON.parse(localStorage.getItem('autoflow_devs') || '[]'); } catch(e) { autoflowDevices = []; }
+}
+function saveAutoflowDevices() {
+  try { localStorage.setItem('autoflow_devs', JSON.stringify(autoflowDevices)); } catch(e) {}
+}
+
+// ── Roteador de mensagens autoflow/ ─────────────────────────────────────────
+function handleAutoflowMessage(topic, payload) {
+  // Espera: autoflow/{id}/{subtopic}
+  const parts = topic.split('/');
+  if (parts.length < 3 || parts[0] !== 'autoflow') return;
+  const devId   = parts[1].toUpperCase();
+  const subTopic = parts.slice(2).join('/');
+
+  let data;
+  try { data = JSON.parse(payload); } catch(e) { data = { raw: payload }; }
+
+  // Registra como visto (auto-discovery)
+  if (!_discoveredDevices[devId]) {
+    _discoveredDevices[devId] = { id: devId, firstSeen: new Date(), data: {} };
+    log(`📡 Novo dispositivo detectado: ${devId} (autoflow/${devId}/${subTopic})`, 'info');
+    renderDiscoveryBadge();
+  }
+  _discoveredDevices[devId].lastSeen = new Date();
+  _discoveredDevices[devId].lastTopic = subTopic;
+
+  // Roteia para o dispositivo cadastrado (se existir)
+  const dev = autoflowDevices.find(d => d.id === devId);
+  if (!dev) return;  // não cadastrado — só registra no discovery
+
+  dev.data = dev.data || {};
+  dev.data.lastSeen = new Date();
+  dev.data.online   = true;
+
+  if (subTopic === 'data') {
+    // Ambiente: temp, hum, gas_raw, gas_alert, lamp
+    if (data.temperature !== undefined) dev.data.temp = parseFloat(data.temperature);
+    if (data.humidity    !== undefined) dev.data.hum  = parseFloat(data.humidity);
+    if (data.gas_raw     !== undefined) {
+      const raw  = parseInt(data.gas_raw) || 0;
+      const alert = !!data.gas_alert;
+      dev.data.smokeRaw  = raw;
+      dev.data.gasAlert  = alert;
+      dev.data.smoke     = alert
+        ? Math.max(60, Math.min(Math.round((raw / 4095) * 100), 100))
+        : Math.min(Math.round((raw / 4095) * 100), 29);
+      if (alert) checkAutoflowGasRule(dev);
+    }
+    if (data.lamp !== undefined) dev.data.lamp = !!data.lamp;
+    // Fluxo: flow_lpm, session_l, total_l
+    if (data.flow_lpm   !== undefined) dev.data.flowLpm    = parseFloat(data.flow_lpm);
+    if (data.session_l  !== undefined) dev.data.sessionL   = parseFloat(data.session_l);
+    if (data.total_l    !== undefined) dev.data.totalL     = parseFloat(data.total_l);
+    if (data.percentage !== undefined) dev.data.percentage = parseFloat(data.percentage);
+    updateLiveBar(topic, false);
+  }
+
+  if (subTopic === 'status') {
+    dev.data.online = data.online !== false;
+    dev.data.ip     = data.ip     || null;
+    dev.data.rssi   = data.rssi   || null;
+    if (!dev.data.online) {
+      triggerAutoflowAlert(dev, 'offline', `⚠ "${dev.name}" offline`);
+    }
+  }
+
+  renderAutoflowCards();
+}
+
+// ── Alertas para dispositivos AutoFlow ──────────────────────────────────────
+const _afAlertSent = {};   // devId → { type → timestamp }
+
+function triggerAutoflowAlert(dev, type, msg) {
+  const now = Date.now();
+  if (!_afAlertSent[dev.id]) _afAlertSent[dev.id] = {};
+  const last = _afAlertSent[dev.id][type] || 0;
+  if (now - last < 60000) return;   // throttle 60s
+  _afAlertSent[dev.id][type] = now;
+  log(`⚠ ${msg}`, 'warn');
+  sendGasNotification({ id: dev.id, name: dev.name }, 0, false).catch(()=>{});
+}
+
+function checkAutoflowGasRule(dev) {
+  const d = dev.data;
+  if (!d.gasAlert) return;
+  triggerAutoflowAlert(dev, 'gas', `🔥 GÁS ${dev.name}: raw=${d.smokeRaw} → ALARME`);
+  // Reusa banner de gás existente
+  const b = document.getElementById('gas-lock-banner');
+  if (b) {
+    b.innerHTML = `<span style="font-size:14px">🚨</span>
+      <span style="flex:1"><strong>ALERTA DE GÁS — ${dev.name}</strong><br>
+      Sensor: raw=${d.smokeRaw} · Dispositivo: ${dev.id}</span>
+      <button onclick="document.getElementById('gas-lock-banner').classList.remove('show')"
+        style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:6px;
+        color:var(--danger);font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer">✕</button>`;
+    b.classList.add('show');
+  }
+}
+
+// ── Controla relé/lâmpada de um dispositivo AutoFlow ────────────────────────
+function setAutoflowLamp(dev, state) {
+  if (!client || !client.connected) { log('Broker não conectado', 'warn'); return; }
+  const topic = `autoflow/${dev.id}/relay/lamp/set`;
+  client.publish(topic, JSON.stringify({ lamp: state, pass: dev.pass || '' }), { qos:1, retain:true });
+  if (dev.data) dev.data.lamp = state;
+  renderAutoflowCards();
+  log(`💡 ${dev.name} → ${state ? 'ON' : 'OFF'}`, state ? 'ok' : 'sys');
+}
+
+// ── Badge de dispositivos descobertos (não cadastrados) ──────────────────────
+function renderDiscoveryBadge() {
+  const registered = new Set(autoflowDevices.map(d => d.id));
+  const unseen = Object.keys(_discoveredDevices).filter(id => !registered.includes(id));
+  const btn = document.getElementById('af-discover-btn');
+  if (btn) {
+    btn.style.display = unseen.length ? 'flex' : 'none';
+    const badge = btn.querySelector('.af-badge');
+    if (badge) badge.textContent = unseen.length;
+  }
+}
+
+// ── Modal de cadastro de dispositivo AutoFlow ────────────────────────────────
+function openAutoflowModal(devId) {
+  const modal = document.getElementById('autoflow-modal');
+  if (!modal) return;
+  // Pre-fill ID se vier do discovery
+  const idInput = document.getElementById('af-device-id');
+  if (idInput) idInput.value = devId || '';
+  // Popula lista de descobertos não cadastrados
+  const registered = new Set(autoflowDevices.map(d => d.id));
+  const list = document.getElementById('af-discovered-list');
+  if (list) {
+    const unseen = Object.values(_discoveredDevices).filter(d => !registered.has(d.id));
+    list.innerHTML = unseen.length
+      ? unseen.map(d => `<div onclick="document.getElementById('af-device-id').value='${d.id}'"
+          style="cursor:pointer;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);
+          border-radius:6px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="color:var(--accent)">●</span>
+          <span style="font-weight:700;letter-spacing:.1em">${d.id}</span>
+          <span style="color:var(--muted);font-size:9px">visto ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}</span>
+          <span style="font-family:var(--mono);font-size:9px;background:rgba(0,212,160,.1);color:var(--accent);
+            border:1px solid rgba(0,212,160,.25);border-radius:4px;padding:1px 5px;margin-left:auto">↖ usar</span>
+        </div>`).join('')
+      : `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 0">
+          Nenhum dispositivo detectado ainda.<br>Ligue o ESP32 e aguarde...</div>`;
+  }
+  modal.classList.add('open');
+}
+
+function closeAutoflowModal() {
+  const m = document.getElementById('autoflow-modal');
+  if (m) m.classList.remove('open');
+}
+
+function confirmAddAutoflowDevice() {
+  const id   = (document.getElementById('af-device-id')?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const name = (document.getElementById('af-device-name')?.value || '').trim();
+  const type = document.querySelector('input[name="af-type"]:checked')?.value || 'ambiente';
+  const icon = document.getElementById('af-device-icon')?.value || (type === 'ambiente' ? '🏠' : '💧');
+  const pass = document.getElementById('af-device-pass')?.value || '';
+  const editId = document.getElementById('af-edit-id')?.value || '';
+
+  if (!id)   { log('Preencha o ID do dispositivo', 'warn'); return; }
+  if (!name) { log('Preencha o nome do dispositivo', 'warn'); return; }
+
+  if (editId) {
+    const d = autoflowDevices.find(x => x.id === editId);
+    if (d) { d.name = name; d.icon = icon; d.pass = pass; d.type = type; }
+  } else {
+    if (autoflowDevices.find(d => d.id === id)) {
+      log(`Dispositivo ${id} já cadastrado`, 'warn'); return;
+    }
+    autoflowDevices.push({ id, name, type, icon, pass,
+      data: { temp:null, hum:null, smoke:null, smokeRaw:0, gasAlert:false, lamp:false,
+              flowLpm:0, sessionL:0, totalL:0, percentage:0, lastSeen:null, online:false } });
+    // Subscreve tópicos deste dispositivo agora
+    if (client && client.connected) {
+      client.subscribe(`autoflow/${id}/#`, { qos:1 }, () => log(`↳ autoflow/${id}/#`, 'sys'));
+    }
+    log(`Dispositivo "${name}" (${id}) cadastrado como ${type}`, 'ok');
+  }
+  saveAutoflowDevices();
+  publishPersist();
+  renderAutoflowCards();
+  renderDiscoveryBadge();
+  closeAutoflowModal();
+}
+
+function removeAutoflowDevice(id) {
+  const d = autoflowDevices.find(x => x.id === id);
+  if (!d) return;
+  autoflowDevices = autoflowDevices.filter(x => x.id !== id);
+  saveAutoflowDevices();
+  publishPersist();
+  renderAutoflowCards();
+  log(`Dispositivo "${d.name}" removido`, 'sys');
+}
+
+function editAutoflowDevice(id) {
+  const d = autoflowDevices.find(x => x.id === id);
+  if (!d) return;
+  openAutoflowModal(d.id);
+  setTimeout(() => {
+    const idEl = document.getElementById('af-device-id');
+    if (idEl) { idEl.value = d.id; idEl.readOnly = true; }
+    const nameEl = document.getElementById('af-device-name');
+    if (nameEl) nameEl.value = d.name;
+    const iconEl = document.getElementById('af-device-icon');
+    if (iconEl) iconEl.value = d.icon;
+    const passEl = document.getElementById('af-device-pass');
+    if (passEl) passEl.value = d.pass || '';
+    const editEl = document.getElementById('af-edit-id');
+    if (editEl) editEl.value = d.id;
+    const typeInput = document.querySelector(`input[name="af-type"][value="${d.type}"]`);
+    if (typeInput) typeInput.checked = true;
+  }, 50);
+}
+
+// ── Render de cards AutoFlow (injetado no widget de ambiente) ────────────────
+function renderAutoflowCards() {
+  autoflowDevices.forEach(dev => {
+    const el = document.getElementById('af-card-' + dev.id);
+    if (!el) {
+      // Card ainda não existe no DOM — re-render completo do widget que o contém
+      _debouncePatch({ id: 'autoflow_widget', type: 'autoflow' }, 120);
+      return;
+    }
+    // Patch cirúrgico do card existente
+    _patchAutoflowCard(el, dev);
+  });
+}
+
+function _patchAutoflowCard(el, dev) {
+  const d = dev.data || {};
+  const secAgo   = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
+  const offline  = secAgo !== null && secAgo > 90;
+  const onlineDot = d.lastSeen
+    ? (offline
+        ? `<span style="color:var(--muted);font-family:var(--mono);font-size:9px">⬤ offline</span>`
+        : `<span style="color:var(--accent);font-family:var(--mono);font-size:9px">⬤ online</span>`)
+    : `<span style="color:var(--muted);font-family:var(--mono);font-size:9px">⬤ –</span>`;
+
+  if (dev.type === 'ambiente') {
+    el.innerHTML = _renderAmbienteCard(dev, d, onlineDot, offline);
+  } else {
+    el.innerHTML = _renderFluxoCard(dev, d, onlineDot, offline);
+  }
+}
+
+function _renderAmbienteCard(dev, d, onlineDot, offline) {
+  const sl = smokeLevel(d.smoke !== null && d.smoke !== undefined ? d.smoke : null);
+  const lampOn = d.lamp === true;
+  // Alerta de temp
+  let tempAlert = '';
+  if (d.temp !== null && d.temp > 35) tempAlert = `<span style="color:var(--danger);font-size:9px;font-family:var(--mono)">⚠ alta</span>`;
+  return `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:16px">${dev.icon}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">${dev.name}</span>
+      ${onlineDot}
+      <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
+        border:1px solid var(--border);border-radius:4px;padding:1px 5px">${dev.id}</span>
+      <button onclick="editAutoflowDevice('${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
+      <button onclick="removeAutoflowDevice('${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      ${d.temp !== null && d.temp !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
+        <span style="font-size:10px">🌡️</span>
+        <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:${d.temp>35?'var(--danger)':'var(--text)'}">${d.temp.toFixed(1)}<span style="font-size:10px;color:var(--muted)">°C</span></span>
+        ${tempAlert}
+      </div>` : ''}
+      ${d.hum !== null && d.hum !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
+        <span style="font-size:10px">💧</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--muted)">${Math.round(d.hum)}<span style="font-size:10px">%</span></span>
+      </div>` : ''}
+      ${d.smoke !== null && d.smoke !== undefined ? `<div style="display:flex;align-items:baseline;gap:2px">
+        <span style="font-size:10px">🔥</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:${sl.color}">${d.smoke}<span style="font-size:9px">%</span></span>
+        <span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color}">${sl.label}</span>
+      </div>` : ''}
+      <div class="room-relay-wrap" title="Lâmpada — ${lampOn?'ON':'OFF'}" style="margin-left:auto">
+        <span style="font-size:14px">${lampOn?'💡':'🔦'}</span>
+        <label class="room-relay-switch">
+          <input type="checkbox" ${lampOn?'checked':''}
+            onchange="setAutoflowLamp(autoflowDevices.find(x=>x.id==='${dev.id}'),this.checked)">
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>
+    </div>
+    ${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
+  `;
+}
+
+function _renderFluxoCard(dev, d, onlineDot, offline) {
+  const flowColor = (d.flowLpm || 0) > 0 ? 'var(--accent2)' : 'var(--muted)';
+  return `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <span style="font-size:16px">${dev.icon}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">${dev.name}</span>
+      ${onlineDot}
+      <span style="font-family:var(--mono);font-size:8px;color:var(--muted);background:var(--bg3);
+        border:1px solid var(--border);border-radius:4px;padding:1px 5px">${dev.id}</span>
+      <button onclick="editAutoflowDevice('${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✏</button>
+      <button onclick="removeAutoflowDevice('${dev.id}')"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:${flowColor};line-height:1">
+          ${(d.flowLpm||0).toFixed(2)}<span style="font-size:11px;color:var(--muted)"> L/min</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">Fluxo atual</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
+          Sessão: <strong>${(d.sessionL||0).toFixed(2)} L</strong>
+        </div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">
+          Total: <strong>${(d.totalL||0).toFixed(2)} L</strong>
+        </div>
+      </div>
+    </div>
+    ${d.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px">↻ ${new Date(d.lastSeen).toLocaleTimeString('pt-BR')}${d.rssi ? ' · '+d.rssi+'dBm' : ''}</div>` : ''}
+  `;
+}
+
+// ── Render widget completo de dispositivos AutoFlow ──────────────────────────
+function renderAutoflowWidget(w) {
+  const addBtn = `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button onclick="openAutoflowModal('')"
+      style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(59,130,246,.1);
+      border:1px solid rgba(59,130,246,.3);border-radius:8px;color:var(--accent2);
+      font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer">
+      ＋ Dispositivo
+    </button>
+  </div>`;
+  if (!autoflowDevices.length) {
+    return addBtn + `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">
+      Nenhum dispositivo cadastrado.<br>Clique em "+ Dispositivo" para adicionar.
+    </div>`;
+  }
+  return addBtn + autoflowDevices.map(dev => `
+    <div id="af-card-${dev.id}"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
+      padding:12px 14px;margin-bottom:8px;transition:border-color .2s"
+      onmouseover="this.style.borderColor='var(--border2)'"
+      onmouseout="this.style.borderColor='var(--border)'">
+      ${dev.type === 'ambiente' ? _renderAmbienteCard(dev, dev.data||{},
+          (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
+                            : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)
+        : _renderFluxoCard(dev, dev.data||{},
+          (dev.data?.online ? '<span style=\"color:var(--accent);font-family:var(--mono);font-size:9px\">⬤ online</span>'
+                            : '<span style=\"color:var(--muted);font-family:var(--mono);font-size:9px\">⬤ –</span>'), false)}
+    </div>
+  `).join('');
+}
+
 function handleRoomMessage(topic, payload) {
+  // Só processa se há ao menos uma room com deviceId correspondente ao tópico
+  const topicMatchesAnyRoom = rooms.some(room => {
+    const devId = room.deviceId || room.tempDeviceId || '';
+    return devId && (topic.includes(devId));
+  });
+  if (!topicMatchesAnyRoom) return;
   rooms.forEach(room => {
     const devId = room.deviceId || room.tempDeviceId || '';
     if (!devId) return;
@@ -3574,7 +4039,7 @@ function renderRooms() {
   const grid = document.getElementById('rooms-grid');
   const cnt  = document.getElementById('rooms-count');
   if (!grid) return;
-  cnt.textContent = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
+  if (cnt) cnt.textContent = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
 
   if (!rooms.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente. Clique em "+ Adicionar".</div>';
@@ -3585,6 +4050,13 @@ function renderRooms() {
     const d  = r.data;
     const sl = smokeLevel(r.hasSmoke && d.smoke !== null ? d.smoke : null);
     const alarmCls = d.smoke >= 60 ? 'alarm' : d.smoke >= 30 ? 'warn-smoke' : '';
+    const _secAgo = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
+    const _offline = _secAgo !== null && _secAgo > 90;
+    const onlineBadge = !d.lastSeen
+      ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>–</span>`
+      : _offline
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>offline ${_secAgo < 3600 ? Math.floor(_secAgo/60)+'m' : Math.floor(_secAgo/3600)+'h'}</span>`
+        : `<span style="font-family:var(--mono);font-size:9px;color:var(--accent);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block"></span>online</span>`;
 
     // Linked relays
     const linkedRelays = (r.relays || []).map(rel => {
@@ -3598,13 +4070,6 @@ function renderRooms() {
       };
     }).filter(Boolean);
 
-    // Status online/offline do sensor
-    const secAgo = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen).getTime()) / 1000) : null;
-    const isOffline = secAgo === null || secAgo > 90;
-    const onlineBadge = isOffline
-      ? `<span style="width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block;flex-shrink:0"></span>`
-      : `<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;flex-shrink:0"></span>`;
-
     // ── Monta os itens da linha única: sensores + switches de relé ──────────
     const rowItems = [];
 
@@ -3615,7 +4080,7 @@ function renderRooms() {
       if (r.hasTemp && d.temp !== null) {
         rowItems.push(`
           <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0">
-            <span style="font-size:15px;line-height:1">🌡️</span>
+            <span style="font-size:10px;line-height:1">🌡️</span>
             <span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span>
           </div>`);
       }
@@ -3624,8 +4089,8 @@ function renderRooms() {
         if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
         rowItems.push(`
           <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0">
-            <span style="font-size:14px;line-height:1">💧</span>
-            <span class="room-val" style="color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span>
+            <span style="font-size:9px;line-height:1">💧</span>
+            <span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span>
           </div>`);
       }
       // Gás
@@ -3635,21 +4100,21 @@ function renderRooms() {
         if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
         rowItems.push(`
           <div style="display:flex;align-items:baseline;gap:2px;flex-shrink:0">
-            <span style="font-size:14px;line-height:1">🔥</span>
-            <span class="room-val" style="color:${sl.color}">${smokeVal !== null ? smokeVal : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>
+            <span style="font-size:9px;line-height:1">🔥</span>
+            <span class="room-val" style="font-size:12px;color:${sl.color}">${smokeVal !== null ? smokeVal : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>
             ${smokeVal !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}
             ${gasLocked ? `<span style="font-size:8px;color:var(--danger);animation:pulse-dot 1s ease-in-out infinite">⚠</span>` : ''}
           </div>`);
       }
     }
 
-    // Relé nativo do AmbientWatch — toggle da lâmpada com efeito de luz
+    // Relé nativo do AmbientWatch — toggle da lâmpada embutida
     if (r.hasLamp) {
       if (rowItems.length) rowItems.push(`<div class="room-sep"></div>`);
       const lampOn = d.lamp === true;
       rowItems.push(`
         <div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
-          <span class="lamp-bulb ${lampOn ? 'lamp-on' : ''}">💡</span>
+          <span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span>
           <label class="room-relay-switch">
             <input type="checkbox" ${lampOn ? 'checked' : ''}
               onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
@@ -3679,16 +4144,18 @@ function renderRooms() {
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        <div class="room-main-row">
-          ${rowItems.join('')}
-        </div>
-        <span style="flex-shrink:0">${onlineBadge}</span>
+        <span style="margin-left:auto">${onlineBadge}</span>
+      </div>
+      <div class="room-main-row">
+        ${rowItems.join('')}
       </div>
     </div>`;
   }).join('');
   // Atualiza widgets de ambiente no painel (patch cirúrgico)
-  if (typeof patchWidgetCard === 'function') {
-    widgets.filter(w => w.type === 'ambiente').forEach(w => patchWidgetCard(w));
+  if (typeof patchWidgetCard === 'function' && typeof widgets !== 'undefined') {
+    widgets.filter(w => w.type === 'ambiente').forEach(w => {
+      try { patchWidgetCard(w); } catch(e) {}
+    });
   }
 }
 
@@ -3723,6 +4190,8 @@ function _getSession() {
 function _saveSession(s) { localStorage.setItem(_sessionKey(), JSON.stringify(s)); }
 function _clearSession() { localStorage.removeItem(_sessionKey()); }
 
+// Modo do modal: 'login' ou 'register'
+let _loginMode = 'login';
 
 function openLoginModal() {
   _loginMode = 'login';
@@ -3767,6 +4236,9 @@ function _refreshLoginModal() {
   document.getElementById('login-modal-heading').textContent = isReg ? 'Criar conta' : 'Entrar no AutoFlow';
   const actionBtn = document.getElementById('login-action-btn');
   actionBtn.textContent = isReg ? 'Criar conta' : 'Entrar';
+  actionBtn.onclick = null;
+  actionBtn.addEventListener('click', isReg ? doRegister : doLogin, { once: false });
+  // Remove listener anterior para evitar duplicação
   actionBtn.onclick = isReg ? doRegister : doLogin;
   document.getElementById('login-switch-btn').textContent = isReg ? '← Já tenho conta' : 'Criar conta';
   document.getElementById('login-msg').style.display = 'none';
@@ -3841,15 +4313,30 @@ function _updateLoginBtn() {
   const lbl = document.getElementById('login-btn-lbl');
   if (!btn) return;
   if (session) {
-    lbl.textContent = session.username;
+    // Mostra só a inicial em maiúsculo — sem sobrepor o botão
+    const initial = (session.username || '?').charAt(0).toUpperCase();
+    lbl.innerHTML = `<span style="
+      font-family:var(--mono);
+      font-size:13px;
+      font-weight:700;
+      color:var(--accent);
+      line-height:1;
+      letter-spacing:0;
+    ">${initial}</span>`;
+    btn.title = session.username;
     btn.style.color = 'var(--accent)';
-    btn.style.borderColor = 'rgba(0,212,160,0.4)';
-    btn.style.background = 'rgba(0,212,160,0.06)';
+    btn.style.borderColor = 'rgba(34,211,160,0.4)';
+    btn.style.background = 'rgba(34,211,160,0.08)';
+    btn.style.width = '30px';
+    btn.style.padding = '0';
   } else {
-    lbl.textContent = 'Login';
+    lbl.innerHTML = '👤';
+    btn.title = 'Login / Conta';
     btn.style.color = '';
     btn.style.borderColor = '';
     btn.style.background = '';
+    btn.style.width = '';
+    btn.style.padding = '';
   }
 }
 
@@ -3860,6 +4347,7 @@ document.addEventListener('DOMContentLoaded', () => { _updateLoginBtn(); }, { on
 // SISTEMA DE WIDGETS GENÉRICOS
 // ════════════════════════════════════════════════════════════════════
 
+let widgets = [];
 
 function saveWidgets() {
   try { localStorage.setItem('autoflow_widgets', JSON.stringify(widgets)); } catch(e) {}
@@ -3868,43 +4356,16 @@ function saveWidgets() {
 function loadWidgets() {
   try {
     const raw = localStorage.getItem('autoflow_widgets');
-    if (raw) {
-      widgets = JSON.parse(raw);
-    } else {
-      // Primeira vez — aplica layout padrão de fábrica (sugestão por criticidade)
-      widgets = getDefaultWidgetLayout();
-      saveWidgets();
-    }
+    if (raw) widgets = JSON.parse(raw);
   } catch(e) { widgets = []; }
 }
 
-// ── LAYOUT PADRÃO DE FÁBRICA ──────────────────────────────────────────
-// Ordem por criticidade: Alarme primeiro (segurança), Ambiente em
-// destaque (linha única precisa de espaço), depois automação em pares,
-// e por fim os widgets de ação rápida em 1/3 (portão, relé, medidor).
-// Só é aplicado na primeira vez — usuário pode reordenar livremente depois.
-function getDefaultWidgetLayout() {
-  return [
-    { id: 'w_default_alarme',   type: 'alarme',     name: 'Alarme',          icon: '🚨', sz: 'full',
-      sensorTopic: '', sirenTopic: '', sirenOnPayload: 'ON', sirenOffPayload: 'OFF' },
-    { id: 'w_default_ambiente', type: 'ambiente',   name: 'Ambientes',       icon: '🌡️', sz: 'full', roomId: '' },
-    { id: 'w_default_caixa',    type: 'caixa_agua', name: "Caixa d'água",    icon: '🪣', sz: 'med', tankId: '' },
-    { id: 'w_default_irrig',    type: 'irrigacao',  name: 'Irrigação',       icon: '💧', sz: 'med' },
-    { id: 'w_default_portao',   type: 'portao',     name: 'Portão',          icon: '🚗', sz: 'small',
-      triggerMode: 'pulse', payloadOpen: 'OPEN', payloadClose: 'CLOSE', payload: '1',
-      deviceId: '', devicePass: '', topic: 'home/garagem/cmd', stateTopic: 'home/garagem/state', obstTopic: 'home/garagem/obstaculo' },
-    { id: 'w_default_rele',     type: 'rele',       name: 'Relé genérico',   icon: '⚡', sz: 'small', relayId: '' },
-    { id: 'w_default_medidor',  type: 'medidor',    name: 'Medidor',         icon: '📊', sz: 'small',
-      topic: '', jsonKey: '', unit: '', max: 100, decimals: 1 },
-  ];
-}
+// ── TAMANHOS DOS CARDS ────────────────────────────────────────────
+// sz: 'small'(4col) | 'med'(6col) | 'large'(8col) | 'full'(12col)
+const W_SIZES = ['small','med','large','full'];
+const W_SIZE_LABELS = { small:'1/3', med:'1/2', large:'2/3', full:'■' };
 
 function getWidgetSize(w) { return w.sz || 'med'; }
-
-function widgetAddAction(wid, type) {
-  if (type === 'ambiente') openRoomModal();
-  else openWidgetCfgModal(wid);
-}
 
 function setWidgetSize(wid, sz) {
   const w = widgets.find(x => x.id === wid);
@@ -3922,101 +4383,60 @@ function setWidgetSize(wid, sz) {
   }
 }
 
-// ── DRAG AND DROP — livre, com placeholder visual ──────────────────
-let dragSrcId   = null;
-let dragPlaceholder = null;
+// ── DRAG AND DROP ─────────────────────────────────────────────────
+let dragSrcId = null;
 
 function initDragEvents(el, wid) {
   el.setAttribute('draggable', 'true');
-
   el.addEventListener('dragstart', e => {
     dragSrcId = wid;
     el.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
-    // Necessário no Firefox para iniciar o drag
-    try { e.dataTransfer.setData('text/plain', wid); } catch(_) {}
-
-    const panel = document.getElementById('widget-panel');
-    panel.classList.add('dnd-active');
-
-    // Cria placeholder com o mesmo span de coluna do card arrastado
-    dragPlaceholder = document.createElement('div');
-    dragPlaceholder.className = 'w-drop-placeholder';
-    const colSpan = getComputedStyle(el).gridColumn;
-    dragPlaceholder.style.gridColumn = colSpan;
   });
-
   el.addEventListener('dragend', () => {
     el.classList.remove('dragging');
-    const panel = document.getElementById('widget-panel');
-    panel.classList.remove('dnd-active');
-    if (dragPlaceholder && dragPlaceholder.parentNode) dragPlaceholder.remove();
-    dragPlaceholder = null;
-    dragSrcId = null;
+    document.querySelectorAll('.w-card').forEach(c => c.classList.remove('drag-over'));
   });
-
   el.addEventListener('dragover', e => {
     e.preventDefault();
-    if (!dragSrcId || dragSrcId === wid || !dragPlaceholder) return;
-    e.dataTransfer.dropEffect = 'move';
-
-    // Decide se o placeholder vai antes ou depois do card sob o cursor,
-    // baseado na posição horizontal do mouse dentro do card (metade esquerda/direita)
+    if (!dragSrcId || dragSrcId === wid) return;
+    document.querySelectorAll('.w-card').forEach(c => {
+      c.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
+    });
     const rect = el.getBoundingClientRect();
-    const midX = rect.left + rect.width / 2;
-    const insertBefore = e.clientX < midX;
-
-    const panel = document.getElementById('widget-panel');
-    if (insertBefore) {
-      panel.insertBefore(dragPlaceholder, el);
-    } else {
-      panel.insertBefore(dragPlaceholder, el.nextSibling);
-    }
+    const before = e.clientX < rect.left + rect.width / 2;
+    el.classList.add('drag-over', before ? 'drag-over-before' : 'drag-over-after');
   });
-
+  el.addEventListener('dragleave', () => {
+    el.classList.remove('drag-over', 'drag-over-before', 'drag-over-after');
+  });
   el.addEventListener('drop', e => {
     e.preventDefault();
-    if (!dragSrcId || !dragPlaceholder) return;
+    el.classList.remove('drag-over');
+    if (!dragSrcId || dragSrcId === wid) return;
+    const fromIdx = widgets.findIndex(x => x.id === dragSrcId);
+    const toIdx   = widgets.findIndex(x => x.id === wid);
+    if (fromIdx < 0 || toIdx < 0) return;
 
-    // A posição final é onde o placeholder está no DOM agora
-    const panel = document.getElementById('widget-panel');
-    panel.replaceChild(document.getElementById('wcard-' + dragSrcId) || el, dragPlaceholder);
+    // Determina se soltar antes ou depois do alvo com base na posição do mouse
+    const targetEl = document.getElementById('wcard-' + wid);
+    const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+    const insertBefore = rect ? (e.clientX < rect.left + rect.width / 2 && e.clientY < rect.top + rect.height / 2) : (fromIdx > toIdx);
 
-    // Recalcula a ordem do array widgets[] a partir da ordem real do DOM
-    const newOrder = [...panel.children]
-      .map(c => c.id ? c.id.replace('wcard-', '') : null)
-      .filter(Boolean);
-    widgets.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+    const [moved] = widgets.splice(fromIdx, 1);
+    const newToIdx = widgets.findIndex(x => x.id === wid);
+    widgets.splice(insertBefore ? newToIdx : newToIdx + 1, 0, moved);
 
     saveWidgets();
-    if (typeof publishPersist === 'function') publishPersist();
+    const panel = document.getElementById('widget-panel');
+    widgets.forEach(w => {
+      const card = document.getElementById('wcard-' + w.id);
+      if (card) panel.appendChild(card);
+    });
+    dragSrcId = null;
+    publishPersist();
   });
 }
-
-// Permite soltar também na área vazia do painel (depois do último card)
-document.addEventListener('DOMContentLoaded', () => {
-  const panel = document.getElementById('widget-panel');
-  if (!panel) return;
-  panel.addEventListener('dragover', e => {
-    if (!dragSrcId || !dragPlaceholder) return;
-    // Só atua se o alvo direto é o painel (não um card filho)
-    if (e.target !== panel) return;
-    e.preventDefault();
-    panel.appendChild(dragPlaceholder);
-  });
-  panel.addEventListener('drop', e => {
-    if (!dragSrcId || !dragPlaceholder || e.target !== panel) return;
-    e.preventDefault();
-    const srcEl = document.getElementById('wcard-' + dragSrcId);
-    if (srcEl) panel.replaceChild(srcEl, dragPlaceholder);
-    const newOrder = [...panel.children]
-      .map(c => c.id ? c.id.replace('wcard-', '') : null)
-      .filter(Boolean);
-    widgets.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
-    saveWidgets();
-    if (typeof publishPersist === 'function') publishPersist();
-  });
-});
 
 // ── RENDER DO PAINEL ──────────────────────────────────────────────
 function renderWidgetPanel() {
@@ -4068,6 +4488,7 @@ function patchWidgetCard(w, wrap) {
     case 'rele':       tmp.innerHTML = renderWidgetRele(w);      break;
     case 'alarme':     tmp.innerHTML = renderWidgetAlarme(w);    break;
     case 'medidor':    tmp.innerHTML = renderWidgetMedidor(w);   break;
+    case 'autoflow':   tmp.innerHTML = renderAutoflowWidget(w);  break;
     default: return;
   }
   while (tmp.firstChild) wrap.appendChild(tmp.firstChild);
@@ -4079,24 +4500,20 @@ function buildWidgetCard(w) {
   wrap.className = `w-card sz-${sz}`;
   wrap.id = 'wcard-' + w.id;
 
-  // Resize — botão verde + (abre config) e 3 bolinhas de tamanho
-  const dotSizes = ['small','med','large'];
-  const resizeDots = dotSizes.map(s =>
-    `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}"></button>`
+  // Resize buttons
+  const resizeBtns = W_SIZES.map(s =>
+    `<button class="w-resize-btn${s === sz ? ' active' : ''}" data-sz="${s}" onclick="setWidgetSize('${w.id}','${s}')" title="Tamanho ${s}">${W_SIZE_LABELS[s]}</button>`
   ).join('');
 
-  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue' };
+  const iconClrMap = { ambiente:'teal', caixa_agua:'blue', irrigacao:'blue', portao:'amber', rele:'teal', alarme:'red', medidor:'blue', autoflow:'teal' };
   const iconClr = iconClrMap[w.type] || 'teal';
   wrap.innerHTML = `
     <div class="w-card-header">
       <span class="w-drag-handle" title="Arrastar para mover">⠿</span>
       <div class="card-icon ${iconClr}" style="width:24px;height:24px;border-radius:6px;font-size:12px;flex-shrink:0">${w.icon || ''}</div>
       <span class="w-card-title">${w.name}</span>
-      <div class="w-resize-btns">
-        <button class="w-resize-add" onclick="widgetAddAction('${w.id}','${w.type}')" title="Adicionar / Configurar">＋</button>
-        <div class="w-resize-sep"></div>
-        <div class="w-resize-dots">${resizeDots}</div>
-      </div>
+      <div class="w-resize-btns">${resizeBtns}</div>
+      <button class="w-edit-btn" onclick="openWidgetCfgModal('${w.id}')">✎</button>
     </div>`;
 
   let body = '';
@@ -4108,6 +4525,7 @@ function buildWidgetCard(w) {
     case 'rele':       body = renderWidgetRele(w);      break;
     case 'alarme':     body = renderWidgetAlarme(w);    break;
     case 'medidor':    body = renderWidgetMedidor(w);   break;
+    case 'autoflow':   body = renderAutoflowWidget(w);  break;
     default: return null;
   }
   const bodyDiv = document.createElement('div');
@@ -4118,9 +4536,25 @@ function buildWidgetCard(w) {
   return wrap;
 }
 
+
+// ── HISTORY / SPARKLINE STUBS ────────────────────────────────────────────────
+function getHistory(id, metric) { return []; }
+function buildSparklineSVG(data, color, w, h) {
+  if (!data || data.length < 2) return '';
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * h;
+    return x + ',' + y;
+  }).join(' ');
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5"/></svg>';
+}
+
 // ── RENDERS POR TIPO ──────────────────────────────────────────────
 
 function renderWidgetAmbienteGrid(w) {
+  if (!w) return '';
   if (!rooms.length) {
     return `<div style="grid-column:1/-1;text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhum ambiente cadastrado. Clique em "+ Ambiente" para começar.</div>`;
   }
@@ -4143,9 +4577,11 @@ function renderWidgetAmbienteGrid(w) {
     const sensorItems = [];
     const secAgo = d.lastSeen ? Math.round((Date.now() - new Date(d.lastSeen)) / 1000) : null;
     const isOffline = secAgo !== null && secAgo > 90;
-    const onlineBadge = (!d.lastSeen || isOffline)
-      ? `<span style="width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block;flex-shrink:0"></span>`
-      : `<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;flex-shrink:0"></span>`;
+    const onlineBadge = !d.lastSeen
+      ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>–</span>`
+      : isOffline
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--muted);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block"></span>offline ${secAgo < 3600 ? Math.floor(secAgo/60)+'m' : Math.floor(secAgo/3600)+'h'}</span>`
+        : `<span style="font-family:var(--mono);font-size:9px;color:var(--accent);display:inline-flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block"></span>online</span>`;
 
     if (!d.lastSeen) {
       sensorItems.push(`<span class="room-nodata">aguardando…</span>`);
@@ -4154,63 +4590,74 @@ function renderWidgetAmbienteGrid(w) {
         sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:10px;line-height:1">🌡️</span><span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span></span>`);
       if (r.hasTemp && d.hum !== null) {
         if (sensorItems.length > 0 && d.temp !== null) sensorItems.push(`<div class="room-sep"></div>`);
-        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></span>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></span>`);
       }
       if (r.hasSmoke) {
         const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
         const sv = d.smoke !== null ? d.smoke : null;
         if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
-        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="color:${sl.color}">${sv !== null ? sv : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${sv !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger)">⚠</span>` : ''}</span>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="font-size:12px;color:${sl.color}">${sv !== null ? sv : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${sv !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger)">⚠</span>` : ''}</span>`);
       }
     }
 
-    // ── lâmpada e relés entram na mesma linha dos sensores ──
+    // ── linha de botões — ROW PRÓPRIA, nunca entra no sensorItems ──
+    const btnItems = [];
     if (r.hasLamp) {
       const lampOn = d.lamp === true;
-      if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
-      sensorItems.push(`
-        <div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
-          <span class="lamp-bulb ${lampOn ? 'lamp-on' : ''}">💡</span>
-          <label class="room-relay-switch">
-            <input type="checkbox" ${lampOn ? 'checked' : ''}
-              onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
-            <div class="rrs-track"></div>
-            <div class="rrs-knob"></div>
-          </label>
-        </div>`);
+      btnItems.push(`<div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
+        <span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span>
+        <label class="room-relay-switch">
+          <input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>`);
     }
     linkedRelays.forEach(rel => {
-      if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
-      sensorItems.push(`
-        <div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}">
-          <span style="font-size:12px;line-height:1">${rel.displayIcon}</span>
-          <label class="room-relay-switch">
-            <input type="checkbox" ${rel.state ? 'checked' : ''}
-              onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
-            <div class="rrs-track"></div>
-            <div class="rrs-knob"></div>
-          </label>
-        </div>`);
+      btnItems.push(`<div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}">
+        <span style="font-size:12px;line-height:1">${rel.displayIcon}</span>
+        <label class="room-relay-switch">
+          <input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>`);
     });
+
+    // Lâmpada e relés ficam na mesma linha dos sensores
+    const sensorAndBtnRow = [...sensorItems];
+    if (btnItems.length) {
+      if (sensorAndBtnRow.length) sensorAndBtnRow.push('<div class="room-sep" style="height:16px"></div>');
+      btnItems.forEach(b => sensorAndBtnRow.push(b));
+    }
 
     return `<div class="room-card ${alarmCls}" id="room-${r.id}">
       <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        <div class="room-main-row">
-          ${sensorItems.join('')}
-        </div>
-        <span style="flex-shrink:0">${onlineBadge}</span>
+        <span style="margin-left:auto">${onlineBadge}</span>
       </div>
+      <div class="room-main-row">${sensorAndBtnRow.join('')}</div>
+      ${(() => {
+        const h = getHistory(r.id, 'temp');
+        if (h.length < 3) return '';
+        return `<div style="margin-top:6px;opacity:0.7">${buildSparklineSVG(h,'var(--accent)',70,16)}</div>`;
+      })()}
     </div>`;
   }).join('');
 }
 
 function renderWidgetAmbiente(w) {
+  const cnt = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
   const sz = getWidgetSize(w);
-  const gridStyle = 'display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:260px;padding-right:2px';
-  return `<div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
+  const gridStyle = sz === 'small'
+    ? 'display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:300px;padding-right:2px'
+    : 'max-height:220px;overflow-y:auto;padding-right:2px';
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${cnt}</span>
+      <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
+    </div>
+    <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
 }
 
 function renderWidgetCaixaAguaGrid(w) {
@@ -4218,9 +4665,12 @@ function renderWidgetCaixaAguaGrid(w) {
     return `<div style="text-align:center;padding:20px 0;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma caixa cadastrada.<br>Clique em "+ Adicionar".</div>`;
   }
   return waterTanks.map(t => {
-    const pct = t.level;
-    const col = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
-    const sub = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
+    const pct     = t.level;
+    const secAgo  = t.lastSeen ? Math.round((Date.now() - new Date(t.lastSeen)) / 1000) : null;
+    const offline = secAgo !== null && secAgo > 120;
+    const col     = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const subCol  = pct === null ? 'var(--muted)' : pct <= 10 ? 'var(--danger)' : pct <= 25 ? 'var(--warn)' : 'var(--accent)';
+    const sub     = pct === null ? '' : pct <= 10 ? '⚠ crítico' : pct <= 25 ? '⚠ baixo' : '✓ ok';
     const pumpsHtml = t.pumps && t.pumps.length ? `
       <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px">
         ${t.pumps.map(p => {
@@ -4247,18 +4697,19 @@ function renderWidgetCaixaAguaGrid(w) {
     return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;transition:border-color 0.2s" id="tankbox-${t.id}"
       onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''))}
+        ${tankSvg(pct, t.id.replace(/[^a-z0-9]/gi,''), offline)}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
             <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+            ${offline ? `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--muted);border:0.5px solid var(--border2);background:var(--bg2);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">OFFLINE</span>` : `<span style="font-family:var(--mono);font-size:8px;font-weight:600;color:var(--accent);border:0.5px solid rgba(34,211,160,0.25);background:rgba(34,211,160,0.08);padding:1px 5px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0">ONLINE</span>`}
             <button onclick="openTankModal('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Editar">✏</button>
             <button onclick="removeTank('${t.id}')" style="font-size:9px;background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0" title="Remover">✕</button>
           </div>
           <div style="display:flex;align-items:baseline;gap:5px">
-            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${col};letter-spacing:-0.5px;opacity:${offline?'0.4':'1'}">${pct !== null ? pct : '—'}<span style="font-size:10px;font-weight:400;color:var(--muted)">%</span></span>
             ${t.liters !== null ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${t.liters}L</span>` : ''}
           </div>
-          <div style="font-family:var(--mono);font-size:9px;color:${col}">${sub}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:${subCol}">${sub}</div>
         </div>
       </div>
       ${t.lastSeen ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px">↻ ${new Date(t.lastSeen).toLocaleTimeString('pt-BR')}</div>` : ''}
@@ -4409,28 +4860,47 @@ function renderWidgetPortao(w) {
 }
 
 function renderWidgetRele(w) {
-  const relay = relays.find(r => r.id === w.relayId);
-  const isOn = relay ? relay.state : false;
-  const stColor = isOn ? 'var(--accent)' : 'var(--muted)';
-  const bgColor = isOn ? 'rgba(0,212,160,0.06)' : 'var(--bg3)';
+  const isStandalone = w.relMode === 'standalone';
+  let isOn, relayName, disabled;
+  if (isStandalone) {
+    isOn      = window['wr_state_' + w.id] || false;
+    relayName = w.name;
+    disabled  = false;
+  } else {
+    const relay = relays.find(r => r.id === w.relayId);
+    isOn      = relay ? relay.state : false;
+    relayName = relay ? relay.name : w.name;
+    disabled  = !relay;
+  }
+  const stColor     = isOn ? 'var(--accent)' : 'var(--muted)';
+  const bgColor     = isOn ? 'rgba(0,212,160,0.06)' : 'var(--bg3)';
   const borderColor = isOn ? 'rgba(0,212,160,0.3)' : 'var(--border)';
-  const stIcon = isOn ? '🟢' : '⚪';
+  const stIcon      = isOn ? '🟢' : '⚪';
+  const onchangeFn  = isStandalone
+    ? `toggleWidgetRelayStandalone('${w.id}', this.checked)`
+    : `toggleWidgetRelay('${w.id}', this.checked)`;
+  const topicBadge  = isStandalone && w.relTopic
+    ? `<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.relTopic}</div>`
+    : '';
   return `
-    <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:var(--radius);padding:14px 16px;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
-          ${w.icon || '⚡'} ${relay ? relay.name : w.name}
+    <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:var(--radius);padding:14px 16px;transition:all 0.3s">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
+            ${w.icon || '⚡'} ${relayName}
+          </div>
+          <div style="font-family:var(--mono);font-size:11px;color:${stColor};display:flex;align-items:center;gap:5px">
+            ${stIcon} <span id="wr-st-${w.id}">${isOn ? 'LIGADO' : 'DESLIGADO'}</span>
+            ${disabled ? '<span style="font-size:9px;color:var(--danger);margin-left:6px">⚠ Relé não encontrado</span>' : ''}
+          </div>
         </div>
-        <div style="font-family:var(--mono);font-size:11px;color:${stColor};display:flex;align-items:center;gap:5px">
-          ${stIcon} <span>${isOn ? 'LIGADO' : 'DESLIGADO'}</span>
-          ${!relay ? `<span style="font-size:9px;color:var(--danger);margin-left:6px">⚠ Relé não encontrado</span>` : ''}
-        </div>
+        <label class="toggle" style="transform:scale(1.2);transform-origin:right center;flex-shrink:0">
+          <input type="checkbox" ${isOn ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="${onchangeFn}">
+          <div class="toggle-track"></div>
+          <div class="toggle-knob"></div>
+        </label>
       </div>
-      <label class="toggle" style="transform:scale(1.2);transform-origin:right center;flex-shrink:0">
-        <input type="checkbox" ${isOn ? 'checked' : ''} ${!relay ? 'disabled' : ''} onchange="toggleWidgetRelay('${w.id}', this.checked)">
-        <div class="toggle-track"></div>
-        <div class="toggle-knob"></div>
-      </label>
+      ${topicBadge}
     </div>`;
 }
 
@@ -4466,6 +4936,78 @@ function renderWidgetAlarme(w) {
 }
 
 function renderWidgetMedidor(w) {
+  const mode = w.meterMode || 'generic';
+
+  // ── Fluxo de Água ────────────────────────────────────────────
+  if (mode === 'flow_water') {
+    const rate  = window['wm_val_'   + w.id];
+    const total = window['wm_tot_'   + w.id];
+    const limit = w.dailyLimit || 500;
+    const rateDisp  = rate  != null ? parseFloat(rate).toFixed(1)  : '--';
+    const totalDisp = total != null ? parseFloat(total).toFixed(0) : '--';
+    const pctDaily  = total != null ? Math.min(100, (parseFloat(total)/limit)*100) : 0;
+    const barColor  = pctDaily >= 90 ? 'var(--danger)' : pctDaily >= 70 ? 'var(--warn)' : '#3b82f6';
+    const topicShort = (w.topic||'').length > 35 ? '…'+(w.topic||'').slice(-33) : (w.topic||'aguardando…');
+    return `
+      <div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px">
+          <span class="flow-rate-big" id="meter-val-${w.id}">${rateDisp}</span>
+          <span class="flow-unit-lbl">L/min</span>
+          <span id="meter-ts-${w.id}" style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--muted)"></span>
+        </div>
+        <div class="flow-row" style="margin-bottom:4px">
+          <span style="font-size:14px">💧</span>
+          <span class="fr-val" id="meter-sub-${w.id}">${totalDisp} L</span>
+          <span class="fr-lbl">consumo hoje</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between">
+          <span>0 L</span><span>limite: ${limit} L</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pctDaily}%;background:${barColor}"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.topic||''}">${topicShort}</div>
+      </div>`;
+  }
+
+  // ── Energia PZEM-004T ────────────────────────────────────────
+  if (mode === 'energy') {
+    const e = window['wm_energy_' + w.id] || {};
+    const pow  = e.power     != null ? parseFloat(e.power).toFixed(0)     : '--';
+    const vol  = e.voltage   != null ? parseFloat(e.voltage).toFixed(1)   : '--';
+    const cur  = e.current   != null ? parseFloat(e.current).toFixed(2)   : '--';
+    const kwh  = e.energy    != null ? parseFloat(e.energy).toFixed(3)    : '--';
+    const pf   = e.pf        != null ? parseFloat(e.pf).toFixed(2)        : '--';
+    const tariff = w.tariff || 0.65;
+    const cost = e.energy != null ? (parseFloat(e.energy)*tariff).toFixed(2) : '--';
+    const powNum = e.power != null ? parseFloat(e.power) : 0;
+    const maxW   = (w.phases||1) === 3 ? 15000 : 5000;
+    const pct    = Math.min(100,(powNum/maxW)*100);
+    const barColor = pct>=90?'var(--danger)':pct>=70?'var(--warn)':'#f59e0b';
+    return `
+      <div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
+          <div class="meter-value" id="meter-val-${w.id}">${pow}<span class="meter-unit">W</span></div>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto" id="meter-ts-${w.id}"></span>
+        </div>
+        <div class="meter-bar" style="margin-bottom:10px">
+          <div class="meter-bar-fill" id="meter-bar-${w.id}" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div class="meter-energy-grid">
+          <div class="energy-cell"><div class="ec-val" id="me-vol-${w.id}">${vol}</div><div class="ec-lbl">⚡ Tensão (V)</div></div>
+          <div class="energy-cell"><div class="ec-val" id="me-cur-${w.id}">${cur}</div><div class="ec-lbl">🔌 Corrente (A)</div></div>
+          <div class="energy-cell"><div class="ec-val" id="me-kwh-${w.id}">${kwh}</div><div class="ec-lbl">📈 Energia (kWh)</div></div>
+          <div class="energy-cell"><div class="ec-val" id="me-pf-${w.id}">${pf}</div><div class="ec-lbl">📐 Fator Potência</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--radius)">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--warn)">💰 Custo acumulado</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn)" id="me-cost-${w.id}">R$ ${cost}</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="meter-sub-${w.id}" title="${w.topic||''}">${(w.topic||'aguardando…').slice(-40)}</div>
+      </div>`;
+  }
+
+  // ── Genérico ─────────────────────────────────────────────────
   const val  = window['wm_val_' + w.id];
   const disp = val != null ? parseFloat(val).toFixed(w.decimals != null ? w.decimals : 1) : '--';
   const max  = w.max || 100;
@@ -4623,18 +5165,64 @@ function setIrrigMode(mode) {
 }
 
 function openIrrigSchedModal(wid) {
-  // Preenche select de relés
-  const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
-  document.getElementById('irrig-sched-relay').innerHTML = relayOpts || '<option value="">— nenhum relé —</option>';
-  // Limpa dias selecionados
   if (!wSelectedDays[wid]) wSelectedDays[wid] = new Set();
   document.querySelectorAll('#irrig-sched-days .day-pick-btn').forEach(btn => {
     btn.dataset.wid = wid;
     btn.classList.toggle('sel', wSelectedDays[wid].has(parseInt(btn.dataset.d)));
   });
   document.getElementById('irrig-sched-wid').value = wid;
-  document.getElementById('irrig-sched-modal').classList.add('open');
+  _renderIrrigSchedSlots(wid);
   _renderIrrigSchedList();
+  document.getElementById('irrig-sched-modal').classList.add('open');
+}
+
+function _renderIrrigSchedSlots(wid) {
+  const relayOpts = relays.filter(r => r.enabled)
+    .map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
+  const relaySelect = (idx) => `<select id="islot-rel-${idx}"
+    style="flex:1;min-width:110px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:0 8px;outline:none;height:34px">
+    ${relayOpts || '<option value="">— nenhum relé —</option>'}
+  </select>`;
+
+  const slotLabels = ['1º', '2º', '3º', '4º'];
+  const slotTimes  = ['06:00', '11:00', '16:00', '20:00'];
+
+  const slotsEl = document.getElementById('irrig-sched-slots');
+  slotsEl.innerHTML = slotLabels.map((lbl, i) => `
+    <div style="display:grid;grid-template-columns:32px 1fr 1fr 1fr 28px;gap:8px;align-items:center;
+      background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+      <!-- Número do slot -->
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--muted);text-align:center">
+        ${lbl}
+      </div>
+      <!-- Hora -->
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">horário</div>
+        <input type="time" id="islot-time-${i}" value="${slotTimes[i]}"
+          style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;padding:0 8px;outline:none;height:34px">
+      </div>
+      <!-- Duração -->
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">duração</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="number" id="islot-dur-${i}" value="15" min="1" max="240"
+            style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;padding:0 8px;outline:none;height:34px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">min</span>
+        </div>
+      </div>
+      <!-- Relé -->
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px">relé / zona</div>
+        ${relaySelect(i)}
+      </div>
+      <!-- Toggle ativo -->
+      <div style="display:flex;align-items:center;justify-content:center">
+        <label class="room-relay-switch" title="Ativar/desativar este slot">
+          <input type="checkbox" id="islot-on-${i}" checked>
+          <div class="rrs-track"></div><div class="rrs-knob"></div>
+        </label>
+      </div>
+    </div>`).join('');
 }
 
 function closeIrrigSchedModal() {
@@ -4649,24 +5237,43 @@ function irrigSchedToggleDay(btn) {
   else { wSelectedDays[wid].add(d); btn.classList.add('sel'); }
 }
 
-function irrigSchedAdd() {
+function irrigSchedSaveSlots() {
   const wid  = document.getElementById('irrig-sched-wid').value;
   const days = wSelectedDays[wid] ? [...wSelectedDays[wid]] : [];
   if (!days.length) { alert('Selecione pelo menos um dia da semana.'); return; }
-  const t   = document.getElementById('irrig-sched-time').value || '06:00';
-  const dur = parseInt(document.getElementById('irrig-sched-dur').value) || 15;
-  const rel = document.getElementById('irrig-sched-relay').value;
-  if (!rel) { alert('Selecione um relé/zona.'); return; }
-  schedules.push({ id: 's' + Date.now(), days, time: t, duration: dur, relay: rel, active: true });
-  wSelectedDays[wid] = new Set();
+
+  let added = 0;
+  for (let i = 0; i < 4; i++) {
+    const onEl  = document.getElementById(`islot-on-${i}`);
+    if (!onEl || !onEl.checked) continue;
+    const t   = document.getElementById(`islot-time-${i}`)?.value || '06:00';
+    const dur = parseInt(document.getElementById(`islot-dur-${i}`)?.value) || 15;
+    const rel = document.getElementById(`islot-rel-${i}`)?.value;
+    if (!rel) continue;
+    // Evita duplicata exata (mesmo dia+hora+relé)
+    const dup = schedules.find(s =>
+      s.relay === rel && s.time === t &&
+      JSON.stringify([...s.days].sort()) === JSON.stringify([...days].sort())
+    );
+    if (dup) continue;
+    schedules.push({ id: 's' + Date.now() + '_' + i, days, time: t, duration: dur, relay: rel, active: true });
+    added++;
+  }
+
+  if (!added) { alert('Nenhum slot novo para adicionar (verifique se já existem agendamentos iguais).'); return; }
   try { localStorage.setItem('autoflow_schedules', JSON.stringify(schedules)); } catch(e) {}
   const w = widgets.find(x => x.id === wid);
   if (w) patchWidgetCard(w);
   publishPersist();
-  log(`Agendamento: ${t} por ${dur}min`, 'ok');
-  // Atualiza lista no modal sem fechar
+  log(`${added} agendamento(s) salvos`, 'ok');
   _renderIrrigSchedList();
+  // Reseta dias
+  wSelectedDays[wid] = new Set();
+  document.querySelectorAll('#irrig-sched-days .day-pick-btn').forEach(b => b.classList.remove('sel'));
 }
+
+// mantém compatibilidade com código antigo
+function irrigSchedAdd() { irrigSchedSaveSlots(); }
 
 function _renderIrrigSchedList() {
   const listEl = document.getElementById('irrig-sched-list-modal');
@@ -4676,17 +5283,24 @@ function _renderIrrigSchedList() {
     return;
   }
   const dayShort = ['D','S','T','Q','Q','S','S'];
+  const dayFull = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   listEl.innerHTML = schedules.map(s => {
     const rel = relays.find(r => r.id === s.relay);
-    const daysStr = dayShort.filter((_,i) => s.days.includes(i)).join(' ');
-    return `<div class="sched-item" style="padding:6px 10px">
-      <div class="sched-time">${s.time}</div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">${s.duration}m</div>
-      <div class="sched-info" style="flex:1;min-width:0">
-        <div class="sched-relay">${rel ? rel.icon + ' ' + rel.name : '—'}</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-top:2px">${daysStr}</div>
+    const daysStr = dayFull.filter((_,i) => s.days.includes(i)).join(', ');
+    const durLabel = s.duration >= 60
+      ? `${Math.floor(s.duration/60)}h${s.duration%60?s.duration%60+'min':''}`
+      : `${s.duration}min`;
+    return `<div class="sched-item" style="padding:8px 10px;gap:10px">
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:38px">
+        <span class="sched-time" style="font-size:14px">${s.time}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent2);margin-top:2px">${durLabel}</span>
       </div>
-      <button class="btn-icon" onclick="irrigSchedRemove('${s.id}')" title="Remover" style="width:22px;height:22px;font-size:11px;flex-shrink:0">✕</button>
+      <div class="sched-info" style="flex:1;min-width:0">
+        <div class="sched-relay" style="font-size:12px">${rel ? rel.icon + ' ' + rel.name : '— relé não encontrado'}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${daysStr}</div>
+      </div>
+      <button class="btn-icon" onclick="irrigSchedRemove('${s.id}')" title="Remover"
+        style="width:22px;height:22px;font-size:11px;flex-shrink:0;color:var(--muted)">✕</button>
     </div>`;
   }).join('');
 }
@@ -4727,21 +5341,84 @@ function handleWidgetMessage(topic, payload) {
       if (dot) dot.className = 'alarm-dot ' + (trig ? 'triggered' : 'ok');
       if (lbl) { lbl.textContent = trig ? 'ALARME ATIVO' : 'Normal'; lbl.style.color = trig ? 'var(--danger)' : 'var(--green)'; }
     }
-    // Medidor — atualiza valor inline
-    if (w.type === 'medidor' && w.topic && topic === w.topic) {
-      let val = parseFloat(payload);
-      if (isNaN(val)) { try { const obj = JSON.parse(payload); val = parseFloat(obj[w.jsonKey] || obj.value || 0); } catch(e) {} }
-      window['wm_val_' + w.id] = val;
-      const max = w.max || 100;
-      const pct = Math.min(100, Math.max(0, (val / max) * 100));
-      const disp = val.toFixed(w.decimals != null ? w.decimals : 1);
-      const barColor = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
-      const meterEl = document.querySelector(`#wcard-${w.id} .meter-value`);
-      const barEl   = document.getElementById('meter-bar-' + w.id);
-      const tsEl    = document.getElementById('meter-ts-' + w.id);
-      if (meterEl) meterEl.innerHTML = `${disp}<span class="meter-unit">${w.unit || ''}</span>`;
-      if (barEl)   { barEl.style.width = pct + '%'; barEl.style.background = barColor; }
-      if (tsEl)    tsEl.textContent = new Date().toLocaleTimeString('pt-BR');
+    // Medidor — atualiza por modo
+    if (w.type === 'medidor') {
+      const mMode = w.meterMode || 'generic';
+      const now = new Date().toLocaleTimeString('pt-BR');
+      if (mMode === 'energy' && w.topic && topic === w.topic) {
+        // PZEM-004T — JSON payload
+        let e = {};
+        try { e = JSON.parse(payload); } catch(ex) { e = { power: parseFloat(payload)||0 }; }
+        window['wm_energy_' + w.id] = e;
+        window['wm_val_'    + w.id] = e.power;
+        const safe = (id,val,dec) => { const el=document.getElementById(id); if(el) el.textContent=(val!=null?parseFloat(val).toFixed(dec||1):'--'); };
+        safe('meter-val-'+w.id, e.power, 0);
+        safe('me-vol-'+w.id,    e.voltage,   1);
+        safe('me-cur-'+w.id,    e.current,   2);
+        safe('me-kwh-'+w.id,    e.energy,    3);
+        safe('me-pf-'+w.id,     e.pf,        2);
+        const costEl = document.getElementById('me-cost-'+w.id);
+        if (costEl && e.energy!=null) costEl.textContent='R$ '+(parseFloat(e.energy)*(w.tariff||0.65)).toFixed(2);
+        const powNum = parseFloat(e.power)||0;
+        const maxW = (w.phases||1)===3?15000:5000;
+        const pct  = Math.min(100,(powNum/maxW)*100);
+        const barEl = document.getElementById('meter-bar-'+w.id);
+        if (barEl) { barEl.style.width=pct+'%'; barEl.style.background=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'#f59e0b'; }
+        const tsEl = document.getElementById('meter-ts-'+w.id);
+        if (tsEl) tsEl.textContent = now;
+      } else if (mMode === 'flow_water') {
+        if (w.topic && topic === w.topic) {
+          // YF-S201 — flow rate (L/min)
+          let rate = parseFloat(payload);
+          if (isNaN(rate)) { try { const o=JSON.parse(payload); rate=parseFloat(o.flow||o.rate||o.value||0); } catch(ex){} }
+          window['wm_val_' + w.id] = rate;
+          const rateEl = document.getElementById('meter-val-'+w.id);
+          if (rateEl) rateEl.textContent = rate.toFixed(1);
+          const max = w.maxFlow||30;
+          const pct = Math.min(100,(rate/max)*100);
+          const barEl = document.getElementById('meter-bar-'+w.id);
+          if (barEl) { barEl.style.width=pct+'%'; barEl.style.background='#3b82f6'; }
+          const tsEl = document.getElementById('meter-ts-'+w.id);
+          if (tsEl) tsEl.textContent = now;
+        }
+        if (w.totalTopic && topic === w.totalTopic) {
+          // Totalizer (L accumulated today)
+          let tot = parseFloat(payload);
+          if (isNaN(tot)) { try { const o=JSON.parse(payload); tot=parseFloat(o.total||o.value||0); } catch(ex){} }
+          window['wm_tot_' + w.id] = tot;
+          const totEl = document.getElementById('meter-sub-'+w.id);
+          if (totEl) totEl.textContent = tot.toFixed(0)+' L';
+          const limit = w.dailyLimit||500;
+          const pctD  = Math.min(100,(tot/limit)*100);
+          const barEl = document.getElementById('meter-bar-'+w.id);
+          if (barEl) { barEl.style.width=pctD+'%'; barEl.style.background=pctD>=90?'var(--danger)':pctD>=70?'var(--warn)':'#3b82f6'; }
+          if (tot >= limit) log(`💧 ${w.name}: limite diário atingido (${tot.toFixed(0)} L)!`, 'warn');
+        }
+      } else if (w.topic && topic === w.topic) {
+        // Generic MQTT value
+        let val = parseFloat(payload);
+        if (isNaN(val)) { try { const obj=JSON.parse(payload); val=parseFloat(obj[w.jsonKey]||obj.value||0); } catch(e){} }
+        window['wm_val_' + w.id] = val;
+        const max = w.max || 100;
+        const pct = Math.min(100, Math.max(0, (val/max)*100));
+        const disp = val.toFixed(w.decimals!=null?w.decimals:1);
+        const barColor = pct>=90?'var(--danger)':pct>=70?'var(--warn)':'var(--accent)';
+        const meterEl = document.querySelector(`#wcard-${w.id} .meter-value`);
+        const barEl   = document.getElementById('meter-bar-'+w.id);
+        const tsEl    = document.getElementById('meter-ts-'+w.id);
+        if (meterEl) meterEl.innerHTML = `${disp}<span class="meter-unit">${w.unit||''}</span>`;
+        if (barEl)   { barEl.style.width=pct+'%'; barEl.style.background=barColor; }
+        if (tsEl)    tsEl.textContent = now;
+      }
+    }
+    // Relé standalone — atualiza estado pelo stateTopic
+    if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic && topic === w.relStateTopic) {
+      const on = payload==='ON'||payload==='1'||payload.toLowerCase()==='on';
+      window['wr_state_'+w.id] = on;
+      const cb   = document.querySelector(`#wcard-${w.id} input[type=checkbox]`);
+      const stEl = document.getElementById('wr-st-'+w.id);
+      if (cb)   cb.checked = on;
+      if (stEl) { stEl.textContent=on?'LIGADO':'DESLIGADO'; stEl.style.color=on?'var(--accent)':'var(--muted)'; }
     }
     // Ambiente — patch cirúrgico apenas no grid de ambientes deste widget
     if (w.type === 'ambiente') {
@@ -4765,14 +5442,42 @@ function handleWidgetMessage(topic, payload) {
 }
 
 // ── SUBSCRIÇÃO dos tópicos dos widgets ───────────────────────────
+// Guarda os tópicos de widgets atualmente assinados
+let _widgetSubscribedTopics = new Set();
+
 function subscribeWidgetTopics() {
   if (!client || !client.connected) return;
+
+  // Monta o conjunto de tópicos que devem estar ativos agora
+  const newTopics = new Set();
   widgets.forEach(w => {
-    if (w.stateTopic)  client.subscribe(w.stateTopic,  { qos: 1 });
-    if (w.sensorTopic) client.subscribe(w.sensorTopic, { qos: 1 });
-    if (w.obstTopic)   client.subscribe(w.obstTopic,   { qos: 1 });
-    if (w.topic && w.type === 'medidor') client.subscribe(w.topic, { qos: 1 });
+    if (w.stateTopic)  newTopics.add(w.stateTopic);
+    if (w.sensorTopic) newTopics.add(w.sensorTopic);
+    if (w.obstTopic)   newTopics.add(w.obstTopic);
+    if (w.type === 'medidor') {
+      if (w.topic)      newTopics.add(w.topic);
+      if (w.totalTopic) newTopics.add(w.totalTopic);
+    }
+    if (w.type === 'rele' && w.relMode === 'standalone' && w.relStateTopic) {
+      newTopics.add(w.relStateTopic);
+    }
   });
+
+  // Cancela assinaturas de tópicos que não pertencem a nenhum widget ativo
+  _widgetSubscribedTopics.forEach(t => {
+    if (!newTopics.has(t)) {
+      client.unsubscribe(t);
+    }
+  });
+
+  // Assina apenas os tópicos novos (que ainda não estavam assinados)
+  newTopics.forEach(t => {
+    if (!_widgetSubscribedTopics.has(t)) {
+      client.subscribe(t, { qos: 1 });
+    }
+  });
+
+  _widgetSubscribedTopics = newTopics;
 }
 
 // ── MODAL: PICKER ─────────────────────────────────────────────────
@@ -4792,10 +5497,29 @@ const WIDGET_TYPE_LABELS = {
   rele:       { label: 'Relé genérico',    icon: '⚡' },
   alarme:     { label: 'Alarme',           icon: '🚨' },
   medidor:    { label: 'Medidor',          icon: '📊' },
+  autoflow:   { label: 'Dispositivos AutoFlow', icon: '📲' },
 };
 
 function selectWidgetType(type) {
   closeWidgetPicker();
+  if (type === 'caixa_agua') {
+    openTankModal(null, true);
+    return;
+  }
+  if (type === 'autoflow') {
+    // Widget autoflow é singleton — só um por painel
+    if (widgets.find(w => w.type === 'autoflow')) {
+      alert('Já existe um widget de Dispositivos AutoFlow no painel.');
+      return;
+    }
+    const w = { id: 'w_autoflow', type: 'autoflow', name: 'Dispositivos AutoFlow', icon: '📲', sz: 'full' };
+    widgets.push(w);
+    saveWidgets();
+    renderWidgetPanel();
+    publishPersist();
+    log('🧩 Widget "Dispositivos AutoFlow" adicionado', 'ok');
+    return;
+  }
   openWidgetCfgModal(null, type);
 }
 
@@ -4841,16 +5565,11 @@ function buildWidgetFields(type, ex) {
   const iconField = inp('icon', 'Ícone (emoji)', v('icon', WIDGET_TYPE_LABELS[type]?.icon || ''), '🏠');
 
   switch(type) {
-    case 'ambiente':
-      const roomOpts = rooms.map(r => `<option value="${r.id}" ${v('roomId','') === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
-      return `${nameField}
-        <div class="field"><label>Ambiente cadastrado</label>
-          <select id="wcm-roomId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
-            <option value="">-- selecione --</option>${roomOpts}
-          </select>
-        </div>`;
+    case 'ambiente': {
+      return `${nameField}${iconField}`;
+    }
 
-    case 'caixa_agua':
+    case 'caixa_agua': {
       const tankOpts = waterTanks.map(t => `<option value="${t.id}" ${v('tankId','') === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
       return `${nameField}
         <div class="field"><label>Caixa d'água cadastrada</label>
@@ -4858,9 +5577,16 @@ function buildWidgetFields(type, ex) {
             <option value="">-- selecione --</option>${tankOpts}
           </select>
         </div>`;
+    }
 
     case 'irrigacao':
-      return `${nameField}${iconField}`;
+      return `${nameField}${iconField}
+        <div class="dev-section-label" style="margin-top:12px"><span class="dsb"></span>Dispositivo ESP32 (opcional)</div>
+        <div class="dev-section">
+          ${inp('deviceId',   'ID do dispositivo',    v('deviceId',''),   'ex: bomba01')}
+          ${inp('devicePass', 'Senha do dispositivo', v('devicePass',''), '••••••••')}
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:-4px">Deixe em branco para usar o relé configurado na bomba de irrigação global.</div>
+        </div>`;
 
     case 'portao': {
       const gMode = v('triggerMode','pulse');
@@ -4904,15 +5630,46 @@ function buildWidgetFields(type, ex) {
         </div>`;
     }
 
-    case 'rele':
+    case 'rele': {
       const relayOpts = relays.filter(r => r.enabled).map(r => `<option value="${r.id}" ${v('relayId','') === r.id ? 'selected' : ''}>${r.icon} ${r.name}</option>`).join('');
+      const relMode = v('relMode','linked');
       return `${nameField}${iconField}
-        <div class="field"><label>Relé vinculado</label>
-          <select id="wcm-relayId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
-            <option value="">-- selecione --</option>${relayOpts}
-          </select>
+        <div class="dev-section-label" style="margin-top:10px"><span class="dsb"></span>Modo de controle</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <label class="rel-mode-card" style="border-color:${relMode!=='standalone'?'var(--accent)':'var(--border2)'};background:${relMode!=='standalone'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-relMode" value="linked" ${relMode!=='standalone'?'checked':''} style="display:none"
+              onchange="this.closest('[style*=flex]').querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border2)');this.closest('label').style.borderColor='var(--accent)';document.getElementById('wcm-rele-linked').style.display='';document.getElementById('wcm-rele-standalone').style.display='none'">
+            <span style="font-size:16px">🔗</span>
+            <div><div style="font-family:var(--mono);font-size:11px;font-weight:600">Relé da lista</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Relé já cadastrado</div></div>
+          </label>
+          <label class="rel-mode-card" style="border-color:${relMode==='standalone'?'var(--accent)':'var(--border2)'};background:${relMode==='standalone'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-relMode" value="standalone" ${relMode==='standalone'?'checked':''} style="display:none"
+              onchange="this.closest('[style*=flex]').querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border2)');this.closest('label').style.borderColor='var(--accent)';document.getElementById('wcm-rele-linked').style.display='none';document.getElementById('wcm-rele-standalone').style.display=''">
+            <span style="font-size:16px">📡</span>
+            <div><div style="font-family:var(--mono);font-size:11px;font-weight:600">Dispositivo ESP32</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">ID + senha + tópico</div></div>
+          </label>
+        </div>
+        <div id="wcm-rele-linked" style="display:${relMode!=='standalone'?'':'none'}">
+          <div class="field"><label>Relé vinculado</label>
+            <select id="wcm-relayId" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none">
+              <option value="">-- selecione --</option>${relayOpts}
+            </select>
+          </div>
+        </div>
+        <div id="wcm-rele-standalone" style="display:${relMode==='standalone'?'':'none'}">
+          <div class="dev-section">
+            ${inp('deviceId',      'ID do dispositivo',        v('deviceId',''),      'ex: rele01')}
+            ${inp('devicePass',    'Senha do dispositivo',     v('devicePass',''),    '••••••••')}
+            ${inp('relTopic',      'Tópico comando (publish)', v('relTopic',''),      'home/rele01/cmd')}
+            ${inp('relStateTopic', 'Tópico estado (subscribe)',v('relStateTopic',''), 'home/rele01/state')}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              ${inp('payloadOn',  'Payload ON',  v('payloadOn','ON'),  'ON')}
+              ${inp('payloadOff', 'Payload OFF', v('payloadOff','OFF'),'OFF')}
+            </div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:-4px">💡 Tópico vazio → auto: <code>home/{deviceId}/cmd</code></div>
+          </div>
         </div>`;
-
+    }
     case 'alarme':
       return `${nameField}${iconField}
         ${inp('sensorTopic',    'Tópico do sensor PIR/contato',   v('sensorTopic',''),    'home/alarme/pir')}
@@ -4920,13 +5677,55 @@ function buildWidgetFields(type, ex) {
         ${inp('sirenOnPayload', 'Payload sirene ON',               v('sirenOnPayload','ON'),  'ON')}
         ${inp('sirenOffPayload','Payload sirene OFF',              v('sirenOffPayload','OFF'),'OFF')}`;
 
-    case 'medidor':
+    case 'medidor': {
+      const mMode = v('meterMode','generic');
+      const modeFields = {
+        generic: `
+          ${inp('topic',   'Tópico MQTT',              v('topic',''),     'sensors/meu_sensor/valor')}
+          ${inp('jsonKey', 'Chave JSON (opcional)',     v('jsonKey',''),   'value')}
+          ${inp('unit',    'Unidade',                   v('unit',''),      'kW, L/min, ppm...')}
+          ${inp('max',     'Valor máximo (barra)',      v('max',100),      '100')}
+          ${inp('decimals','Casas decimais',             v('decimals',1),   '1')}`,
+        flow_water: `
+          <div style="padding:8px 10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+            🌊 <strong style="color:#3b82f6">YF-S201</strong> / YF-B7 (ESP32)<br>
+            Publica <code style="color:var(--accent2)">{id}/flow</code> (L/min) e <code style="color:var(--accent2)">{id}/total</code> (L acum.)
+          </div>
+          ${inp('deviceId',   'ID do dispositivo',        v('deviceId',''),    'ex: fluxo01')}
+          ${inp('devicePass', 'Senha do dispositivo',     v('devicePass',''),  '••••••••')}
+          ${inp('maxFlow',    'Vazão máxima (L/min)',      v('maxFlow',30),     '30')}
+          ${inp('dailyLimit', 'Limite diário alertar (L)', v('dailyLimit',500), '500')}`,
+        energy: `
+          <div style="padding:8px 10px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+            ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> (ESP32) — JSON em <code style="color:var(--accent2)">{id}/energy</code><br>
+            <code style="color:var(--text)">{voltage, current, power, energy, frequency, pf}</code>
+          </div>
+          ${inp('deviceId',  'ID do dispositivo',       v('deviceId',''),   'ex: energia01')}
+          ${inp('devicePass','Senha do dispositivo',    v('devicePass',''), '••••••••')}
+          ${inp('tariff',    'Tarifa elétrica (R$/kWh)', v('tariff',0.65),   '0.65')}
+          ${inp('phases',    'Fases (1 ou 3)',            v('phases',1),      '1')}`
+      };
       return `${nameField}${iconField}
-        ${inp('topic',   'Tópico MQTT',          v('topic',''),  'sensors/energia/potencia')}
-        ${inp('jsonKey', 'Chave JSON (opcional)', v('jsonKey',''), 'value')}
-        ${inp('unit',    'Unidade',               v('unit',''),   'kW, A, °C...')}
-        ${inp('max',     'Valor máximo (barra)',  v('max',100),   '100')}
-        ${inp('decimals','Casas decimais',         v('decimals',1),'1')}`;
+        <div class="dev-section-label" style="margin-top:10px"><span class="dsb"></span>Modo do medidor</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+          <label class="meter-mode-card" style="border-color:${mMode==='generic'?'var(--accent)':'var(--border2)'};background:${mMode==='generic'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-meterMode" value="generic" ${mMode==='generic'?'checked':''} onchange="_switchMeterMode('generic')" style="display:none">
+            <span style="font-size:22px">📊</span><span style="font-family:var(--mono);font-size:10px;font-weight:600">Genérico</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Qualquer valor</span>
+          </label>
+          <label class="meter-mode-card" style="border-color:${mMode==='flow_water'?'var(--accent)':'var(--border2)'};background:${mMode==='flow_water'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-meterMode" value="flow_water" ${mMode==='flow_water'?'checked':''} onchange="_switchMeterMode('flow_water')" style="display:none">
+            <span style="font-size:22px">🌊</span><span style="font-family:var(--mono);font-size:10px;font-weight:600">Fluxo Água</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">YF-S201</span>
+          </label>
+          <label class="meter-mode-card" style="border-color:${mMode==='energy'?'var(--accent)':'var(--border2)'};background:${mMode==='energy'?'rgba(34,211,160,.07)':'var(--bg3)'}">
+            <input type="radio" name="wcm-meterMode" value="energy" ${mMode==='energy'?'checked':''} onchange="_switchMeterMode('energy')" style="display:none">
+            <span style="font-size:22px">⚡</span><span style="font-family:var(--mono);font-size:10px;font-weight:600">Energia</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">PZEM-004T</span>
+          </label>
+        </div>
+        <div id="wcm-meter-fields">${modeFields[mMode]||modeFields.generic}</div>`;
+    }
 
     default:
       return `${nameField}${iconField}`;
@@ -4950,7 +5749,7 @@ function saveWidgetFromModal() {
   }
 
   switch(type) {
-    case 'ambiente':   w.roomId   = gv('roomId');   break;
+    case 'ambiente':   break;
     case 'caixa_agua': w.tankId   = gv('tankId');   break;
     case 'irrigacao':  break;
     case 'portao': {
@@ -4971,20 +5770,56 @@ function saveWidgetFromModal() {
       w.obstTopic  = `home/${did}/obstaculo`;
       break;
     }
-    case 'rele':       w.relayId  = gv('relayId');  break;
+    case 'rele': {
+      const selRelMode = document.querySelector('input[name="wcm-relMode"]:checked');
+      w.relMode = selRelMode ? selRelMode.value : 'linked';
+      if (w.relMode === 'standalone') {
+        w.deviceId      = gv('deviceId');
+        w.devicePass    = gvRaw('devicePass');
+        w.relTopic      = gv('relTopic') || (w.deviceId ? `home/${w.deviceId}/cmd` : '');
+        w.relStateTopic = gv('relStateTopic') || (w.deviceId ? `home/${w.deviceId}/state` : '');
+        w.payloadOn     = gvRaw('payloadOn') || 'ON';
+        w.payloadOff    = gvRaw('payloadOff') || 'OFF';
+      } else {
+        w.relayId = gv('relayId');
+      }
+      break;
+    }
     case 'alarme':
       w.sensorTopic    = gv('sensorTopic');
       w.sirenTopic     = gv('sirenTopic');
       w.sirenOnPayload = gvRaw('sirenOnPayload') || 'ON';
       w.sirenOffPayload= gvRaw('sirenOffPayload') || 'OFF';
       break;
-    case 'medidor':
-      w.topic    = gv('topic');
-      w.jsonKey  = gv('jsonKey');
-      w.unit     = gv('unit');
-      w.max      = parseFloat(gvRaw('max')) || 100;
-      w.decimals = parseInt(gvRaw('decimals')) || 1;
+    case 'medidor': {
+      const selMM = document.querySelector('input[name="wcm-meterMode"]:checked');
+      w.meterMode = selMM ? selMM.value : 'generic';
+      if (w.meterMode === 'flow_water') {
+        w.deviceId   = gv('deviceId');
+        w.devicePass = gvRaw('devicePass');
+        w.maxFlow    = parseFloat(gvRaw('maxFlow'))    || 30;
+        w.dailyLimit = parseFloat(gvRaw('dailyLimit')) || 500;
+        const did = w.deviceId || 'fluxo';
+        w.topic      = `${did}/flow`;
+        w.totalTopic = `${did}/total`;
+        w.unit = 'L/min'; w.max = w.maxFlow;
+      } else if (w.meterMode === 'energy') {
+        w.deviceId   = gv('deviceId');
+        w.devicePass = gvRaw('devicePass');
+        w.tariff     = parseFloat(gvRaw('tariff'))  || 0.65;
+        w.phases     = parseInt(gvRaw('phases'))    || 1;
+        const did = w.deviceId || 'energia';
+        w.topic = `${did}/energy`;
+        w.unit = 'W'; w.max = 5000;
+      } else {
+        w.topic    = gv('topic');
+        w.jsonKey  = gv('jsonKey');
+        w.unit     = gv('unit');
+        w.max      = parseFloat(gvRaw('max'))      || 100;
+        w.decimals = parseInt(gvRaw('decimals'))   || 1;
+      }
       break;
+    }
   }
 
   if (editId) {
@@ -5015,299 +5850,75 @@ function deleteWidgetFromModal() {
   log(`🧩 Widget removido`, 'sys');
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// FUNÇÕES QUE FALTAVAM — restauradas (estavam referenciadas mas ausentes)
-// ═══════════════════════════════════════════════════════════════════
 
-// ── Feedback tátil ───────────────────────────────────────────────────
-function haptic(pattern) {
-  try { if (navigator.vibrate) navigator.vibrate(pattern || [40]); } catch(e) {}
-}
-
-// ── Permissões de usuário ────────────────────────────────────────────
-function applyRoleRestrictions() {
-  try {
-    const session = _getSession();
-    const role = session?.role || 'admin';
-    const isViewer = role === 'viewer';
-    document.querySelectorAll('[data-role-cfg]').forEach(el => {
-      el.style.display = (role === 'viewer' || role === 'operator') ? 'none' : '';
-    });
-    document.querySelectorAll('[data-role-ctrl]').forEach(el => {
-      el.style.pointerEvents = isViewer ? 'none' : '';
-      el.style.opacity = isViewer ? '0.4' : '';
-    });
-  } catch(e) {}
-}
-
-// ── Histórico de leituras (sparklines) ───────────────────────────────
-const MAX_HISTORY = 40;
-function pushHistory(roomId, field, value) {
-  try {
-    const key = `hist_${roomId}_${field}`;
-    let arr = [];
-    try { arr = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch(_) {}
-    arr.push({ t: Date.now(), v: value });
-    if (arr.length > MAX_HISTORY) arr = arr.slice(-MAX_HISTORY);
-    sessionStorage.setItem(key, JSON.stringify(arr));
-  } catch(e) {}
-}
-function getHistory(roomId, field) {
-  try { return JSON.parse(sessionStorage.getItem(`hist_${roomId}_${field}`) || '[]'); }
-  catch(e) { return []; }
-}
-function buildSparklineSVG(data, color, width, height) {
-  color = color || 'var(--accent)'; width = width || 60; height = height || 20;
-  if (!data || data.length < 2) return '';
-  const vals = data.map(d => d.v);
-  const min = Math.min(...vals), max = Math.max(...vals);
-  const range = max - min || 1;
-  const pts = vals.map((v, i) => {
-    const x = (i / (vals.length - 1)) * width;
-    const y = height - ((v - min) / range) * (height - 2) - 1;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  const lastPt = pts.split(' ').pop().split(',');
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display:block;overflow:visible">
-    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="2" fill="${color}"/>
-  </svg>`;
-}
-
-// ── Log: filtro por tipo ──────────────────────────────────────────────
-function setLogFilter(type) {
-  _logFilter = type;
-  document.querySelectorAll('.log-filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.f === type);
-  });
-  const box = document.getElementById('log-box');
-  if (!box) return;
-  const filtered = type === 'all' ? _logEntries : _logEntries.filter(e => e.type === type);
-  box.innerHTML = '';
-  filtered.slice(-120).forEach(e => {
-    const cls = { ok:'log-ok', warn:'log-warn', info:'log-info', sys:'log-sys' }[e.type] || 'log-sys';
-    const el = document.createElement('span');
-    el.className = 'log-line ' + cls;
-    el.innerHTML = `<span class="ts">${e.ts}</span><span class="log-dot"></span><span class="msg">${e.msg}</span>`;
-    box.appendChild(el);
-  });
-  box.scrollTop = box.scrollHeight;
-}
-
-// ── Log: exportação ───────────────────────────────────────────────────
-function exportLog() {
-  try {
-    const txt = _logEntries.map(e => `[${e.ts}] [${e.type.toUpperCase()}] ${e.msg}`).join('\n');
-    const blob = new Blob([txt], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `autoflow-log-${new Date().toISOString().slice(0,10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch(e) { log('Erro ao exportar log: ' + e.message, 'warn'); }
-}
-
-// ── Alertas configuráveis ──────────────────────────────────────────────
-
-function saveAlertRules() {
-  try { localStorage.setItem('autoflow_alert_rules', JSON.stringify(alertRules)); } catch(e) {}
-}
-function loadAlertRules() {
-  try { alertRules = JSON.parse(localStorage.getItem('autoflow_alert_rules') || '[]'); } catch(e) { alertRules = []; }
-}
-
-function evalAlertRules() {
-  const now = Date.now();
-  alertRules.forEach(rule => {
-    if (!rule.enabled) return;
-    const room = rooms.find(r => r.id === rule.deviceId || r.deviceId === rule.deviceId);
-    if (!room || !room.data) return;
-    const val = { temp: room.data.temp, hum: room.data.hum, smoke: room.data.smoke }[rule.field];
-    if (val === null || val === undefined) return;
-
-    const ops = { '>': (a,b)=>a>b, '<': (a,b)=>a<b, '>=': (a,b)=>a>=b, '<=': (a,b)=>a<=b };
-    const triggered = ops[rule.op] ? ops[rule.op](val, rule.threshold) : false;
-
-    if (!alertRuleState[rule.id]) alertRuleState[rule.id] = { firstTrigger: null, notified: false, active: false };
-    const state = alertRuleState[rule.id];
-
-    if (triggered) {
-      if (!state.firstTrigger) state.firstTrigger = now;
-      const elapsed = now - state.firstTrigger;
-      if (elapsed >= (rule.duration * 1000) && !state.notified) {
-        state.notified = true;
-        state.active   = true;
-        const fieldLabel = { temp:'Temperatura', hum:'Umidade', smoke:'Gás' }[rule.field] || rule.field;
-        log(`🔔 Alerta "${rule.name}" — ${room.name}: ${fieldLabel} ${rule.op} ${rule.threshold} por ${rule.duration}s`, 'warn');
-        if (rule.notif && typeof sendGasNotification === 'function') {
-          sendGasNotification({ id: rule.id, name: rule.name }, val, true);
-        }
-      }
-    } else {
-      state.firstTrigger = null;
-      state.notified = false;
-      state.active = false;
-    }
-  });
-}
-setInterval(evalAlertRules, 10000);
-
-function openAlertRulesModal() {
-  renderAlertRulesModal();
-  refreshAlertDeviceSelect();
-  document.getElementById('alert-rules-modal')?.classList.add('open');
-}
-function closeAlertRulesModal() {
-  document.getElementById('alert-rules-modal')?.classList.remove('open');
-}
-function renderAlertRulesModal() {
-  const list = document.getElementById('alert-rules-list');
-  if (!list) return;
-  if (!alertRules.length) {
-    list.innerHTML = `<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--muted)">Nenhuma regra. Crie uma abaixo.</div>`;
-    return;
-  }
-  list.innerHTML = alertRules.map(r => {
-    const room = rooms.find(x => x.id === r.deviceId || x.deviceId === r.deviceId);
-    const fieldLabel = { temp:'🌡️ Temp', hum:'💧 Umidade', smoke:'🔥 Gás' }[r.field] || r.field;
-    const state = alertRuleState[r.id];
-    const isActive = state?.active;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:0.5px solid ${isActive?'var(--warn)':'var(--border)'};border-radius:var(--radius);margin-bottom:6px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:var(--text)">${r.name} ${isActive?'<span style="color:var(--warn)">● ativo</span>':''}</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">${room?.name||'?'} · ${fieldLabel} ${r.op} ${r.threshold} por ${r.duration}s</div>
+// ── Medidor: troca modo no modal de configuração ─────────────────
+function _switchMeterMode(mode) {
+  const fieldsDiv = document.getElementById('wcm-meter-fields');
+  if (!fieldsDiv) return;
+  const inp = (id,lbl,val,ph) => `<div class="field"><label>${lbl}</label><input id="wcm-${id}" type="text" value="${val||''}" placeholder="${ph||''}"></div>`;
+  const modeHTML = {
+    generic: `
+      ${inp('topic',   'Tópico MQTT',                '','sensors/meu_sensor/valor')}
+      ${inp('jsonKey', 'Chave JSON (opcional)',       '','value')}
+      ${inp('unit',    'Unidade',                     '','kW, L/min, ppm...')}
+      ${inp('max',     'Valor máximo (barra)',         100,'100')}
+      ${inp('decimals','Casas decimais',               1,'1')}`,
+    flow_water: `
+      <div style="padding:8px 10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+        🌊 <strong style="color:#3b82f6">YF-S201</strong> / YF-B7 (ESP32) — publica <code style="color:var(--accent2)">{id}/flow</code> (L/min) e <code style="color:var(--accent2)">{id}/total</code> (L acum.)
       </div>
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
-        <input type="checkbox" ${r.enabled?'checked':''} onchange="toggleAlertRule('${r.id}',this.checked)" style="accent-color:var(--accent)">
-      </label>
-      <button onclick="deleteAlertRule('${r.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px">✕</button>
-    </div>`;
-  }).join('');
-}
-function addAlertRule() {
-  const name      = document.getElementById('ar-name')?.value.trim();
-  const deviceId  = document.getElementById('ar-device')?.value;
-  const field     = document.getElementById('ar-field')?.value;
-  const op        = document.getElementById('ar-op')?.value;
-  const threshold = parseFloat(document.getElementById('ar-threshold')?.value);
-  const duration  = parseInt(document.getElementById('ar-duration')?.value) || 30;
-  const notif     = document.getElementById('ar-notif')?.checked;
-  if (!name || !deviceId || isNaN(threshold)) { log('Preencha todos os campos da regra', 'warn'); return; }
-  alertRules.push({ id: 'rule_'+Date.now(), name, enabled: true, deviceId, field, op, threshold, duration, notif });
-  saveAlertRules();
-  renderAlertRulesModal();
-  ['ar-name','ar-threshold'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  log(`✅ Regra "${name}" criada`, 'ok');
-}
-function toggleAlertRule(id, enabled) {
-  const r = alertRules.find(x => x.id === id);
-  if (r) { r.enabled = enabled; saveAlertRules(); }
-}
-function deleteAlertRule(id) {
-  alertRules = alertRules.filter(x => x.id !== id);
-  delete alertRuleState[id];
-  saveAlertRules();
-  renderAlertRulesModal();
-}
-function refreshAlertDeviceSelect() {
-  const sel = document.getElementById('ar-device');
-  if (!sel) return;
-  sel.innerHTML = rooms.map(r => `<option value="${r.id}">${r.icon} ${r.name}</option>`).join('');
-}
-
-// ── QR Scanner ───────────────────────────────────────────────────────
-let _qrStream = null;
-async function openQrScanner(targetInputId) {
-  const modal = document.getElementById('qr-scanner-modal');
-  if (!modal) return;
-  modal._targetInput = targetInputId;
-  modal.classList.add('open');
-  const video = document.getElementById('qr-video');
-  try {
-    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    video.srcObject = _qrStream;
-    video.play();
-    _startQrDecode(targetInputId);
-  } catch(e) {
-    log('Câmera não disponível: ' + e.message, 'warn');
-    closeQrScanner();
-  }
-}
-function closeQrScanner() {
-  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
-  document.getElementById('qr-scanner-modal')?.classList.remove('open');
-  if (window._qrInterval) { clearInterval(window._qrInterval); window._qrInterval = null; }
-}
-function _startQrDecode(targetInputId) {
-  const video  = document.getElementById('qr-video');
-  const canvas = document.getElementById('qr-canvas');
-  const ctx    = canvas?.getContext('2d');
-  if (!ctx) return;
-  window._qrInterval = setInterval(() => {
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    if ('BarcodeDetector' in window) {
-      const bd = new BarcodeDetector({ formats: ['qr_code'] });
-      bd.detect(canvas).then(codes => {
-        if (codes.length) {
-          const raw = codes[0].rawValue;
-          const match = raw.match(/([0-9a-f]{6})/i);
-          if (match) {
-            const inp = document.getElementById(targetInputId);
-            if (inp) { inp.value = match[1].toLowerCase(); inp.dispatchEvent(new Event('input')); }
-            log('QR lido: Device ID ' + match[1], 'ok');
-            closeQrScanner();
-          }
-        }
-      }).catch(() => {});
-    }
-  }, 500);
-}
-
-// ── Watchdog: status offline por dispositivo ──────────────────────────
-const WATCHDOG_INTERVAL = 15000;
-const WATCHDOG_TIMEOUT  = 90000;
-function runWatchdog() {
-  const now = Date.now();
-  let changed = false;
-  rooms.forEach(room => {
-    if (!room.data) return;
-    const ls = room.data.lastSeen ? new Date(room.data.lastSeen).getTime() : 0;
-    const wasOnline = room.data.online;
-    room.data.online = ls > 0 && (now - ls) < WATCHDOG_TIMEOUT;
-    if (wasOnline && !room.data.online) {
-      log(`📴 ${room.name} — sensor offline`, 'warn');
-      changed = true;
-    }
+      ${inp('deviceId',   'ID do dispositivo',       '','ex: fluxo01')}
+      ${inp('devicePass', 'Senha do dispositivo',    '','••••••••')}
+      ${inp('maxFlow',    'Vazão máxima (L/min)',      30,'30')}
+      ${inp('dailyLimit', 'Limite diário alertar (L)', 500,'500')}`,
+    energy: `
+      <div style="padding:8px 10px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:var(--radius);margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+        ⚡ <strong style="color:#f59e0b">PZEM-004T</strong> (ESP32) — JSON em <code style="color:var(--accent2)">{id}/energy</code><br>
+        <code style="color:var(--text)">{voltage, current, power, energy, frequency, pf}</code>
+      </div>
+      ${inp('deviceId',  'ID do dispositivo',       '','ex: energia01')}
+      ${inp('devicePass','Senha do dispositivo',    '','••••••••')}
+      ${inp('tariff',    'Tarifa elétrica (R$/kWh)', 0.65,'0.65')}
+      ${inp('phases',    'Fases (1 ou 3)',            1,'1')}`
+  };
+  fieldsDiv.innerHTML = modeHTML[mode] || modeHTML.generic;
+  document.querySelectorAll('input[name="wcm-meterMode"]').forEach(r => {
+    const card = r.closest('label');
+    if (!card) return;
+    const sel = r.value === mode;
+    card.style.borderColor = sel ? 'var(--accent)' : 'var(--border2)';
+    card.style.background  = sel ? 'rgba(34,211,160,.07)' : 'var(--bg3)';
   });
-  if (changed && typeof renderWidgetPanel === 'function') renderWidgetPanel();
 }
-setTimeout(() => { runWatchdog(); setInterval(runWatchdog, WATCHDOG_INTERVAL); }, 5000);
 
-// Inicializa alertRules ao carregar
-try { loadAlertRules(); } catch(e) {}
+// ── Relé standalone: publica diretamente no tópico do widget ─────
+function toggleWidgetRelayStandalone(wid, state) {
+  const w = widgets.find(x => x.id === wid);
+  if (!w) return;
+  if (!client || !client.connected) { log('Sem conexão MQTT', 'warn'); return; }
+  const topic = w.relTopic || (w.deviceId ? `home/${w.deviceId}/cmd` : null);
+  if (!topic) { log('Tópico do relé não configurado', 'warn'); return; }
+  client.publish(topic, state ? (w.payloadOn||'ON') : (w.payloadOff||'OFF'), { qos: 1 });
+  window['wr_state_'+wid] = state;
+  const cb   = document.querySelector(`#wcard-${wid} input[type=checkbox]`);
+  const stEl = document.getElementById('wr-st-'+wid);
+  if (cb)   cb.checked = state;
+  if (stEl) { stEl.textContent = state?'LIGADO':'DESLIGADO'; stEl.style.color = state?'var(--accent)':'var(--muted)'; }
+  log(`⚡ ${w.name}: ${state?'ligado':'desligado'}`, 'ok');
+}
 
 </script>
 
-
 <!-- ═══ MODAL: AGENDAMENTOS DE IRRIGAÇÃO ════════════════════════════ -->
 <div class="modal-overlay" id="irrig-sched-modal">
-  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">📅 Agendamentos de Irrigação</div>
+  <div class="modal" style="width:520px;max-height:92vh;overflow-y:auto">
+    <div class="modal-title">📅 Programação de Irrigação</div>
     <input type="hidden" id="irrig-sched-wid">
 
-    <!-- Lista existente -->
-    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Agendados</div>
-    <div id="irrig-sched-list-modal" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;margin-bottom:16px;padding-right:2px"></div>
-
-    <!-- Novo agendamento -->
-    <div style="border-top:1px solid var(--border);padding-top:14px">
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:10px">Novo agendamento</div>
-
-      <!-- Dias da semana -->
-      <div id="irrig-sched-days" style="display:flex;gap:6px;margin-bottom:12px">
+    <!-- Dias da semana — compartilhado pelos 4 slots -->
+    <div style="margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Dias da semana</div>
+      <div id="irrig-sched-days" style="display:flex;gap:6px">
         <button class="day-pick-btn" data-d="0" onclick="irrigSchedToggleDay(this)">D</button>
         <button class="day-pick-btn" data-d="1" onclick="irrigSchedToggleDay(this)">S</button>
         <button class="day-pick-btn" data-d="2" onclick="irrigSchedToggleDay(this)">T</button>
@@ -5316,22 +5927,24 @@ try { loadAlertRules(); } catch(e) {}
         <button class="day-pick-btn" data-d="5" onclick="irrigSchedToggleDay(this)">S</button>
         <button class="day-pick-btn" data-d="6" onclick="irrigSchedToggleDay(this)">S</button>
       </div>
-
-      <!-- Hora + duração + relé -->
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-        <input type="time" id="irrig-sched-time" value="06:00"
-          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;height:36px;width:98px">
-        <input type="number" id="irrig-sched-dur" value="15" min="1" max="120"
-          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 8px;outline:none;height:36px;width:58px">
-        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">min</span>
-        <select id="irrig-sched-relay"
-          style="flex:1;min-width:110px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none;height:36px"></select>
-      </div>
-
-      <button class="btn primary" style="width:100%;font-size:11px" onclick="irrigSchedAdd()">＋ Adicionar agendamento</button>
     </div>
 
-    <div class="modal-actions" style="margin-top:14px">
+    <!-- 4 slots de horário -->
+    <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:10px">
+      Horários programados — até 4 por dia
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px" id="irrig-sched-slots">
+      <!-- slots renderizados por JS -->
+    </div>
+
+    <!-- Lista de agendamentos salvos -->
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">Agendamentos ativos</div>
+      <div id="irrig-sched-list-modal" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;padding-right:2px"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between">
+      <button class="btn" style="font-size:11px" onclick="irrigSchedSaveSlots()">💾 Salvar horários</button>
       <button class="btn" onclick="closeIrrigSchedModal()">Fechar</button>
     </div>
   </div>
@@ -5373,7 +5986,17 @@ try { loadAlertRules(); } catch(e) {}
       <div class="widget-type-opt" onclick="selectWidgetType('medidor')">
         <span class="wt-icon">📊</span>
         <span class="wt-label">Medidor</span>
-        <span class="wt-sub">Qualquer valor MQTT</span>
+        <span class="wt-sub">Genérico · Fluxo · Energia</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('rele')">
+        <span class="wt-icon">⚡</span>
+        <span class="wt-label">Relé genérico</span>
+        <span class="wt-sub">Lista ou ESP32 independente</span>
+      </div>
+      <div class="widget-type-opt" onclick="selectWidgetType('autoflow')">
+        <span class="wt-icon">📲</span>
+        <span class="wt-label">Dispositivos AutoFlow</span>
+        <span class="wt-sub">Ambiente · Fluxo d'água</span>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:16px">
@@ -5481,5 +6104,114 @@ try { loadAlertRules(); } catch(e) {}
   </div>
 </div>
 
+
+<!-- MODAL DISPOSITIVO AUTOFLOW -->
+<div class="modal-overlay" id="autoflow-modal">
+  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+      <span>📲</span> Cadastrar dispositivo AutoFlow
+    </div>
+
+    <!-- Dispositivos detectados -->
+    <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+      letter-spacing:.08em;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <span style="display:inline-block;width:3px;height:12px;background:var(--accent2);border-radius:2px"></span>
+      Dispositivos detectados na rede
+    </div>
+    <div id="af-discovered-list"
+      style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px">
+      Nenhum dispositivo detectado ainda.
+    </div>
+
+    <div class="modal-fields">
+      <!-- ID -->
+      <div class="field">
+        <label>Device ID <span style="font-weight:400;opacity:.6;font-size:9px">(6 dígitos hex do MAC — exibido no portal AP)</span></label>
+        <input id="af-device-id" placeholder="ex: AE4F3C" maxlength="12"
+          style="font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase"/>
+        <div style="font-size:10px;color:var(--muted);margin-top:5px;font-family:var(--mono);line-height:1.8">
+          📶 Conecte ao Wi-Fi <b style="color:var(--text)">AutoFlow-XXXXXX</b> e acesse <b>192.168.4.1</b><br>
+          📥 <span style="color:var(--accent2)" id="af-topic-preview">autoflow/.../data</span>
+        </div>
+      </div>
+
+      <!-- Nome + ícone -->
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field" style="flex:0">
+          <label>Ícone</label>
+          <input id="af-device-icon" value="🏠" maxlength="2" style="width:56px"/>
+        </div>
+        <div class="field" style="flex:1">
+          <label>Nome</label>
+          <input id="af-device-name" placeholder="ex: Sala, Garagem, Quintal"/>
+        </div>
+      </div>
+
+      <!-- Tipo -->
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;
+          letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Tipo de dispositivo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+            padding:14px 10px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:var(--radius-lg);transition:all .15s"
+            onmouseover="this.style.borderColor='var(--accent)'"
+            onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border2)'">
+            <input type="radio" name="af-type" value="ambiente" checked style="display:none"
+              onchange="document.getElementById('af-device-icon').value='🏠'">
+            <span style="font-size:24px">🌡️</span>
+            <span style="font-size:12px;font-weight:600">Ambiente</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Temp · Umid · Gás · Lâmpada</span>
+          </label>
+          <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+            padding:14px 10px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:var(--radius-lg);transition:all .15s"
+            onmouseover="this.style.borderColor='var(--accent)'"
+            onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border2)'">
+            <input type="radio" name="af-type" value="fluxo" style="display:none"
+              onchange="document.getElementById('af-device-icon').value='💧'">
+            <span style="font-size:24px">💧</span>
+            <span style="font-size:12px;font-weight:600">Fluxo d'água</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">L/min · Total · Sessão</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Senha -->
+      <div class="field">
+        <label>Senha do dispositivo</label>
+        <div style="display:flex;gap:6px">
+          <input id="af-device-pass" type="password" placeholder="Senha criada no portal AP"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);
+            color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none"/>
+          <button type="button" onclick="togglePassVis('af-device-pass',this)"
+            style="padding:0 12px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0">👁</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">🔑 Usada para autenticar comandos enviados ao ESP32</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="af-edit-id" value="">
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn" onclick="closeAutoflowModal()">Cancelar</button>
+      <button class="btn primary" onclick="confirmAddAutoflowDevice()">Salvar dispositivo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auto-update topic preview no modal ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const idEl = document.getElementById('af-device-id');
+  if (idEl) idEl.addEventListener('input', () => {
+    const id = idEl.value.toUpperCase().replace(/[^A-Z0-9]/g,'') || '...';
+    const prev = document.getElementById('af-topic-preview');
+    if (prev) prev.textContent = `autoflow/${id}/data`;
+  });
+  // Periodic discovery badge update
+  setInterval(renderDiscoveryBadge, 5000);
+});
+</script>
 </body>
 </html>
