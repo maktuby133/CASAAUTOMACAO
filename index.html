@@ -651,10 +651,12 @@ body::before {
 /* sensores + lâmpada ficam todos na mesma linha do header agora */
 .room-main-row {
   display: flex; align-items: center; gap: 6px;
-  flex-wrap: wrap; min-width: 0;
+  flex-wrap: nowrap; min-width: 0; overflow: hidden;
   flex: 1; line-height: 1;
-  row-gap: 0;
 }
+/* Garante que a lâmpada nunca suma por overflow */
+.room-main-row .room-relay-wrap { flex-shrink: 0 !important; }
+.room-main-row > span[style*="inline-flex"] { flex-shrink: 1; min-width: 0; }
 
 .room-relay-row {
   display: flex; align-items: center; gap: 5px;
@@ -745,8 +747,19 @@ body::before {
   gap: 4px;
 }
 
-/* sz-small: mesma coisa mas mais compacto */
+/* sz-small: valores menores para tudo caber em uma linha */
 .sz-small .rooms-scroll { gap: 4px; }
+.sz-small .room-val  { font-size: 14px !important; }
+.sz-small .room-unit { font-size: 9px !important; }
+.sz-small .lamp-bulb { font-size: 16px !important; }
+.sz-small .room-relay-switch { width: 34px !important; height: 19px !important; }
+.sz-small .rrs-knob  { width: 12px !important; height: 12px !important; top:2px !important; left:2px !important; }
+.sz-small .room-relay-switch input:checked ~ .rrs-knob { transform: translateX(15px) !important; }
+.sz-small .room-name { max-width: 72px !important; font-size: 12px !important; }
+.sz-small .room-icon { font-size: 14px !important; }
+.sz-small .room-sep  { height: 12px !important; }
+.sz-med   .room-val  { font-size: 16px !important; }
+.sz-med   .lamp-bulb { font-size: 18px !important; }
 
 /* ══ Irrigação: status bomba botões ══ */
 .irrig-pump-status {
@@ -3859,6 +3872,11 @@ function getDefaultWidgetLayout() {
 
 function getWidgetSize(w) { return w.sz || 'med'; }
 
+function widgetAddAction(wid, type) {
+  if (type === 'ambiente') openRoomModal();
+  else openWidgetCfgModal(wid);
+}
+
 function setWidgetSize(wid, sz) {
   const w = widgets.find(x => x.id === wid);
   if (!w) return;
@@ -4046,7 +4064,7 @@ function buildWidgetCard(w) {
       <div class="card-icon ${iconClr}" style="width:24px;height:24px;border-radius:6px;font-size:12px;flex-shrink:0">${w.icon || ''}</div>
       <span class="w-card-title">${w.name}</span>
       <div class="w-resize-btns">
-        <button class="w-resize-add" onclick="openWidgetCfgModal('${w.id}')" title="Configurar widget">＋</button>
+        <button class="w-resize-add" onclick="widgetAddAction('${w.id}','${w.type}')" title="Adicionar / Configurar">＋</button>
         <div class="w-resize-sep"></div>
         <div class="w-resize-dots">${resizeDots}</div>
       </div>
@@ -4109,13 +4127,13 @@ function renderWidgetAmbienteGrid(w) {
         sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:10px;line-height:1">🌡️</span><span class="room-val">${d.temp.toFixed(1)}<span class="room-unit">°C</span></span></span>`);
       if (r.hasTemp && d.hum !== null) {
         if (sensorItems.length > 0 && d.temp !== null) sensorItems.push(`<div class="room-sep"></div>`);
-        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="font-size:12px;color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></span>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">💧</span><span class="room-val" style="color:var(--muted)">${Math.round(d.hum)}<span class="room-unit">%</span></span></span>`);
       }
       if (r.hasSmoke) {
         const gasLocked = (typeof gasAlertLocked !== 'undefined' && gasAlertLocked[r.id]) || false;
         const sv = d.smoke !== null ? d.smoke : null;
         if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
-        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="font-size:12px;color:${sl.color}">${sv !== null ? sv : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${sv !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger)">⚠</span>` : ''}</span>`);
+        sensorItems.push(`<span style="display:inline-flex;align-items:baseline;gap:2px;flex-shrink:0"><span style="font-size:9px;line-height:1">🔥</span><span class="room-val" style="color:${sl.color}">${sv !== null ? sv : '—'}<span class="room-unit" style="color:${sl.color};opacity:0.7">%</span></span>${sv !== null ? `<span style="font-family:var(--mono);font-size:7px;font-weight:700;color:${sl.color};margin-left:1px">${sl.label}</span>` : ''}${gasLocked ? `<span style="font-size:8px;color:var(--danger)">⚠</span>` : ''}</span>`);
       }
     }
 
@@ -4163,17 +4181,9 @@ function renderWidgetAmbienteGrid(w) {
 }
 
 function renderWidgetAmbiente(w) {
-  const cnt = rooms.length ? `${rooms.length} ambiente${rooms.length > 1 ? 's' : ''}` : 'nenhum ambiente';
   const sz = getWidgetSize(w);
-  const gridStyle = sz === 'small'
-    ? 'display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:300px;padding-right:2px'
-    : 'max-height:220px;overflow-y:auto;padding-right:2px';
-  return `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${cnt}</span>
-      <button class="btn primary" style="font-size:10px;padding:4px 12px;display:flex;align-items:center;gap:5px" onclick="openRoomModal()"><span style="font-size:13px;line-height:1">＋</span> Ambiente</button>
-    </div>
-    <div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
+  const gridStyle = 'display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:260px;padding-right:2px';
+  return `<div id="rooms-grid-w${w.id}" class="rooms-scroll" style="${gridStyle}">${renderWidgetAmbienteGrid(w)}</div>`;
 }
 
 function renderWidgetCaixaAguaGrid(w) {
