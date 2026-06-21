@@ -1998,6 +1998,9 @@ input, select{font-family:inherit; color:var(--text);}
   function subscribeWaterTopics(){
     if(!mqttClient || !mqttClient.connected()) return;
     // Assinaturas da caixa d'água. O receptor LoRa publica em casa/caixa01/dados.
+    // Assino também # temporariamente para diagnóstico: assim aparece qualquer pacote MQTT
+    // que chegar ao mesmo broker, mesmo que o firmware esteja usando outro tópico.
+    mqttSub("#");
     mqttSub("casa/caixa01/dados");
     mqttSub("casa/caixa01/status");
     mqttSub("casa/caixa01/#");
@@ -2008,14 +2011,20 @@ input, select{font-family:inherit; color:var(--text);}
     mqttSub("caixa01/#");
     // Também assina exatamente os reservatórios cadastrados.
     (state.waterReservoirs || []).forEach(function(r){
-      var id = normalizeWaterId(r && r.id);
+      var rawId = String((r && r.id) || "caixa01").trim();
+      var id = normalizeWaterId(rawId);
       mqttSub(waterTopicFor(id, "dados"));
       mqttSub(waterTopicFor(id, "status"));
       mqttSub("casa/" + id + "/#");
       mqttSub(id + "/dados");
       mqttSub(id + "/#");
+      // cobre se algum firmware estiver publicando com maiúsculas
+      if(rawId && rawId !== id){
+        mqttSub("casa/" + rawId + "/dados");
+        mqttSub("casa/" + rawId + "/#");
+      }
     });
-    console.log("[MQTT] Assinaturas de água ativadas para casa/caixa01/dados e variações.");
+    console.log("[MQTT] Assinaturas de água ativadas: casa/caixa01/dados, casa/# e # para diagnóstico.");
   }
 
   function requestWaterUpdate(id){
@@ -2099,7 +2108,12 @@ input, select{font-family:inherit; color:var(--text);}
     mqttClient.on("message", function(topic, payloadBuf){
       var parts = topic.split("/");
       var payloadText = decodeMqttPayload(payloadBuf);
+      state.waterDebug = state.waterDebug || {};
+      state.waterDebug.lastAnyTopic = topic;
+      state.waterDebug.lastAnyPayload = String(payloadText || "").slice(0,220);
+      state.waterDebug.lastAnyAt = new Date();
       console.log("[MQTT] recebido:", topic, payloadText);
+      renderWaterDebug();
       if(parts.length >= 4 && parts[0] === "sensors" && parts[2] === "auth" && parts[3] === "response"){
         handleAuthResponse(parts[1], payloadText);
         return;
@@ -2138,12 +2152,21 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function isWaterTopicOrPayload(topic, payloadText){
-    var parts = String(topic || "").split("/");
-    if(parts.length >= 3 && parts[0] === "casa" && (parts[2] === "dados" || parts[2] === "status")) return true;
-    if(parts.length >= 2 && parts[1] === "dados") return true;
+    var parts = String(topic || "").split("/").filter(Boolean);
+    var t = String(topic || "").toLowerCase();
+    if(parts.length >= 3 && parts[0].toLowerCase() === "casa" && ["dados","status","data"].indexOf(parts[2].toLowerCase()) !== -1) return true;
+    if(parts.length >= 2 && ["dados","status","data"].indexOf(parts[1].toLowerCase()) !== -1) return true;
+    if(t.indexOf("caixa") !== -1 || t.indexOf("water") !== -1 || t.indexOf("reserv") !== -1) return true;
+    var txt = String(payloadText || "");
+    if(/\b\d{1,3}\s*%/.test(txt) && /\b\d+\s*l\b/i.test(txt)) return true;
     try{
-      var d = JSON.parse(payloadText);
-      return d && (d.percentage !== undefined || d.nivel !== undefined || d.liters !== undefined || d.litros !== undefined || d.distance !== undefined || d.distancia !== undefined || d.bomba_ligada !== undefined || d.modo_auto !== undefined);
+      var d = JSON.parse(txt);
+      return d && (
+        d.percentage !== undefined || d.percent !== undefined || d.porcentagem !== undefined || d.nivel !== undefined || d.level !== undefined ||
+        d.liters !== undefined || d.litros !== undefined || d.volume !== undefined || d.volume_litros !== undefined ||
+        d.distance !== undefined || d.distancia !== undefined || d.bomba_ligada !== undefined || d.bomba !== undefined || d.pump !== undefined || d.pumpOn !== undefined ||
+        d.modo_auto !== undefined || d.auto !== undefined || d.sensorOK !== undefined || d.sensor_ok !== undefined
+      );
     }catch(e){ return false; }
   }
 
@@ -2166,7 +2189,7 @@ input, select{font-family:inherit; color:var(--text);}
 
   function inferWaterIdFromTopic(topic){
     var parts = String(topic || "").split("/").filter(Boolean);
-    if(parts.length >= 3 && parts[0] === "casa") return normalizeWaterId(parts[1]);
+    if(parts.length >= 3 && String(parts[0]).toLowerCase() === "casa") return normalizeWaterId(parts[1]);
     if(parts.length >= 2) return normalizeWaterId(parts[0]);
     return "caixa01";
   }
@@ -2180,22 +2203,34 @@ input, select{font-family:inherit; color:var(--text);}
     state.waterDebug.lastAt = new Date();
     renderWaterDebug();
     var data;
-    try{ data = JSON.parse(payloadText); }catch(e){
-      console.warn("[MQTT] água: payload inválido", topic, payloadText);
-      renderAll();
-      return;
+    try{
+      data = JSON.parse(payloadText);
+    }catch(e){
+      // Compatibilidade: alguns firmwares publicam texto simples, ex: "75% | 1505L".
+      var txt = String(payloadText || "");
+      var mPct = txt.match(/(\d{1,3}(?:[\.,]\d+)?)\s*%/);
+      var mLit = txt.match(/(\d+(?:[\.,]\d+)?)\s*l\b/i);
+      if(mPct || mLit){
+        data = {};
+        if(mPct) data.percentage = Number(mPct[1].replace(",", "."));
+        if(mLit) data.liters = Number(mLit[1].replace(",", "."));
+      }else{
+        console.warn("[MQTT] água: payload inválido", topic, payloadText);
+        renderAll();
+        return;
+      }
     }
 
     var r = ensureReservoir(moduleId);
     r.topic = topic || waterTopicFor(moduleId,"dados");
 
     var v;
-    v = waterNumber(data.percentage); if(v === null) v = waterNumber(data.nivel); if(v !== null) r.level = v;
-    v = waterNumber(data.liters); if(v === null) v = waterNumber(data.litros); if(v !== null) r.liters = v;
-    v = waterNumber(data.distance); if(v === null) v = waterNumber(data.distancia); if(v !== null) r.distance = v;
-    v = waterBool(data.sensorOK); if(v !== null) r.sensorOK = v;
-    v = waterBool(data.bomba_ligada); if(v !== null) r.pumpOn = v;
-    v = waterBool(data.modo_auto); if(v !== null) r.autoMode = v;
+    v = waterNumber(data.percentage); if(v === null) v = waterNumber(data.percent); if(v === null) v = waterNumber(data.porcentagem); if(v === null) v = waterNumber(data.nivel); if(v === null) v = waterNumber(data.level); if(v !== null) r.level = v;
+    v = waterNumber(data.liters); if(v === null) v = waterNumber(data.litros); if(v === null) v = waterNumber(data.volume); if(v === null) v = waterNumber(data.volume_litros); if(v !== null) r.liters = v;
+    v = waterNumber(data.distance); if(v === null) v = waterNumber(data.distancia); if(v === null) v = waterNumber(data.cm); if(v !== null) r.distance = v;
+    v = waterBool(data.sensorOK); if(v === null) v = waterBool(data.sensor_ok); if(v !== null) r.sensorOK = v;
+    v = waterBool(data.bomba_ligada); if(v === null) v = waterBool(data.bomba); if(v === null) v = waterBool(data.pump); if(v === null) v = waterBool(data.pumpOn); if(v !== null) r.pumpOn = v;
+    v = waterBool(data.modo_auto); if(v === null) v = waterBool(data.auto); if(v === null) v = waterBool(data.autoMode); if(v !== null) r.autoMode = v;
     v = waterNumber(data.nivel_ligar); if(v !== null) r.levelOn = v;
     v = waterNumber(data.nivel_desligar); if(v !== null) r.levelOff = v;
     v = waterNumber(data.rssi); if(v !== null) r.rssi = v;
@@ -2666,9 +2701,12 @@ input, select{font-family:inherit; color:var(--text);}
     var topics = ids.map(function(id){ return waterTopicFor(id,"dados"); }).join(", ");
     el.innerHTML = "<strong>Diagnóstico MQTT Água</strong> · Broker: " + escapeHtml(host) + ":" + escapeHtml(port) +
       " · Status: " + (connected ? "conectado" : "desconectado") +
-      " · Tópico: " + escapeHtml(topics) +
+      " · Tópico esperado: " + escapeHtml(topics) +
       " · Último subscribe: " + escapeHtml(dbg.lastSubscribe || "—") +
-      " · Última mensagem: " + escapeHtml(dbg.lastTopic ? (dbg.lastTopic + " / " + fmtRelative(dbg.lastAt)) : "nenhuma");
+      "<br><strong>Última mensagem de água:</strong> " + escapeHtml(dbg.lastTopic ? (dbg.lastTopic + " / " + fmtRelative(dbg.lastAt)) : "nenhuma") +
+      "<br><strong>Última mensagem MQTT geral:</strong> " + escapeHtml(dbg.lastAnyTopic ? (dbg.lastAnyTopic + " / " + fmtRelative(dbg.lastAnyAt)) : "nenhuma") +
+      (dbg.lastAnyPayload ? "<br><strong>Payload bruto:</strong> " + escapeHtml(dbg.lastAnyPayload) : "") +
+      (dbg.lastPayload ? "<br><strong>Payload água:</strong> " + escapeHtml(dbg.lastPayload) : "");
   }
 
   function renderWaterView(){
@@ -2781,6 +2819,7 @@ input, select{font-family:inherit; color:var(--text);}
     if(ov){
       ov.classList.add("hidden");
       ov.style.display = "none";
+      ov.setAttribute("aria-hidden", "true");
     }
     document.body.classList.remove("modal-open");
   }
