@@ -4110,46 +4110,45 @@ function renderWidgetAmbienteGrid(w) {
       }
     }
 
-    // ── linha de botões — ROW PRÓPRIA, nunca entra no sensorItems ──
-    const btnItems = [];
+    // ── lâmpada e relés entram na mesma linha dos sensores ──
     if (r.hasLamp) {
       const lampOn = d.lamp === true;
-      btnItems.push(`<div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
-        <span style="font-size:12px;line-height:1">${lampOn ? '💡' : '🔦'}</span>
-        <label class="room-relay-switch">
-          <input type="checkbox" ${lampOn ? 'checked' : ''} onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
-          <div class="rrs-track"></div><div class="rrs-knob"></div>
-        </label>
-      </div>`);
+      if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
+      sensorItems.push(`
+        <div class="room-relay-wrap" title="Lâmpada — ${lampOn ? 'LIGADA' : 'DESLIGADA'}">
+          <span class="lamp-bulb ${lampOn ? 'lamp-on' : ''}">💡</span>
+          <label class="room-relay-switch">
+            <input type="checkbox" ${lampOn ? 'checked' : ''}
+              onchange="setRoomLamp(rooms.find(x=>x.id==='${r.id}'),this.checked)">
+            <div class="rrs-track"></div>
+            <div class="rrs-knob"></div>
+          </label>
+        </div>`);
     }
     linkedRelays.forEach(rel => {
-      btnItems.push(`<div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}">
-        <span style="font-size:12px;line-height:1">${rel.displayIcon}</span>
-        <label class="room-relay-switch">
-          <input type="checkbox" ${rel.state ? 'checked' : ''} onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
-          <div class="rrs-track"></div><div class="rrs-knob"></div>
-        </label>
-      </div>`);
+      if (sensorItems.length) sensorItems.push(`<div class="room-sep"></div>`);
+      sensorItems.push(`
+        <div class="room-relay-wrap" title="${rel.displayLabel} — ${rel.state ? 'LIGADO' : 'DESLIGADO'}">
+          <span style="font-size:12px;line-height:1">${rel.displayIcon}</span>
+          <label class="room-relay-switch">
+            <input type="checkbox" ${rel.state ? 'checked' : ''}
+              onchange="setRelay(relays.find(x=>x.id==='${rel.id}'),this.checked)">
+            <div class="rrs-track"></div>
+            <div class="rrs-knob"></div>
+          </label>
+        </div>`);
     });
-
-    const btnRowHtml = btnItems.length
-      ? `<div class="room-relay-row">${btnItems.join('')}</div>`
-      : '';
 
     return `<div class="room-card ${alarmCls}" id="room-${r.id}">
       <button class="room-del-btn" onclick="removeRoom('${r.id}')" title="Excluir ${r.name}">✕</button>
       <div class="room-header">
         <span class="room-icon">${r.icon}</span>
         <span class="room-name">${r.name}</span>
-        <span style="margin-left:auto">${onlineBadge}</span>
+        <div class="room-main-row">
+          ${sensorItems.join('')}
+        </div>
+        <span style="flex-shrink:0">${onlineBadge}</span>
       </div>
-      <div class="room-main-row">${sensorItems.join('')}</div>
-      ${(() => {
-        const h = getHistory(r.id, 'temp');
-        if (h.length < 3) return '';
-        return `<div style="margin-top:6px;opacity:0.7">${buildSparklineSVG(h,'var(--accent)',70,16)}</div>`;
-      })()}
-      ${btnRowHtml}
     </div>`;
   }).join('');
 }
