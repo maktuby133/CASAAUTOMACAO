@@ -1220,7 +1220,7 @@ input, select{font-family:inherit; color:var(--text);}
       <div class="hint">A senha fica salva apenas no painel por enquanto. O painel irá escutar o tópico casa/ID/dados.</div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="addWaterOverlay">Cancelar</button>
-        <button type="submit" class="btn btn-primary" id="confirmAddWaterBtn">Adicionar</button>
+        <button type="button" class="btn btn-primary" id="confirmAddWaterBtn">Adicionar</button>
       </div>
     </form>
   </div>
@@ -2822,6 +2822,8 @@ input, select{font-family:inherit; color:var(--text);}
       ov.setAttribute("aria-hidden", "true");
     }
     document.body.classList.remove("modal-open");
+    var active = document.activeElement;
+    if(active && ov && ov.contains(active)) active.blur();
   }
 
   function addWaterReservoirFromModal(e){
@@ -2872,9 +2874,18 @@ input, select{font-family:inherit; color:var(--text);}
   }
   var confirmAddWaterBtn = document.getElementById("confirmAddWaterBtn");
   if(confirmAddWaterBtn) confirmAddWaterBtn.addEventListener("click", function(e){
-    var form = document.getElementById("addWaterForm");
-    if(form && typeof form.reportValidity === "function" && !form.reportValidity()) return;
-    addWaterReservoirFromModal(e);
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    try{
+      var form = document.getElementById("addWaterForm");
+      if(form && typeof form.reportValidity === "function" && !form.reportValidity()) return false;
+      addWaterReservoirFromModal(e);
+      closeAddWaterModal();
+      return false;
+    }catch(err){
+      console.error("[AGUA] erro ao salvar reservatório:", err);
+      toast("Erro ao salvar reservatório. Veja o console.", "error");
+      return false;
+    }
   });
 
   document.addEventListener("click", function(e){
@@ -3123,6 +3134,33 @@ input, select{font-family:inherit; color:var(--text);}
   if(isIos() && !isStandalone() && !localStorage_safeGet("smarthome_install_dismissed")){
     setTimeout(function(){ showInstallBanner(true); }, 1800);
   }
+
+
+
+  // Fallback reforçado para o modal de água: evita travamento mesmo se o navegador disparar submit/click de forma diferente.
+  window.addEventListener("load", function(){
+    var btn = document.getElementById("confirmAddWaterBtn");
+    if(btn){
+      btn.type = "button";
+      btn.onclick = function(ev){
+        if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+        var form = document.getElementById("addWaterForm");
+        if(form && typeof form.reportValidity === "function" && !form.reportValidity()) return false;
+        try{ addWaterReservoirFromModal(ev); }catch(err){ console.error("[AGUA] fallback salvar:", err); toast("Erro ao salvar reservatório", "error"); }
+        closeAddWaterModal();
+        return false;
+      };
+    }
+    var form = document.getElementById("addWaterForm");
+    if(form){
+      form.onsubmit = function(ev){
+        if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+        try{ addWaterReservoirFromModal(ev); }catch(err){ console.error("[AGUA] fallback submit:", err); toast("Erro ao salvar reservatório", "error"); }
+        closeAddWaterModal();
+        return false;
+      };
+    }
+  });
 
   /* ============================================================
      MASTER RENDER
