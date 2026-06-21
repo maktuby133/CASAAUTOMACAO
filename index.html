@@ -1465,7 +1465,10 @@ input, select{font-family:inherit; color:var(--text);}
         '</div>'+
         '<div class="env-foot">'+
           '<span class="badge '+(env.status==="online"?"badge-online":(env.status==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(env.lastSeen)+'</span>'+
-          '<button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">⚙ Configurar dispositivo</button>'+
+          '<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">'+
+            '<button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">⚙ Configurar</button>'+
+            '<button class="btn btn-danger btn-sm" data-delete-env="'+env.id+'">🗑 Excluir</button>'+
+          '</div>'+
         '</div>';
       grid.appendChild(card);
     });
@@ -1499,8 +1502,26 @@ input, select{font-family:inherit; color:var(--text);}
         openDeviceConfig(this.getAttribute("data-config-device"));
       });
     }
+    var deleteBtns = document.querySelectorAll("[data-delete-env]");
+    for(var d=0; d<deleteBtns.length; d++){
+      deleteBtns[d].addEventListener("click", function(ev){
+        ev.stopPropagation();
+        deleteEnvironment(this.getAttribute("data-delete-env"));
+      });
+    }
     var addBtn = document.getElementById("addEnvCardBtn");
     if(addBtn){ addBtn.addEventListener("click", openAddEnvModal); }
+  }
+
+  function deleteEnvironment(id){
+    var env = findEnv(id);
+    if(!env) return;
+    if(!confirm('Excluir o ambiente "' + env.name + '" do painel?')) return;
+    state.environments = state.environments.filter(function(item){ return item.id !== id; });
+    state.alerts.unshift({id:"a"+Date.now(), type:"info", icon:"🗑️", message:"Ambiente excluído: "+env.name+" (ID "+getEnvDeviceId(env).toUpperCase()+").", time:new Date()});
+    saveEnvironments();
+    toast("Ambiente excluído", "success");
+    renderAll();
   }
 
   function findEnv(id){
@@ -1559,14 +1580,35 @@ input, select{font-family:inherit; color:var(--text);}
       mqttClient = null;
     }
 
-    var url = "wss://" + state.broker.host + ":" + state.broker.port + "/mqtt";
+    var rawHost = String(state.broker.host || "").trim();
+    var rawPort = String(state.broker.port || "").trim();
+
+    // O ESP32 usa MQTT TLS puro, normalmente porta 8883.
+    // O navegador NAO consegue usar MQTT puro: precisa WebSocket TLS.
+    // Na HiveMQ Cloud, a porta WebSocket TLS normalmente e 8884.
+    rawHost = rawHost.replace(/^wss?:\/\//i, "").replace(/^mqtts?:\/\//i, "");
+    rawHost = rawHost.replace(/\/mqtt\/?$/i, "").replace(/\/+$/g, "");
+    if(rawHost.indexOf(":") !== -1){
+      var splitHost = rawHost.split(":");
+      rawHost = splitHost[0];
+      if(!rawPort && splitHost[1]) rawPort = splitHost[1];
+    }
+    var wsPort = rawPort;
+    if(wsPort === "8883"){
+      wsPort = "8884";
+      toast("Painel usa WebSocket: troquei 8883 por 8884 para conectar no navegador", "info");
+    }
+
+    var url = "wss://" + rawHost + ":" + wsPort + "/mqtt";
+    console.log("[MQTT] conectando painel via WebSocket:", url);
     try{
       mqttClient = mqtt.connect(url, {
         username: state.broker.user || undefined,
         password: state.broker.pass || undefined,
         clientId: "painel_" + Math.random().toString(16).slice(2),
         reconnectPeriod: 4000,
-        connectTimeout: 8000
+        connectTimeout: 12000,
+        clean: true
       });
     }catch(e){
       console.error("[MQTT] erro ao conectar:", e);
@@ -1577,8 +1619,8 @@ input, select{font-family:inherit; color:var(--text);}
     mqttClient.on("connect", function(){
       setBrokerStatus(true);
       toast("Conectado ao broker MQTT", "success");
-      mqttClient.subscribe("sensors/+/data", {qos:1});
-      mqttClient.subscribe("sensors/+/gas", {qos:1});
+      mqttClient.subscribe("sensors/+/data", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe data", err); });
+      mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
     });
 
     mqttClient.on("reconnect", function(){ setBrokerStatus(false); });
@@ -1733,13 +1775,19 @@ input, select{font-family:inherit; color:var(--text);}
         '<td data-label="Status">'+statusBadge(env.status)+'</td>'+
         '<td data-label="Última comunicação">'+(env.lastSeen ? fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen) : 'sem dados')+'</td>'+
         '<td data-label="Firmware" class="dev-mac">'+env.firmware+'</td>'+
-        '<td data-label=""><button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">Configurar</button></td>';
+        '<td data-label="Ações"><button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">Configurar</button> <button class="btn btn-danger btn-sm" data-delete-env="'+env.id+'">Excluir</button></td>';
       body.appendChild(tr);
     });
     var btns = document.querySelectorAll("#deviceTableBody [data-config-device]");
     for(var i=0;i<btns.length;i++){
       btns[i].addEventListener("click", function(){
         openDeviceConfig(this.getAttribute("data-config-device"));
+      });
+    }
+    var delBtns = document.querySelectorAll("#deviceTableBody [data-delete-env]");
+    for(var j=0;j<delBtns.length;j++){
+      delBtns[j].addEventListener("click", function(){
+        deleteEnvironment(this.getAttribute("data-delete-env"));
       });
     }
   }
@@ -1917,9 +1965,9 @@ input, select{font-family:inherit; color:var(--text);}
      ============================================================ */
   document.getElementById("brokerForm").addEventListener("submit", function(e){
     e.preventDefault();
-    state.broker.host = document.getElementById("brokerHost").value;
-    state.broker.port = document.getElementById("brokerPort").value;
-    state.broker.user = document.getElementById("brokerUser").value;
+    state.broker.host = document.getElementById("brokerHost").value.trim();
+    state.broker.port = document.getElementById("brokerPort").value.trim();
+    state.broker.user = document.getElementById("brokerUser").value.trim();
     state.broker.pass = document.getElementById("brokerPass").value;
     saveBrokerConfig();
     toast("Configuração salva — conectando ao broker...", "success");
