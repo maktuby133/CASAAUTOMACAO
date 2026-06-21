@@ -735,7 +735,7 @@ input, select{font-family:inherit; color:var(--text);}
     </nav>
 
     <div class="sidebar-foot">
-      <span class="badge badge-online"><span class="badge-dot"></span> Broker conectado (mock)</span>
+      <span class="badge badge-offline" id="sidebarBrokerStatus"><span class="badge-dot"></span> Broker desconectado</span>
       <button class="logout-btn" id="logoutBtn">🚪 Sair</button>
     </div>
   </aside>
@@ -1101,19 +1101,10 @@ input, select{font-family:inherit; color:var(--text);}
 
   var state = {
     loggedIn:false,
-    environments:[
-      {id:"e1", name:"Sala", icon:"🛋️", mac:macFromSeed(1), status:"online", gasAlert:false, lighting:{on:true}, outlet:{on:true}, temp:24.5, humidity:52, smoke:0, lastSeen:minutesAgo(2), firmware:"v1.4.2"},
-      {id:"e2", name:"Cozinha", icon:"🍳", mac:macFromSeed(2), status:"online", gasAlert:false, lighting:{on:false}, outlet:{on:true}, temp:26.1, humidity:48, smoke:0, lastSeen:minutesAgo(1), firmware:"v1.4.2"},
-      {id:"e3", name:"Quarto", icon:"🛏️", mac:macFromSeed(3), status:"online", gasAlert:false, lighting:{on:false}, outlet:{on:false}, temp:23.0, humidity:55, smoke:0, lastSeen:minutesAgo(5), firmware:"v1.3.9"},
-      {id:"e4", name:"Jardim", icon:"🌿", mac:macFromSeed(4), status:"online", gasAlert:false, lighting:{on:true}, outlet:{on:false}, temp:27.8, humidity:61, smoke:0, lastSeen:minutesAgo(3), firmware:"v1.4.2"},
-      {id:"e5", name:"Garagem", icon:"🚗", mac:macFromSeed(5), status:"offline", gasAlert:false, lighting:{on:false}, outlet:{on:false}, temp:22.4, humidity:50, smoke:0, lastSeen:minutesAgo(140), firmware:"v1.2.1"},
-      {id:"e6", name:"Piscina", icon:"🏊", mac:macFromSeed(6), status:"alert", gasAlert:false, lighting:{on:false}, outlet:{on:true}, temp:29.2, humidity:67, smoke:38, lastSeen:minutesAgo(0), firmware:"v1.4.0"}
-    ],
-    alerts:[
-      {id:"a1", type:"alert", icon:"🔥", message:"Sensor de fumaça detectou nível elevado em Piscina (área técnica).", time:minutesAgo(0)},
-      {id:"a2", type:"info", icon:"📡", message:"Dispositivo Garagem está offline há mais de 2 horas.", time:minutesAgo(140)},
-      {id:"a3", type:"info", icon:"💧", message:"Irrigação automática bloqueada — previsão de chuva detectada.", time:minutesAgo(310)}
-    ],
+    // Sem ambientes/alertas de demonstracao: o painel inicia vazio e so
+    // grava no localStorage o que o usuario realmente cadastrar.
+    environments:[],
+    alerts:[],
     weather:{
       tempOut:24,
       condition:"Parcialmente nublado",
@@ -1164,6 +1155,7 @@ input, select{font-family:inherit; color:var(--text);}
     setTimeout(function(){
       document.getElementById("loginScreen").classList.add("hidden");
       document.getElementById("app").classList.remove("hidden");
+      restoreEnvironments();
       renderAll();
       if(restoreBrokerConfig()) connectMqtt();
     }, 320);
@@ -1346,8 +1338,11 @@ input, select{font-family:inherit; color:var(--text);}
     for(var i=0;i<existingNodes.length;i++){ existingNodes[i].remove(); }
 
     var envs = state.environments;
-    var radius = 122;
-    var center = 130;
+    // raio/centro calculados a partir do tamanho real do stage (nao fixos),
+    // para os icones nao ficarem fora do circulo quando o CSS mobile encolhe o widget
+    var stageSize = stage.clientWidth || 260;
+    var center = stageSize / 2;
+    var radius = center - 8;
     var n = envs.length;
 
     envs.forEach(function(env, idx){
@@ -1485,9 +1480,15 @@ input, select{font-family:inherit; color:var(--text);}
   function setBrokerStatus(connected){
     mqttConnected = connected;
     var el = document.getElementById("brokerStatus");
-    if(!el) return;
-    el.className = "badge " + (connected ? "badge-online" : "badge-offline");
-    el.textContent = connected ? "● conectado" : "● desconectado";
+    if(el){
+      el.className = "badge " + (connected ? "badge-online" : "badge-offline");
+      el.textContent = connected ? "● conectado" : "● desconectado";
+    }
+    var sb = document.getElementById("sidebarBrokerStatus");
+    if(sb){
+      sb.className = "badge " + (connected ? "badge-online" : "badge-offline");
+      sb.innerHTML = '<span class="badge-dot"></span> Broker ' + (connected ? "conectado" : "desconectado");
+    }
   }
 
   function findEnvByDeviceId(devId){
@@ -1773,11 +1774,32 @@ input, select{font-family:inherit; color:var(--text);}
     };
     state.environments.push(newEnv);
     state.alerts.unshift({id:"a"+Date.now(), type:"info", icon:"📡", message:(isRealDevice?"Dispositivo autenticado e vinculado":"Novo ambiente cadastrado")+": "+name+" (ID "+idFromMac(mac)+").", time:new Date()});
+    saveEnvironments();
 
     document.getElementById("addEnvOverlay").classList.add("hidden");
     toast("Ambiente \""+name+"\" criado com sucesso", "success");
     renderAll();
   });
+
+  /* ── Persistencia dos ambientes (localStorage) ──
+     So grava o que o usuario realmente adicionar — sem seed/demo. */
+  var ENV_STORAGE_KEY = "autoflow_environments";
+
+  function saveEnvironments(){
+    localStorage_safeSet(ENV_STORAGE_KEY, JSON.stringify(state.environments));
+  }
+
+  function restoreEnvironments(){
+    var raw = localStorage_safeGet(ENV_STORAGE_KEY);
+    if(!raw) return;
+    var arr;
+    try{ arr = JSON.parse(raw); }catch(e){ return; }
+    if(!Array.isArray(arr)) return;
+    arr.forEach(function(env){
+      if(env.lastSeen) env.lastSeen = new Date(env.lastSeen);
+    });
+    state.environments = arr;
+  }
 
   /* ============================================================
      MODAL: DEVICE CONFIG
