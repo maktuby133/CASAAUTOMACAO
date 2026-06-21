@@ -266,13 +266,14 @@ input, select{font-family:inherit; color:var(--text);}
 
 /* Topbar */
 #topbar{
-  display:flex; align-items:center; justify-content:space-between; gap:18px;
-  padding:18px 30px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:12px 24px;
   border-bottom:1px solid var(--line-soft);
   position:sticky; top:0; z-index:20;
   background:rgba(6,10,18,0.7);
   backdrop-filter:blur(14px);
 }
+.topbar-widgets{display:flex; align-items:center; justify-content:flex-end; gap:10px; flex-wrap:wrap;}
 .topbar-title h1{
   font-family:var(--font-display); font-size:17px; letter-spacing:2.5px; color:var(--text);
 }
@@ -295,16 +296,16 @@ input, select{font-family:inherit; color:var(--text);}
 .weather-stats span{font-size:9.5px; color:var(--text-faint); letter-spacing:0.5px;}
 
 /* Content */
-#content{padding:26px 30px 60px; flex:1;}
+#content{padding:16px 24px 44px; flex:1;}
 .view{display:none; animation:fadeUp .45s ease both;}
 .view.active{display:block;}
 @keyframes fadeUp{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
 
-.view-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
+.view-head{display:flex; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:14px; flex-wrap:wrap;}
 .view-head h2{font-family:var(--font-display); font-size:19px; letter-spacing:1.5px;}
 .view-head p{color:var(--text-dim); font-size:13px; margin-top:5px;}
 
-.view-head-compact{margin-bottom:10px;}
+.view-head-compact{margin-bottom:8px;}
 .view-head-compact h2{font-size:15px; letter-spacing:1px;}
 .view-head-compact p{font-size:11px; margin-top:2px;}
 
@@ -322,6 +323,9 @@ input, select{font-family:inherit; color:var(--text);}
 .irrigation-banner-compact{padding:10px 16px; margin-bottom:14px; font-size:12px;}
 .irrigation-banner-compact .ic{font-size:16px;}
 .irrigation-banner-compact small{font-size:10px; margin-top:1px;}
+.irrigation-banner-top{padding:8px 12px; margin-bottom:0; border-radius:28px; font-size:11px; min-height:54px; max-width:270px;}
+.irrigation-banner-top .ic{font-size:16px;}
+.irrigation-banner-top small{font-size:9.5px; margin-top:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
 /* Stat cards grid */
 .stat-grid{
@@ -341,7 +345,10 @@ input, select{font-family:inherit; color:var(--text);}
 .stat-card .ai-lines div{font-size:12px; color:var(--text-dim); line-height:1.35;}
 .stat-card .meter-mini{height:6px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--line-soft); overflow:hidden; margin-top:10px;}
 .stat-card .meter-mini span{display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow:0 0 10px rgba(45,212,255,0.4);}
-@media(max-width:560px){.stat-card.stat-wide{grid-column:span 2;}}
+@media(max-width:560px){
+  .topbar-widgets{width:100%; justify-content:flex-start;}
+  .irrigation-banner-top small{display:none;}
+.stat-card.stat-wide{grid-column:span 2;}}
 .stat-card.glow-cyan .sic{background:var(--cyan-dim); color:var(--cyan); box-shadow:0 0 18px rgba(45,212,255,0.15);}
 .stat-card.glow-violet .sic{background:var(--violet-dim); color:var(--violet); box-shadow:0 0 18px rgba(124,92,255,0.15);}
 .stat-card.glow-amber .sic{background:var(--amber-dim); color:var(--amber); box-shadow:0 0 18px rgba(255,180,67,0.15);}
@@ -358,14 +365,14 @@ input, select{font-family:inherit; color:var(--text);}
 
 .core-section-smart{grid-template-columns:340px minmax(260px,1fr) minmax(260px,1fr); align-items:stretch;}
 .smart-panel{display:flex; flex-direction:column; min-height:100%;}
-.smart-side-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; flex:1;}
+.smart-side-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1;}
 .smart-side-grid-b{grid-template-columns:1fr;}
-.smart-mini-card{padding:14px 15px; border-radius:13px; background:rgba(255,255,255,0.026); border:1px solid var(--line-soft); position:relative; overflow:hidden; min-height:112px;}
-.smart-mini-card .sic{width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px;}
-.smart-mini-card .val{font-family:var(--font-display); font-size:20px; letter-spacing:.4px;}
+.smart-mini-card{padding:11px 13px; border-radius:13px; background:rgba(255,255,255,0.026); border:1px solid var(--line-soft); position:relative; overflow:hidden; min-height:96px;}
+.smart-mini-card .sic{width:28px; height:28px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; margin-bottom:7px;}
+.smart-mini-card .val{font-family:var(--font-display); font-size:18px; letter-spacing:.4px;}
 .smart-mini-card .lbl{font-size:11.5px; color:var(--text-dim); margin-top:4px;}
 .smart-mini-card .sub{font-family:var(--font-mono); font-size:10px; color:var(--text-faint); margin-top:7px; line-height:1.35;}
-.smart-mini-card.stat-wide{grid-column:1 / -1; min-height:150px;}
+.smart-mini-card.stat-wide{grid-column:1 / -1; min-height:122px;}
 .smart-mini-card .ai-lines{margin-top:10px; display:flex; flex-direction:column; gap:5px;}
 .smart-mini-card .ai-lines div{font-size:12px; color:var(--text-dim); line-height:1.35;}
 .smart-mini-card.glow-cyan .sic{background:var(--cyan-dim); color:var(--cyan); box-shadow:0 0 18px rgba(45,212,255,0.15);}
@@ -383,16 +390,16 @@ input, select{font-family:inherit; color:var(--text);}
    SIGNATURE: REACTOR CORE
    ============================================================ */
 .core-section{
-  display:grid; grid-template-columns:340px 300px 1fr; gap:24px; margin-bottom:26px;
+  display:grid; grid-template-columns:340px 300px 1fr; gap:16px; margin-bottom:18px;
 }
 @media (max-width:1240px){.core-section{grid-template-columns:340px 1fr; }}
 @media (max-width:980px){.core-section{grid-template-columns:1fr;}}
 .core-panel{
-  padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:18px; display:flex; flex-direction:column; align-items:center; justify-content:center;
   position:relative;
 }
 .core-stage{
-  position:relative; width:260px; height:260px;
+  position:relative; width:236px; height:236px;
 }
 .core-ring{
   position:absolute; border-radius:50%; border:1px solid rgba(45,212,255,0.18);
@@ -406,7 +413,7 @@ input, select{font-family:inherit; color:var(--text);}
 .core-ring.r2{inset:26px; border-style:dashed; border-color:rgba(124,92,255,0.22); animation:spin 22s linear infinite reverse;}
 .core-ring.r3{inset:52px; background:radial-gradient(circle, rgba(45,212,255,0.10), transparent 70%);}
 .core-center{
-  position:absolute; inset:78px; border-radius:50%;
+  position:absolute; inset:70px; border-radius:50%;
   background:linear-gradient(160deg, rgba(45,212,255,0.12), rgba(124,92,255,0.08));
   border:1px solid rgba(45,212,255,0.3);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -460,7 +467,7 @@ input, select{font-family:inherit; color:var(--text);}
 .core-caption span{display:block; font-size:11px; color:var(--text-faint); font-family:var(--font-mono); margin-top:3px;}
 
 /* events / alerts feed panel beside core */
-.feed-panel{padding:20px 22px;}
+.feed-panel{padding:16px 18px;}
 .feed-panel h3{font-family:var(--font-head); font-size:14px; letter-spacing:0.6px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
 
 .quick-status-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;}
@@ -704,8 +711,10 @@ input, select{font-family:inherit; color:var(--text);}
     width:38px; height:38px; border-radius:9px; background:rgba(255,255,255,0.05); border:1px solid var(--line); font-size:16px;
   }
   .weather-stats{display:none;}
-  #content{padding:20px 16px 50px;}
-  #topbar{padding:14px 16px; padding-top:max(14px, env(safe-area-inset-top));}
+  #content{padding:14px 14px 48px;}
+  #topbar{padding:10px 12px; padding-top:max(10px, env(safe-area-inset-top)); align-items:flex-start;}
+  .topbar-widgets{gap:8px; max-width:100%;}
+  .irrigation-banner-top{max-width:210px; min-height:48px; padding:7px 10px;}
 
   #bottomNav{
     display:flex; align-items:center; justify-content:space-around;
@@ -746,6 +755,9 @@ input, select{font-family:inherit; color:var(--text);}
 @keyframes sheetUp{from{opacity:0; transform:translateY(40px);} to{opacity:1; transform:translateY(0);}}
 
 @media(max-width:560px){
+  .topbar-widgets{width:100%; justify-content:flex-start;}
+  .irrigation-banner-top small{display:none;}
+
   .core-stage{width:220px; height:220px;}
   .core-center{inset:66px;}
   .login-card{padding:30px 22px 26px;}
@@ -827,15 +839,25 @@ input, select{font-family:inherit; color:var(--text);}
         </div>
       </div>
 
-      <div class="weather-chip glass" id="weatherChip">
-        <div class="wic" id="weatherIcon">☀️</div>
-        <div class="weather-meta">
-          <strong id="weatherTemp">--°C</strong>
-          <span id="weatherCond">Carregando...</span>
+      <div class="topbar-widgets">
+        <div class="weather-chip glass" id="weatherChip">
+          <div class="wic" id="weatherIcon">☀️</div>
+          <div class="weather-meta">
+            <strong id="weatherTemp">--°C</strong>
+            <span id="weatherCond">Carregando...</span>
+          </div>
+          <div class="weather-stats">
+            <div><strong id="weatherRain">--%</strong><span>CHUVA</span></div>
+            <div><strong id="weatherHum">--%</strong><span>UMIDADE</span></div>
+          </div>
         </div>
-        <div class="weather-stats">
-          <div><strong id="weatherRain">--%</strong><span>CHUVA</span></div>
-          <div><strong id="weatherHum">--%</strong><span>UMIDADE</span></div>
+
+        <div id="irrigationBanner" class="irrigation-banner irrigation-banner-top authorized">
+          <span class="ic">💧</span>
+          <div>
+            <div id="irrigationText">IRRIGAÇÃO AUTORIZADA</div>
+            <small id="irrigationSub">Sem previsão de chuva nas próximas horas</small>
+          </div>
         </div>
       </div>
     </header>
@@ -851,13 +873,6 @@ input, select{font-family:inherit; color:var(--text);}
           </div>
         </div>
 
-        <div id="irrigationBanner" class="irrigation-banner irrigation-banner-compact authorized">
-          <span class="ic">💧</span>
-          <div>
-            <div id="irrigationText">IRRIGAÇÃO AUTORIZADA</div>
-            <small id="irrigationSub">Sem previsão de chuva nas próximas horas</small>
-          </div>
-        </div>
 
         <div class="core-section core-section-smart">
 
@@ -1387,11 +1402,11 @@ input, select{font-family:inherit; color:var(--text);}
     var text = document.getElementById("irrigationText");
     var sub = document.getElementById("irrigationSub");
     if(w.rainPredicted){
-      banner.className = "irrigation-banner irrigation-banner-compact blocked";
+      banner.className = "irrigation-banner irrigation-banner-top blocked";
       text.textContent = "IRRIGAÇÃO BLOQUEADA - CHUVA PREVISTA";
       sub.textContent = "Probabilidade de chuva: "+w.rainChance+"% — sistema aguardará condições melhores";
     } else {
-      banner.className = "irrigation-banner irrigation-banner-compact authorized";
+      banner.className = "irrigation-banner irrigation-banner-top authorized";
       text.textContent = "IRRIGAÇÃO AUTORIZADA";
       sub.textContent = "Sem previsão de chuva nas próximas horas";
     }
