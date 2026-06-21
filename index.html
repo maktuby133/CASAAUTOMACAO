@@ -1054,6 +1054,7 @@ input, select{font-family:inherit; color:var(--text);}
 <div id="toastHost"></div>
 
 <script>
+
 (function(){
   "use strict";
 
@@ -1115,11 +1116,28 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function fmtRelative(d){
-    var diffMin = Math.round((nowTs - d.getTime())/60000);
+    if(!d || !(d instanceof Date) || isNaN(d.getTime())) return "sem dados";
+    var diffMin = Math.round((Date.now() - d.getTime())/60000);
     if(diffMin < 1) return "agora mesmo";
     if(diffMin < 60) return "há "+diffMin+" min";
     var h = Math.round(diffMin/60);
     return "há "+h+"h";
+  }
+
+  function hasNumber(v){
+    return typeof v === "number" && isFinite(v);
+  }
+
+  function fmtTemp(v){
+    return hasNumber(v) ? v.toFixed(1) + "°C" : "—";
+  }
+
+  function fmtHum(v){
+    return hasNumber(v) ? Math.round(v) + "%" : "—";
+  }
+
+  function fmtSmoke(v){
+    return hasNumber(v) ? Math.round(v) + " ppm" : "—";
   }
 
   var state = {
@@ -1312,16 +1330,18 @@ input, select{font-family:inherit; color:var(--text);}
     var envs = state.environments;
     var online = envs.filter(function(e){ return e.status === "online" || e.status === "alert"; }).length;
     var offline = envs.length - online;
-    var avgTemp = (envs.reduce(function(a,e){return a+e.temp;},0) / envs.length).toFixed(1);
-    var avgHum = Math.round(envs.reduce(function(a,e){return a+e.humidity;},0) / envs.length);
+    var tempVals = envs.map(function(e){return e.temp;}).filter(hasNumber);
+    var humVals = envs.map(function(e){return e.humidity;}).filter(hasNumber);
+    var avgTemp = tempVals.length ? (tempVals.reduce(function(a,v){return a+v;},0) / tempVals.length).toFixed(1) : null;
+    var avgHum = humVals.length ? Math.round(humVals.reduce(function(a,v){return a+v;},0) / humVals.length) : null;
     var activeAlerts = envs.filter(function(e){return e.status === "alert";}).length;
     var energyToday = state.energy.daily[state.energy.daily.length-1];
     var waterToday = state.water.daily[state.water.daily.length-1];
 
     var cards = [
       {cls:"glow-cyan", ic:"📡", val:online+"/"+envs.length, lbl:"Dispositivos online", sub:offline+" offline"},
-      {cls:"glow-violet", ic:"🌡️", val:avgTemp+"°C", lbl:"Temperatura geral", sub:"Média de "+envs.length+" ambientes"},
-      {cls:"glow-cyan", ic:"💧", val:avgHum+"%", lbl:"Umidade média", sub:"Sensores de ambiente"},
+      {cls:"glow-violet", ic:"🌡️", val:avgTemp!==null ? avgTemp+"°C" : "—", lbl:"Temperatura geral", sub:tempVals.length ? "Média de "+tempVals.length+" sensor(es)" : "Aguardando sensores"},
+      {cls:"glow-cyan", ic:"💧", val:avgHum!==null ? avgHum+"%" : "—", lbl:"Umidade média", sub:humVals.length ? "Média de "+humVals.length+" sensor(es)" : "Aguardando sensores"},
       {cls: activeAlerts>0 ? "glow-red" : "glow-green", ic:"🚨", val:activeAlerts, lbl:"Alertas ativos", sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"},
       {cls:"glow-amber", ic:"⚡", val:energyToday+" kWh", lbl:"Consumo de energia (hoje)", sub:"Tomadas + iluminação"},
       {cls:"glow-cyan", ic:"🚿", val:waterToday+" L", lbl:"Consumo de água (hoje)", sub:"Caixa d'água + irrigação"}
@@ -1439,9 +1459,9 @@ input, select{font-family:inherit; color:var(--text);}
             '<div class="cic">💡</div>'+
             '<div class="toggle '+(env.lighting.on?"on":"")+'" data-toggle-light="'+env.id+'"></div>'+
           '</div>'+
-          '<div class="ctrl"><div class="cic">🌡️</div><div class="cval">'+env.temp.toFixed(1)+'°C</div></div>'+
-          '<div class="ctrl"><div class="cic">💧</div><div class="cval">'+env.humidity+'%</div></div>'+
-          '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+env.smoke+' ppm</div></div>'+
+          '<div class="ctrl"><div class="cic">🌡️</div><div class="cval">'+fmtTemp(env.temp)+'</div></div>'+
+          '<div class="ctrl"><div class="cic">💧</div><div class="cval">'+fmtHum(env.humidity)+'</div></div>'+
+          '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+fmtSmoke(env.smoke)+'</div></div>'+
         '</div>'+
         '<div class="env-foot">'+
           '<span class="badge '+(env.status==="online"?"badge-online":(env.status==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(env.lastSeen)+'</span>'+
@@ -1589,8 +1609,11 @@ input, select{font-family:inherit; color:var(--text);}
       if(data.sensor_error){
         env.status = "alert";
       } else {
-        if(typeof data.temperature === "number") env.temp = data.temperature;
-        if(typeof data.humidity === "number") env.humidity = data.humidity;
+        env.sensorReady = true;
+        var tVal = (typeof data.temperature === "number") ? data.temperature : (typeof data.temp === "number" ? data.temp : null);
+        var hVal = (typeof data.humidity === "number") ? data.humidity : (typeof data.hum === "number" ? data.hum : null);
+        if(hasNumber(tVal)) env.temp = tVal;
+        if(hasNumber(hVal)) env.humidity = hVal;
         // nota: estado da lâmpada vem via sensors/{id}/gas, não aqui
         env.status = "online";
       }
@@ -1610,6 +1633,7 @@ input, select{font-family:inherit; color:var(--text);}
     var data;
     try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
 
+    env.sensorReady = true;
     if(typeof data.gas_raw === "number") env.smoke = data.gas_raw;
     if(typeof data.gas_alert === "boolean") env.gasAlert = data.gas_alert;
     if(typeof data.lamp === "boolean"){
@@ -1707,7 +1731,7 @@ input, select{font-family:inherit; color:var(--text);}
         '<td data-label="ID" class="dev-id">'+getEnvDeviceId(env).toUpperCase()+'</td>'+
         '<td data-label="MAC" class="dev-mac">'+env.mac+'</td>'+
         '<td data-label="Status">'+statusBadge(env.status)+'</td>'+
-        '<td data-label="Última comunicação">'+fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen)+'</td>'+
+        '<td data-label="Última comunicação">'+(env.lastSeen ? fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen) : 'sem dados')+'</td>'+
         '<td data-label="Firmware" class="dev-mac">'+env.firmware+'</td>'+
         '<td data-label=""><button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">Configurar</button></td>';
       body.appendChild(tr);
@@ -1815,13 +1839,14 @@ input, select{font-family:inherit; color:var(--text);}
       icon:selectedIcon,
       mac:mac,
       deviceId:devId,
-      status: "online",
+      status: "offline",
       gasAlert:false,
       lighting:{on:false},
-      temp:23 + Math.random()*4,
-      humidity:45 + Math.random()*15,
-      smoke:0,
-      lastSeen:new Date(),
+      temp:null,
+      humidity:null,
+      smoke:null,
+      lastSeen:null,
+      sensorReady:false,
       firmware: isRealDevice ? "—" : "v1.0.0"
     };
     state.environments.push(newEnv);
@@ -1849,7 +1874,14 @@ input, select{font-family:inherit; color:var(--text);}
     if(!Array.isArray(arr)) return;
     arr.forEach(function(env){
       if(env.lastSeen) env.lastSeen = new Date(env.lastSeen);
+      else env.lastSeen = null;
       if(!env.deviceId && env.mac) env.deviceId = getEnvDeviceId(env).toUpperCase().toLowerCase();
+      if(env.sensorReady !== true){
+        env.temp = null;
+        env.humidity = null;
+        env.smoke = null;
+        if(env.status === "online") env.status = "offline";
+      }
     });
     state.environments = arr;
   }
@@ -1866,7 +1898,7 @@ input, select{font-family:inherit; color:var(--text);}
     document.getElementById("dcPass").value = "";
     document.getElementById("dcStatus").value = env.status === "online" ? "Online" : (env.status === "alert" ? "Alerta ativo" : "Offline");
     document.getElementById("dcFirmware").value = env.firmware;
-    document.getElementById("dcLastSeen").value = fmtTime(env.lastSeen) + " · " + fmtRelative(env.lastSeen);
+    document.getElementById("dcLastSeen").value = env.lastSeen ? (fmtTime(env.lastSeen) + " · " + fmtRelative(env.lastSeen)) : "sem dados";
     document.getElementById("deviceConfigOverlay").classList.remove("hidden");
   }
 
@@ -2135,6 +2167,7 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
 })();
+
 </script>
 </body>
 </html>
