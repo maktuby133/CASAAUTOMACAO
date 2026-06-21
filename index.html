@@ -739,8 +739,9 @@ body::before {
   border-radius: var(--radius-lg);
   font-size: 16px;
   font-weight: 500;
+  margin-bottom: 10px;
 }
-.room-card-line .room-name { font-size: 16px; font-weight: 600; flex: 0 0 auto; }
+.room-card-line .room-name { font-size: 16px; font-weight: 600; flex: 0 0 auto; min-width: 80px; }
 .room-card-line .room-metric { font-size: 15px; color: var(--subtle); display: flex; align-items: center; gap: 6px; }
 .room-card-line .lamp-btn { 
   margin-left: auto; 
@@ -750,6 +751,7 @@ body::before {
   cursor: pointer; 
   transition: all 0.2s ease;
   display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
 }
 .lamp-btn.off { background: var(--muted); }
 .lamp-btn.on { 
@@ -771,6 +773,7 @@ body::before {
   display: flex; align-items: center; justify-content: center;
   font-size: 28px; color: var(--accent);
   cursor: pointer; transition: all 0.2s ease;
+  margin: 10px 0;
 }
 .add-room-balloon:hover { 
   background: var(--bg4); 
@@ -779,7 +782,7 @@ body::before {
 }
 
 .scale-balloons {
-  display: flex; gap: 8px; margin-top: 12px;
+  display: flex; gap: 8px; margin: 12px 0;
 }
 .scale-balloon {
   width: 32px; height: 32px;
@@ -6282,6 +6285,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // Periodic discovery badge update
   setInterval(renderDiscoveryBadge, 5000);
 });
+
+// === MELHORIAS SOLICITADAS ===
+function renderRoomCardLine(room) {
+  const lampOn = room.lamp || false;
+  return `
+    <div class="room-card-line" data-room="${room.id}">
+      <span class="room-name">${room.icon || '🏠'} ${room.name}</span>
+      <span class="room-metric">🌡️ ${room.temp !== null ? room.temp.toFixed(1) : '—'}°C</span>
+      <span class="room-metric">💧 ${room.hum !== null ? Math.round(room.hum) : '—'}%</span>
+      <span class="room-metric">⛽ ${room.gas !== null ? room.gas : '—'}ppm</span>
+      <button class="lamp-btn ${lampOn ? 'on' : 'off'}" onclick="toggleLampCard('${room.id}', this)">💡</button>
+    </div>
+  `;
+}
+
+function toggleLampCard(roomId, btn) {
+  const isOn = btn.classList.contains('on');
+  btn.classList.toggle('on', !isOn);
+  btn.classList.toggle('off', isOn);
+  // Aqui você chamaria MQTT: publish(`autoflow/${roomId}/lamp/set`, !isOn ? 'ON' : 'OFF')
+}
+
+function renderScaleBalloons() {
+  return `
+    <div class="scale-balloons">
+      <div class="scale-balloon" onclick="setWidgetScale(0.85, this)">P</div>
+      <div class="scale-balloon active" onclick="setWidgetScale(1, this)">M</div>
+      <div class="scale-balloon" onclick="setWidgetScale(1.15, this)">G</div>
+      <div class="scale-balloon" onclick="setWidgetScale(1.3, this)">XG</div>
+    </div>
+  `;
+}
+
+function setWidgetScale(scale, el) {
+  document.querySelectorAll('.scale-balloon').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('rooms-grid').style.transform = `scale(${scale})`;
+  document.getElementById('rooms-grid').style.transformOrigin = 'top left';
+}
+
+function renderAddRoomBalloon() {
+  return `<div class="add-room-balloon" onclick="openRoomModal()">+</div>`;
+}
+
 </script>
 </body>
 </html>
