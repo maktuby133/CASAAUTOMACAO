@@ -991,13 +991,13 @@ input, select{font-family:inherit; color:var(--text);}
         <div class="icon-picker" id="iconPicker"></div>
       </div>
 
-      <div class="field"><label>ID do ESP32 ou MAC completo (opcional)</label><input type="text" id="newEnvMac" placeholder="Ex.: 92AB55 ou A4:C1:38:92:AB:55" maxlength="17"></div>
+      <div class="field"><label>Endereço MAC do ESP32 (opcional)</label><input type="text" id="newEnvMac" placeholder="A4:C1:38:92:AB:55" maxlength="17"></div>
       <div class="mac-preview">
         <span>ID do dispositivo:</span>
         <span class="id" id="macPreviewId">------</span>
       </div>
       <div class="field"><label>Senha de acesso do dispositivo</label><input type="password" id="newEnvPass" placeholder="Definida no modo AP do ESP32"></div>
-      <div class="hint">Informe o ID de 6 caracteres mostrado no portal do ESP32 ou o MAC completo, junto com a senha definida no modo AP, para vincular um dispositivo real — o painel autentica direto com o aparelho via MQTT. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
+      <div class="hint">Informe o MAC do ESP32 e a senha definida na configuração dele (modo AP) para vincular um dispositivo real — o painel autentica direto com o aparelho via MQTT. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="addEnvOverlay">Cancelar</button>
@@ -1077,28 +1077,31 @@ input, select{font-family:inherit; color:var(--text);}
     return out.join(":");
   }
 
-  function onlyHex(value){
-    return String(value || "").replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+  function onlyHex(str){
+    return String(str || "").replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
   }
 
   function idFromMac(mac){
-    return onlyHex(mac).slice(-6).toUpperCase();
+    var hex = onlyHex(mac);
+    if(hex.length < 6) return "------";
+    return hex.slice(-6).toUpperCase();
   }
 
-  function macFromDeviceId(devId){
-    var id = onlyHex(devId).slice(-6).padStart(6, "0");
-    return "00:00:00:" + id.match(/.{1,2}/g).join(":");
-  }
-
-  function normalizeDeviceInput(value){
-    var hex = onlyHex(value);
-    if(hex.length === 0) return { isReal:false, id:"", mac:"" };
-    if(hex.length === 6) return { isReal:true, id:hex, mac:macFromDeviceId(hex) };
-    if(hex.length >= 12){
-      var macHex = hex.slice(-12);
-      return { isReal:true, id:macHex.slice(-6), mac:macHex.match(/.{1,2}/g).join(":") };
+  function normalizeDeviceInput(input){
+    var hex = onlyHex(input);
+    if(hex.length === 6){
+      return { ok:true, deviceId:hex.toLowerCase(), mac:("00:00:00:" + hex.match(/.{1,2}/g).join(":")).toUpperCase() };
     }
-    return { isReal:false, id:hex, mac:"" };
+    if(hex.length >= 12){
+      hex = hex.slice(-12);
+      return { ok:true, deviceId:hex.slice(-6).toLowerCase(), mac:hex.match(/.{1,2}/g).join(":").toUpperCase() };
+    }
+    return { ok:false, deviceId:"", mac:"" };
+  }
+
+  function getEnvDeviceId(env){
+    if(env && env.deviceId && onlyHex(env.deviceId).length >= 6) return onlyHex(env.deviceId).slice(-6).toLowerCase();
+    return idFromMac(env && env.mac ? env.mac : "").toLowerCase();
   }
 
   function minutesAgo(m){
@@ -1427,7 +1430,7 @@ input, select{font-family:inherit; color:var(--text);}
           '<div class="env-id">'+
             '<div class="env-icon">'+env.icon+'</div>'+
             '<div><div class="env-name">'+env.name.toUpperCase()+'</div>'+
-            '<div class="env-device">ESP32-'+env.name.toUpperCase().replace(/\s+/g,"")+' · '+idFromMac(env.mac)+'</div></div>'+
+            '<div class="env-device">ESP32-'+env.name.toUpperCase().replace(/\s+/g,"")+' · '+getEnvDeviceId(env).toUpperCase()+'</div></div>'+
           '</div>'+
           statusBadge(env.status)+
         '</div>'+
@@ -1492,7 +1495,7 @@ input, select{font-family:inherit; color:var(--text);}
      Tópicos usados pelo firmware:
        sensors/{deviceId}/data  -> status publicado pelo ESP32 (temp, humidity, light)
        sensors/{deviceId}/cmd   -> comandos enviados pelo painel (ex: ligar lâmpada)
-     deviceId = idFromMac(env.mac) em minúsculas (6 últimos chars do MAC)
+     deviceId = getEnvDeviceId(env).toUpperCase() em minúsculas (6 últimos chars do MAC)
      ============================================================ */
   var mqttClient = null;
   var mqttConnected = false;
@@ -1513,9 +1516,10 @@ input, select{font-family:inherit; color:var(--text);}
 
   function findEnvByDeviceId(devId){
     if(!devId) return null;
-    var idLower = devId.toLowerCase();
+    var idLower = onlyHex(devId).slice(-6).toLowerCase();
+    if(!idLower || idLower.length < 6) return null;
     for(var i=0;i<state.environments.length;i++){
-      if(idFromMac(state.environments[i].mac).toLowerCase() === idLower) return state.environments[i];
+      if(getEnvDeviceId(state.environments[i]) === idLower) return state.environments[i];
     }
     return null;
   }
@@ -1630,7 +1634,8 @@ input, select{font-family:inherit; color:var(--text);}
       toast("Broker MQTT desconectado — configure em Configurações", "error");
       return;
     }
-    var devId = idFromMac(env.mac).toLowerCase();
+    var devId = getEnvDeviceId(env);
+    if(!devId || devId === "------"){ toast("ID do dispositivo inválido neste ambiente", "error"); return; }
     var topic = "sensors/" + devId + "/lamp/set";
     var payload = JSON.stringify({lamp: turnOn});
     // retain:true → broker guarda o último comando; quando o ESP32
@@ -1665,17 +1670,25 @@ input, select{font-family:inherit; color:var(--text);}
   function requestDeviceAuth(devId, passHash){
     return new Promise(function(resolve, reject){
       if(!mqttClient || !mqttConnected){ reject(new Error("broker_offline")); return; }
+      devId = onlyHex(devId).slice(-6).toLowerCase();
+      if(!devId || devId.length < 6){ reject(new Error("id_invalido")); return; }
       var token = Date.now().toString(16) + Math.random().toString(16).slice(2);
       var respTopic = "sensors/" + devId + "/auth/response";
+      var reqTopic = "sensors/" + devId + "/auth/request";
+      var timer = setTimeout(function(){
+        delete pendingAuthRequests[devId];
+        if(mqttClient) mqttClient.unsubscribe(respTopic);
+        reject(new Error("timeout"));
+      }, 15000);
+      pendingAuthRequests[devId] = { token:token, resolve:resolve, timer:timer };
       mqttClient.subscribe(respTopic, {qos:1}, function(err){
-        if(err){ reject(err); return; }
-        var timer = setTimeout(function(){
+        if(err){
+          clearTimeout(timer);
           delete pendingAuthRequests[devId];
-          if(mqttClient) mqttClient.unsubscribe(respTopic);
-          reject(new Error("timeout"));
-        }, 8000);
-        pendingAuthRequests[devId] = { token:token, resolve:resolve, timer:timer };
-        mqttClient.publish("sensors/" + devId + "/auth/request", JSON.stringify({token:token, hash:passHash}), {qos:1});
+          reject(err);
+          return;
+        }
+        mqttClient.publish(reqTopic, JSON.stringify({token:token, hash:passHash}), {qos:1, retain:false});
       });
     });
   }
@@ -1691,7 +1704,7 @@ input, select{font-family:inherit; color:var(--text);}
       var devName = "ESP32-"+env.name.toUpperCase().replace(/\s+/g,"");
       tr.innerHTML =
         '<td data-label="Dispositivo" class="dev-name">'+devName+'</td>'+
-        '<td data-label="ID" class="dev-id">'+idFromMac(env.mac)+'</td>'+
+        '<td data-label="ID" class="dev-id">'+getEnvDeviceId(env).toUpperCase()+'</td>'+
         '<td data-label="MAC" class="dev-mac">'+env.mac+'</td>'+
         '<td data-label="Status">'+statusBadge(env.status)+'</td>'+
         '<td data-label="Última comunicação">'+fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen)+'</td>'+
@@ -1740,8 +1753,8 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   document.getElementById("newEnvMac").addEventListener("input", function(){
-    var info = normalizeDeviceInput(this.value);
-    document.getElementById("macPreviewId").textContent = info.id.length === 6 ? info.id : "------";
+    var norm = normalizeDeviceInput(this.value);
+    document.getElementById("macPreviewId").textContent = norm.ok ? norm.deviceId.toUpperCase() : "------";
   });
 
   document.getElementById("addEnvForm").addEventListener("submit", async function(e){
@@ -1750,11 +1763,17 @@ input, select{font-family:inherit; color:var(--text);}
     if(!name) return;
     var macInput = document.getElementById("newEnvMac").value.trim();
     var passInput = document.getElementById("newEnvPass").value;
-    var devInfo = normalizeDeviceInput(macInput);
-    var isRealDevice = devInfo.isReal;
-    var mac = isRealDevice ? devInfo.mac : macFromSeed(Date.now() % 100000);
+    var norm = normalizeDeviceInput(macInput);
+    var isRealDevice = norm.ok;
+    var mac = isRealDevice ? norm.mac : macFromSeed(Date.now() % 100000);
+    var devId = isRealDevice ? norm.deviceId : idFromMac(mac).toLowerCase();
 
     var submitBtn = document.querySelector("#addEnvForm button[type=submit]");
+
+    if(macInput && !isRealDevice){
+      toast("ID/MAC inválido. Use o ID de 6 caracteres mostrado no ESP32 ou o MAC completo.", "error");
+      return;
+    }
 
     if(isRealDevice){
       if(!passInput){
@@ -1763,11 +1782,6 @@ input, select{font-family:inherit; color:var(--text);}
       }
       if(!mqttClient || !mqttConnected){
         toast("Conecte o broker em Configurações antes de adicionar um dispositivo real", "error");
-        return;
-      }
-      var devId = devInfo.id.toLowerCase();
-      if(devInfo.id.length !== 6){
-        toast("Informe o ID de 6 caracteres do ESP32 ou o MAC completo", "error");
         return;
       }
       if(findEnvByDeviceId(devId)){
@@ -1800,6 +1814,7 @@ input, select{font-family:inherit; color:var(--text);}
       name:name,
       icon:selectedIcon,
       mac:mac,
+      deviceId:devId,
       status: "online",
       gasAlert:false,
       lighting:{on:false},
@@ -1810,7 +1825,7 @@ input, select{font-family:inherit; color:var(--text);}
       firmware: isRealDevice ? "—" : "v1.0.0"
     };
     state.environments.push(newEnv);
-    state.alerts.unshift({id:"a"+Date.now(), type:"info", icon:"📡", message:(isRealDevice?"Dispositivo autenticado e vinculado":"Novo ambiente cadastrado")+": "+name+" (ID "+idFromMac(mac)+").", time:new Date()});
+    state.alerts.unshift({id:"a"+Date.now(), type:"info", icon:"📡", message:(isRealDevice?"Dispositivo autenticado e vinculado":"Novo ambiente cadastrado")+": "+name+" (ID "+devId.toUpperCase()+").", time:new Date()});
     saveEnvironments();
 
     document.getElementById("addEnvOverlay").classList.add("hidden");
@@ -1834,6 +1849,7 @@ input, select{font-family:inherit; color:var(--text);}
     if(!Array.isArray(arr)) return;
     arr.forEach(function(env){
       if(env.lastSeen) env.lastSeen = new Date(env.lastSeen);
+      if(!env.deviceId && env.mac) env.deviceId = getEnvDeviceId(env).toUpperCase().toLowerCase();
     });
     state.environments = arr;
   }
@@ -1845,7 +1861,7 @@ input, select{font-family:inherit; color:var(--text);}
     var env = findEnv(envId);
     if(!env) return;
     document.getElementById("dcEnvId").value = env.id;
-    document.getElementById("dcIdMac").textContent = idFromMac(env.mac) + " · " + env.mac;
+    document.getElementById("dcIdMac").textContent = getEnvDeviceId(env).toUpperCase() + " · " + env.mac;
     document.getElementById("dcName").value = "ESP32-"+env.name.toUpperCase().replace(/\s+/g,"");
     document.getElementById("dcPass").value = "";
     document.getElementById("dcStatus").value = env.status === "online" ? "Online" : (env.status === "alert" ? "Alerta ativo" : "Offline");
