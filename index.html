@@ -1165,6 +1165,7 @@ input, select{font-family:inherit; color:var(--text);}
       document.getElementById("loginScreen").classList.add("hidden");
       document.getElementById("app").classList.remove("hidden");
       renderAll();
+      if(restoreBrokerConfig()) connectMqtt();
     }, 320);
   });
 
@@ -1813,9 +1814,41 @@ input, select{font-family:inherit; color:var(--text);}
     state.broker.port = document.getElementById("brokerPort").value;
     state.broker.user = document.getElementById("brokerUser").value;
     state.broker.pass = document.getElementById("brokerPass").value;
+    saveBrokerConfig();
     toast("Configuração salva — conectando ao broker...", "success");
     connectMqtt();
   });
+
+  /* ── Persistencia da config do broker (localStorage) ──
+     Sem isso, state.broker some a cada reload e o painel nunca
+     reconecta sozinho ao MQTT (precisava reabrir Configuracoes
+     e salvar de novo toda vez). */
+  var BROKER_STORAGE_KEY = "autoflow_broker_config";
+
+  function saveBrokerConfig(){
+    localStorage_safeSet(BROKER_STORAGE_KEY, JSON.stringify(state.broker));
+  }
+
+  function restoreBrokerConfig(){
+    var raw = localStorage_safeGet(BROKER_STORAGE_KEY);
+    if(!raw) return false;
+    var cfg;
+    try{ cfg = JSON.parse(raw); }catch(e){ return false; }
+    if(!cfg || !cfg.host) return false;
+    state.broker.host = cfg.host || "";
+    state.broker.port = cfg.port || "";
+    state.broker.user = cfg.user || "";
+    state.broker.pass = cfg.pass || "";
+    var elHost = document.getElementById("brokerHost");
+    var elPort = document.getElementById("brokerPort");
+    var elUser = document.getElementById("brokerUser");
+    var elPass = document.getElementById("brokerPass");
+    if(elHost) elHost.value = state.broker.host;
+    if(elPort) elPort.value = state.broker.port;
+    if(elUser) elUser.value = state.broker.user;
+    if(elPass) elPass.value = state.broker.pass;
+    return true;
+  }
 
   document.getElementById("saveDevicePrefsBtn").addEventListener("click", function(){
     toast("Padrões de dispositivo salvos", "success");
