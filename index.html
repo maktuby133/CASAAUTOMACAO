@@ -594,6 +594,8 @@ input, select{font-family:inherit; color:var(--text);}
 .water-history-list{display:flex;flex-direction:column;gap:9px;max-height:240px;overflow:auto;}
 .water-history-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);font-size:13px;}
 .water-history-item time{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
+.water-debug-panel{padding:14px 16px;margin:0 0 18px;border-radius:12px;background:rgba(45,212,255,.045);border:1px solid rgba(45,212,255,.16);font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.55;}
+.water-debug-panel strong{color:var(--cyan);font-weight:600;}
 .danger-zone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
 @media(max-width:560px){.water-level-wrap{flex-direction:column;align-items:flex-start}.water-meta{width:100%}.water-actions{grid-template-columns:1fr}}
 
@@ -988,6 +990,7 @@ input, select{font-family:inherit; color:var(--text);}
         </div>
 
         <div class="water-summary-grid" id="waterSummaryGrid"></div>
+        <div class="water-debug-panel" id="waterDebugPanel"></div>
         <div class="water-grid" id="waterGrid"></div>
 
         <div class="glass water-history-panel">
@@ -1978,7 +1981,11 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function mqttSub(topic){
-    if(!mqttClient || !mqttClient.connected() || !topic) return;
+    state.waterDebug = state.waterDebug || {};
+    if(!mqttClient || !mqttClient.connected() || !topic){
+      state.waterDebug.lastSubscribe = topic ? (topic + " (aguardando broker)") : "—";
+      return;
+    }
     mqttClient.subscribe(topic, {qos:1}, function(err){
       if(err) console.error("[MQTT] erro subscribe", topic, err);
       else {
@@ -2079,6 +2086,7 @@ input, select{font-family:inherit; color:var(--text);}
       mqttClient.subscribe("sensors/+/data", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe data", err); });
       mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
       subscribeWaterTopics();
+      renderWaterDebug();
     });
 
     mqttClient.on("reconnect", function(){ setBrokerStatus(false); });
@@ -2166,16 +2174,17 @@ input, select{font-family:inherit; color:var(--text);}
   function handleWaterTankMessage(topic, payloadBuf){
     var payloadText = decodeMqttPayload(payloadBuf);
     var moduleId = inferWaterIdFromTopic(topic);
+    state.waterDebug = state.waterDebug || {};
+    state.waterDebug.lastTopic = topic;
+    state.waterDebug.lastPayload = String(payloadText || "").slice(0,180);
+    state.waterDebug.lastAt = new Date();
+    renderWaterDebug();
     var data;
     try{ data = JSON.parse(payloadText); }catch(e){
       console.warn("[MQTT] água: payload inválido", topic, payloadText);
+      renderAll();
       return;
     }
-
-    state.waterDebug = state.waterDebug || {};
-    state.waterDebug.lastTopic = topic;
-    state.waterDebug.lastPayload = payloadText.slice(0,180);
-    state.waterDebug.lastAt = new Date();
 
     var r = ensureReservoir(moduleId);
     r.topic = topic || waterTopicFor(moduleId,"dados");
@@ -2644,6 +2653,24 @@ input, select{font-family:inherit; color:var(--text);}
     }
   }
 
+
+  function renderWaterDebug(){
+    var el = document.getElementById("waterDebugPanel");
+    if(!el) return;
+    var dbg = state.waterDebug || {};
+    var host = (state.broker && state.broker.host) ? state.broker.host : "não configurado";
+    var port = (state.broker && state.broker.port) ? String(state.broker.port) : "—";
+    var connected = mqttClient && mqttClient.connected && mqttClient.connected();
+    var ids = (state.waterReservoirs || []).map(function(r){ return normalizeWaterId(r.id); }).filter(Boolean);
+    if(!ids.length) ids = ["caixa01"];
+    var topics = ids.map(function(id){ return waterTopicFor(id,"dados"); }).join(", ");
+    el.innerHTML = "<strong>Diagnóstico MQTT Água</strong> · Broker: " + escapeHtml(host) + ":" + escapeHtml(port) +
+      " · Status: " + (connected ? "conectado" : "desconectado") +
+      " · Tópico: " + escapeHtml(topics) +
+      " · Último subscribe: " + escapeHtml(dbg.lastSubscribe || "—") +
+      " · Última mensagem: " + escapeHtml(dbg.lastTopic ? (dbg.lastTopic + " / " + fmtRelative(dbg.lastAt)) : "nenhuma");
+  }
+
   function renderWaterView(){
     var list = state.waterReservoirs || [];
     var grid = document.getElementById("waterGrid");
@@ -2739,7 +2766,10 @@ input, select{font-family:inherit; color:var(--text);}
 
   function openAddWaterModal(){
     var ov = document.getElementById("addWaterOverlay");
-    if(ov) ov.classList.remove("hidden");
+    if(ov){
+      ov.classList.remove("hidden");
+      ov.style.display = "flex";
+    }
     var topicEl = document.getElementById("newWaterTopic");
     var idEl = document.getElementById("newWaterId");
     if(topicEl) topicEl.value = waterTopicFor(idEl && idEl.value ? idEl.value : "caixa01", "dados");
@@ -2748,7 +2778,11 @@ input, select{font-family:inherit; color:var(--text);}
 
   function closeAddWaterModal(){
     var ov = document.getElementById("addWaterOverlay");
-    if(ov) ov.classList.add("hidden");
+    if(ov){
+      ov.classList.add("hidden");
+      ov.style.display = "none";
+    }
+    document.body.classList.remove("modal-open");
   }
 
   function addWaterReservoirFromModal(e){
@@ -2776,6 +2810,7 @@ input, select{font-family:inherit; color:var(--text);}
     saveWaterState();
     subscribeWaterTopics();
     closeAddWaterModal();
+    setTimeout(function(){ closeAddWaterModal(); renderWaterDebug(); }, 80);
 
     var form = document.getElementById("addWaterForm");
     if(form) form.reset();
@@ -2799,7 +2834,7 @@ input, select{font-family:inherit; color:var(--text);}
   var confirmAddWaterBtn = document.getElementById("confirmAddWaterBtn");
   if(confirmAddWaterBtn) confirmAddWaterBtn.addEventListener("click", function(e){
     var form = document.getElementById("addWaterForm");
-    if(form && typeof form.requestSubmit === "function") return;
+    if(form && typeof form.reportValidity === "function" && !form.reportValidity()) return;
     addWaterReservoirFromModal(e);
   });
 
