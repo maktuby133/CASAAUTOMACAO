@@ -504,9 +504,9 @@ body::before {
   }
   .room-card {
     height: auto !important;
-    min-height: 44px !important;
+    min-height: 0 !important;
     overflow: visible !important;
-    padding: 8px 28px 8px 10px !important;
+    padding: 6px 26px 6px 9px !important;
     flex-direction: row !important;
     align-items: center !important;
     gap: 8px !important;
@@ -525,14 +525,14 @@ body::before {
     align-items: center !important;
     gap: 8px !important;
     margin-bottom: 0 !important;
-    padding-right: 16px !important;
+    padding-right: 14px !important;
     width: 100% !important;
   }
   .room-icon { font-size: 16px !important; flex-shrink:0; }
   .room-name {
     font-size: 13px !important; white-space: nowrap !important;
     overflow: hidden !important; text-overflow: ellipsis !important;
-    max-width: 84px !important; flex-shrink:0;
+    max-width: 80px !important; flex-shrink:0;
   }
   .room-ts { display: none !important; }
   .room-main-row {
@@ -541,13 +541,13 @@ body::before {
     align-items: center !important;
     overflow-x: auto !important; overflow-y: hidden !important;
   }
-  .room-val  { font-size: 16px !important; }
+  .room-val  { font-size: 17px !important; }
   .room-unit { font-size: 9px !important; }
-  .room-relay-wrap { flex-shrink: 0 !important; gap: 5px !important; }
-  .room-relay-switch { width: 40px !important; height: 22px !important; }
+  .room-relay-wrap { flex-shrink: 0 !important; gap: 4px !important; }
+  .room-relay-switch { width: 38px !important; height: 21px !important; }
   .rrs-knob { width: 14px !important; height: 14px !important; }
-  .room-relay-switch input:checked ~ .rrs-knob { transform: translateX(18px) !important; }
-  .lamp-bulb { font-size: 17px !important; }
+  .room-relay-switch input:checked ~ .rrs-knob { transform: translateX(17px) !important; }
+  .lamp-bulb { font-size: 22px !important; }
 
   /* ── Row 2 (caixas + irrigação) — 1 coluna ── */
   .row-2 { grid-template-columns: 1fr !important; }
@@ -605,10 +605,11 @@ body::before {
 .rooms-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .room-card {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 7px 22px 7px 9px;
+  border-radius: var(--radius); padding: 6px 22px 6px 9px;
   transition: border-color 0.2s; position:relative; min-width:0;
   box-sizing: border-box;
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 0;
   /* SEM height fixo, SEM overflow:hidden — botões nunca somem */
 }
 .room-card:hover { border-color: var(--border2); }
@@ -629,22 +630,23 @@ body::before {
 .room-del-btn:hover { background: rgba(239,68,68,0.15); color: var(--danger); opacity: 1 !important; }
 /* ── LINHA ÚNICA: ícone + nome + sensores + lâmpada ──────────────── */
 .room-header {
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; gap:9px;
   flex-wrap: nowrap; padding-right:18px; width:100%;
+  line-height: 1;
 }
-.room-icon   { font-size:18px; flex-shrink:0; line-height:1; }
+.room-icon   { font-size:17px; flex-shrink:0; line-height:1; }
 .room-name   {
   font-size:14px; font-weight:700; color:var(--text);
   flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  max-width:120px; letter-spacing:-0.01em;
+  max-width:108px; letter-spacing:-0.01em; line-height:1;
 }
 .room-ts     { font-family:var(--mono); font-size:7px; color:var(--muted); flex-shrink:0; }
 
 /* sensores + lâmpada ficam todos na mesma linha do header agora */
 .room-main-row {
-  display: flex; align-items: center; gap: 9px;
+  display: flex; align-items: center; gap: 8px;
   flex-wrap: nowrap; min-width: 0; overflow-x: auto; overflow-y: hidden;
-  flex: 1;
+  flex: 1; line-height: 1;
   scrollbar-width: none;
 }
 .room-main-row::-webkit-scrollbar { display: none; }
@@ -653,14 +655,14 @@ body::before {
   display: flex; align-items: center; gap: 5px;
   flex-wrap: wrap; flex-shrink: 0;
 }
-.room-sep { width:1px; height:18px; background:var(--border); flex-shrink:0; }
+.room-sep { width:1px; height:16px; background:var(--border); flex-shrink:0; }
 
-/* valores de sensor — fonte vertical maior (alongada) */
+/* valores de sensor — fonte vertical maior (alongada), card compacto */
 .room-val  {
   font-family: var(--mono); font-weight: 800; color: var(--text);
-  font-size: 19px; line-height: 1;
+  font-size: 20px; line-height: 1;
   letter-spacing: -0.02em;
-  transform: scaleY(1.12);
+  transform: scaleY(1.15);
   transform-origin: center;
   white-space: nowrap;
 }
@@ -669,7 +671,7 @@ body::before {
 /* ── SWITCH DA LÂMPADA — maior, mais robusto ─────────────────────── */
 .room-relay-switch {
   position: relative; display: inline-flex; align-items: center;
-  width: 44px; height: 24px; flex-shrink: 0; cursor: pointer;
+  width: 42px; height: 23px; flex-shrink: 0; cursor: pointer;
 }
 .room-relay-switch input { opacity:0; width:0; height:0; position:absolute; }
 .rrs-track {
@@ -678,43 +680,47 @@ body::before {
   border-radius: 13px; transition: all 0.25s ease;
 }
 .rrs-knob {
-  position: absolute; width: 16px; height: 16px;
+  position: absolute; width: 15px; height: 15px;
   background: var(--muted); border-radius: 50%;
   top: 3px; left: 3px;
   transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.25s, box-shadow 0.25s;
   pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 .room-relay-switch input:checked ~ .rrs-track { background: rgba(0,212,160,0.18); border-color: rgba(0,212,160,0.5); }
-.room-relay-switch input:checked ~ .rrs-knob  { transform: translateX(20px); background: var(--accent); box-shadow: 0 0 6px rgba(0,212,160,0.6); }
+.room-relay-switch input:checked ~ .rrs-knob  { transform: translateX(19px); background: var(--accent); box-shadow: 0 0 6px rgba(0,212,160,0.6); }
 
-.room-relay-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; white-space: nowrap; }
+.room-relay-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; white-space: nowrap; }
 .room-relay-lbl { font-family: var(--mono); font-size: 8px; color: var(--muted); max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.room-nodata { font-family:var(--mono); font-size:11px; color:var(--muted); padding:2px 0; white-space:nowrap; }
+.room-nodata { font-family:var(--mono); font-size:11px; color:var(--muted); padding:0; white-space:nowrap; }
 
-/* ── EFEITO DE LÂMPADA — cinza apagada / amarelo brilhante acesa ─── */
+/* ── EFEITO DE LÂMPADA — maior, cinza apagada / amarelo pulsante acesa ─── */
 .lamp-bulb {
-  font-size: 19px; line-height: 1;
+  font-size: 26px; line-height: 1;
   display: inline-block;
-  transition: filter 0.35s ease, transform 0.25s ease, text-shadow 0.35s ease;
-  filter: grayscale(1) brightness(0.65);
-  transform: scale(1);
+  transition: filter 0.35s ease, transform 0.25s ease;
+  filter: grayscale(1) brightness(0.55) contrast(0.9);
+  transform: scale(0.92);
 }
 .lamp-bulb.lamp-on {
-  filter: grayscale(0) brightness(1.15) saturate(1.3)
-    drop-shadow(0 0 4px rgba(255,200,60,0.9))
-    drop-shadow(0 0 10px rgba(255,180,40,0.6));
-  animation: lampGlow 2.2s ease-in-out infinite;
+  filter: grayscale(0) brightness(1.25) saturate(1.5)
+    drop-shadow(0 0 5px rgba(255,205,70,0.95))
+    drop-shadow(0 0 13px rgba(255,180,40,0.7))
+    drop-shadow(0 0 22px rgba(255,160,30,0.35));
+  transform: scale(1);
+  animation: lampGlow 2s ease-in-out infinite;
 }
 @keyframes lampGlow {
   0%, 100% {
-    filter: grayscale(0) brightness(1.15) saturate(1.3)
-      drop-shadow(0 0 4px rgba(255,200,60,0.9))
-      drop-shadow(0 0 10px rgba(255,180,40,0.6));
+    filter: grayscale(0) brightness(1.25) saturate(1.5)
+      drop-shadow(0 0 5px rgba(255,205,70,0.95))
+      drop-shadow(0 0 13px rgba(255,180,40,0.7))
+      drop-shadow(0 0 22px rgba(255,160,30,0.35));
   }
   50% {
-    filter: grayscale(0) brightness(1.3) saturate(1.4)
-      drop-shadow(0 0 6px rgba(255,210,80,1))
-      drop-shadow(0 0 16px rgba(255,190,60,0.85));
+    filter: grayscale(0) brightness(1.45) saturate(1.6)
+      drop-shadow(0 0 8px rgba(255,215,90,1))
+      drop-shadow(0 0 20px rgba(255,195,60,0.9))
+      drop-shadow(0 0 32px rgba(255,170,40,0.5));
   }
 }
 
@@ -731,7 +737,7 @@ body::before {
 /* ══ rooms-scroll dentro do widget ══ */
 #widget-panel .rooms-scroll {
   grid-template-columns: 1fr; /* coluna única dentro do widget */
-  gap: 5px;
+  gap: 4px;
 }
 
 /* sz-small: mesma coisa mas mais compacto */
