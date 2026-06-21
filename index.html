@@ -583,7 +583,7 @@ input, select{font-family:inherit; color:var(--text);}
 .water-kpi{padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);}
 .water-kpi small{display:block;font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint);letter-spacing:.6px;text-transform:uppercase;}
 .water-kpi strong{display:block;margin-top:3px;font-family:var(--font-head);font-size:15px;}
-.water-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.water-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
 .water-actions .btn{padding:8px 8px;font-size:12px;}
 .water-thresholds{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
 .water-bar{height:7px;border-radius:8px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:8px;}
@@ -1959,24 +1959,56 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
 
+  function decodeMqttPayload(payload){
+    if(payload == null) return "";
+    if(typeof payload === "string") return payload;
+    try{
+      if(typeof payload.toString === "function"){
+        var txt = payload.toString();
+        if(txt && txt.charAt(0) !== "[" && txt.indexOf(",") === -1) return txt;
+      }
+    }catch(e){}
+    try{
+      if(window.TextDecoder) return new TextDecoder("utf-8").decode(payload);
+    }catch(e){}
+    try{
+      var arr = Array.prototype.slice.call(payload);
+      return String.fromCharCode.apply(null, arr);
+    }catch(e){ return ""; }
+  }
+
+  function mqttSub(topic){
+    if(!mqttClient || !mqttClient.connected() || !topic) return;
+    mqttClient.subscribe(topic, {qos:1}, function(err){
+      if(err) console.error("[MQTT] erro subscribe", topic, err);
+      else {
+        state.waterDebug = state.waterDebug || {};
+        state.waterDebug.lastSubscribe = topic;
+      }
+    });
+  }
+
   function subscribeWaterTopics(){
     if(!mqttClient || !mqttClient.connected()) return;
-    // Cobre qualquer reservatório no padrão casa/<id>/dados.
-    mqttClient.subscribe("casa/+/dados", {qos:1}, function(err){
-      if(err) console.error("[MQTT] erro subscribe wildcard caixa dagua", err);
-    });
-    // Também assina exatamente os reservatórios cadastrados. Isso evita falha caso algum broker restrinja wildcard.
+    // Assinaturas da caixa d'água. O receptor LoRa publica em casa/caixa01/dados.
+    mqttSub("casa/caixa01/dados");
+    mqttSub("casa/caixa01/status");
+    mqttSub("casa/caixa01/#");
+    mqttSub("casa/+/dados");
+    mqttSub("casa/#");
+    // Alguns testes/projetos publicam sem o prefixo casa/. Deixo coberto para diagnóstico.
+    mqttSub("caixa01/dados");
+    mqttSub("caixa01/#");
+    // Também assina exatamente os reservatórios cadastrados.
     (state.waterReservoirs || []).forEach(function(r){
       var id = normalizeWaterId(r && r.id);
-      var topic = waterTopicFor(id, "dados");
-      mqttClient.subscribe(topic, {qos:1}, function(err){
-        if(err) console.error("[MQTT] erro subscribe reservatorio", topic, err);
-      });
+      mqttSub(waterTopicFor(id, "dados"));
+      mqttSub(waterTopicFor(id, "status"));
+      mqttSub("casa/" + id + "/#");
+      mqttSub(id + "/dados");
+      mqttSub(id + "/#");
     });
-    // Assina o padrão fixo do projeto LoRa enviado, mesmo sem cadastrar.
-    mqttClient.subscribe("casa/caixa01/dados", {qos:1}, function(err){
-      if(err) console.error("[MQTT] erro subscribe caixa01", err);
-    });
+    console.log("[MQTT] Assinaturas de água ativadas para casa/caixa01/dados e variações.");
   }
 
   function requestWaterUpdate(id){
@@ -2058,16 +2090,18 @@ input, select{font-family:inherit; color:var(--text);}
 
     mqttClient.on("message", function(topic, payloadBuf){
       var parts = topic.split("/");
+      var payloadText = decodeMqttPayload(payloadBuf);
+      console.log("[MQTT] recebido:", topic, payloadText);
       if(parts.length >= 4 && parts[0] === "sensors" && parts[2] === "auth" && parts[3] === "response"){
-        handleAuthResponse(parts[1], payloadBuf.toString());
+        handleAuthResponse(parts[1], payloadText);
         return;
       }
       if(parts.length >= 3 && parts[0] === "sensors" && parts[2] === "gas"){
-        handleGasMessage(topic, payloadBuf);
+        handleGasMessage(topic, payloadText);
         return;
       }
-      if(parts.length >= 3 && parts[0] === "casa" && parts[2] === "dados"){
-        handleWaterTankMessage(topic, payloadBuf);
+      if(isWaterTopicOrPayload(topic, payloadText)){
+        handleWaterTankMessage(topic, payloadText);
         return;
       }
       if(parts.length < 3 || parts[0] !== "sensors" || parts[2] !== "data") return;
@@ -2076,7 +2110,7 @@ input, select{font-family:inherit; color:var(--text);}
       if(!env) return; // dispositivo ainda não cadastrado em nenhum ambiente
 
       var data;
-      try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
+      try{ data = JSON.parse(payloadText); }catch(e){ return; }
 
       if(data.sensor_error){
         env.status = "alert";
@@ -2092,31 +2126,73 @@ input, select{font-family:inherit; color:var(--text);}
       env.lastSeen = new Date();
       saveEnvironments();
       renderAll();
+    if(firstWaterRead) toast("Dados recebidos da caixa " + r.id, "success");
     });
   }
 
+  function isWaterTopicOrPayload(topic, payloadText){
+    var parts = String(topic || "").split("/");
+    if(parts.length >= 3 && parts[0] === "casa" && (parts[2] === "dados" || parts[2] === "status")) return true;
+    if(parts.length >= 2 && parts[1] === "dados") return true;
+    try{
+      var d = JSON.parse(payloadText);
+      return d && (d.percentage !== undefined || d.nivel !== undefined || d.liters !== undefined || d.litros !== undefined || d.distance !== undefined || d.distancia !== undefined || d.bomba_ligada !== undefined || d.modo_auto !== undefined);
+    }catch(e){ return false; }
+  }
+
+  function waterNumber(v){
+    if(typeof v === "number" && isFinite(v)) return v;
+    if(typeof v === "string" && v.trim() !== "" && isFinite(Number(v))) return Number(v);
+    return null;
+  }
+
+  function waterBool(v){
+    if(typeof v === "boolean") return v;
+    if(typeof v === "number") return v !== 0;
+    if(typeof v === "string"){
+      var x = v.trim().toLowerCase();
+      if(["true","1","on","ligado","ligada","sim","auto"].indexOf(x) !== -1) return true;
+      if(["false","0","off","desligado","desligada","nao","não","manual"].indexOf(x) !== -1) return false;
+    }
+    return null;
+  }
+
+  function inferWaterIdFromTopic(topic){
+    var parts = String(topic || "").split("/").filter(Boolean);
+    if(parts.length >= 3 && parts[0] === "casa") return normalizeWaterId(parts[1]);
+    if(parts.length >= 2) return normalizeWaterId(parts[0]);
+    return "caixa01";
+  }
+
   function handleWaterTankMessage(topic, payloadBuf){
-    var parts = topic.split("/");
-    if(parts.length < 3 || parts[0] !== "casa" || parts[2] !== "dados") return;
-    var moduleId = normalizeWaterId(parts[1] || "caixa01");
+    var payloadText = decodeMqttPayload(payloadBuf);
+    var moduleId = inferWaterIdFromTopic(topic);
     var data;
-    try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
+    try{ data = JSON.parse(payloadText); }catch(e){
+      console.warn("[MQTT] água: payload inválido", topic, payloadText);
+      return;
+    }
+
+    state.waterDebug = state.waterDebug || {};
+    state.waterDebug.lastTopic = topic;
+    state.waterDebug.lastPayload = payloadText.slice(0,180);
+    state.waterDebug.lastAt = new Date();
 
     var r = ensureReservoir(moduleId);
-    r.topic = topic;
-    if(typeof data.percentage === "number") r.level = data.percentage;
-    if(typeof data.nivel === "number") r.level = data.nivel;
-    if(typeof data.liters === "number") r.liters = data.liters;
-    if(typeof data.litros === "number") r.liters = data.litros;
-    if(typeof data.distance === "number") r.distance = data.distance;
-    if(typeof data.distancia === "number") r.distance = data.distancia;
-    if(typeof data.sensorOK === "boolean") r.sensorOK = data.sensorOK;
-    if(typeof data.bomba_ligada === "boolean") r.pumpOn = data.bomba_ligada;
-    if(typeof data.modo_auto === "boolean") r.autoMode = data.modo_auto;
-    if(typeof data.nivel_ligar === "number") r.levelOn = data.nivel_ligar;
-    if(typeof data.nivel_desligar === "number") r.levelOff = data.nivel_desligar;
-    if(typeof data.rssi === "number") r.rssi = data.rssi;
-    if(typeof data.snr === "number") r.snr = data.snr;
+    r.topic = topic || waterTopicFor(moduleId,"dados");
+
+    var v;
+    v = waterNumber(data.percentage); if(v === null) v = waterNumber(data.nivel); if(v !== null) r.level = v;
+    v = waterNumber(data.liters); if(v === null) v = waterNumber(data.litros); if(v !== null) r.liters = v;
+    v = waterNumber(data.distance); if(v === null) v = waterNumber(data.distancia); if(v !== null) r.distance = v;
+    v = waterBool(data.sensorOK); if(v !== null) r.sensorOK = v;
+    v = waterBool(data.bomba_ligada); if(v !== null) r.pumpOn = v;
+    v = waterBool(data.modo_auto); if(v !== null) r.autoMode = v;
+    v = waterNumber(data.nivel_ligar); if(v !== null) r.levelOn = v;
+    v = waterNumber(data.nivel_desligar); if(v !== null) r.levelOff = v;
+    v = waterNumber(data.rssi); if(v !== null) r.rssi = v;
+    v = waterNumber(data.snr); if(v !== null) r.snr = v;
+
     var firstWaterRead = !r.lastSeen;
     r.lastSeen = new Date();
 
@@ -2128,12 +2204,12 @@ input, select{font-family:inherit; color:var(--text);}
     }
     saveWaterState();
 
-
     var idEl = document.getElementById("waterDeviceId");
     var topicEl = document.getElementById("waterTopic");
     if(idEl && !idEl.value) idEl.value = moduleId;
-    if(topicEl) topicEl.value = topic;
+    if(topicEl) topicEl.value = topic || waterTopicFor(moduleId,"dados");
 
+    if(firstWaterRead) toast("Dados recebidos da caixa " + r.id, "success");
     renderAll();
   }
 
@@ -2145,7 +2221,7 @@ input, select{font-family:inherit; color:var(--text);}
     if(!env) return; // dispositivo ainda nao cadastrado em nenhum ambiente
 
     var data;
-    try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
+    try{ data = JSON.parse(decodeMqttPayload(payloadBuf)); }catch(e){ return; }
 
     env.sensorReady = true;
     if(typeof data.gas_raw === "number") env.smoke = data.gas_raw;
@@ -2587,6 +2663,8 @@ input, select{font-family:inherit; color:var(--text);}
       {cls:pumpsOn ? "glow-amber" : "glow-violet", ic:"⚙️", val:pumpsOn, lbl:"Bombas ligadas", sub:pumpsOn ? "Abastecimento em andamento" : "Nenhuma bomba ligada"},
       {cls:sensorBad ? "glow-red" : "glow-green", ic:"🛰️", val:sensorBad, lbl:"Falhas de sensor", sub:sensorBad ? "Verifique o LoRa/sensor" : "Sensores OK ou aguardando"}
     ];
+    var dbg = state.waterDebug || {};
+    summaryCards.push({cls:dbg.lastTopic ? "glow-green" : "glow-amber", ic:"📡", val:dbg.lastTopic ? "Recebido" : "Aguardando", lbl:"MQTT água", sub:dbg.lastTopic ? (dbg.lastTopic + " · " + fmtRelative(dbg.lastAt)) : "Assinando casa/caixa01/dados"});
     summary.innerHTML = summaryCards.map(function(c){
       return '<div class="stat-card glass '+c.cls+'"><div class="sic">'+c.ic+'</div><div class="val">'+escapeHtml(c.val)+'</div><div class="lbl">'+escapeHtml(c.lbl)+'</div><div class="sub">'+escapeHtml(c.sub)+'</div></div>';
     }).join("");
