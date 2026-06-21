@@ -461,6 +461,7 @@ input, select{font-family:inherit; color:var(--text);}
 }
 .toggle.on{background:var(--cyan-dim); border-color:rgba(45,212,255,0.5);}
 .toggle.on::after{left:21px; background:var(--cyan); box-shadow:0 0 8px var(--cyan);}
+.toggle.disabled{opacity:0.35; pointer-events:none; cursor:not-allowed;}
 .env-foot{display:flex; align-items:center; justify-content:space-between; margin-top:16px; gap:8px;}
 .env-foot .badge{font-size:10px;}
 
@@ -1289,16 +1290,18 @@ input, select{font-family:inherit; color:var(--text);}
     var envs = state.environments;
     var online = envs.filter(function(e){ return e.status === "online" || e.status === "alert"; }).length;
     var offline = envs.length - online;
-    var avgTemp = (envs.reduce(function(a,e){return a+e.temp;},0) / envs.length).toFixed(1);
-    var avgHum = Math.round(envs.reduce(function(a,e){return a+e.humidity;},0) / envs.length);
+    var envsWithData = envs.filter(function(e){ return e.temp !== null && e.temp !== undefined; });
+    var avgTemp = envsWithData.length > 0 ? (envsWithData.reduce(function(a,e){return a+parseFloat(e.temp);},0) / envsWithData.length).toFixed(1) : "--";
+    var envsWithHum = envs.filter(function(e){ return e.humidity !== null && e.humidity !== undefined; });
+    var avgHum = envsWithHum.length > 0 ? Math.round(envsWithHum.reduce(function(a,e){return a+parseFloat(e.humidity);},0) / envsWithHum.length) : "--";
     var activeAlerts = envs.filter(function(e){return e.status === "alert";}).length;
     var energyToday = state.energy.daily[state.energy.daily.length-1];
     var waterToday = state.water.daily[state.water.daily.length-1];
 
     var cards = [
       {cls:"glow-cyan", ic:"📡", val:online+"/"+envs.length, lbl:"Dispositivos online", sub:offline+" offline"},
-      {cls:"glow-violet", ic:"🌡️", val:avgTemp+"°C", lbl:"Temperatura geral", sub:"Média de "+envs.length+" ambientes"},
-      {cls:"glow-cyan", ic:"💧", val:avgHum+"%", lbl:"Umidade média", sub:"Sensores de ambiente"},
+      {cls:"glow-violet", ic:"🌡️", val:(avgTemp==="--"?"--":avgTemp+"°C"), lbl:"Temperatura geral", sub:(envsWithData.length>0?"Média de "+envsWithData.length+" amb.":"Aguardando dados")},
+      {cls:"glow-cyan", ic:"💧", val:(avgHum==="--"?"--":avgHum+"%"), lbl:"Umidade média", sub:(envsWithHum.length>0?"Sensores de ambiente":"Aguardando dados")},
       {cls: activeAlerts>0 ? "glow-red" : "glow-green", ic:"🚨", val:activeAlerts, lbl:"Alertas ativos", sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"},
       {cls:"glow-amber", ic:"⚡", val:energyToday+" kWh", lbl:"Consumo de energia (hoje)", sub:"Tomadas + iluminação"},
       {cls:"glow-cyan", ic:"🚿", val:waterToday+" L", lbl:"Consumo de água (hoje)", sub:"Caixa d'água + irrigação"}
@@ -1402,27 +1405,38 @@ input, select{font-family:inherit; color:var(--text);}
       card.className = "glass env-card" + (env.status === "alert" ? " is-alert" : "");
       var smokeFlag = env.gasAlert === true;
 
+      var tempVal = (env.temp !== null && env.temp !== undefined) ? parseFloat(env.temp).toFixed(1)+"°C" : "--";
+      var humVal  = (env.humidity !== null && env.humidity !== undefined) ? Math.round(parseFloat(env.humidity))+"%" : "--";
+      var smokeVal= (env.smoke !== null && env.smoke !== undefined) ? parseInt(env.smoke)+" raw" : "--";
+      var seenVal = env.lastSeen ? fmtRelative(env.lastSeen) : "nunca";
+      var seenCls = env.status==="online" ? "badge-online" : (env.status==="alert" ? "badge-alert" : "badge-offline");
+      // Toggle desabilitado se offline
+      var toggleCls = "toggle" + (env.lighting.on ? " on" : "") + (env.status==="offline" ? " disabled" : "");
+
       card.innerHTML =
         '<div class="env-head">'+
           '<div class="env-id">'+
             '<div class="env-icon">'+env.icon+'</div>'+
             '<div><div class="env-name">'+env.name.toUpperCase()+'</div>'+
-            '<div class="env-device">ESP32-'+env.name.toUpperCase().replace(/\s+/g,"")+' · '+idFromMac(env.mac)+'</div></div>'+
+            '<div class="env-device">ESP32 · '+idFromMac(env.mac)+'</div></div>'+
           '</div>'+
-          statusBadge(env.status)+
+          '<div style="display:flex;align-items:center;gap:8px;">'+
+            statusBadge(env.status)+
+            '<button class="btn btn-danger btn-sm" style="padding:5px 9px;font-size:12px;" data-delete-env="'+env.id+'" title="Excluir ambiente">🗑</button>'+
+          '</div>'+
         '</div>'+
         '<div class="env-controls">'+
           '<div class="ctrl">'+
             '<div class="cic">💡</div>'+
-            '<div class="toggle '+(env.lighting.on?"on":"")+'" data-toggle-light="'+env.id+'"></div>'+
+            '<div class="'+toggleCls+'" data-toggle-light="'+env.id+'"></div>'+
           '</div>'+
-          '<div class="ctrl"><div class="cic">🌡️</div><div class="cval">'+env.temp.toFixed(1)+'°C</div></div>'+
-          '<div class="ctrl"><div class="cic">💧</div><div class="cval">'+env.humidity+'%</div></div>'+
-          '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+env.smoke+' ppm</div></div>'+
+          '<div class="ctrl"><div class="cic">🌡️</div><div class="cval">'+tempVal+'</div></div>'+
+          '<div class="ctrl"><div class="cic">💧</div><div class="cval">'+humVal+'</div></div>'+
+          '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+smokeVal+'</div></div>'+
         '</div>'+
         '<div class="env-foot">'+
-          '<span class="badge '+(env.status==="online"?"badge-online":(env.status==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(env.lastSeen)+'</span>'+
-          '<button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">⚙ Configurar dispositivo</button>'+
+          '<span class="badge '+seenCls+'">'+seenVal+'</span>'+
+          '<button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">⚙ Config</button>'+
         '</div>';
       grid.appendChild(card);
     });
@@ -1454,6 +1468,20 @@ input, select{font-family:inherit; color:var(--text);}
     for(var j=0;j<configBtns.length;j++){
       configBtns[j].addEventListener("click", function(){
         openDeviceConfig(this.getAttribute("data-config-device"));
+      });
+    }
+    var deleteBtns = document.querySelectorAll("[data-delete-env]");
+    for(var d=0;d<deleteBtns.length;d++){
+      deleteBtns[d].addEventListener("click", function(e){
+        e.stopPropagation();
+        var id = this.getAttribute("data-delete-env");
+        var env = findEnv(id);
+        if(!env) return;
+        if(!confirm("Excluir o ambiente "" + env.name + ""? Esta ação não pode ser desfeita.")) return;
+        state.environments = state.environments.filter(function(e){ return e.id !== id; });
+        saveEnvironments();
+        toast("Ambiente "" + env.name + "" excluído", "info");
+        renderAll();
       });
     }
     var addBtn = document.getElementById("addEnvCardBtn");
@@ -1777,13 +1805,13 @@ input, select{font-family:inherit; color:var(--text);}
       name:name,
       icon:selectedIcon,
       mac:mac,
-      status: "online",
+      status: isRealDevice ? "offline" : "online",
       gasAlert:false,
       lighting:{on:false},
-      temp:23 + Math.random()*4,
-      humidity:45 + Math.random()*15,
-      smoke:0,
-      lastSeen:new Date(),
+      temp: isRealDevice ? null : (23 + Math.random()*4),
+      humidity: isRealDevice ? null : Math.round(45 + Math.random()*15),
+      smoke: isRealDevice ? null : 0,
+      lastSeen: isRealDevice ? null : new Date(),
       firmware: isRealDevice ? "—" : "v1.0.0"
     };
     state.environments.push(newEnv);
@@ -1811,6 +1839,12 @@ input, select{font-family:inherit; color:var(--text);}
     if(!Array.isArray(arr)) return;
     arr.forEach(function(env){
       if(env.lastSeen) env.lastSeen = new Date(env.lastSeen);
+      // Garantir que campos null de devices reais não quebrem
+      if(env.temp === undefined) env.temp = null;
+      if(env.humidity === undefined) env.humidity = null;
+      if(env.smoke === undefined) env.smoke = null;
+      if(!env.lighting) env.lighting = {on:false};
+      if(typeof env.gasAlert === "undefined") env.gasAlert = false;
     });
     state.environments = arr;
   }
