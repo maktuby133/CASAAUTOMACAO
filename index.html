@@ -1154,11 +1154,18 @@ input, select{font-family:inherit; color:var(--text);}
     document.getElementById("loginScreen").style.opacity = "0";
     document.getElementById("loginScreen").style.transition = "opacity .35s ease";
     setTimeout(function(){
-      document.getElementById("loginScreen").classList.add("hidden");
-      document.getElementById("app").classList.remove("hidden");
-      restoreEnvironments();
-      renderAll();
-      if(restoreBrokerConfig()) connectMqtt();
+      try {
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        restoreEnvironments();
+        renderAll();
+        if(restoreBrokerConfig()) connectMqtt();
+      } catch(err) {
+        console.error("[LOGIN] Erro ao inicializar painel:", err);
+        // Garantir que o app apareça mesmo se render falhar
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+      }
     }, 320);
   });
 
@@ -2119,14 +2126,14 @@ input, select{font-family:inherit; color:var(--text);}
      MASTER RENDER
      ============================================================ */
   function renderAll(){
-    renderWeather();
-    renderStats();
-    renderCore();
-    renderFeed();
-    renderEnvironments();
-    renderDevices();
-    renderHistory();
-    renderAlertsView();
+    try { renderWeather(); } catch(e){ console.error("renderWeather:", e); }
+    try { renderStats(); } catch(e){ console.error("renderStats:", e); }
+    try { renderCore(); } catch(e){ console.error("renderCore:", e); }
+    try { renderFeed(); } catch(e){ console.error("renderFeed:", e); }
+    try { renderEnvironments(); } catch(e){ console.error("renderEnvironments:", e); }
+    try { renderDevices(); } catch(e){ console.error("renderDevices:", e); }
+    try { renderHistory(); } catch(e){ console.error("renderHistory:", e); }
+    try { renderAlertsView(); } catch(e){ console.error("renderAlertsView:", e); }
   }
 
 })();
