@@ -336,6 +336,12 @@ input, select{font-family:inherit; color:var(--text);}
 .stat-card .val{font-family:var(--font-display); font-size:24px; letter-spacing:0.5px;}
 .stat-card .lbl{font-size:12px; color:var(--text-dim); margin-top:4px;}
 .stat-card .sub{font-family:var(--font-mono); font-size:10.5px; color:var(--text-faint); margin-top:8px;}
+.stat-card.stat-wide{grid-column:span 2;}
+.stat-card .ai-lines{margin-top:10px; display:flex; flex-direction:column; gap:5px;}
+.stat-card .ai-lines div{font-size:12px; color:var(--text-dim); line-height:1.35;}
+.stat-card .meter-mini{height:6px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--line-soft); overflow:hidden; margin-top:10px;}
+.stat-card .meter-mini span{display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow:0 0 10px rgba(45,212,255,0.4);}
+@media(max-width:560px){.stat-card.stat-wide{grid-column:span 2;}}
 .stat-card.glow-cyan .sic{background:var(--cyan-dim); color:var(--cyan); box-shadow:0 0 18px rgba(45,212,255,0.15);}
 .stat-card.glow-violet .sic{background:var(--violet-dim); color:var(--violet); box-shadow:0 0 18px rgba(124,92,255,0.15);}
 .stat-card.glow-amber .sic{background:var(--amber-dim); color:var(--amber); box-shadow:0 0 18px rgba(255,180,67,0.15);}
@@ -1372,25 +1378,108 @@ input, select{font-family:inherit; color:var(--text);}
   /* ============================================================
      RENDER: STAT CARDS
      ============================================================ */
+  function buildAiHouse(envs, activeAlerts, hottest, avgHum){
+    var lines = [];
+    if(activeAlerts > 0){
+      lines.push("🚨 Existe alerta ativo. Verifique a aba Alertas.");
+    } else {
+      lines.push("✅ Nenhum alerta ativo no momento.");
+    }
+
+    if(hottest){
+      if(hottest.temp >= 32) lines.push("🔥 " + hottest.name + " está bem quente.");
+      else if(hottest.temp >= 28) lines.push("🌡️ " + hottest.name + " é o ambiente mais quente.");
+      else lines.push("🌡️ Temperatura interna está estável.");
+    } else {
+      lines.push("🌡️ Aguardando sensores de temperatura.");
+    }
+
+    if(avgHum !== null){
+      if(avgHum < 40) lines.push("💧 Umidade baixa na residência.");
+      else if(avgHum > 75) lines.push("💧 Umidade alta na residência.");
+      else lines.push("💧 Umidade em faixa confortável.");
+    } else {
+      lines.push("💧 Aguardando sensores de umidade.");
+    }
+
+    if(state.weather && state.weather.rainPredicted){
+      lines.push("🌧️ Irrigação suspensa por previsão de chuva.");
+    } else {
+      lines.push("🌱 Irrigação liberada pelo clima atual.");
+    }
+
+    return lines.slice(0,4);
+  }
+
+  /* ============================================================
+     RENDER: STAT CARDS
+     ============================================================ */
   function renderStats(){
     var envs = state.environments;
-    var online = envs.filter(function(e){ return e.status === "online" || e.status === "alert"; }).length;
-    var offline = envs.length - online;
-    var tempVals = envs.map(function(e){return e.temp;}).filter(hasNumber);
+    var tempEnvs = envs.filter(function(e){ return hasNumber(e.temp); });
     var humVals = envs.map(function(e){return e.humidity;}).filter(hasNumber);
-    var avgTemp = tempVals.length ? (tempVals.reduce(function(a,v){return a+v;},0) / tempVals.length).toFixed(1) : null;
     var avgHum = humVals.length ? Math.round(humVals.reduce(function(a,v){return a+v;},0) / humVals.length) : null;
     var activeAlerts = envs.filter(function(e){return e.status === "alert";}).length;
-    var energyToday = state.energy.daily[state.energy.daily.length-1];
-    var waterToday = state.water.daily[state.water.daily.length-1];
+
+    var hottest = null;
+    tempEnvs.forEach(function(e){
+      if(!hottest || e.temp > hottest.temp) hottest = e;
+    });
+
+    var humStatus = "Aguardando sensores";
+    var humClass = "glow-cyan";
+    if(avgHum !== null){
+      if(avgHum < 40){ humStatus = "Baixa — ar seco"; humClass = "glow-amber"; }
+      else if(avgHum > 75){ humStatus = "Alta — atenção"; humClass = "glow-amber"; }
+      else { humStatus = "Confortável"; humClass = "glow-green"; }
+    }
+
+    var aiLines = buildAiHouse(envs, activeAlerts, hottest, avgHum);
 
     var cards = [
-      {cls:"glow-cyan", ic:"📡", val:online+"/"+envs.length, lbl:"Dispositivos online", sub:offline+" offline"},
-      {cls:"glow-violet", ic:"🌡️", val:avgTemp!==null ? avgTemp+"°C" : "—", lbl:"Temperatura geral", sub:tempVals.length ? "Média de "+tempVals.length+" sensor(es)" : "Aguardando sensores"},
-      {cls:"glow-cyan", ic:"💧", val:avgHum!==null ? avgHum+"%" : "—", lbl:"Umidade média", sub:humVals.length ? "Média de "+humVals.length+" sensor(es)" : "Aguardando sensores"},
-      {cls: activeAlerts>0 ? "glow-red" : "glow-green", ic:"🚨", val:activeAlerts, lbl:"Alertas ativos", sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"},
-      {cls:"glow-amber", ic:"⚡", val:energyToday+" kWh", lbl:"Consumo de energia (hoje)", sub:"Tomadas + iluminação"},
-      {cls:"glow-cyan", ic:"🚿", val:waterToday+" L", lbl:"Consumo de água (hoje)", sub:"Caixa d'água + irrigação"}
+      {
+        cls: hottest && hottest.temp >= 32 ? "glow-red" : "glow-violet",
+        ic:"🌡️",
+        val:hottest ? fmtTemp(hottest.temp) : "—",
+        lbl:"Ambiente mais quente",
+        sub:hottest ? hottest.name : "Aguardando sensores"
+      },
+      {
+        cls:humClass,
+        ic:"💧",
+        val:avgHum!==null ? avgHum+"%" : "—",
+        lbl:"Umidade média",
+        sub:humStatus
+      },
+      {
+        cls: activeAlerts>0 ? "glow-red" : "glow-green",
+        ic:"🚨",
+        val:activeAlerts,
+        lbl:"Alertas ativos",
+        sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"
+      },
+      {
+        cls:"glow-cyan",
+        ic:"🚰",
+        val:"—",
+        lbl:"Caixa d'água",
+        sub:"Aguardando módulo de nível"
+      },
+      {
+        cls:"glow-amber",
+        ic:"⚡",
+        val:"—",
+        lbl:"Energia",
+        sub:"Aguardando medidor"
+      },
+      {
+        cls:"glow-violet stat-wide",
+        ic:"🤖",
+        val:"AI HOUSE",
+        lbl:"Análise inteligente da residência",
+        sub:"Resumo automático sem dados inventados",
+        ai:aiLines
+      }
     ];
 
     var grid = document.getElementById("statGrid");
@@ -1398,11 +1487,15 @@ input, select{font-family:inherit; color:var(--text);}
     cards.forEach(function(c){
       var el = document.createElement("div");
       el.className = "stat-card glass "+c.cls;
+      var extra = "";
+      if(c.ai && c.ai.length){
+        extra = '<div class="ai-lines">' + c.ai.map(function(line){ return '<div>'+escapeHtml(line)+'</div>'; }).join('') + '</div>';
+      }
       el.innerHTML =
-        '<div class="sic">'+c.ic+'</div>'+
-        '<div class="val">'+c.val+'</div>'+
-        '<div class="lbl">'+c.lbl+'</div>'+
-        '<div class="sub">'+c.sub+'</div>';
+        '<div class="sic">'+c.ic+'</div>'+ 
+        '<div class="val">'+c.val+'</div>'+ 
+        '<div class="lbl">'+c.lbl+'</div>'+ 
+        '<div class="sub">'+c.sub+'</div>'+ extra;
       grid.appendChild(el);
     });
 
