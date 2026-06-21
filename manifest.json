@@ -1,1 +1,21 @@
 
+{
+  "name": "Smart Home AI Control",
+  "short_name": "Smart Home",
+  "description": "Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "portrait-primary",
+  "background_color": "#060a12",
+  "theme_color": "#060a12",
+  "lang": "pt-BR",
+  "categories": ["utilities", "productivity", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
