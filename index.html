@@ -372,6 +372,10 @@ input, select{font-family:inherit; color:var(--text);}
 .smart-mini-card .val{font-family:var(--font-display); font-size:18px; letter-spacing:.4px;}
 .smart-mini-card .lbl{font-size:11.5px; color:var(--text-dim); margin-top:4px;}
 .smart-mini-card .sub{font-family:var(--font-mono); font-size:10px; color:var(--text-faint); margin-top:7px; line-height:1.35;}
+.smart-mini-card .meter-mini{height:7px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid var(--line-soft); overflow:hidden; margin-top:9px;}
+.smart-mini-card .meter-mini span{display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow:0 0 10px rgba(45,212,255,0.42); transition:width .35s ease;}
+.smart-mini-card .tank-details{margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;}
+.smart-mini-card .tank-details span{font-family:var(--font-mono); font-size:9.5px; color:var(--text-faint); padding:3px 6px; border-radius:999px; background:rgba(255,255,255,0.035); border:1px solid var(--line-soft);}
 .smart-mini-card.stat-wide{grid-column:1 / -1; min-height:122px;}
 .smart-mini-card .ai-lines{margin-top:10px; display:flex; flex-direction:column; gap:5px;}
 .smart-mini-card .ai-lines div{font-size:12px; color:var(--text-dim); line-height:1.35;}
@@ -971,6 +975,17 @@ input, select{font-family:inherit; color:var(--text);}
             <div class="hint">Esses valores são usados ao cadastrar um novo ambiente / dispositivo.</div>
             <button class="btn btn-ghost btn-block" id="saveDevicePrefsBtn">Salvar padrões</button>
           </div>
+
+          <div class="glass panel-pad">
+            <div class="panel-title"><span class="pic">🚰</span> Caixa d'água / LoRa</div>
+            <div class="field-row">
+              <div class="field"><label>ID do módulo</label><input type="text" id="waterDeviceId" value="caixa01" placeholder="caixa01"></div>
+              <div class="field"><label>Senha do módulo</label><input type="password" id="waterDevicePass" placeholder="campo reservado"></div>
+            </div>
+            <div class="field"><label>Tópico de dados</label><input type="text" id="waterTopic" value="casa/caixa01/dados" disabled style="opacity:.65;"></div>
+            <div class="hint">Campo de ID/senha deixado preparado, mas ainda sem autenticação funcional. Nesta etapa o painel apenas escuta o tópico MQTT do receptor LoRa já existente.</div>
+            <button class="btn btn-ghost btn-block" id="saveWaterPrefsBtn" type="button">Salvar visualmente</button>
+          </div>
         </div>
       </section>
 
@@ -1251,6 +1266,22 @@ input, select{font-family:inherit; color:var(--text);}
       ]
     },
     broker:{host:"", port:"", user:"", pass:""},
+    waterTank:{
+      id:"caixa01",
+      pass:"",
+      topic:"casa/caixa01/dados",
+      level:null,
+      liters:null,
+      distance:null,
+      sensorOK:null,
+      pumpOn:null,
+      autoMode:null,
+      levelOn:null,
+      levelOff:null,
+      rssi:null,
+      snr:null,
+      lastSeen:null
+    },
     energy:{daily:[3.2,4.1,3.8,5.0,4.4,3.6,4.8], unit:"kWh"},
     water:{daily:[210,180,260,300,190,220,250], unit:"L"}
   };
@@ -1449,10 +1480,13 @@ input, select{font-family:inherit; color:var(--text);}
       lines.push("💧 Aguardando sensores de umidade.");
     }
 
-    if(state.weather && state.weather.rainPredicted){
-      lines.push("🌧️ Irrigação suspensa por previsão de chuva.");
+    if(state.waterTank && hasNumber(state.waterTank.level)){
+      if(state.waterTank.sensorOK === false) lines.push("🚰 Sensor da caixa d'água sem leitura confiável.");
+      else if(state.waterTank.level <= 20) lines.push("🚰 Caixa d'água em nível baixo.");
+      else if(state.waterTank.level >= 80) lines.push("🚰 Caixa d'água em nível seguro.");
+      else lines.push("🚰 Nível da caixa d'água intermediário.");
     } else {
-      lines.push("🌱 Irrigação liberada pelo clima atual.");
+      lines.push("🚰 Aguardando módulo da caixa d'água.");
     }
 
     return lines.slice(0,4);
@@ -1492,6 +1526,21 @@ input, select{font-family:inherit; color:var(--text);}
     }
 
     var aiLines = buildAiHouse(envs, activeAlerts, hottest, avgHum);
+    var tank = state.waterTank || {};
+    var tankHasData = hasNumber(tank.level);
+    var tankCls = "glow-cyan";
+    if(tankHasData){
+      if(tank.sensorOK === false) tankCls = "glow-red";
+      else if(tank.level <= 20) tankCls = "glow-red";
+      else if(tank.level < 45) tankCls = "glow-amber";
+      else tankCls = "glow-green";
+    }
+    var tankSub = "Aguardando receptor LoRa";
+    if(tankHasData){
+      tankSub = (hasNumber(tank.liters) ? Math.round(tank.liters) + " L" : "litros —") +
+        " · " + (tank.sensorOK === false ? "sensor falhou" : "sensor OK") +
+        " · bomba " + (tank.pumpOn ? "ligada" : "desligada");
+    }
 
     var cardsA = [
       {
@@ -1516,11 +1565,17 @@ input, select{font-family:inherit; color:var(--text);}
         sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"
       },
       {
-        cls:"glow-cyan",
+        cls:tankCls,
         ic:"🚰",
-        val:"—",
+        val:tankHasData ? Math.round(tank.level) + "%" : "—",
         lbl:"Caixa d'água",
-        sub:"Aguardando módulo de nível"
+        sub:tankSub,
+        meter:tankHasData ? Math.max(0, Math.min(100, Math.round(tank.level))) : null,
+        details:tankHasData ? [
+          "auto " + (tank.autoMode ? "ON" : "OFF"),
+          "RSSI " + (hasNumber(tank.rssi) ? Math.round(tank.rssi) : "—"),
+          tank.lastSeen ? fmtRelative(tank.lastSeen) : "sem dados"
+        ] : []
       }
     ];
 
@@ -1551,13 +1606,19 @@ input, select{font-family:inherit; color:var(--text);}
         el.className = "smart-mini-card "+c.cls;
         var extra = "";
         if(c.ai && c.ai.length){
-          extra = '<div class="ai-lines">' + c.ai.map(function(line){ return '<div>'+escapeHtml(line)+'</div>'; }).join('') + '</div>';
+          extra += '<div class="ai-lines">' + c.ai.map(function(line){ return '<div>'+escapeHtml(line)+'</div>'; }).join('') + '</div>';
+        }
+        if(typeof c.meter === "number"){
+          extra += '<div class="meter-mini"><span style="width:'+c.meter+'%"></span></div>';
+        }
+        if(c.details && c.details.length){
+          extra += '<div class="tank-details">' + c.details.map(function(item){ return '<span>'+escapeHtml(item)+'</span>'; }).join('') + '</div>';
         }
         el.innerHTML =
           '<div class="sic">'+c.ic+'</div>'+
           '<div class="val">'+c.val+'</div>'+
           '<div class="lbl">'+c.lbl+'</div>'+
-          '<div class="sub">'+c.sub+'</div>'+ extra;
+          '<div class="sub">'+escapeHtml(c.sub)+'</div>'+ extra;
         grid.appendChild(el);
       });
     }
@@ -1834,6 +1895,7 @@ input, select{font-family:inherit; color:var(--text);}
       toast("Conectado ao broker MQTT", "success");
       mqttClient.subscribe("sensors/+/data", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe data", err); });
       mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
+      mqttClient.subscribe("casa/+/dados", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe caixa dagua", err); });
     });
 
     mqttClient.on("reconnect", function(){ setBrokerStatus(false); });
@@ -1851,6 +1913,10 @@ input, select{font-family:inherit; color:var(--text);}
       }
       if(parts.length >= 3 && parts[0] === "sensors" && parts[2] === "gas"){
         handleGasMessage(topic, payloadBuf);
+        return;
+      }
+      if(parts.length >= 3 && parts[0] === "casa" && parts[2] === "dados"){
+        handleWaterTankMessage(topic, payloadBuf);
         return;
       }
       if(parts.length < 3 || parts[0] !== "sensors" || parts[2] !== "data") return;
@@ -1876,6 +1942,39 @@ input, select{font-family:inherit; color:var(--text);}
       saveEnvironments();
       renderAll();
     });
+  }
+
+  function handleWaterTankMessage(topic, payloadBuf){
+    var parts = topic.split("/");
+    if(parts.length < 3 || parts[0] !== "casa" || parts[2] !== "dados") return;
+    var moduleId = parts[1] || "caixa01";
+    var data;
+    try{ data = JSON.parse(payloadBuf.toString()); }catch(e){ return; }
+
+    var tank = state.waterTank || (state.waterTank = {});
+    tank.id = moduleId;
+    tank.topic = topic;
+    if(typeof data.percentage === "number") tank.level = data.percentage;
+    if(typeof data.nivel === "number") tank.level = data.nivel;
+    if(typeof data.liters === "number") tank.liters = data.liters;
+    if(typeof data.litros === "number") tank.liters = data.litros;
+    if(typeof data.distance === "number") tank.distance = data.distance;
+    if(typeof data.distancia === "number") tank.distance = data.distancia;
+    if(typeof data.sensorOK === "boolean") tank.sensorOK = data.sensorOK;
+    if(typeof data.bomba_ligada === "boolean") tank.pumpOn = data.bomba_ligada;
+    if(typeof data.modo_auto === "boolean") tank.autoMode = data.modo_auto;
+    if(typeof data.nivel_ligar === "number") tank.levelOn = data.nivel_ligar;
+    if(typeof data.nivel_desligar === "number") tank.levelOff = data.nivel_desligar;
+    if(typeof data.rssi === "number") tank.rssi = data.rssi;
+    if(typeof data.snr === "number") tank.snr = data.snr;
+    tank.lastSeen = new Date();
+
+    var idEl = document.getElementById("waterDeviceId");
+    var topicEl = document.getElementById("waterTopic");
+    if(idEl && !idEl.value) idEl.value = moduleId;
+    if(topicEl) topicEl.value = topic;
+
+    renderAll();
   }
 
   function handleGasMessage(topic, payloadBuf){
@@ -2249,6 +2348,19 @@ input, select{font-family:inherit; color:var(--text);}
 
   document.getElementById("saveDevicePrefsBtn").addEventListener("click", function(){
     toast("Padrões de dispositivo salvos", "success");
+  });
+
+  document.getElementById("saveWaterPrefsBtn").addEventListener("click", function(){
+    var idEl = document.getElementById("waterDeviceId");
+    var passEl = document.getElementById("waterDevicePass");
+    if(state.waterTank){
+      state.waterTank.id = (idEl && idEl.value.trim()) || "caixa01";
+      state.waterTank.pass = passEl ? passEl.value : "";
+      state.waterTank.topic = "casa/" + state.waterTank.id + "/dados";
+      var topicEl = document.getElementById("waterTopic");
+      if(topicEl) topicEl.value = state.waterTank.topic;
+    }
+    toast("Campo da caixa d'água salvo apenas visualmente — autenticação será ativada depois", "info");
   });
 
   /* ============================================================
