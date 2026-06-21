@@ -1934,6 +1934,14 @@ input, select{font-family:inherit; color:var(--text);}
      deviceId = getEnvDeviceId(env).toUpperCase() em minúsculas (6 últimos chars do MAC)
      ============================================================ */
   var mqttClient = null;
+
+  function isMqttConnected(){
+    try{
+      if(!mqttClient) return false;
+      if(typeof mqttClient.connected === "function") return !!mqttClient.connected();
+      return !!mqttClient.connected;
+    }catch(e){ return false; }
+  }
   var mqttConnected = false;
 
   function setBrokerStatus(connected){
@@ -1981,7 +1989,7 @@ input, select{font-family:inherit; color:var(--text);}
 
   function mqttSub(topic){
     state.waterDebug = state.waterDebug || {};
-    if(!mqttClient || !mqttClient.connected() || !topic){
+    if(!isMqttConnected() || !topic){
       state.waterDebug.lastSubscribe = topic ? (topic + " (aguardando broker)") : "—";
       return;
     }
@@ -1995,7 +2003,7 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function subscribeWaterTopics(){
-    if(!mqttClient || !mqttClient.connected()) return;
+    if(!isMqttConnected()) return;
     // Assinaturas da caixa d'água. O receptor LoRa publica em casa/caixa01/dados.
     // Assino também # temporariamente para diagnóstico: assim aparece qualquer pacote MQTT
     // que chegar ao mesmo broker, mesmo que o firmware esteja usando outro tópico.
@@ -2027,11 +2035,11 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function setupMqttSubscriptions(){
-    if(mqttClient && mqttClient.connected()) subscribeWaterTopics();
+    if(isMqttConnected()) subscribeWaterTopics();
   }
 
   function requestWaterUpdate(id){
-    if(!mqttClient || !mqttClient.connected()){ toast("Broker MQTT desconectado", "error"); return; }
+    if(!isMqttConnected()){ toast("Broker MQTT desconectado", "error"); return; }
     var r = findReservoirById(id) || ensureReservoir(id);
     // O receptor publica uma leitura imediatamente quando recebe configuração.
     var payload = JSON.stringify({nivel_ligar:Number(r.levelOn)||20, nivel_desligar:Number(r.levelOff)||80});
@@ -2719,7 +2727,7 @@ input, select{font-family:inherit; color:var(--text);}
     var dbg = state.waterDebug || {};
     var host = (state.broker && state.broker.host) ? state.broker.host : "não configurado";
     var port = (state.broker && state.broker.port) ? String(state.broker.port) : "—";
-    var connected = mqttClient && mqttClient.connected && mqttClient.connected();
+    var connected = isMqttConnected();
     var ids = (state.waterReservoirs || []).map(function(r){ return normalizeWaterId(r.id); }).filter(Boolean);
     if(!ids.length) ids = ["caixa01"];
     var topics = ids.map(function(id){ return waterTopicFor(id,"dados"); }).join(", ");
@@ -2810,7 +2818,7 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function publishWaterCommand(id, cmd){
-    if(!mqttClient || !mqttClient.connected()){ toast("Broker MQTT desconectado", "error"); return; }
+    if(!isMqttConnected()){ toast("Broker MQTT desconectado", "error"); return; }
     mqttClient.publish(waterTopicFor(id,"comando"), cmd, {qos:1, retain:false}, function(err){
       if(err) toast("Falha ao enviar comando da bomba", "error");
       else toast("Comando enviado: "+cmd, "success");
@@ -2818,7 +2826,7 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function publishWaterConfig(r){
-    if(!mqttClient || !mqttClient.connected()){ toast("Configuração salva no painel. Broker desconectado.", "info"); return; }
+    if(!isMqttConnected()){ toast("Configuração salva no painel. Broker desconectado.", "info"); return; }
     var payload = JSON.stringify({nivel_ligar:Number(r.levelOn)||20, nivel_desligar:Number(r.levelOff)||80});
     mqttClient.publish(waterTopicFor(r.id,"config"), payload, {qos:1, retain:false}, function(err){
       if(err) toast("Falha ao enviar configuração", "error");
@@ -2915,7 +2923,7 @@ input, select{font-family:inherit; color:var(--text);}
       return false;
     }catch(err){
       console.error("[AGUA] erro ao salvar reservatório:", err);
-      toast("Erro ao salvar reservatório. Veja o console.", "error");
+      toast("Erro ao salvar reservatório", "error");
       return false;
     }
   });
