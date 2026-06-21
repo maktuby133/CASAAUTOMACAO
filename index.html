@@ -729,76 +729,19 @@ body::before {
 
 
 /* === MELHORIAS SOLICITADAS === */
-.room-card-line {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-lg);
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 10px;
-}
-.room-card-line .room-name { font-size: 16px; font-weight: 600; flex: 0 0 auto; min-width: 80px; }
-.room-card-line .room-metric { font-size: 15px; color: var(--subtle); display: flex; align-items: center; gap: 6px; }
-.room-card-line .lamp-btn { 
-  margin-left: auto; 
-  width: 36px; height: 36px; 
-  border-radius: 50%; 
-  border: none; 
-  cursor: pointer; 
-  transition: all 0.2s ease;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-}
-.lamp-btn.off { background: var(--muted); }
-.lamp-btn.on { 
-  background: #fbbf24; 
-  animation: pulse-lamp 1.5s infinite;
-  box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
-}
-@keyframes pulse-lamp {
-  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); transform: scale(1); }
-  50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); transform: scale(1.05); }
-  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); transform: scale(1); }
-}
-
-.add-room-balloon {
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: var(--bg3);
-  border: 2px dashed var(--border3);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; color: var(--accent);
-  cursor: pointer; transition: all 0.2s ease;
-  margin: 10px 0;
-}
-.add-room-balloon:hover { 
-  background: var(--bg4); 
-  border-color: var(--accent); 
-  transform: scale(1.08);
-}
-
-.scale-balloons {
-  display: flex; gap: 8px; margin: 12px 0;
-}
-.scale-balloon {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600; color: var(--subtle);
-  cursor: pointer; transition: all 0.2s ease;
-}
-.scale-balloon.active { 
-  border-color: var(--accent); 
-  background: var(--bg4); 
-  color: var(--text); 
-}
-.scale-balloon:hover { border-color: var(--border3); }
+.room-card-line{display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);font-size:16px;font-weight:500;margin-bottom:10px}
+.room-card-line .room-name{font-size:16px;font-weight:600;flex:0 0 auto;min-width:80px}
+.room-card-line .room-metric{font-size:15px;color:var(--subtle);display:flex;align-items:center;gap:6px}
+.room-card-line .lamp-btn{margin-left:auto;width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center;font-size:18px}
+.lamp-btn.off{background:var(--muted)}
+.lamp-btn.on{background:#fbbf24;animation:pulse-lamp 1.5s infinite;box-shadow:0 0 0 0 rgba(251,191,36,0.7)}
+@keyframes pulse-lamp{0%{box-shadow:0 0 0 0 rgba(251,191,36,0.7);transform:scale(1)}50%{box-shadow:0 0 0 8px rgba(251,191,36,0);transform:scale(1.05)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0);transform:scale(1)}}
+.add-room-balloon{width:56px;height:56px;border-radius:50%;background:var(--bg3);border:2px dashed var(--border3);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--accent);cursor:pointer;transition:all 0.2s ease;margin:10px 0}
+.add-room-balloon:hover{background:var(--bg4);border-color:var(--accent);transform:scale(1.08)}
+.scale-balloons{display:flex;gap:8px;margin:12px 0}
+.scale-balloon{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--subtle);cursor:pointer;transition:all 0.2s ease}
+.scale-balloon.active{border-color:var(--accent);background:var(--bg4);color:var(--text)}
+.scale-balloon:hover{border-color:var(--border3)}
 
 </style>
 </head>
@@ -6286,47 +6229,17 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(renderDiscoveryBadge, 5000);
 });
 
-// === MELHORIAS SOLICITADAS ===
-function renderRoomCardLine(room) {
-  const lampOn = room.lamp || false;
-  return `
-    <div class="room-card-line" data-room="${room.id}">
-      <span class="room-name">${room.icon || '🏠'} ${room.name}</span>
-      <span class="room-metric">🌡️ ${room.temp !== null ? room.temp.toFixed(1) : '—'}°C</span>
-      <span class="room-metric">💧 ${room.hum !== null ? Math.round(room.hum) : '—'}%</span>
-      <span class="room-metric">⛽ ${room.gas !== null ? room.gas : '—'}ppm</span>
-      <button class="lamp-btn ${lampOn ? 'on' : 'off'}" onclick="toggleLampCard('${room.id}', this)">💡</button>
-    </div>
-  `;
-}
-
 function toggleLampCard(roomId, btn) {
   const isOn = btn.classList.contains('on');
   btn.classList.toggle('on', !isOn);
   btn.classList.toggle('off', isOn);
-  // Aqui você chamaria MQTT: publish(`autoflow/${roomId}/lamp/set`, !isOn ? 'ON' : 'OFF')
+  // MQTT: publish(`autoflow/${roomId}/lamp/set`, !isOn ? 'ON' : 'OFF')
 }
-
-function renderScaleBalloons() {
-  return `
-    <div class="scale-balloons">
-      <div class="scale-balloon" onclick="setWidgetScale(0.85, this)">P</div>
-      <div class="scale-balloon active" onclick="setWidgetScale(1, this)">M</div>
-      <div class="scale-balloon" onclick="setWidgetScale(1.15, this)">G</div>
-      <div class="scale-balloon" onclick="setWidgetScale(1.3, this)">XG</div>
-    </div>
-  `;
-}
-
 function setWidgetScale(scale, el) {
   document.querySelectorAll('.scale-balloon').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('rooms-grid').style.transform = `scale(${scale})`;
-  document.getElementById('rooms-grid').style.transformOrigin = 'top left';
-}
-
-function renderAddRoomBalloon() {
-  return `<div class="add-room-balloon" onclick="openRoomModal()">+</div>`;
+  const grid = document.getElementById('rooms-grid');
+  if(grid) { grid.style.transform = `scale(${scale})`; grid.style.transformOrigin = 'top left'; }
 }
 
 </script>
