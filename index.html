@@ -566,8 +566,8 @@ input, select{font-family:inherit; color:var(--text);}
 /* ============================================================
    WATER VIEW
    ============================================================ */
-.water-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px;}
-.water-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;margin-bottom:20px;}
+.water-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:18px 0 0;}
+.water-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;margin-bottom:18px;}
 .water-card{padding:20px;position:relative;overflow:hidden;}
 .water-card.offline{opacity:.72;}
 .water-card .water-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
@@ -590,12 +590,17 @@ input, select{font-family:inherit; color:var(--text);}
 .water-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:8px;box-shadow:0 0 10px rgba(45,212,255,.35);}
 .add-water-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:245px;border:1.5px dashed var(--line);border-radius:var(--radius);color:var(--text-dim);transition:border-color .2s ease,color .2s ease,background .2s ease;}
 .add-water-card:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(45,212,255,.03);}
-.water-history-panel{padding:22px;margin-top:10px;}
+.water-history-panel{padding:20px;margin-top:0;}
+.water-consumption-panel{margin-bottom:18px;}
 .water-history-list{display:flex;flex-direction:column;gap:9px;max-height:240px;overflow:auto;}
 .water-history-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);font-size:13px;}
 .water-history-item time{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
-.water-debug-panel{padding:14px 16px;margin:0 0 18px;border-radius:12px;background:rgba(45,212,255,.045);border:1px solid rgba(45,212,255,.16);font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.55;}
+.water-debug-panel{display:none;}
 .water-debug-panel strong{color:var(--cyan);font-weight:600;}
+.water-pump-gear{margin-left:auto;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-dim);}
+.water-pump-gear:hover{color:var(--cyan);border-color:rgba(45,212,255,.35);background:rgba(45,212,255,.06);}
+.water-card-main{grid-column:span 2;}
+@media(max-width:760px){.water-card-main{grid-column:span 1;}}
 .danger-zone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
 @media(max-width:560px){.water-level-wrap{flex-direction:column;align-items:flex-start}.water-meta{width:100%}.water-actions{grid-template-columns:1fr}}
 
@@ -989,15 +994,16 @@ input, select{font-family:inherit; color:var(--text);}
           <button class="btn btn-primary" id="addWaterBtn">➕ Adicionar reservatório</button>
         </div>
 
-        <div class="water-summary-grid" id="waterSummaryGrid"></div>
-        <div class="water-debug-panel" id="waterDebugPanel"></div>
         <div class="water-grid" id="waterGrid"></div>
 
-        <div class="glass water-history-panel">
-          <div class="panel-title"><span class="pic">📈</span> Histórico de abastecimento / consumo</div>
-          <svg id="waterLevelChart" viewBox="0 0 640 150" preserveAspectRatio="none" style="width:100%;height:150px;margin-bottom:14px;"></svg>
-          <div class="water-history-list" id="waterHistoryList"></div>
+        <div class="glass water-history-panel water-consumption-panel">
+          <div class="panel-title"><span class="pic">📈</span> Gráfico de consumo de água</div>
+          <svg id="waterLevelChart" viewBox="0 0 640 150" preserveAspectRatio="none" style="width:100%;height:150px;margin-bottom:4px;"></svg>
+          <div class="water-history-list hidden" id="waterHistoryList"></div>
         </div>
+
+        <div class="water-summary-grid" id="waterSummaryGrid"></div>
+        <div class="water-debug-panel hidden" id="waterDebugPanel"></div>
       </section>
 
       <!-- ===================== CONFIGURAÇÕES ===================== -->
@@ -2753,26 +2759,26 @@ input, select{font-family:inherit; color:var(--text);}
     var pumpsOn = list.filter(function(r){ return r.pumpOn === true; }).length;
     var sensorBad = list.filter(function(r){ return r.sensorOK === false; }).length;
 
+    var primaryReservoir = list[0] || null;
+    var pumpSub = primaryReservoir ? ("Liga em " + (hasNumber(primaryReservoir.levelOn)?primaryReservoir.levelOn:20) + "% · desliga em " + (hasNumber(primaryReservoir.levelOff)?primaryReservoir.levelOff:80) + "%") : "Configure após adicionar reservatório";
     var summaryCards = [
       {cls:avg!==null && avg<=20 ? "glow-red" : "glow-cyan", ic:"🚰", val:avg!==null ? avg+"%" : "—", lbl:"Nível médio", sub:withData.length ? withData.length+" reservatório(s) com dados" : "Aguardando dados"},
       {cls:"glow-green", ic:"💧", val:liters ? Math.round(liters)+" L" : "—", lbl:"Volume total", sub:liters ? "Soma dos reservatórios" : "Aguardando litros"},
-      {cls:pumpsOn ? "glow-amber" : "glow-violet", ic:"⚙️", val:pumpsOn, lbl:"Bombas ligadas", sub:pumpsOn ? "Abastecimento em andamento" : "Nenhuma bomba ligada"},
+      {cls:pumpsOn ? "glow-amber" : "glow-violet", ic:"⚙️", val:pumpsOn ? "Ligada" : "Futura", lbl:"Bomba", sub:pumpsOn ? "Abastecimento em andamento" : pumpSub, gear:true, target:primaryReservoir ? primaryReservoir.id : ""},
       {cls:sensorBad ? "glow-red" : "glow-green", ic:"🛰️", val:sensorBad, lbl:"Falhas de sensor", sub:sensorBad ? "Verifique o LoRa/sensor" : "Sensores OK ou aguardando"}
     ];
-    var dbg = state.waterDebug || {};
-    summaryCards.push({cls:dbg.lastTopic ? "glow-green" : "glow-amber", ic:"📡", val:dbg.lastTopic ? "Recebido" : "Aguardando", lbl:"MQTT água", sub:dbg.lastTopic ? (dbg.lastTopic + " · " + fmtRelative(dbg.lastAt)) : "Assinando casa/caixa01/dados"});
     summary.innerHTML = summaryCards.map(function(c){
-      return '<div class="stat-card glass '+c.cls+'"><div class="sic">'+c.ic+'</div><div class="val">'+escapeHtml(c.val)+'</div><div class="lbl">'+escapeHtml(c.lbl)+'</div><div class="sub">'+escapeHtml(c.sub)+'</div></div>';
+      return '<div class="stat-card glass '+c.cls+'"><div style="display:flex;align-items:center;gap:8px;"><div class="sic">'+c.ic+'</div>'+(c.gear?'<button class="water-pump-gear" title="Configurar bomba" data-water-pump-config="'+escapeHtml(c.target || '')+'">⚙️</button>':'')+'</div><div class="val">'+escapeHtml(c.val)+'</div><div class="lbl">'+escapeHtml(c.lbl)+'</div><div class="sub">'+escapeHtml(c.sub)+'</div></div>';
     }).join("");
 
     grid.innerHTML = "";
-    list.forEach(function(r){
+    list.forEach(function(r, index){
       var has = hasNumber(r.level);
       var pct = has ? Math.max(0, Math.min(100, Math.round(r.level))) : 0;
       var online = r.lastSeen && (Date.now() - new Date(r.lastSeen).getTime() < 120000);
       var badge = online ? '<span class="badge badge-online"><span class="badge-dot"></span> online</span>' : '<span class="badge badge-offline"><span class="badge-dot"></span> offline</span>';
       var card = document.createElement("div");
-      card.className = "water-card glass" + (online ? "" : " offline");
+      card.className = "water-card glass" + (index === 0 ? " water-card-main" : "") + (online ? "" : " offline");
       card.style.setProperty("--water-deg", (pct*3.6) + "deg");
       card.innerHTML =
         '<div class="water-top"><div class="water-title"><div class="water-ic">🚰</div><div><div class="water-name">'+escapeHtml(r.name || r.id)+'</div><div class="water-id">ID '+escapeHtml(r.id)+' · '+escapeHtml(r.topic || waterTopicFor(r.id,"dados"))+'</div></div></div>'+badge+'</div>'+ 
@@ -2802,19 +2808,37 @@ input, select{font-family:inherit; color:var(--text);}
     var svg = document.getElementById("waterLevelChart");
     var listEl = document.getElementById("waterHistoryList");
     if(!svg || !listEl) return;
-    var hist = (state.waterHistory || []).slice(0,30).reverse();
-    if(!hist.length){
-      svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(134,150,173,.8)" font-size="12">Aguardando leituras da caixa d\'água</text>';
-      listEl.innerHTML = '<div class="feed-empty">Sem histórico ainda. Quando chegar dado MQTT, aparece aqui.</div>';
+    var hist = (state.waterHistory || []).filter(function(h){ return hasNumber(h.liters); }).slice(0,30).reverse();
+    if(hist.length < 2){
+      svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(134,150,173,.8)" font-size="12">Aguardando leituras suficientes para calcular consumo</text>';
+      listEl.innerHTML = '';
       return;
     }
-    var vals = hist.map(function(h){ return Math.max(0,Math.min(100,Number(h.level)||0)); });
-    var step = vals.length > 1 ? 620/(vals.length-1) : 620;
-    var pts = vals.map(function(v,i){ return (10+i*step)+','+(135-(v*1.2)); }).join(' ');
-    svg.innerHTML = '<polyline points="'+pts+'" fill="none" stroke="rgba(45,212,255,.9)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="10" y1="135" x2="630" y2="135" stroke="rgba(140,180,220,.14)"/><line x1="10" y1="15" x2="630" y2="15" stroke="rgba(140,180,220,.08)"/>';
-    listEl.innerHTML = (state.waterHistory || []).slice(0,12).map(function(h){
-      return '<div class="water-history-item"><div><strong>'+escapeHtml(h.name || h.id)+'</strong> · nível '+Math.round(h.level)+'%'+(hasNumber(h.liters)?' · '+Math.round(h.liters)+' L':'')+'</div><time>'+fmtRelative(h.time)+'</time></div>';
+    var bars = [];
+    for(var i=1;i<hist.length;i++){
+      var prev = Number(hist[i-1].liters)||0;
+      var cur = Number(hist[i].liters)||0;
+      var consumed = Math.max(0, prev - cur);
+      if(consumed > 0) bars.push({v: consumed, time: hist[i].time});
+    }
+    if(!bars.length){
+      svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(134,150,173,.8)" font-size="12">Sem queda de litros detectada ainda</text>';
+      listEl.innerHTML = '';
+      return;
+    }
+    bars = bars.slice(-18);
+    var max = Math.max.apply(null, bars.map(function(b){return b.v;})) || 1;
+    var gap = 5;
+    var barW = Math.max(8, (620 - (bars.length-1)*gap) / bars.length);
+    var chunks = bars.map(function(b,i){
+      var h = Math.max(4, (b.v/max)*112);
+      var x = 10 + i*(barW+gap);
+      var y = 132 - h;
+      return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="5" fill="rgba(45,212,255,.82)"><title>'+Math.round(b.v)+' L</title></rect>';
     }).join('');
+    var total = bars.reduce(function(a,b){return a+b.v;},0);
+    svg.innerHTML = '<line x1="10" y1="132" x2="630" y2="132" stroke="rgba(140,180,220,.14)"/>'+chunks+'<text x="630" y="18" text-anchor="end" fill="rgba(134,150,173,.9)" font-size="12">Consumo estimado: '+Math.round(total)+' L</text>';
+    listEl.innerHTML = '';
   }
 
   function publishWaterCommand(id, cmd){
@@ -2935,6 +2959,25 @@ input, select{font-family:inherit; color:var(--text);}
     if(cmdBtn){ publishWaterCommand(cmdBtn.getAttribute("data-water-id"), cmdBtn.getAttribute("data-water-cmd")); return; }
     var refreshBtn = e.target.closest && e.target.closest("[data-water-refresh]");
     if(refreshBtn){ requestWaterUpdate(refreshBtn.getAttribute("data-water-refresh")); return; }
+    var pumpCfgBtn = e.target.closest && e.target.closest("[data-water-pump-config]");
+    if(pumpCfgBtn){
+      var targetId = pumpCfgBtn.getAttribute("data-water-pump-config") || ((state.waterReservoirs && state.waterReservoirs[0]) ? state.waterReservoirs[0].id : "");
+      if(!targetId){ openAddWaterModal(); return; }
+      var btn = document.querySelector('[data-water-config="'+targetId+'"]');
+      if(btn){ btn.click(); return; }
+      var rPump = findReservoirById(targetId);
+      if(rPump){
+        document.getElementById("wcReservoirId").value = rPump.id;
+        document.getElementById("wcName").value = rPump.name || rPump.id;
+        document.getElementById("wcDeviceId").value = rPump.id;
+        document.getElementById("wcPass").value = rPump.pass || "";
+        document.getElementById("wcLevelOn").value = hasNumber(rPump.levelOn) ? rPump.levelOn : 20;
+        document.getElementById("wcLevelOff").value = hasNumber(rPump.levelOff) ? rPump.levelOff : 80;
+        document.getElementById("wcTopic").value = waterTopicFor(rPump.id,"dados");
+        document.getElementById("waterConfigOverlay").classList.remove("hidden");
+      }
+      return;
+    }
     var cfgBtn = e.target.closest && e.target.closest("[data-water-config]");
     if(cfgBtn){
       var r = findReservoirById(cfgBtn.getAttribute("data-water-config"));
