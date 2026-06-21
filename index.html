@@ -1217,7 +1217,7 @@ input, select{font-family:inherit; color:var(--text);}
       <div class="hint">A senha fica salva apenas no painel por enquanto. O painel irá escutar o tópico casa/ID/dados.</div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="addWaterOverlay">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Adicionar</button>
+        <button type="submit" class="btn btn-primary" id="confirmAddWaterBtn">Adicionar</button>
       </div>
     </form>
   </div>
@@ -2126,7 +2126,6 @@ input, select{font-family:inherit; color:var(--text);}
       env.lastSeen = new Date();
       saveEnvironments();
       renderAll();
-    if(firstWaterRead) toast("Dados recebidos da caixa " + r.id, "success");
     });
   }
 
@@ -2738,30 +2737,75 @@ input, select{font-family:inherit; color:var(--text);}
     });
   }
 
+  function openAddWaterModal(){
+    var ov = document.getElementById("addWaterOverlay");
+    if(ov) ov.classList.remove("hidden");
+    var topicEl = document.getElementById("newWaterTopic");
+    var idEl = document.getElementById("newWaterId");
+    if(topicEl) topicEl.value = waterTopicFor(idEl && idEl.value ? idEl.value : "caixa01", "dados");
+    setTimeout(function(){ var nameEl=document.getElementById("newWaterName"); if(nameEl) nameEl.focus(); }, 50);
+  }
+
+  function closeAddWaterModal(){
+    var ov = document.getElementById("addWaterOverlay");
+    if(ov) ov.classList.add("hidden");
+  }
+
+  function addWaterReservoirFromModal(e){
+    if(e && e.preventDefault) e.preventDefault();
+    var nameEl = document.getElementById("newWaterName");
+    var idEl = document.getElementById("newWaterId");
+    var passEl = document.getElementById("newWaterPass");
+    if(!nameEl || !idEl){ toast("Erro interno: formulário de água não encontrado", "error"); return false; }
+    var rawId = String(idEl.value || "").trim();
+    var id = normalizeWaterId(rawId);
+    var name = String(nameEl.value || "").trim();
+    if(!rawId){ toast("Informe o ID do módulo da caixa", "error"); idEl.focus(); return false; }
+    if(!name){ toast("Informe o nome do reservatório", "error"); nameEl.focus(); return false; }
+
+    state.waterReservoirs = state.waterReservoirs || [];
+    var r = ensureReservoir(id);
+    r.name = name;
+    r.id = id;
+    r.pass = passEl ? passEl.value : "";
+    r.topic = waterTopicFor(id,"dados");
+    if(!hasNumber(r.levelOn)) r.levelOn = 20;
+    if(!hasNumber(r.levelOff)) r.levelOff = 80;
+
+    state.waterTank = r;
+    saveWaterState();
+    subscribeWaterTopics();
+    closeAddWaterModal();
+
+    var form = document.getElementById("addWaterForm");
+    if(form) form.reset();
+    var topicEl=document.getElementById("newWaterTopic");
+    if(topicEl) topicEl.value="casa/caixa01/dados";
+
+    toast("Reservatório salvo: " + r.name + " (" + r.topic + ")", "success");
+    renderAll();
+    return false;
+  }
+
   var addWaterBtn = document.getElementById("addWaterBtn");
-  if(addWaterBtn) addWaterBtn.addEventListener("click", function(){ document.getElementById("addWaterOverlay").classList.remove("hidden"); });
+  if(addWaterBtn) addWaterBtn.addEventListener("click", openAddWaterModal);
   var newWaterIdEl = document.getElementById("newWaterId");
   if(newWaterIdEl) newWaterIdEl.addEventListener("input", function(){ var t=document.getElementById("newWaterTopic"); if(t) t.value=waterTopicFor(this.value,"dados"); });
   var addWaterForm = document.getElementById("addWaterForm");
-  if(addWaterForm) addWaterForm.addEventListener("submit", function(e){
-    e.preventDefault();
-    var id = normalizeWaterId(document.getElementById("newWaterId").value);
-    var r = ensureReservoir(id);
-    r.name = document.getElementById("newWaterName").value.trim() || id;
-    r.pass = document.getElementById("newWaterPass").value || "";
-    r.topic = waterTopicFor(id,"dados");
-    saveWaterState();
-    subscribeWaterTopics();
-    document.getElementById("addWaterOverlay").classList.add("hidden");
-    addWaterForm.reset();
-    var t=document.getElementById("newWaterTopic"); if(t) t.value="casa/caixa01/dados";
-    toast("Reservatório adicionado", "success");
-    renderAll();
+  if(addWaterForm){
+    addWaterForm.addEventListener("submit", addWaterReservoirFromModal);
+    addWaterForm.onsubmit = addWaterReservoirFromModal;
+  }
+  var confirmAddWaterBtn = document.getElementById("confirmAddWaterBtn");
+  if(confirmAddWaterBtn) confirmAddWaterBtn.addEventListener("click", function(e){
+    var form = document.getElementById("addWaterForm");
+    if(form && typeof form.requestSubmit === "function") return;
+    addWaterReservoirFromModal(e);
   });
 
   document.addEventListener("click", function(e){
     var addCard = e.target.closest && e.target.closest("#addWaterCardBtn");
-    if(addCard){ document.getElementById("addWaterOverlay").classList.remove("hidden"); return; }
+    if(addCard){ openAddWaterModal(); return; }
     var cmdBtn = e.target.closest && e.target.closest("[data-water-cmd]");
     if(cmdBtn){ publishWaterCommand(cmdBtn.getAttribute("data-water-id"), cmdBtn.getAttribute("data-water-cmd")); return; }
     var refreshBtn = e.target.closest && e.target.closest("[data-water-refresh]");
