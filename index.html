@@ -395,7 +395,7 @@ input, select{font-family:inherit; color:var(--text);}
   width:16px; height:1px;
   background:linear-gradient(90deg, rgba(140,180,220,0.34), transparent);
   transform-origin:left center;
-  transform:rotate(var(--orb-angle,0deg)) translateX(17px);
+  transform:rotate(var(--orb-angle-in,0deg)) translateX(17px);
   opacity:.55;
   pointer-events:none;
 }
@@ -1444,14 +1444,14 @@ input, select{font-family:inherit; color:var(--text);}
       node.style.left = x + "px";
       node.style.top = y + "px";
 
-      // Bolinha da lâmpada em órbita: fica fora do círculo do ambiente,
-      // alinhada na mesma reta do centro do mapa, como sistema solar.
+      // Bolinha da lâmpada em órbita: fica do lado de dentro,
+      // na linha entre o ambiente e o centro do mapa, como sistema solar.
       var orbDistance = 31;
-      var orbX = Math.cos(angle) * orbDistance;
-      var orbY = Math.sin(angle) * orbDistance;
+      var orbX = -Math.cos(angle) * orbDistance;
+      var orbY = -Math.sin(angle) * orbDistance;
       node.style.setProperty("--orb-x", orbX.toFixed(2) + "px");
       node.style.setProperty("--orb-y", orbY.toFixed(2) + "px");
-      node.style.setProperty("--orb-angle", (angle * 180 / Math.PI).toFixed(2) + "deg");
+      node.style.setProperty("--orb-angle-in", ((angle * 180 / Math.PI) + 180).toFixed(2) + "deg");
 
       var lightOn = !!(env.lighting && env.lighting.on);
       node.title = env.name + " — " + (env.status === "alert" ? "ALERTA" : (env.status === "online" ? "Online" : "Offline")) + " — Luz " + (lightOn ? "acesa" : "apagada");
