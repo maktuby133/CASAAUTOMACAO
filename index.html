@@ -1101,19 +1101,8 @@ input, select{font-family:inherit; color:var(--text);}
 
   var state = {
     loggedIn:false,
-    environments:[
-      {id:"e1", name:"Sala", icon:"🛋️", mac:macFromSeed(1), status:"online", lighting:{on:true}, outlet:{on:true}, temp:24.5, humidity:52, smoke:0, lastSeen:minutesAgo(2), firmware:"v1.4.2"},
-      {id:"e2", name:"Cozinha", icon:"🍳", mac:macFromSeed(2), status:"online", lighting:{on:false}, outlet:{on:true}, temp:26.1, humidity:48, smoke:0, lastSeen:minutesAgo(1), firmware:"v1.4.2"},
-      {id:"e3", name:"Quarto", icon:"🛏️", mac:macFromSeed(3), status:"online", lighting:{on:false}, outlet:{on:false}, temp:23.0, humidity:55, smoke:0, lastSeen:minutesAgo(5), firmware:"v1.3.9"},
-      {id:"e4", name:"Jardim", icon:"🌿", mac:macFromSeed(4), status:"online", lighting:{on:true}, outlet:{on:false}, temp:27.8, humidity:61, smoke:0, lastSeen:minutesAgo(3), firmware:"v1.4.2"},
-      {id:"e5", name:"Garagem", icon:"🚗", mac:macFromSeed(5), status:"offline", lighting:{on:false}, outlet:{on:false}, temp:22.4, humidity:50, smoke:0, lastSeen:minutesAgo(140), firmware:"v1.2.1"},
-      {id:"e6", name:"Piscina", icon:"🏊", mac:macFromSeed(6), status:"alert", lighting:{on:false}, outlet:{on:true}, temp:29.2, humidity:67, smoke:38, lastSeen:minutesAgo(0), firmware:"v1.4.0"}
-    ],
-    alerts:[
-      {id:"a1", type:"alert", icon:"🔥", message:"Sensor de fumaça detectou nível elevado em Piscina (área técnica).", time:minutesAgo(0)},
-      {id:"a2", type:"info", icon:"📡", message:"Dispositivo Garagem está offline há mais de 2 horas.", time:minutesAgo(140)},
-      {id:"a3", type:"info", icon:"💧", message:"Irrigação automática bloqueada — previsão de chuva detectada.", time:minutesAgo(310)}
-    ],
+    environments:[],
+    alerts:[],
     weather:{
       tempOut:24,
       condition:"Parcialmente nublado",
@@ -1294,18 +1283,19 @@ input, select{font-family:inherit; color:var(--text);}
      ============================================================ */
   function renderStats(){
     var envs = state.environments;
+    var hasEnvs = envs.length > 0;
     var online = envs.filter(function(e){ return e.status === "online" || e.status === "alert"; }).length;
     var offline = envs.length - online;
-    var avgTemp = (envs.reduce(function(a,e){return a+e.temp;},0) / envs.length).toFixed(1);
-    var avgHum = Math.round(envs.reduce(function(a,e){return a+e.humidity;},0) / envs.length);
+    var avgTemp = hasEnvs ? (envs.reduce(function(a,e){return a+e.temp;},0) / envs.length).toFixed(1) : "--";
+    var avgHum = hasEnvs ? Math.round(envs.reduce(function(a,e){return a+e.humidity;},0) / envs.length) : "--";
     var activeAlerts = envs.filter(function(e){return e.status === "alert";}).length;
     var energyToday = state.energy.daily[state.energy.daily.length-1];
     var waterToday = state.water.daily[state.water.daily.length-1];
 
     var cards = [
-      {cls:"glow-cyan", ic:"📡", val:online+"/"+envs.length, lbl:"Dispositivos online", sub:offline+" offline"},
-      {cls:"glow-violet", ic:"🌡️", val:avgTemp+"°C", lbl:"Temperatura geral", sub:"Média de "+envs.length+" ambientes"},
-      {cls:"glow-cyan", ic:"💧", val:avgHum+"%", lbl:"Umidade média", sub:"Sensores de ambiente"},
+      {cls:"glow-cyan", ic:"📡", val:online+"/"+envs.length, lbl:"Dispositivos online", sub: hasEnvs ? offline+" offline" : "Nenhum ambiente cadastrado"},
+      {cls:"glow-violet", ic:"🌡️", val:avgTemp+(hasEnvs?"°C":""), lbl:"Temperatura geral", sub: hasEnvs ? "Média de "+envs.length+" ambientes" : "Sem dados"},
+      {cls:"glow-cyan", ic:"💧", val:avgHum+(hasEnvs?"%":""), lbl:"Umidade média", sub: hasEnvs ? "Sensores de ambiente" : "Sem dados"},
       {cls: activeAlerts>0 ? "glow-red" : "glow-green", ic:"🚨", val:activeAlerts, lbl:"Alertas ativos", sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"},
       {cls:"glow-amber", ic:"⚡", val:energyToday+" kWh", lbl:"Consumo de energia (hoje)", sub:"Tomadas + iluminação"},
       {cls:"glow-cyan", ic:"🚿", val:waterToday+" L", lbl:"Consumo de água (hoje)", sub:"Caixa d'água + irrigação"}
@@ -1365,6 +1355,31 @@ input, select{font-family:inherit; color:var(--text);}
 
     var onlineCount = envs.filter(function(e){return e.status !== "offline";}).length;
     document.getElementById("coreOnlineCount").textContent = onlineCount + "/" + envs.length;
+
+    var captionSpan = document.querySelector("#coreStage").parentElement.querySelector(".core-caption span");
+    if(captionSpan){
+      captionSpan.textContent = n === 0 ? "Nenhum ambiente cadastrado ainda" : "Mapa em tempo real dos ambientes cadastrados";
+    }
+  }
+
+  /* ============================================================
+     RENDER: LIGADO AGORA (luzes/tomadas ativas)
+     ============================================================ */
+  function renderQuickStatus(){
+    var lightsList = document.getElementById("qsLights");
+    var outletsList = document.getElementById("qsOutlets");
+    if(!lightsList || !outletsList) return;
+
+    var lights = state.environments.filter(function(e){ return e.lighting && e.lighting.on; });
+    var outlets = state.environments.filter(function(e){ return e.outlet && e.outlet.on; });
+
+    lightsList.innerHTML = lights.length ? lights.map(function(e){
+      return '<div class="qs-item"><span class="qsic">'+e.icon+'</span>'+e.name+'<span class="qs-dot"></span></div>';
+    }).join("") : '<div class="qs-empty">Nenhuma luz ligada</div>';
+
+    outletsList.innerHTML = outlets.length ? outlets.map(function(e){
+      return '<div class="qs-item"><span class="qsic">'+e.icon+'</span>'+e.name+'<span class="qs-dot"></span></div>';
+    }).join("") : '<div class="qs-empty">Nenhuma tomada ligada</div>';
   }
 
   /* ============================================================
@@ -1401,6 +1416,17 @@ input, select{font-family:inherit; color:var(--text);}
     var grid = document.getElementById("envGrid");
     grid.innerHTML = "";
 
+    if(state.environments.length === 0){
+      var empty = document.createElement("div");
+      empty.className = "glass";
+      empty.style.cssText = "grid-column:1/-1; padding:40px 24px; text-align:center; color:var(--text-dim);";
+      empty.innerHTML =
+        '<div style="font-size:34px; margin-bottom:10px;">📭</div>'+
+        '<div style="font-family:var(--font-head); font-size:14px; color:var(--text); margin-bottom:4px;">Nenhum ambiente cadastrado</div>'+
+        '<div style="font-size:12.5px;">Clique em "Adicionar Ambiente" abaixo para vincular o primeiro ESP32.</div>';
+      grid.appendChild(empty);
+    }
+
     state.environments.forEach(function(env){
       var card = document.createElement("div");
       card.className = "glass env-card" + (env.status === "alert" ? " is-alert" : "");
@@ -1421,7 +1447,7 @@ input, select{font-family:inherit; color:var(--text);}
             '<div class="toggle '+(env.lighting.on?"on":"")+'" data-toggle-light="'+env.id+'"></div>'+
           '</div>'+
           '<div class="ctrl"><div class="cic">🌡️</div><div class="cval">'+env.temp.toFixed(1)+'°C</div></div>'+
-          '<div class="ctrl"><div class="cic">💧</div><div class="cval">'+env.humidity+'%</div></div>'+
+          '<div class="ctrl"><div class="cic">💧</div><div class="cval">'+Math.round(env.humidity)+'%</div></div>'+
           '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+env.smoke+' ppm</div></div>'+
         '</div>'+
         '<div class="env-foot">'+
@@ -1559,7 +1585,7 @@ input, select{font-family:inherit; color:var(--text);}
         env.status = "alert";
       } else {
         if(typeof data.temperature === "number") env.temp = data.temperature;
-        if(typeof data.humidity === "number") env.humidity = data.humidity;
+        if(typeof data.humidity === "number") env.humidity = Math.round(data.humidity * 10) / 10;
         if(typeof data.light === "boolean") env.lighting.on = data.light;
         env.status = "online";
       }
@@ -1625,6 +1651,10 @@ input, select{font-family:inherit; color:var(--text);}
   function renderDevices(){
     var body = document.getElementById("deviceTableBody");
     body.innerHTML = "";
+    if(state.environments.length === 0){
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-faint); font-style:italic;">Nenhum dispositivo cadastrado ainda.</td></tr>';
+      return;
+    }
     state.environments.forEach(function(env){
       var tr = document.createElement("tr");
       var devName = "ESP32-"+env.name.toUpperCase().replace(/\s+/g,"");
@@ -1741,7 +1771,7 @@ input, select{font-family:inherit; color:var(--text);}
       status: "online",
       lighting:{on:false},
       temp:23 + Math.random()*4,
-      humidity:45 + Math.random()*15,
+      humidity:Math.round(45 + Math.random()*15),
       smoke:0,
       lastSeen:new Date(),
       firmware: isRealDevice ? "—" : "v1.0.0"
@@ -1995,6 +2025,7 @@ input, select{font-family:inherit; color:var(--text);}
     renderWeather();
     renderStats();
     renderCore();
+    renderQuickStatus();
     renderFeed();
     renderEnvironments();
     renderDevices();
