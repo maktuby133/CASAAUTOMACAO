@@ -304,6 +304,10 @@ input, select{font-family:inherit; color:var(--text);}
 .view-head h2{font-family:var(--font-display); font-size:19px; letter-spacing:1.5px;}
 .view-head p{color:var(--text-dim); font-size:13px; margin-top:5px;}
 
+.view-head-compact{margin-bottom:10px;}
+.view-head-compact h2{font-size:15px; letter-spacing:1px;}
+.view-head-compact p{font-size:11px; margin-top:2px;}
+
 /* Irrigation banner */
 .irrigation-banner{
   display:flex; align-items:center; gap:14px;
@@ -314,6 +318,10 @@ input, select{font-family:inherit; color:var(--text);}
 .irrigation-banner.authorized{background:var(--green-dim); border:1px solid rgba(57,230,164,0.35); color:var(--green);}
 .irrigation-banner .ic{font-size:20px;}
 .irrigation-banner small{display:block; font-family:var(--font-mono); font-weight:400; color:var(--text-dim); font-size:11px; margin-top:2px;}
+
+.irrigation-banner-compact{padding:10px 16px; margin-bottom:14px; font-size:12px;}
+.irrigation-banner-compact .ic{font-size:16px;}
+.irrigation-banner-compact small{font-size:10px; margin-top:1px;}
 
 /* Stat cards grid */
 .stat-grid{
@@ -758,14 +766,14 @@ input, select{font-family:inherit; color:var(--text);}
 
       <!-- ===================== DASHBOARD ===================== -->
       <section class="view active" id="view-dashboard">
-        <div class="view-head">
+        <div class="view-head view-head-compact">
           <div>
             <h2>VISÃO GERAL DA RESIDÊNCIA</h2>
             <p>Status consolidado de todos os ambientes e dispositivos conectados</p>
           </div>
         </div>
 
-        <div id="irrigationBanner" class="irrigation-banner authorized">
+        <div id="irrigationBanner" class="irrigation-banner irrigation-banner-compact authorized">
           <span class="ic">💧</span>
           <div>
             <div id="irrigationText">IRRIGAÇÃO AUTORIZADA</div>
@@ -1267,11 +1275,11 @@ input, select{font-family:inherit; color:var(--text);}
     var text = document.getElementById("irrigationText");
     var sub = document.getElementById("irrigationSub");
     if(w.rainPredicted){
-      banner.className = "irrigation-banner blocked";
+      banner.className = "irrigation-banner irrigation-banner-compact blocked";
       text.textContent = "IRRIGAÇÃO BLOQUEADA - CHUVA PREVISTA";
       sub.textContent = "Probabilidade de chuva: "+w.rainChance+"% — sistema aguardará condições melhores";
     } else {
-      banner.className = "irrigation-banner authorized";
+      banner.className = "irrigation-banner irrigation-banner-compact authorized";
       text.textContent = "IRRIGAÇÃO AUTORIZADA";
       sub.textContent = "Sem previsão de chuva nas próximas horas";
     }
