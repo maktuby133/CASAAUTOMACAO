@@ -991,13 +991,13 @@ input, select{font-family:inherit; color:var(--text);}
         <div class="icon-picker" id="iconPicker"></div>
       </div>
 
-      <div class="field"><label>Endereço MAC do ESP32 (opcional)</label><input type="text" id="newEnvMac" placeholder="A4:C1:38:92:AB:55" maxlength="17"></div>
+      <div class="field"><label>ID do ESP32 ou MAC completo (opcional)</label><input type="text" id="newEnvMac" placeholder="Ex.: 92AB55 ou A4:C1:38:92:AB:55" maxlength="17"></div>
       <div class="mac-preview">
         <span>ID do dispositivo:</span>
         <span class="id" id="macPreviewId">------</span>
       </div>
       <div class="field"><label>Senha de acesso do dispositivo</label><input type="password" id="newEnvPass" placeholder="Definida no modo AP do ESP32"></div>
-      <div class="hint">Informe o MAC do ESP32 e a senha definida na configuração dele (modo AP) para vincular um dispositivo real — o painel autentica direto com o aparelho via MQTT. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
+      <div class="hint">Informe o ID de 6 caracteres mostrado no portal do ESP32 ou o MAC completo, junto com a senha definida no modo AP, para vincular um dispositivo real — o painel autentica direto com o aparelho via MQTT. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="addEnvOverlay">Cancelar</button>
@@ -1077,8 +1077,28 @@ input, select{font-family:inherit; color:var(--text);}
     return out.join(":");
   }
 
+  function onlyHex(value){
+    return String(value || "").replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+  }
+
   function idFromMac(mac){
-    return mac.replace(/:/g,"").slice(-6).toUpperCase();
+    return onlyHex(mac).slice(-6).toUpperCase();
+  }
+
+  function macFromDeviceId(devId){
+    var id = onlyHex(devId).slice(-6).padStart(6, "0");
+    return "00:00:00:" + id.match(/.{1,2}/g).join(":");
+  }
+
+  function normalizeDeviceInput(value){
+    var hex = onlyHex(value);
+    if(hex.length === 0) return { isReal:false, id:"", mac:"" };
+    if(hex.length === 6) return { isReal:true, id:hex, mac:macFromDeviceId(hex) };
+    if(hex.length >= 12){
+      var macHex = hex.slice(-12);
+      return { isReal:true, id:macHex.slice(-6), mac:macHex.match(/.{1,2}/g).join(":") };
+    }
+    return { isReal:false, id:hex, mac:"" };
   }
 
   function minutesAgo(m){
@@ -1647,14 +1667,16 @@ input, select{font-family:inherit; color:var(--text);}
       if(!mqttClient || !mqttConnected){ reject(new Error("broker_offline")); return; }
       var token = Date.now().toString(16) + Math.random().toString(16).slice(2);
       var respTopic = "sensors/" + devId + "/auth/response";
-      mqttClient.subscribe(respTopic, {qos:1});
-      var timer = setTimeout(function(){
-        delete pendingAuthRequests[devId];
-        if(mqttClient) mqttClient.unsubscribe(respTopic);
-        reject(new Error("timeout"));
-      }, 8000);
-      pendingAuthRequests[devId] = { token:token, resolve:resolve, timer:timer };
-      mqttClient.publish("sensors/" + devId + "/auth/request", JSON.stringify({token:token, hash:passHash}), {qos:1});
+      mqttClient.subscribe(respTopic, {qos:1}, function(err){
+        if(err){ reject(err); return; }
+        var timer = setTimeout(function(){
+          delete pendingAuthRequests[devId];
+          if(mqttClient) mqttClient.unsubscribe(respTopic);
+          reject(new Error("timeout"));
+        }, 8000);
+        pendingAuthRequests[devId] = { token:token, resolve:resolve, timer:timer };
+        mqttClient.publish("sensors/" + devId + "/auth/request", JSON.stringify({token:token, hash:passHash}), {qos:1});
+      });
     });
   }
 
@@ -1718,12 +1740,8 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   document.getElementById("newEnvMac").addEventListener("input", function(){
-    var v = this.value.replace(/[^0-9A-Fa-f]/g,"").toUpperCase();
-    if(v.length >= 6){
-      document.getElementById("macPreviewId").textContent = v.slice(-6);
-    } else {
-      document.getElementById("macPreviewId").textContent = "------";
-    }
+    var info = normalizeDeviceInput(this.value);
+    document.getElementById("macPreviewId").textContent = info.id.length === 6 ? info.id : "------";
   });
 
   document.getElementById("addEnvForm").addEventListener("submit", async function(e){
@@ -1732,8 +1750,9 @@ input, select{font-family:inherit; color:var(--text);}
     if(!name) return;
     var macInput = document.getElementById("newEnvMac").value.trim();
     var passInput = document.getElementById("newEnvPass").value;
-    var isRealDevice = macInput.length >= 12;
-    var mac = isRealDevice ? macInput.match(/.{1,2}/g).join(":").toUpperCase() : macFromSeed(Date.now() % 100000);
+    var devInfo = normalizeDeviceInput(macInput);
+    var isRealDevice = devInfo.isReal;
+    var mac = isRealDevice ? devInfo.mac : macFromSeed(Date.now() % 100000);
 
     var submitBtn = document.querySelector("#addEnvForm button[type=submit]");
 
@@ -1746,7 +1765,11 @@ input, select{font-family:inherit; color:var(--text);}
         toast("Conecte o broker em Configurações antes de adicionar um dispositivo real", "error");
         return;
       }
-      var devId = idFromMac(mac).toLowerCase();
+      var devId = devInfo.id.toLowerCase();
+      if(devInfo.id.length !== 6){
+        toast("Informe o ID de 6 caracteres do ESP32 ou o MAC completo", "error");
+        return;
+      }
       if(findEnvByDeviceId(devId)){
         toast("Esse dispositivo já está cadastrado em outro ambiente", "error");
         return;
