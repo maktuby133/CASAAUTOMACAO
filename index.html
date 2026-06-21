@@ -2477,16 +2477,25 @@ function confirmSaveTank() {
   closeTankModal();
 }
 
+function _destroyTankClient(id) {
+  if (tankClients[id]) {
+    try { tankClients[id].end(true); } catch(e) {}
+    delete tankClients[id];
+  }
+}
+
 function deleteTankFromModal() {
   const id = document.getElementById('tank-edit-id')?.value;
   if (!id) return;
   const t = waterTanks.find(x => x.id === id);
   if (!t) return;
   if (!confirm(`Remover caixa "${t.name}"?`)) return;
+  _destroyTankClient(id);
   waterTanks = waterTanks.filter(x => x.id !== id);
   saveTanks();
   publishPersist();
   renderTanks();
+  hideAlert();
   closeTankModal();
   log(`Caixa "${t.name}" removida`, 'sys');
 }
@@ -2494,10 +2503,12 @@ function deleteTankFromModal() {
 function removeTank(id) {
   const t = waterTanks.find(x => x.id === id);
   if (!t || !confirm(`Remover "${t.name}"?`)) return;
+  _destroyTankClient(id);
   waterTanks = waterTanks.filter(x => x.id !== id);
   saveTanks();
   publishPersist();
   renderTanks();
+  hideAlert();
   log(`Caixa "${t.name}" removida`, 'sys');
 }
 
