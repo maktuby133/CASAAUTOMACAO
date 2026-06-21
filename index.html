@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v12</title>
+<title>SMART HOME AI CONTROL - v22</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -1400,9 +1400,7 @@ input, select{font-family:inherit; color:var(--text);}
       snr:null,
       lastSeen:null
     },
-    waterReservoirs:[
-      {uid:"water-caixa01", name:"Caixa principal", id:"caixa01", pass:"", topic:"casa/caixa01/dados", level:null, liters:null, distance:null, sensorOK:null, pumpOn:null, autoMode:null, levelOn:20, levelOff:80, rssi:null, snr:null, lastSeen:null}
-    ],
+    waterReservoirs:[],
     waterHistory:[],
     energy:{daily:[3.2,4.1,3.8,5.0,4.4,3.6,4.8], unit:"kWh"},
     water:{daily:[210,180,260,300,190,220,250], unit:"L"}
@@ -1439,6 +1437,7 @@ input, select{font-family:inherit; color:var(--text);}
       document.getElementById("loginScreen").classList.add("hidden");
       document.getElementById("app").classList.remove("hidden");
       restoreEnvironments();
+      loadWaterState();
       renderAll();
       if(restoreBrokerConfig()) connectMqtt();
     }, 320);
@@ -2025,6 +2024,10 @@ input, select{font-family:inherit; color:var(--text);}
       }
     });
     console.log("[MQTT] Assinaturas de água ativadas: casa/caixa01/dados, casa/# e # para diagnóstico.");
+  }
+
+  function setupMqttSubscriptions(){
+    if(mqttClient && mqttClient.connected()) subscribeWaterTopics();
   }
 
   function requestWaterUpdate(id){
@@ -2671,21 +2674,42 @@ input, select{font-family:inherit; color:var(--text);}
 
   function saveWaterState(){
     try{
-      localStorage.setItem("smartHomeWaterReservoirs", JSON.stringify(state.waterReservoirs || []));
+      var cleanWater = (state.waterReservoirs || []).filter(function(r){ return r && r.id && (r.createdByUser || r.type === "water" || normalizeWaterId(r.id) === "caixa01"); });
+      localStorage.setItem("smartHomeWaterReservoirs", JSON.stringify(cleanWater));
       localStorage.setItem("smartHomeWaterHistory", JSON.stringify((state.waterHistory || []).slice(0,60)));
     }catch(e){}
   }
 
   function loadWaterState(){
     try{
-      var saved = JSON.parse(localStorage.getItem("smartHomeWaterReservoirs") || "null");
-      if(Array.isArray(saved) && saved.length) state.waterReservoirs = saved;
+      var saved = JSON.parse(localStorage.getItem("smartHomeWaterReservoirs") || "[]");
+      if(Array.isArray(saved)){
+        // Limpa cadastros errados criados por versões anteriores,
+        // quando a aba Água puxava ID de ambiente ESP32, ex.: e524d0.
+        state.waterReservoirs = saved.filter(function(r){
+          if(!r) return false;
+          var id = normalizeWaterId(r.id);
+          var topic = String(r.topic || "").toLowerCase();
+          if(!id) return false;
+          if(/^e?[0-9a-f]{6}$/i.test(id) && topic.indexOf("casa/caixa") !== 0 && id !== "caixa01") return false;
+          return true;
+        }).map(function(r){
+          var id = normalizeWaterId(r.id || "caixa01");
+          r.id = id;
+          r.uid = r.uid || ("water-" + id);
+          r.topic = waterTopicFor(id,"dados");
+          if(r.lastSeen) r.lastSeen = new Date(r.lastSeen);
+          return r;
+        });
+      }
       var hist = JSON.parse(localStorage.getItem("smartHomeWaterHistory") || "[]");
       if(Array.isArray(hist)) state.waterHistory = hist;
-    }catch(e){}
-    if(!state.waterReservoirs || !state.waterReservoirs.length){
-      state.waterReservoirs = [{uid:"water-caixa01", name:"Caixa principal", id:"caixa01", pass:"", topic:"casa/caixa01/dados", level:null, liters:null, distance:null, sensorOK:null, pumpOn:null, autoMode:null, levelOn:20, levelOff:80, rssi:null, snr:null, lastSeen:null}];
+    }catch(e){
+      state.waterReservoirs = [];
+      state.waterHistory = [];
     }
+    // Importante: não cria caixa automaticamente. Só aparece depois que o usuário salvar.
+    if(!Array.isArray(state.waterReservoirs)) state.waterReservoirs = [];
   }
 
 
@@ -2804,14 +2828,20 @@ input, select{font-family:inherit; color:var(--text);}
 
   function openAddWaterModal(){
     var ov = document.getElementById("addWaterOverlay");
+    var nameEl = document.getElementById("newWaterName");
+    var idEl = document.getElementById("newWaterId");
+    var passEl = document.getElementById("newWaterPass");
+    var topicEl = document.getElementById("newWaterTopic");
+    if(nameEl) nameEl.value = "";
+    if(idEl) idEl.value = "caixa01";
+    if(passEl) passEl.value = "";
+    if(topicEl) topicEl.value = "casa/caixa01/dados";
     if(ov){
       ov.classList.remove("hidden");
       ov.style.display = "flex";
+      ov.removeAttribute("aria-hidden");
     }
-    var topicEl = document.getElementById("newWaterTopic");
-    var idEl = document.getElementById("newWaterId");
-    if(topicEl) topicEl.value = waterTopicFor(idEl && idEl.value ? idEl.value : "caixa01", "dados");
-    setTimeout(function(){ var nameEl=document.getElementById("newWaterName"); if(nameEl) nameEl.focus(); }, 50);
+    setTimeout(function(){ if(nameEl) nameEl.focus(); }, 50);
   }
 
   function closeAddWaterModal(){
@@ -2844,6 +2874,8 @@ input, select{font-family:inherit; color:var(--text);}
     r.id = id;
     r.pass = passEl ? passEl.value : "";
     r.topic = waterTopicFor(id,"dados");
+    r.type = "water";
+    r.createdByUser = true;
     if(!hasNumber(r.levelOn)) r.levelOn = 20;
     if(!hasNumber(r.levelOff)) r.levelOff = 80;
 
