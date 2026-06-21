@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL</title>
+<title>SMART HOME AI CONTROL - v11</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -347,6 +347,15 @@ input, select{font-family:inherit; color:var(--text);}
 .stat-card.glow-amber .sic{background:var(--amber-dim); color:var(--amber); box-shadow:0 0 18px rgba(255,180,67,0.15);}
 .stat-card.glow-red .sic{background:var(--red-dim); color:var(--red); box-shadow:0 0 18px rgba(255,77,106,0.15);}
 .stat-card.glow-green .sic{background:var(--green-dim); color:var(--green); box-shadow:0 0 18px rgba(57,230,164,0.15);}
+
+.dashboard-insights-head{margin-top:12px; margin-bottom:12px;}
+.dashboard-insights-grid{margin-bottom:24px;}
+.dashboard-insights-grid .stat-card{min-height:138px;}
+.dashboard-insights-grid .stat-card .sic{font-size:20px;}
+.dashboard-insights-grid .stat-card .val{font-size:22px;}
+.dashboard-insights-grid .stat-card.stat-wide{grid-column:span 2;}
+@media(max-width:760px){.dashboard-insights-grid .stat-card.stat-wide{grid-column:1 / -1;}}
+
 
 /* ============================================================
    SIGNATURE: REACTOR CORE
@@ -828,6 +837,14 @@ input, select{font-family:inherit; color:var(--text);}
           </div>
         </div>
 
+        <div class="view-head view-head-compact dashboard-insights-head">
+          <div>
+            <h2>RESUMO INTELIGENTE</h2>
+            <p>Temperatura, umidade, água, energia e análise da casa sem dados simulados</p>
+          </div>
+        </div>
+        <div class="stat-grid dashboard-insights-grid" id="statGrid"></div>
+
         <div class="core-section">
           <div class="core-panel glass">
             <div class="core-stage" id="coreStage">
@@ -866,7 +883,6 @@ input, select{font-family:inherit; color:var(--text);}
           </div>
         </div>
 
-        <div class="stat-grid" id="statGrid"></div>
       </section>
 
       <!-- ===================== AMBIENTES ===================== -->
