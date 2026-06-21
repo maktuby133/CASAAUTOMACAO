@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v11</title>
+<title>SMART HOME AI CONTROL - v12</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -355,6 +355,28 @@ input, select{font-family:inherit; color:var(--text);}
 .dashboard-insights-grid .stat-card .val{font-size:22px;}
 .dashboard-insights-grid .stat-card.stat-wide{grid-column:span 2;}
 @media(max-width:760px){.dashboard-insights-grid .stat-card.stat-wide{grid-column:1 / -1;}}
+
+.core-section-smart{grid-template-columns:340px minmax(260px,1fr) minmax(260px,1fr); align-items:stretch;}
+.smart-panel{display:flex; flex-direction:column; min-height:100%;}
+.smart-side-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; flex:1;}
+.smart-side-grid-b{grid-template-columns:1fr;}
+.smart-mini-card{padding:14px 15px; border-radius:13px; background:rgba(255,255,255,0.026); border:1px solid var(--line-soft); position:relative; overflow:hidden; min-height:112px;}
+.smart-mini-card .sic{width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px;}
+.smart-mini-card .val{font-family:var(--font-display); font-size:20px; letter-spacing:.4px;}
+.smart-mini-card .lbl{font-size:11.5px; color:var(--text-dim); margin-top:4px;}
+.smart-mini-card .sub{font-family:var(--font-mono); font-size:10px; color:var(--text-faint); margin-top:7px; line-height:1.35;}
+.smart-mini-card.stat-wide{grid-column:1 / -1; min-height:150px;}
+.smart-mini-card .ai-lines{margin-top:10px; display:flex; flex-direction:column; gap:5px;}
+.smart-mini-card .ai-lines div{font-size:12px; color:var(--text-dim); line-height:1.35;}
+.smart-mini-card.glow-cyan .sic{background:var(--cyan-dim); color:var(--cyan); box-shadow:0 0 18px rgba(45,212,255,0.15);}
+.smart-mini-card.glow-violet .sic{background:var(--violet-dim); color:var(--violet); box-shadow:0 0 18px rgba(124,92,255,0.15);}
+.smart-mini-card.glow-amber .sic{background:var(--amber-dim); color:var(--amber); box-shadow:0 0 18px rgba(255,180,67,0.15);}
+.smart-mini-card.glow-red .sic{background:var(--red-dim); color:var(--red); box-shadow:0 0 18px rgba(255,77,106,0.15);}
+.smart-mini-card.glow-green .sic{background:var(--green-dim); color:var(--green); box-shadow:0 0 18px rgba(57,230,164,0.15);}
+@media (max-width:1240px){.core-section-smart{grid-template-columns:340px 1fr;} .core-section-smart .smart-panel:last-child{grid-column:1 / -1;}}
+@media (max-width:980px){.core-section-smart{grid-template-columns:1fr;} .core-section-smart .smart-panel:last-child{grid-column:auto;}}
+@media (max-width:560px){.smart-side-grid{grid-template-columns:1fr 1fr; gap:10px;} .smart-mini-card{padding:12px; min-height:104px;} .smart-mini-card.stat-wide{min-height:auto;}}
+
 
 
 /* ============================================================
@@ -837,15 +859,8 @@ input, select{font-family:inherit; color:var(--text);}
           </div>
         </div>
 
-        <div class="view-head view-head-compact dashboard-insights-head">
-          <div>
-            <h2>RESUMO INTELIGENTE</h2>
-            <p>Temperatura, umidade, água, energia e análise da casa sem dados simulados</p>
-          </div>
-        </div>
-        <div class="stat-grid dashboard-insights-grid" id="statGrid"></div>
+        <div class="core-section core-section-smart">
 
-        <div class="core-section">
           <div class="core-panel glass">
             <div class="core-stage" id="coreStage">
               <div class="core-ring r1"></div>
@@ -863,23 +878,14 @@ input, select{font-family:inherit; color:var(--text);}
             </div>
           </div>
 
-          <div class="feed-panel glass">
-            <h3>⚡ Ligado agora</h3>
-            <div class="quick-status-grid">
-              <div class="qs-col">
-                <div class="qs-col-head"><span class="ic">💡</span> Iluminação ligada</div>
-                <div class="qs-list" id="qsLights"></div>
-              </div>
-              <div class="qs-col">
-                <div class="qs-col-head"><span class="ic">🔌</span> Tomadas ligadas</div>
-                <div class="qs-list" id="qsOutlets"></div>
-              </div>
-            </div>
+          <div class="feed-panel glass smart-panel">
+            <h3>🧠 Resumo inteligente</h3>
+            <div class="smart-side-grid" id="smartSideGridA"></div>
           </div>
 
-          <div class="feed-panel glass">
-            <h3>📡 Atividade recente</h3>
-            <div class="feed-list" id="feedList"></div>
+          <div class="feed-panel glass smart-panel">
+            <h3>🤖 AI HOUSE</h3>
+            <div class="smart-side-grid smart-side-grid-b" id="smartSideGridB"></div>
           </div>
         </div>
 
@@ -1472,7 +1478,7 @@ input, select{font-family:inherit; color:var(--text);}
 
     var aiLines = buildAiHouse(envs, activeAlerts, hottest, avgHum);
 
-    var cards = [
+    var cardsA = [
       {
         cls: hottest && hottest.temp >= 32 ? "glow-red" : "glow-violet",
         ic:"🌡️",
@@ -1500,7 +1506,10 @@ input, select{font-family:inherit; color:var(--text);}
         val:"—",
         lbl:"Caixa d'água",
         sub:"Aguardando módulo de nível"
-      },
+      }
+    ];
+
+    var cardsB = [
       {
         cls:"glow-amber",
         ic:"⚡",
@@ -1518,22 +1527,28 @@ input, select{font-family:inherit; color:var(--text);}
       }
     ];
 
-    var grid = document.getElementById("statGrid");
-    grid.innerHTML = "";
-    cards.forEach(function(c){
-      var el = document.createElement("div");
-      el.className = "stat-card glass "+c.cls;
-      var extra = "";
-      if(c.ai && c.ai.length){
-        extra = '<div class="ai-lines">' + c.ai.map(function(line){ return '<div>'+escapeHtml(line)+'</div>'; }).join('') + '</div>';
-      }
-      el.innerHTML =
-        '<div class="sic">'+c.ic+'</div>'+ 
-        '<div class="val">'+c.val+'</div>'+ 
-        '<div class="lbl">'+c.lbl+'</div>'+ 
-        '<div class="sub">'+c.sub+'</div>'+ extra;
-      grid.appendChild(el);
-    });
+    function fillSmartGrid(gridId, cards){
+      var grid = document.getElementById(gridId);
+      if(!grid) return;
+      grid.innerHTML = "";
+      cards.forEach(function(c){
+        var el = document.createElement("div");
+        el.className = "smart-mini-card "+c.cls;
+        var extra = "";
+        if(c.ai && c.ai.length){
+          extra = '<div class="ai-lines">' + c.ai.map(function(line){ return '<div>'+escapeHtml(line)+'</div>'; }).join('') + '</div>';
+        }
+        el.innerHTML =
+          '<div class="sic">'+c.ic+'</div>'+
+          '<div class="val">'+c.val+'</div>'+
+          '<div class="lbl">'+c.lbl+'</div>'+
+          '<div class="sub">'+c.sub+'</div>'+ extra;
+        grid.appendChild(el);
+      });
+    }
+
+    fillSmartGrid("smartSideGridA", cardsA);
+    fillSmartGrid("smartSideGridB", cardsB);
 
     var navCount = document.getElementById("navAlertCount");
     var bnDot = document.getElementById("bnAlertDot");
