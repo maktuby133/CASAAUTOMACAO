@@ -338,8 +338,9 @@ input, select{font-family:inherit; color:var(--text);}
    SIGNATURE: REACTOR CORE
    ============================================================ */
 .core-section{
-  display:grid; grid-template-columns:340px 1fr; gap:24px; margin-bottom:26px;
+  display:grid; grid-template-columns:340px 300px 1fr; gap:24px; margin-bottom:26px;
 }
+@media (max-width:1240px){.core-section{grid-template-columns:340px 1fr; }}
 @media (max-width:980px){.core-section{grid-template-columns:1fr;}}
 .core-panel{
   padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -386,6 +387,24 @@ input, select{font-family:inherit; color:var(--text);}
 /* events / alerts feed panel beside core */
 .feed-panel{padding:20px 22px;}
 .feed-panel h3{font-family:var(--font-head); font-size:14px; letter-spacing:0.6px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+
+.quick-status-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;}
+.qs-col-head{
+  display:flex; align-items:center; gap:7px;
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-faint);
+  margin-bottom:10px;
+}
+.qs-list{display:flex; flex-direction:column; gap:7px; min-height:34px;}
+.qs-item{
+  display:flex; align-items:center; gap:8px;
+  padding:7px 10px; border-radius:9px;
+  background:rgba(45,212,255,0.06); border:1px solid rgba(45,212,255,0.22);
+  font-size:12.5px; font-family:var(--font-head); font-weight:600;
+}
+.qs-item .qsic{font-size:13px;}
+.qs-item .qs-dot{width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); margin-left:auto; flex-shrink:0;}
+.qs-empty{font-size:12px; color:var(--text-faint); padding:7px 10px; font-style:italic;}
+.qs-divider{height:1px; background:var(--line-soft); margin-bottom:18px;}
 .feed-list{display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;}
 .feed-item{
   display:flex; gap:12px; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.025);
@@ -754,8 +773,6 @@ input, select{font-family:inherit; color:var(--text);}
           </div>
         </div>
 
-        <div class="stat-grid" id="statGrid"></div>
-
         <div class="core-section">
           <div class="core-panel glass">
             <div class="core-stage" id="coreStage">
@@ -775,10 +792,26 @@ input, select{font-family:inherit; color:var(--text);}
           </div>
 
           <div class="feed-panel glass">
+            <h3>⚡ Ligado agora</h3>
+            <div class="quick-status-grid">
+              <div class="qs-col">
+                <div class="qs-col-head"><span class="ic">💡</span> Iluminação ligada</div>
+                <div class="qs-list" id="qsLights"></div>
+              </div>
+              <div class="qs-col">
+                <div class="qs-col-head"><span class="ic">🔌</span> Tomadas ligadas</div>
+                <div class="qs-list" id="qsOutlets"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="feed-panel glass">
             <h3>📡 Atividade recente</h3>
             <div class="feed-list" id="feedList"></div>
           </div>
         </div>
+
+        <div class="stat-grid" id="statGrid"></div>
       </section>
 
       <!-- ===================== AMBIENTES ===================== -->
@@ -1057,12 +1090,12 @@ input, select{font-family:inherit; color:var(--text);}
   var state = {
     loggedIn:false,
     environments:[
-      {id:"e1", name:"Sala", icon:"🛋️", mac:macFromSeed(1), status:"online", lighting:{on:true}, temp:24.5, humidity:52, smoke:0, lastSeen:minutesAgo(2), firmware:"v1.4.2"},
-      {id:"e2", name:"Cozinha", icon:"🍳", mac:macFromSeed(2), status:"online", lighting:{on:false}, temp:26.1, humidity:48, smoke:0, lastSeen:minutesAgo(1), firmware:"v1.4.2"},
-      {id:"e3", name:"Quarto", icon:"🛏️", mac:macFromSeed(3), status:"online", lighting:{on:false}, temp:23.0, humidity:55, smoke:0, lastSeen:minutesAgo(5), firmware:"v1.3.9"},
-      {id:"e4", name:"Jardim", icon:"🌿", mac:macFromSeed(4), status:"online", lighting:{on:true}, temp:27.8, humidity:61, smoke:0, lastSeen:minutesAgo(3), firmware:"v1.4.2"},
-      {id:"e5", name:"Garagem", icon:"🚗", mac:macFromSeed(5), status:"offline", lighting:{on:false}, temp:22.4, humidity:50, smoke:0, lastSeen:minutesAgo(140), firmware:"v1.2.1"},
-      {id:"e6", name:"Piscina", icon:"🏊", mac:macFromSeed(6), status:"alert", lighting:{on:false}, temp:29.2, humidity:67, smoke:38, lastSeen:minutesAgo(0), firmware:"v1.4.0"}
+      {id:"e1", name:"Sala", icon:"🛋️", mac:macFromSeed(1), status:"online", lighting:{on:true}, outlet:{on:true}, temp:24.5, humidity:52, smoke:0, lastSeen:minutesAgo(2), firmware:"v1.4.2"},
+      {id:"e2", name:"Cozinha", icon:"🍳", mac:macFromSeed(2), status:"online", lighting:{on:false}, outlet:{on:true}, temp:26.1, humidity:48, smoke:0, lastSeen:minutesAgo(1), firmware:"v1.4.2"},
+      {id:"e3", name:"Quarto", icon:"🛏️", mac:macFromSeed(3), status:"online", lighting:{on:false}, outlet:{on:false}, temp:23.0, humidity:55, smoke:0, lastSeen:minutesAgo(5), firmware:"v1.3.9"},
+      {id:"e4", name:"Jardim", icon:"🌿", mac:macFromSeed(4), status:"online", lighting:{on:true}, outlet:{on:false}, temp:27.8, humidity:61, smoke:0, lastSeen:minutesAgo(3), firmware:"v1.4.2"},
+      {id:"e5", name:"Garagem", icon:"🚗", mac:macFromSeed(5), status:"offline", lighting:{on:false}, outlet:{on:false}, temp:22.4, humidity:50, smoke:0, lastSeen:minutesAgo(140), firmware:"v1.2.1"},
+      {id:"e6", name:"Piscina", icon:"🏊", mac:macFromSeed(6), status:"alert", lighting:{on:false}, outlet:{on:true}, temp:29.2, humidity:67, smoke:38, lastSeen:minutesAgo(0), firmware:"v1.4.0"}
     ],
     alerts:[
       {id:"a1", type:"alert", icon:"🔥", message:"Sensor de fumaça detectou nível elevado em Piscina (área técnica).", time:minutesAgo(0)},
