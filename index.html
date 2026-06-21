@@ -2,8 +2,20 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>SMART HOME AI CONTROL</title>
+<meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
+
+<!-- PWA: instalável como app no celular -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#060a12">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Smart Home">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -544,13 +556,42 @@ input, select{font-family:inherit; color:var(--text);}
 .toast.info{border-color:rgba(45,212,255,0.4); color:var(--cyan);}
 
 /* ============================================================
-   RESPONSIVE
+   INSTALL BANNER (PWA "Adicionar à tela inicial")
    ============================================================ */
+#installBanner{
+  position:fixed; left:16px; right:16px; bottom:16px; z-index:90;
+  display:flex; align-items:center; gap:14px;
+  padding:14px 16px;
+  animation:floatIn .4s cubic-bezier(.16,1,.3,1) both;
+}
+#installBanner .ib-ic{
+  width:42px; height:42px; border-radius:11px; flex-shrink:0;
+  background:linear-gradient(135deg, var(--cyan-dim), var(--violet-dim));
+  border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+}
+#installBanner .ib-txt{flex:1; min-width:0;}
+#installBanner .ib-txt strong{display:block; font-family:var(--font-head); font-size:13.5px;}
+#installBanner .ib-txt span{display:block; font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+#installBanner .ib-actions{display:flex; gap:8px; flex-shrink:0;}
+#installBanner .ib-close{
+  width:28px; height:28px; border-radius:8px; background:rgba(255,255,255,0.05);
+  display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text-faint); flex-shrink:0;
+}
+
+/* ============================================================
+   BOTTOM TAB BAR (mobile app feel)
+   ============================================================ */
+#bottomNav{display:none;}
+
 @media(max-width:980px){
+  body{ padding-bottom:env(safe-area-inset-bottom); }
+
   #sidebar{
     position:fixed; left:0; top:0; height:100vh; transform:translateX(-100%);
     transition:transform .28s ease; z-index:60; background:var(--void);
     box-shadow:20px 0 50px rgba(0,0,0,0.5);
+    padding-top:max(24px, env(safe-area-inset-top));
   }
   #sidebar.open{transform:translateX(0);}
   #sidebarOverlay.show{display:block; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:55;}
@@ -560,14 +601,56 @@ input, select{font-family:inherit; color:var(--text);}
   }
   .weather-stats{display:none;}
   #content{padding:20px 16px 50px;}
-  #topbar{padding:14px 16px;}
+  #topbar{padding:14px 16px; padding-top:max(14px, env(safe-area-inset-top));}
+
+  #bottomNav{
+    display:flex; align-items:center; justify-content:space-around;
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    background:rgba(8,12,20,0.86);
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border-top:1px solid var(--line-soft);
+  }
+  #bottomNav .bn-item{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:6px 10px; border-radius:10px; min-width:54px;
+    color:var(--text-faint); font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.3px;
+    position:relative;
+  }
+  #bottomNav .bn-item .bnic{font-size:18px; line-height:1;}
+  #bottomNav .bn-item.active{color:var(--cyan);}
+  #bottomNav .bn-item.active .bnic{filter:drop-shadow(0 0 8px rgba(45,212,255,0.6));}
+  #bottomNav .bn-item .bn-dot{
+    position:absolute; top:2px; right:8px; width:7px; height:7px; border-radius:50%;
+    background:var(--red); box-shadow:0 0 6px var(--red);
+  }
+  #main{padding-bottom:64px;}
+  #content{padding-bottom:90px;}
+
+  /* modals become bottom sheets on mobile for native app feel */
+  .modal-overlay{align-items:flex-end; padding:0;}
+  .modal{
+    width:100%; max-width:100%; border-radius:22px 22px 0 0;
+    max-height:86vh; padding-bottom:calc(26px + env(safe-area-inset-bottom));
+    animation:sheetUp .32s cubic-bezier(.16,1,.3,1) both;
+  }
+  .modal::before{
+    content:''; display:block; width:38px; height:4px; border-radius:4px;
+    background:var(--line); margin:-10px auto 16px;
+  }
 }
+@keyframes sheetUp{from{opacity:0; transform:translateY(40px);} to{opacity:1; transform:translateY(0);}}
+
 @media(max-width:560px){
   .core-stage{width:220px; height:220px;}
   .core-center{inset:66px;}
-  .env-controls{grid-template-columns:repeat(4,1fr);}
   .login-card{padding:30px 22px 26px;}
+  #bottomNav .bn-item{min-width:46px; padding:6px 7px;}
+  .env-controls{grid-template-columns:repeat(4,1fr); gap:6px;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .core-section{gap:18px;}
 }
+
 </style>
 </head>
 <body>
@@ -821,6 +904,29 @@ input, select{font-family:inherit; color:var(--text);}
       </section>
 
     </main>
+
+    <nav id="bottomNav">
+      <button class="bn-item active" data-view="dashboard"><span class="bnic">🏠</span>Início</button>
+      <button class="bn-item" data-view="ambientes"><span class="bnic">➕</span>Ambientes</button>
+      <button class="bn-item" data-view="dispositivos"><span class="bnic">📡</span>Dispos.</button>
+      <button class="bn-item" data-view="alertas"><span class="bnic">🚨</span>Alertas<span id="bnAlertDot" class="bn-dot hidden"></span></button>
+      <button class="bn-item" id="bnMore"><span class="bnic">☰</span>Mais</button>
+    </nav>
+  </div>
+</div>
+
+<!-- ============================================================
+     INSTALL APP BANNER
+     ============================================================ -->
+<div class="glass hidden" id="installBanner">
+  <div class="ib-ic">📲</div>
+  <div class="ib-txt">
+    <strong>Instalar Smart Home</strong>
+    <span id="installBannerSub">Adicione à tela inicial para abrir como um app</span>
+  </div>
+  <div class="ib-actions">
+    <button class="btn btn-primary btn-sm" id="installBtn">Instalar</button>
+    <button class="ib-close" id="installBannerClose">✕</button>
   </div>
 </div>
 
@@ -1044,6 +1150,10 @@ input, select{font-family:inherit; color:var(--text);}
     for(var i=0;i<items.length;i++){
       items[i].classList.toggle("active", items[i].getAttribute("data-view") === name);
     }
+    var bnItems = document.querySelectorAll("#bottomNav .bn-item[data-view]");
+    for(var b=0;b<bnItems.length;b++){
+      bnItems[b].classList.toggle("active", bnItems[b].getAttribute("data-view") === name);
+    }
     var views = document.querySelectorAll(".view");
     for(var j=0;j<views.length;j++){
       views[j].classList.toggle("active", views[j].id === "view-"+name);
@@ -1059,6 +1169,16 @@ input, select{font-family:inherit; color:var(--text);}
       goToView(this.getAttribute("data-view"));
     });
   }
+
+  var bnNavItems = document.querySelectorAll("#bottomNav .bn-item[data-view]");
+  for(var bn=0;bn<bnNavItems.length;bn++){
+    bnNavItems[bn].addEventListener("click", function(){
+      goToView(this.getAttribute("data-view"));
+    });
+  }
+  document.getElementById("bnMore").addEventListener("click", function(){
+    openSidebarMobile();
+  });
 
   /* mobile sidebar */
   function openSidebarMobile(){
@@ -1160,11 +1280,14 @@ input, select{font-family:inherit; color:var(--text);}
     });
 
     var navCount = document.getElementById("navAlertCount");
+    var bnDot = document.getElementById("bnAlertDot");
     if(activeAlerts > 0){
       navCount.textContent = activeAlerts;
       navCount.classList.remove("hidden");
+      bnDot.classList.remove("hidden");
     } else {
       navCount.classList.add("hidden");
+      bnDot.classList.add("hidden");
     }
   }
 
@@ -1549,6 +1672,85 @@ input, select{font-family:inherit; color:var(--text);}
 
     renderAll();
   });
+
+  /* ============================================================
+     PWA: SERVICE WORKER + INSTALAÇÃO DO APP
+     ============================================================ */
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){ /* offline cache indisponível, app segue funcionando normalmente */ });
+    });
+  }
+
+  function isStandalone(){
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+
+  function isIos(){
+    return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  }
+
+  var deferredInstallPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if(!isStandalone() && !localStorage_safeGet("smarthome_install_dismissed")){
+      showInstallBanner(false);
+    }
+  });
+
+  function localStorage_safeGet(key){
+    try{ return window.localStorage.getItem(key); }catch(err){ return null; }
+  }
+  function localStorage_safeSet(key, val){
+    try{ window.localStorage.setItem(key, val); }catch(err){ /* ignore */ }
+  }
+
+  function showInstallBanner(iosMode){
+    var banner = document.getElementById("installBanner");
+    var sub = document.getElementById("installBannerSub");
+    var btn = document.getElementById("installBtn");
+    if(iosMode){
+      sub.textContent = "Toque em Compartilhar 􀈂 e depois em \"Adicionar à Tela de Início\"";
+      btn.textContent = "Entendi";
+    } else {
+      sub.textContent = "Adicione à tela inicial para abrir como um app";
+      btn.textContent = "Instalar";
+    }
+    banner.classList.remove("hidden");
+  }
+
+  document.getElementById("installBtn").addEventListener("click", function(){
+    var banner = document.getElementById("installBanner");
+    if(deferredInstallPrompt){
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(function(choice){
+        if(choice.outcome === "accepted"){
+          toast("App instalado com sucesso", "success");
+        }
+        deferredInstallPrompt = null;
+        banner.classList.add("hidden");
+      });
+    } else {
+      banner.classList.add("hidden");
+    }
+  });
+
+  document.getElementById("installBannerClose").addEventListener("click", function(){
+    document.getElementById("installBanner").classList.add("hidden");
+    localStorage_safeSet("smarthome_install_dismissed", "1");
+  });
+
+  window.addEventListener("appinstalled", function(){
+    document.getElementById("installBanner").classList.add("hidden");
+    toast("Smart Home instalado na tela inicial", "success");
+  });
+
+  // iOS Safari não dispara beforeinstallprompt — mostramos instruções manuais
+  if(isIos() && !isStandalone() && !localStorage_safeGet("smarthome_install_dismissed")){
+    setTimeout(function(){ showInstallBanner(true); }, 1800);
+  }
 
   /* ============================================================
      MASTER RENDER
