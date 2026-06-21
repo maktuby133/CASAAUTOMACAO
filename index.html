@@ -1421,7 +1421,7 @@ input, select{font-family:inherit; color:var(--text);}
           '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+env.smoke+' ppm</div></div>'+
         '</div>'+
         '<div class="env-foot">'+
-          '<span class="badge badge-offline">'+fmtRelative(env.lastSeen)+'</span>'+
+          '<span class="badge '+(env.status==="online"?"badge-online":(env.status==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(env.lastSeen)+'</span>'+
           '<button class="btn btn-ghost btn-sm" data-config-device="'+env.id+'">⚙ Configurar dispositivo</button>'+
         '</div>';
       grid.appendChild(card);
@@ -1567,10 +1567,11 @@ input, select{font-family:inherit; color:var(--text);}
       } else {
         if(typeof data.temperature === "number") env.temp = data.temperature;
         if(typeof data.humidity === "number") env.humidity = data.humidity;
-        if(typeof data.light === "boolean") env.lighting.on = data.light;
+        // nota: estado da lâmpada vem via sensors/{id}/gas, não aqui
         env.status = "online";
       }
       env.lastSeen = new Date();
+      saveEnvironments();
       renderAll();
     });
   }
@@ -1587,9 +1588,20 @@ input, select{font-family:inherit; color:var(--text);}
 
     if(typeof data.gas_raw === "number") env.smoke = data.gas_raw;
     if(typeof data.gas_alert === "boolean") env.gasAlert = data.gas_alert;
-    if(typeof data.lamp === "boolean") env.lighting.on = data.lamp; // estado real do rele (fonte de verdade)
-    env.status = data.gas_alert ? "alert" : (env.status === "alert" ? "online" : env.status);
+    if(typeof data.lamp === "boolean"){
+      var prev = env.lighting.on;
+      env.lighting.on = data.lamp; // estado real do rele (fonte de verdade)
+      // Se o estado do relé mudou externamente (botão físico no ESP32),
+      // exibe toast para o usuário saber
+      if(prev !== data.lamp){
+        toast(env.name + ": lâmpada " + (data.lamp ? "ligada" : "desligada") + " (físico)", "info");
+      }
+    }
+    // Qualquer mensagem de gás recebida = dispositivo online
+    // Se havia alerta de gás e sumiu → volta para online
+    env.status = data.gas_alert ? "alert" : "online";
     env.lastSeen = new Date();
+    saveEnvironments();
     renderAll();
   }
 
@@ -1601,7 +1613,9 @@ input, select{font-family:inherit; color:var(--text);}
     var devId = idFromMac(env.mac).toLowerCase();
     var topic = "sensors/" + devId + "/lamp/set";
     var payload = JSON.stringify({lamp: turnOn});
-    mqttClient.publish(topic, payload, {qos:1});
+    // retain:true → broker guarda o último comando; quando o ESP32
+    // reconectar ele recebe imediatamente e restaura o estado do relé.
+    mqttClient.publish(topic, payload, {qos:1, retain:true});
   }
 
   /* ── Autenticação com o ESP32 físico (handshake via MQTT) ──
