@@ -996,7 +996,8 @@ input, select{font-family:inherit; color:var(--text);}
         <span>ID do dispositivo:</span>
         <span class="id" id="macPreviewId">------</span>
       </div>
-      <div class="hint">Se nenhum MAC for informado, um endereço será simulado para fins de demonstração.</div>
+      <div class="field"><label>Senha de acesso do dispositivo</label><input type="password" id="newEnvPass" placeholder="Definida no modo AP do ESP32"></div>
+      <div class="hint">Informe o MAC do ESP32 e a senha definida na configuração dele (modo AP) para vincular um dispositivo real — o painel autentica direto com o aparelho via MQTT. Deixe os dois em branco para criar um ambiente de demonstração (simulado).</div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-close="addEnvOverlay">Cancelar</button>
@@ -1542,6 +1543,10 @@ input, select{font-family:inherit; color:var(--text);}
 
     mqttClient.on("message", function(topic, payloadBuf){
       var parts = topic.split("/");
+      if(parts.length >= 4 && parts[0] === "sensors" && parts[2] === "auth" && parts[3] === "response"){
+        handleAuthResponse(parts[1], payloadBuf.toString());
+        return;
+      }
       if(parts.length < 3 || parts[0] !== "sensors" || parts[2] !== "data") return;
       var devId = parts[1];
       var env = findEnvByDeviceId(devId);
@@ -1572,6 +1577,46 @@ input, select{font-family:inherit; color:var(--text);}
     var topic = "sensors/" + devId + "/cmd";
     var payload = JSON.stringify({action:"light", state:turnOn});
     mqttClient.publish(topic, payload, {qos:1});
+  }
+
+  /* ── Autenticação com o ESP32 físico (handshake via MQTT) ──
+     Espelha o fluxo do firmware: painel publica token+hash em
+     sensors/{deviceId}/auth/request e aguarda a resposta do próprio
+     dispositivo em sensors/{deviceId}/auth/response. */
+  var pendingAuthRequests = {};
+
+  async function sha256Hex(str){
+    var enc = new TextEncoder().encode(str);
+    var buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,"0"); }).join("");
+  }
+
+  function handleAuthResponse(devId, raw){
+    var entry = pendingAuthRequests[devId];
+    if(!entry) return;
+    var data;
+    try{ data = JSON.parse(raw); }catch(e){ return; }
+    if(data.token !== entry.token) return;
+    clearTimeout(entry.timer);
+    delete pendingAuthRequests[devId];
+    if(mqttClient) mqttClient.unsubscribe("sensors/" + devId + "/auth/response");
+    entry.resolve(!!data.ok);
+  }
+
+  function requestDeviceAuth(devId, passHash){
+    return new Promise(function(resolve, reject){
+      if(!mqttClient || !mqttConnected){ reject(new Error("broker_offline")); return; }
+      var token = Date.now().toString(16) + Math.random().toString(16).slice(2);
+      var respTopic = "sensors/" + devId + "/auth/response";
+      mqttClient.subscribe(respTopic, {qos:1});
+      var timer = setTimeout(function(){
+        delete pendingAuthRequests[devId];
+        if(mqttClient) mqttClient.unsubscribe(respTopic);
+        reject(new Error("timeout"));
+      }, 8000);
+      pendingAuthRequests[devId] = { token:token, resolve:resolve, timer:timer };
+      mqttClient.publish("sensors/" + devId + "/auth/request", JSON.stringify({token:token, hash:passHash}), {qos:1});
+    });
   }
 
   /* ============================================================
@@ -1626,6 +1671,7 @@ input, select{font-family:inherit; color:var(--text);}
   function openAddEnvModal(){
     document.getElementById("newEnvName").value = "";
     document.getElementById("newEnvMac").value = "";
+    document.getElementById("newEnvPass").value = "";
     document.getElementById("macPreviewId").textContent = "------";
     selectedIcon = ENV_ICONS[0];
     buildIconPicker();
@@ -1641,28 +1687,67 @@ input, select{font-family:inherit; color:var(--text);}
     }
   });
 
-  document.getElementById("addEnvForm").addEventListener("submit", function(e){
+  document.getElementById("addEnvForm").addEventListener("submit", async function(e){
     e.preventDefault();
     var name = document.getElementById("newEnvName").value.trim();
     if(!name) return;
     var macInput = document.getElementById("newEnvMac").value.trim();
-    var mac = macInput.length >= 12 ? macInput.match(/.{1,2}/g).join(":").toUpperCase() : macFromSeed(Date.now() % 100000);
+    var passInput = document.getElementById("newEnvPass").value;
+    var isRealDevice = macInput.length >= 12;
+    var mac = isRealDevice ? macInput.match(/.{1,2}/g).join(":").toUpperCase() : macFromSeed(Date.now() % 100000);
+
+    var submitBtn = document.querySelector("#addEnvForm button[type=submit]");
+
+    if(isRealDevice){
+      if(!passInput){
+        toast("Informe a senha de acesso do dispositivo", "error");
+        return;
+      }
+      if(!mqttClient || !mqttConnected){
+        toast("Conecte o broker em Configurações antes de adicionar um dispositivo real", "error");
+        return;
+      }
+      var devId = idFromMac(mac).toLowerCase();
+      if(findEnvByDeviceId(devId)){
+        toast("Esse dispositivo já está cadastrado em outro ambiente", "error");
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = "🔐 Autenticando com o dispositivo...";
+      try{
+        var hash = await sha256Hex(passInput);
+        var ok = await requestDeviceAuth(devId, hash);
+        if(!ok){
+          toast("Senha incorreta para o dispositivo "+devId.toUpperCase(), "error");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Criar ambiente";
+          return;
+        }
+      }catch(err){
+        toast("Dispositivo não respondeu — verifique se o ESP32 está ligado e online", "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Criar ambiente";
+        return;
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Criar ambiente";
+    }
 
     var newEnv = {
       id:"e"+Date.now(),
       name:name,
       icon:selectedIcon,
       mac:mac,
-      status:"online",
+      status: "online",
       lighting:{on:false},
       temp:23 + Math.random()*4,
       humidity:45 + Math.random()*15,
       smoke:0,
       lastSeen:new Date(),
-      firmware:"v1.0.0"
+      firmware: isRealDevice ? "—" : "v1.0.0"
     };
     state.environments.push(newEnv);
-    state.alerts.unshift({id:"a"+Date.now(), type:"info", icon:"📡", message:"Novo ambiente cadastrado: "+name+" (ID "+idFromMac(mac)+").", time:new Date()});
+    state.alerts.unshift({id:"a"+Date.now(), type:"info", icon:"📡", message:(isRealDevice?"Dispositivo autenticado e vinculado":"Novo ambiente cadastrado")+": "+name+" (ID "+idFromMac(mac)+").", time:new Date()});
 
     document.getElementById("addEnvOverlay").classList.add("hidden");
     toast("Ambiente \""+name+"\" criado com sucesso", "success");
