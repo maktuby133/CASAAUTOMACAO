@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v22</title>
+<title>SMART HOME AI CONTROL - v33</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -397,6 +397,10 @@ input, select{font-family:inherit; color:var(--text);}
 .smart-mini-card .meter-mini span{display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow:0 0 10px rgba(45,212,255,0.42); transition:width .35s ease;}
 .smart-mini-card .tank-details{margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;}
 .smart-mini-card .tank-details span{font-family:var(--font-mono); font-size:9.5px; color:var(--text-faint); padding:3px 6px; border-radius:999px; background:rgba(255,255,255,0.035); border:1px solid var(--line-soft);}
+.smart-mini-card .smoke-rooms{margin-top:7px;display:flex;gap:5px;flex-wrap:wrap;max-height:26px;overflow:hidden;}
+.smart-mini-card .smoke-rooms span{font-family:var(--font-mono);font-size:9px;color:var(--red);padding:2px 5px;border-radius:999px;background:rgba(255,77,106,.10);border:1px solid rgba(255,77,106,.22);white-space:nowrap;}
+.smart-mini-card.smoke-memory{box-shadow:0 0 0 1px rgba(255,77,106,.10), 0 0 18px rgba(255,77,106,.08);}
+
 .smart-mini-card.stat-wide{grid-column:1 / -1; min-height:122px;}
 .smart-mini-card .ai-lines{margin-top:10px; display:flex; flex-direction:column; gap:5px;}
 .smart-mini-card .ai-lines div{font-size:12px; color:var(--text-dim); line-height:1.35;}
@@ -1485,6 +1489,7 @@ input, select{font-family:inherit; color:var(--text);}
     // grava no localStorage o que o usuario realmente cadastrar.
     environments:[],
     alerts:[],
+    smokeRegistry:[],
     weather:{
       monitoredState:"RJ",
       monitoredStateName:"Rio de Janeiro",
@@ -1556,6 +1561,7 @@ input, select{font-family:inherit; color:var(--text);}
       document.getElementById("loginScreen").classList.add("hidden");
       document.getElementById("app").classList.remove("hidden");
       restoreEnvironments();
+      restoreSmokeRegistry();
       loadWaterState();
       restoreWeatherState();
       renderAll();
@@ -1817,6 +1823,58 @@ input, select{font-family:inherit; color:var(--text);}
       .replace(/'/g, "&#39;");
   }
 
+
+  /* ============================================================
+     ALERTA DE FUMAÇA PERSISTENTE NO DASHBOARD
+     ============================================================ */
+  var SMOKE_REGISTRY_KEY = "autoflow_smoke_registry";
+
+  function saveSmokeRegistry(){
+    var clean = (state.smokeRegistry || []).slice(0,20).map(function(a){
+      return {deviceId:a.deviceId, envId:a.envId, room:a.room, ppm:a.ppm, time:a.time instanceof Date ? a.time.toISOString() : a.time};
+    });
+    localStorage_safeSet(SMOKE_REGISTRY_KEY, JSON.stringify(clean));
+  }
+
+  function restoreSmokeRegistry(){
+    var raw = localStorage_safeGet(SMOKE_REGISTRY_KEY);
+    if(!raw) return;
+    try{
+      var arr = JSON.parse(raw);
+      if(!Array.isArray(arr)) return;
+      state.smokeRegistry = arr.map(function(a){
+        a.time = a.time ? new Date(a.time) : new Date();
+        return a;
+      });
+    }catch(e){ state.smokeRegistry = []; }
+  }
+
+  function registerSmokeAlert(env, ppm){
+    if(!env) return;
+    state.smokeRegistry = state.smokeRegistry || [];
+    var devId = getEnvDeviceId(env);
+    var now = new Date();
+    var existing = state.smokeRegistry.find(function(a){ return a.deviceId === devId || a.envId === env.id; });
+    if(existing){
+      existing.room = env.name;
+      existing.ppm = hasNumber(ppm) ? Math.round(ppm) : existing.ppm;
+      existing.time = now;
+    } else {
+      state.smokeRegistry.unshift({deviceId:devId, envId:env.id, room:env.name, ppm:hasNumber(ppm)?Math.round(ppm):null, time:now});
+      state.smokeRegistry = state.smokeRegistry.slice(0,20);
+    }
+    saveSmokeRegistry();
+  }
+
+  function smokeRoomsSummary(){
+    var arr = (state.smokeRegistry || []).filter(function(a){ return a && a.room; });
+    if(!arr.length) return {count:0, text:"Tudo normal", chips:[]};
+    var names = arr.map(function(a){ return a.room; });
+    var shown = names.slice(0,2);
+    var more = names.length > 2 ? " +"+(names.length-2) : "";
+    return {count:arr.length, text:"Fumaça: "+shown.join(", ")+more, chips:shown.concat(names.length>2 ? ["+"+(names.length-2)] : [])};
+  }
+
   /* ============================================================
      RENDER: STAT CARDS
      ============================================================ */
@@ -1825,7 +1883,8 @@ input, select{font-family:inherit; color:var(--text);}
     var tempEnvs = envs.filter(function(e){ return hasNumber(e.temp); });
     var humVals = envs.map(function(e){return e.humidity;}).filter(hasNumber);
     var avgHum = humVals.length ? Math.round(humVals.reduce(function(a,v){return a+v;},0) / humVals.length) : null;
-    var activeAlerts = envs.filter(function(e){return e.status === "alert";}).length;
+    var smokeInfo = smokeRoomsSummary();
+    var activeAlerts = Math.max(smokeInfo.count, envs.filter(function(e){return e.status === "alert";}).length);
 
     var hottest = null;
     tempEnvs.forEach(function(e){
@@ -1871,11 +1930,12 @@ input, select{font-family:inherit; color:var(--text);}
         sub:humStatus
       },
       {
-        cls: activeAlerts>0 ? "glow-red" : "glow-green",
+        cls: activeAlerts>0 ? "glow-red smoke-memory" : "glow-green",
         ic:"🚨",
         val:activeAlerts,
         lbl:"Alertas ativos",
-        sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"
+        sub: smokeInfo.count>0 ? smokeInfo.text : "Tudo normal",
+        smokeRooms: smokeInfo.chips
       },
       {
         type:"tankDashboard",
@@ -1923,6 +1983,9 @@ input, select{font-family:inherit; color:var(--text);}
         }
         if(c.details && c.details.length){
           extra += '<div class="tank-details">' + c.details.map(function(item){ return '<span>'+escapeHtml(item)+'</span>'; }).join('') + '</div>';
+        }
+        if(c.smokeRooms && c.smokeRooms.length){
+          extra += '<div class="smoke-rooms">' + c.smokeRooms.map(function(item){ return '<span>🔥 '+escapeHtml(item)+'</span>'; }).join('') + '</div>';
         }
         if(c.type === "tankDashboard"){
           var level = typeof c.level === "number" ? c.level : 0;
@@ -2477,7 +2540,20 @@ input, select{font-family:inherit; color:var(--text);}
 
     env.sensorReady = true;
     if(typeof data.gas_raw === "number") env.smoke = data.gas_raw;
+    var wasGasAlert = env.gasAlert === true;
     if(typeof data.gas_alert === "boolean") env.gasAlert = data.gas_alert;
+    if(env.gasAlert === true){
+      registerSmokeAlert(env, env.smoke);
+      if(!wasGasAlert){
+        var smokeMsg = "Sensor MQ-2 detectou fumaça em " + env.name + (hasNumber(env.smoke) ? " — nível " + fmtSmoke(env.smoke) : "") + ".";
+        state.alerts.unshift({id:"a"+Date.now(), type:"alert", icon:"🔥", message:smokeMsg, time:new Date()});
+        document.getElementById("smokeMsg").textContent = smokeMsg;
+        document.getElementById("smokeOverlay").classList.remove("hidden");
+        playAlertSound();
+        document.getElementById("app").classList.add("app-flash");
+        setTimeout(function(){ document.getElementById("app").classList.remove("app-flash"); }, 3200);
+      }
+    }
     if(typeof data.lamp === "boolean"){
       var prev = env.lighting.on;
       env.lighting.on = data.lamp; // estado real do rele (fonte de verdade)
@@ -3302,6 +3378,7 @@ input, select{font-family:inherit; color:var(--text);}
 
     var msg = "Sensor MQ-2 detectou fumaça em "+env.name+" — nível "+env.smoke+" ppm.";
     state.alerts.unshift({id:"a"+Date.now(), type:"alert", icon:"🔥", message:msg, time:new Date()});
+    registerSmokeAlert(env, env.smoke);
 
     document.getElementById("smokeMsg").textContent = msg;
     document.getElementById("smokeOverlay").classList.remove("hidden");
