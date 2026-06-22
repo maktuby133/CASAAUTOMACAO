@@ -930,30 +930,42 @@ input, select{font-family:inherit; color:var(--text);}
 /* ============================================================
    MEDIÇÕES: ENERGIA / ÁGUA FUTURA
    ============================================================ */
-.measure-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+.measure-grid{display:grid;grid-template-columns:1fr;gap:18px;}
 .measure-card{padding:20px;position:relative;overflow:hidden;}
-.measure-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.measure-card::before{content:'';position:absolute;inset:-30% -10% auto auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,255,.10),transparent 68%);pointer-events:none;}
+.measure-card-horizontal{min-height:260px;}
+.measure-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;position:relative;z-index:1;}
 .measure-title{font-family:var(--font-head);font-size:17px;font-weight:700;}
 .measure-id{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin-top:2px;}
-.measure-main{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;align-items:center;}
-.energy-power{font-family:var(--font-display);font-size:30px;letter-spacing:.5px;line-height:1;color:var(--cyan);text-shadow:0 0 14px rgba(45,212,255,.35);}
-.energy-power small{font-size:14px;color:var(--text-dim);text-shadow:none;}
-.energy-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);margin-top:7px;}
-.energy-ring{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;margin-left:auto;background:conic-gradient(var(--cyan) var(--energy-deg,0deg),rgba(140,180,220,.10) 0deg);box-shadow:0 0 22px rgba(45,212,255,.14);}
-.energy-ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:rgba(6,10,18,.92);border:1px solid var(--line-soft);}
-.energy-ring span{position:relative;z-index:1;font-family:var(--font-display);font-size:15px;color:var(--text);}
-.measure-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;}
-.measure-mini{padding:8px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);text-align:center;}
-.measure-mini strong{display:block;font-family:var(--font-mono);font-size:12px;color:var(--text);}
-.measure-mini span{display:block;font-size:9.5px;color:var(--text-faint);margin-top:2px;}
-.measure-chart{height:120px;margin-top:16px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--line-soft);padding:10px;}
-.measure-chart svg{width:100%;height:100%;overflow:visible;}
-.measure-actions{display:flex;gap:8px;margin-top:14px;}
-.measure-empty{min-height:220px;}
 .measure-gear{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
 .measure-gear:hover{color:var(--cyan);border-color:rgba(45,212,255,.4);background:rgba(45,212,255,.08);}
+.measure-layout-horizontal{display:grid;grid-template-columns:minmax(230px,.82fr) minmax(360px,1.25fr) minmax(230px,.78fr);gap:16px;align-items:stretch;position:relative;z-index:1;}
+.measure-power-panel{border:1px solid rgba(45,212,255,.18);background:linear-gradient(180deg,rgba(45,212,255,.055),rgba(255,255,255,.018));border-radius:14px;padding:16px;display:flex;flex-direction:column;justify-content:center;min-height:150px;}
+.energy-power{font-family:var(--font-display);font-size:38px;letter-spacing:.5px;line-height:1;color:var(--cyan);text-shadow:0 0 14px rgba(45,212,255,.35);}
+.energy-power small{font-size:15px;color:var(--text-dim);text-shadow:none;}
+.energy-power.power-ok{color:var(--green);text-shadow:0 0 14px rgba(57,230,164,.32);}
+.energy-power.power-mid{color:var(--amber);text-shadow:0 0 14px rgba(255,180,67,.32);}
+.energy-power.power-high{color:var(--red);text-shadow:0 0 14px rgba(255,77,106,.38);}
+.energy-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);margin-top:8px;}
+.energy-status-line{display:flex;align-items:center;gap:8px;margin-top:14px;font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);}
+.energy-status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);}
+.energy-status-dot.online{background:var(--green);box-shadow:0 0 10px var(--green);animation:onlinePulse 1.8s ease-in-out infinite;}
+.measure-data-panel{border:1px solid var(--line-soft);background:rgba(255,255,255,.02);border-radius:14px;padding:14px;}
+.measure-triplet{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.measure-kv{text-align:center;padding:10px 8px;border-radius:11px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);}
+.measure-kv strong{display:block;font-family:var(--font-mono);font-size:14px;color:var(--text);white-space:nowrap;}
+.measure-kv span{display:block;font-size:9.5px;color:var(--text-faint);margin-top:3px;text-transform:uppercase;letter-spacing:.45px;}
+.measure-separator{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:12px 0;}
+.measure-cost-row .measure-kv strong{color:var(--green);}
+.measure-side-panel{display:flex;flex-direction:column;gap:10px;}
+.measure-chart{height:124px;border-radius:14px;background:rgba(255,255,255,.02);border:1px solid var(--line-soft);padding:10px;flex:1;}
+.measure-chart svg{width:100%;height:100%;overflow:visible;}
+.measure-actions{display:flex;gap:8px;}
+.measure-actions .btn{flex:1;}
+.measure-empty{min-height:220px;}
 .measure-alert{color:var(--red);font-family:var(--font-mono);font-size:11px;margin-top:10px;}
-@media(max-width:560px){.measure-main{grid-template-columns:1fr}.energy-ring{margin:8px auto 0}.energy-power{text-align:center}.measure-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1100px){.measure-layout-horizontal{grid-template-columns:1fr 1fr}.measure-side-panel{grid-column:1 / -1}.measure-chart{height:112px}}
+@media(max-width:680px){.measure-layout-horizontal{grid-template-columns:1fr}.energy-power{text-align:center;font-size:34px}.energy-status-line{justify-content:center}.measure-triplet{grid-template-columns:repeat(3,1fr);gap:7px}.measure-kv{padding:8px 5px}.measure-kv strong{font-size:12px}.measure-card-horizontal{min-height:auto}}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
@@ -2919,7 +2931,8 @@ input, select{font-family:inherit; color:var(--text);}
     var max = Math.max.apply(null, [100].concat(vals.map(function(h){ return Number(h.power)||0; })));
     var step = vals.length > 1 ? 260/(vals.length-1) : 260;
     var pts = vals.map(function(v,i){ return (8+i*step)+','+(94-((Number(v.power)||0)/max)*78); }).join(' ');
-    svg.innerHTML = '<polyline points="'+pts+'" fill="none" stroke="rgba(45,212,255,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="95" x2="270" y2="95" stroke="rgba(140,180,220,.14)"/><line x1="8" y1="16" x2="270" y2="16" stroke="rgba(140,180,220,.08)"/>';
+    svg.setAttribute('viewBox','0 0 278 104');
+    svg.innerHTML = '<polyline points="'+pts+'" fill="none" stroke="rgba(45,212,255,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="95" x2="270" y2="95" stroke="rgba(140,180,220,.14)"/><line x1="8" y1="16" x2="270" y2="16" stroke="rgba(140,180,220,.08)"/><text x="8" y="12" fill="rgba(134,150,173,.8)" font-size="10">Consumo</text>';
   }
 
   function renderMeasurementsView(){
@@ -2935,24 +2948,44 @@ input, select{font-family:inherit; color:var(--text);}
     grid.innerHTML = list.map(function(m){
       var online = m.lastSeen && (Date.now() - new Date(m.lastSeen).getTime() < 150000);
       var power = hasNumber(m.power) ? Number(m.power) : null;
-      var deg = power == null ? 0 : Math.max(8, Math.min(360, (power/5000)*360));
-      return '<div class="measure-card glass">'+
-        '<div class="measure-head"><div><div class="measure-title">⚡ '+escapeHtml(m.name || "Medidor de energia")+'</div><div class="measure-id">'+escapeHtml(m.topicBase || measureTopicBaseFor(m.id))+'</div></div><button class="measure-gear" data-config-measure="'+escapeHtml(m.uid)+'">⚙️</button></div>'+
-        '<div class="measure-main">'+
-          '<div><div class="energy-power">'+(power == null ? "—" : (power >= 1000 ? (power/1000).toFixed(2)+'<small> kW</small>' : power.toFixed(0)+'<small> W</small>'))+'</div><div class="energy-sub">'+(online ? "Online · " : "Offline · ")+(m.lastSeen ? fmtRelative(new Date(m.lastSeen)) : "sem dados")+'</div></div>'+
-          '<div class="energy-ring" style="--energy-deg:'+deg+'deg"><span>'+fmtEnergy(m.energia_hoje,"kWh",2)+'</span></div>'+
+      var pClass = power == null ? "" : (power >= 3000 ? "power-high" : (power >= 1000 ? "power-mid" : "power-ok"));
+      var powerText = power == null ? "—" : (power >= 1000 ? (power/1000).toFixed(2)+'<small> kW</small>' : power.toFixed(0)+'<small> W</small>');
+      var custoHoje = hasNumber(m.energia_hoje) ? Number(m.energia_hoje) * 0.85 : null;
+      var custoSemana = hasNumber(m.energia_semana) ? Number(m.energia_semana) * 0.85 : null;
+      var custoMes = hasNumber(m.energia_mes) ? Number(m.energia_mes) * 0.85 : (hasNumber(m.custo) ? Number(m.custo) : null);
+      return '<div class="measure-card measure-card-horizontal glass">'+
+        '<div class="measure-head"><div><div class="measure-title">⚡ '+escapeHtml(m.name || "Medidor principal")+'</div><div class="measure-id">'+escapeHtml(m.topicBase || measureTopicBaseFor(m.id))+'</div></div><button class="measure-gear" title="Configurar medição" data-config-measure="'+escapeHtml(m.uid)+'">⚙️</button></div>'+
+        '<div class="measure-layout-horizontal">'+
+          '<div class="measure-power-panel">'+
+            '<div class="energy-power '+pClass+'">'+powerText+'</div>'+
+            '<div class="energy-sub">Potência instantânea</div>'+
+            '<div class="energy-status-line"><span class="energy-status-dot '+(online ? 'online' : '')+'"></span>'+(online ? 'Online · ' : 'Offline · ')+(m.lastSeen ? fmtRelative(new Date(m.lastSeen)) : 'sem dados')+'</div>'+
+            (m.alert ? '<div class="measure-alert">⚠️ '+escapeHtml(m.alert)+'</div>' : '')+
+          '</div>'+
+          '<div class="measure-data-panel">'+
+            '<div class="measure-triplet">'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(m.voltage,"V",1)+'</strong><span>Tensão</span></div>'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(m.current,"A",2)+'</strong><span>Corrente</span></div>'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(m.pf,"",2)+'</strong><span>Fator FP</span></div>'+
+            '</div>'+
+            '<div class="measure-separator"></div>'+
+            '<div class="measure-triplet">'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(m.energia_hoje,"kWh",2)+'</strong><span>Hoje</span></div>'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(m.energia_semana,"kWh",2)+'</strong><span>Semana</span></div>'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(m.energia_mes,"kWh",2)+'</strong><span>Mês</span></div>'+
+            '</div>'+
+            '<div class="measure-separator"></div>'+
+            '<div class="measure-triplet measure-cost-row">'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(custoHoje,"R$",2)+'</strong><span>Custo hoje</span></div>'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(custoSemana,"R$",2)+'</strong><span>Custo sem.</span></div>'+
+              '<div class="measure-kv"><strong>'+fmtEnergy(custoMes,"R$",2)+'</strong><span>Custo mês</span></div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="measure-side-panel">'+
+            '<div class="measure-chart"><svg data-energy-chart="'+escapeHtml(m.uid)+'"></svg></div>'+
+            '<div class="measure-actions"><button class="btn btn-ghost btn-sm" data-reset-energy="'+escapeHtml(m.uid)+'">Reset energia</button></div>'+
+          '</div>'+
         '</div>'+
-        '<div class="measure-metrics">'+
-          '<div class="measure-mini"><strong>'+fmtEnergy(m.voltage,"V",1)+'</strong><span>Tensão</span></div>'+
-          '<div class="measure-mini"><strong>'+fmtEnergy(m.current,"A",2)+'</strong><span>Corrente</span></div>'+
-          '<div class="measure-mini"><strong>'+fmtEnergy(m.energy,"kWh",3)+'</strong><span>Total</span></div>'+
-          '<div class="measure-mini"><strong>'+fmtEnergy(m.energia_mes,"kWh",2)+'</strong><span>Mês</span></div>'+
-          '<div class="measure-mini"><strong>'+fmtEnergy(m.custo,"R$",2)+'</strong><span>Custo</span></div>'+
-          '<div class="measure-mini"><strong>'+fmtEnergy(m.pf,"",2)+'</strong><span>FP</span></div>'+
-        '</div>'+
-        '<div class="measure-chart"><svg data-energy-chart="'+escapeHtml(m.uid)+'"></svg></div>'+
-        (m.alert ? '<div class="measure-alert">⚠️ '+escapeHtml(m.alert)+'</div>' : '')+
-        '<div class="measure-actions"><button class="btn btn-ghost btn-sm" data-reset-energy="'+escapeHtml(m.uid)+'">Reset energia</button></div>'+
       '</div>';
     }).join('');
     document.querySelectorAll("[data-energy-chart]").forEach(function(svg){ renderMeasurementChart(svg, svg.getAttribute("data-energy-chart")); });
