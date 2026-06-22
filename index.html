@@ -1007,6 +1007,31 @@ input, select{font-family:inherit; color:var(--text);}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
+
+<style id="irrigacao-v40-style">
+.irrigation-advanced-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:16px}
+.irrigation-plan-card{padding:18px}
+.irrigation-plan-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.irrigation-plan-title{font-family:var(--font-head,Arial);font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.irrigation-mode-pill{font-family:var(--font-mono,monospace);font-size:10px;border:1px solid rgba(45,212,255,.28);border-radius:999px;padding:4px 8px;color:var(--cyan,#2dd4ff);background:rgba(45,212,255,.06)}
+.irrigation-schedule-line{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line-soft,rgba(140,180,220,.07));padding:10px 0;font-size:13px}
+.irrigation-schedule-line strong{font-family:var(--font-display,monospace);font-size:18px;color:var(--text,#e9eef6)}
+.irrigation-days{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.irrigation-day{width:30px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono,monospace);font-size:10px;border:1px solid var(--line,rgba(140,180,220,.14));color:var(--text-faint,#54637a);background:rgba(255,255,255,.025)}
+.irrigation-day.on{border-color:rgba(57,230,164,.38);color:var(--green,#39e6a4);background:rgba(57,230,164,.10);box-shadow:0 0 12px rgba(57,230,164,.12)}
+.irrigation-mini-history{height:94px;display:flex;align-items:end;gap:6px;padding:12px 0 2px}
+.irrigation-mini-history span{flex:1;min-width:5px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,rgba(45,212,255,.65),rgba(45,212,255,.12));box-shadow:0 0 10px rgba(45,212,255,.18)}
+.irrigation-ai-note{font-size:12.5px;line-height:1.45;color:var(--text-dim,#8696ad);padding:12px;border:1px solid var(--line-soft,rgba(140,180,220,.07));border-radius:12px;background:rgba(255,255,255,.025)}
+.irrigation-protection-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.irrigation-protection-list div{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft,rgba(140,180,220,.07))}
+.irrigation-protection-list small{color:var(--text-faint,#54637a);font-family:var(--font-mono,monospace)}
+.irrigation-zone-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px}
+.irrigation-zone{padding:12px;border-radius:12px;border:1px solid var(--line-soft,rgba(140,180,220,.07));background:rgba(255,255,255,.025)}
+.irrigation-zone strong{display:block;font-family:var(--font-head,Arial);font-size:13px}
+.irrigation-zone span{display:block;color:var(--text-faint,#54637a);font-size:11px;margin-top:4px}
+@media(max-width:860px){.irrigation-advanced-grid{grid-template-columns:1fr}.irrigation-schedule-line strong{font-size:16px}}
+</style>
+
 </head>
 <body>
 
@@ -4355,5 +4380,260 @@ input, select{font-family:inherit; color:var(--text);}
 })();
 
 </script>
+
+<script id="irrigacao-v40-script">
+(function(){
+  const LS_KEY = 'smartHomeIrrigacaoV40';
+
+  function loadIrrigationV40(){
+    try{
+      return JSON.parse(localStorage.getItem(LS_KEY)) || {
+        mode:'normal',
+        smartWindow:true,
+        rainBlock:true,
+        rainChanceLimit:70,
+        maxRunsPerDay:2,
+        maxRuntimeMin:60,
+        vacationScale:50,
+        zones:[
+          {name:'Jardim frontal',enabled:true,duration:10},
+          {name:'Horta',enabled:false,duration:8},
+          {name:'Gramado',enabled:false,duration:12}
+        ],
+        history:[8,10,0,12,10,0,9],
+        lastRun:'—'
+      };
+    }catch(e){return {mode:'normal',smartWindow:true,rainBlock:true,rainChanceLimit:70,maxRunsPerDay:2,maxRuntimeMin:60,vacationScale:50,zones:[],history:[]};}
+  }
+
+  function saveIrrigationV40(data){
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }
+
+  function getWeatherRainChance(){
+    const candidates = ['weatherRainChance','rainChance','irrigationRainChance'];
+    for(const k of candidates){
+      const v = window[k];
+      if(typeof v === 'number' && !isNaN(v)) return v;
+    }
+    const txt = (document.body.innerText || '').match(/Chuva:\s*(\d+)%/i);
+    return txt ? Number(txt[1]) : 0;
+  }
+
+  function buildAI(data){
+    const rain = getWeatherRainChance();
+    const notes = [];
+    if(data.rainBlock && rain >= data.rainChanceLimit) notes.push('🌧️ Chuva alta: irrigação será suspensa automaticamente.');
+    else notes.push('☀️ Clima liberado para irrigação programada.');
+    if(data.smartWindow) notes.push('🌙 Horário inteligente ativo: prioridade antes das 7h ou após 18h.');
+    if(data.mode === 'ferias') notes.push('🏖️ Modo férias: duração reduzida para economizar água.');
+    if(data.mode === 'economico') notes.push('♻️ Modo econômico: tempo de irrigação reduzido.');
+    notes.push('🛡️ Proteções ativas contra tempo excessivo e repetição no mesmo dia.');
+    return notes.join('<br>');
+  }
+
+  function getMainSchedule(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('smartHomeIrrigacaoDevices') || localStorage.getItem('irrigationDevices') || '[]');
+      const d = Array.isArray(saved) && saved.length ? saved[0] : null;
+      return {
+        name: d?.name || d?.nome || 'Irrigação principal',
+        id: d?.id || d?.deviceId || 'irrigacao01',
+        time: d?.time || d?.hora || d?.scheduleTime || '06:00',
+        duration: d?.duration || d?.duracao || d?.duracaoMin || 10,
+        days: d?.days || d?.dias || [1,3,5]
+      }
+    }catch(e){return {name:'Irrigação principal',id:'irrigacao01',time:'06:00',duration:10,days:[1,3,5]};}
+  }
+
+  function dayHtml(days){
+    const labels = ['D','S','T','Q','Q','S','S'];
+    const list = Array.isArray(days) ? days.map(Number) : [];
+    return labels.map((l,i)=>`<span class="irrigation-day ${list.includes(i)?'on':''}">${l}</span>`).join('');
+  }
+
+  function renderIrrigationAdvanced(){
+    const view = document.querySelector('#view-irrigacao, #irrigacao, [data-view-panel="irrigacao"], .view[data-view="irrigacao"], .view-irrigacao');
+    const target = view || document.querySelector('.view.active') || document.body;
+    if(!target || document.getElementById('irrigationAdvancedV40')) return;
+
+    const data = loadIrrigationV40();
+    const sched = getMainSchedule();
+    const hist = (data.history && data.history.length ? data.history : [8,10,0,12,10,0,9]);
+    const max = Math.max(...hist, 1);
+
+    const wrap = document.createElement('section');
+    wrap.id = 'irrigationAdvancedV40';
+    wrap.className = 'irrigation-advanced-grid';
+    wrap.innerHTML = `
+      <div class="glass irrigation-plan-card">
+        <div class="irrigation-plan-head">
+          <div class="irrigation-plan-title">🌱 Plano inteligente de irrigação</div>
+          <button class="btn btn-ghost btn-sm" id="irrigationV40ConfigBtn">⚙️</button>
+        </div>
+
+        <div class="irrigation-schedule-line">
+          <span>Próximo horário</span>
+          <strong>${sched.time}</strong>
+        </div>
+        <div class="irrigation-schedule-line">
+          <span>Duração</span>
+          <strong>${sched.duration} min</strong>
+        </div>
+        <div class="irrigation-days">${dayHtml(sched.days)}</div>
+
+        <div class="irrigation-protection-list">
+          <div><span>🌧️ Bloqueio por chuva</span><small>${data.rainBlock?'Ativo':'Off'} · ${data.rainChanceLimit}%</small></div>
+          <div><span>🛡️ Tempo máximo</span><small>${data.maxRuntimeMin} min</small></div>
+          <div><span>🔁 Máx. ciclos/dia</span><small>${data.maxRunsPerDay}</small></div>
+          <div><span>🏖️ Modo</span><small>${data.mode}</small></div>
+        </div>
+      </div>
+
+      <div class="glass irrigation-plan-card">
+        <div class="irrigation-plan-head">
+          <div class="irrigation-plan-title">📈 Histórico e AI House</div>
+          <span class="irrigation-mode-pill">últimos 7 dias</span>
+        </div>
+        <div class="irrigation-mini-history">
+          ${hist.map(v=>`<span title="${v} min" style="height:${Math.max(8,Math.round((v/max)*86))}px"></span>`).join('')}
+        </div>
+        <div class="irrigation-ai-note">${buildAI(data)}</div>
+      </div>
+
+      <div class="glass irrigation-plan-card" style="grid-column:1/-1">
+        <div class="irrigation-plan-head">
+          <div class="irrigation-plan-title">🧩 Zonas preparadas</div>
+          <span class="irrigation-mode-pill">futuro</span>
+        </div>
+        <div class="irrigation-zone-list">
+          ${data.zones.map(z=>`<div class="irrigation-zone"><strong>${z.enabled?'🟢':'⚪'} ${z.name}</strong><span>${z.duration} min · ${z.enabled?'ativa':'preparada'}</span></div>`).join('')}
+        </div>
+      </div>
+    `;
+
+    const head = target.querySelector('.view-head');
+    if(head && head.nextSibling) head.parentNode.insertBefore(wrap, head.nextSibling);
+    else target.appendChild(wrap);
+
+    document.getElementById('irrigationV40ConfigBtn')?.addEventListener('click', openIrrigationV40Modal);
+  }
+
+  function openIrrigationV40Modal(){
+    const data = loadIrrigationV40();
+    const old = document.getElementById('irrigationV40Modal');
+    if(old) old.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'irrigationV40Modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal glass">
+        <div class="modal-head">
+          <h3>🌱 Configuração inteligente</h3>
+          <button class="modal-close" id="closeIrrV40">✕</button>
+        </div>
+
+        <div class="field">
+          <label>Modo</label>
+          <select id="irrV40Mode">
+            <option value="normal" ${data.mode==='normal'?'selected':''}>Normal</option>
+            <option value="economico" ${data.mode==='economico'?'selected':''}>Econômico</option>
+            <option value="ferias" ${data.mode==='ferias'?'selected':''}>Férias</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Bloquear se chance de chuva for maior ou igual a (%)</label>
+          <input id="irrV40RainLimit" type="number" min="0" max="100" value="${data.rainChanceLimit}">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Máx. ciclos por dia</label>
+            <input id="irrV40MaxRuns" type="number" min="1" max="10" value="${data.maxRunsPerDay}">
+          </div>
+          <div class="field">
+            <label>Tempo máximo ligado</label>
+            <input id="irrV40MaxRuntime" type="number" min="1" max="180" value="${data.maxRuntimeMin}">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Modo férias reduz duração para (%)</label>
+          <input id="irrV40VacationScale" type="number" min="10" max="100" value="${data.vacationScale}">
+        </div>
+
+        <label style="display:flex;gap:8px;align-items:center;margin:10px 0;color:var(--text-dim)">
+          <input id="irrV40RainBlock" type="checkbox" ${data.rainBlock?'checked':''}> Usar previsão de chuva
+        </label>
+        <label style="display:flex;gap:8px;align-items:center;margin:10px 0;color:var(--text-dim)">
+          <input id="irrV40SmartWindow" type="checkbox" ${data.smartWindow?'checked':''}> Preferir horários inteligentes
+        </label>
+
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="cancelIrrV40">Cancelar</button>
+          <button class="btn btn-primary" id="saveIrrV40">Salvar</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const close = ()=>modal.remove();
+    document.getElementById('closeIrrV40').onclick = close;
+    document.getElementById('cancelIrrV40').onclick = close;
+    document.getElementById('saveIrrV40').onclick = ()=>{
+      data.mode = document.getElementById('irrV40Mode').value;
+      data.rainChanceLimit = Number(document.getElementById('irrV40RainLimit').value || 70);
+      data.maxRunsPerDay = Number(document.getElementById('irrV40MaxRuns').value || 2);
+      data.maxRuntimeMin = Number(document.getElementById('irrV40MaxRuntime').value || 60);
+      data.vacationScale = Number(document.getElementById('irrV40VacationScale').value || 50);
+      data.rainBlock = document.getElementById('irrV40RainBlock').checked;
+      data.smartWindow = document.getElementById('irrV40SmartWindow').checked;
+      saveIrrigationV40(data);
+      document.getElementById('irrigationAdvancedV40')?.remove();
+      close();
+      renderIrrigationAdvanced();
+
+      // Envia configuração para o ESP32 se existir função MQTT global
+      try{
+        const sched = getMainSchedule();
+        const topic = `casa/${sched.id}/config`;
+        const payload = {
+          pass: sched.pass || sched.password || '',
+          rain_block: data.rainBlock,
+          rain_chance_limit: data.rainChanceLimit,
+          smart_window: data.smartWindow,
+          mode: data.mode,
+          max_runs_day: data.maxRunsPerDay,
+          max_runtime_min: data.maxRuntimeMin,
+          vacation_scale: data.vacationScale
+        };
+        if(window.mqttClient && (window.mqttClient.connected === true || (typeof window.mqttClient.connected === 'function' && window.mqttClient.connected()))){
+          window.mqttClient.publish(topic, JSON.stringify(payload));
+        }
+      }catch(e){}
+
+      if(typeof showToast === 'function') showToast('Configuração da irrigação salva','success');
+    };
+  }
+
+  function hookNav(){
+    document.addEventListener('click', function(e){
+      const b = e.target.closest('[data-view="irrigacao"], .nav-item');
+      if(b && (b.dataset.view === 'irrigacao' || /irrig/i.test(b.textContent||''))){
+        setTimeout(renderIrrigationAdvanced, 80);
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    hookNav();
+    setTimeout(renderIrrigationAdvanced, 600);
+  });
+  window.renderIrrigationAdvancedV40 = renderIrrigationAdvanced;
+})();
+</script>
+
 </body>
 </html>
