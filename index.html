@@ -869,6 +869,59 @@ input, select{font-family:inherit; color:var(--text);}
   .core-section{gap:18px;}
 }
 
+
+
+/* ============================================================
+   AJUSTE V32 — IRRIGAÇÃO MINIMALISTA + ANIMAÇÕES SUAVES
+   ============================================================ */
+.irrigation-banner-top{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  padding:0 4px !important;
+  min-height:auto !important;
+  max-width:210px !important;
+  gap:6px !important;
+  color:var(--text-dim);
+}
+.irrigation-banner-top.blocked{color:var(--amber) !important;}
+.irrigation-banner-top.authorized{color:var(--green) !important;}
+.irrigation-banner-top .ic{display:none !important;}
+.irrigation-banner-top #irrigationText{
+  font-family:var(--font-head);
+  font-size:12px !important;
+  font-weight:700;
+  letter-spacing:.3px;
+  max-width:170px !important;
+  animation:softTextFade .35s ease both;
+}
+.irrigation-banner-top small{
+  display:none !important;
+}
+@keyframes softTextFade{
+  from{opacity:.25; transform:translateY(3px);}
+  to{opacity:1; transform:translateY(0);}
+}
+.weather-chip .wic{animation:weatherFloat 4.5s ease-in-out infinite;}
+@keyframes weatherFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+.core-center{animation:coreBreath 3.8s ease-in-out infinite;}
+@keyframes coreBreath{
+  0%,100%{box-shadow:0 0 34px rgba(45,212,255,0.16), inset 0 0 24px rgba(45,212,255,0.08);}
+  50%{box-shadow:0 0 48px rgba(45,212,255,0.28), inset 0 0 30px rgba(124,92,255,0.12);}
+}
+.badge-online .badge-dot{animation:onlinePulse 1.8s ease-in-out infinite;}
+@keyframes onlinePulse{0%,100%{opacity:.65; box-shadow:0 0 5px currentColor;}50%{opacity:1; box-shadow:0 0 13px currentColor;}}
+.glass{transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;}
+.glass:hover{border-color:rgba(45,212,255,.22);}
+.tank-dashboard-card .tank-card-level{animation:tankGlow 2.8s ease-in-out infinite;}
+@keyframes tankGlow{0%,100%{text-shadow:0 0 10px rgba(45,212,255,.35);}50%{text-shadow:0 0 16px rgba(45,212,255,.6);}}
+.tank-dashboard-card .tank-vertical-fill{transition:height .6s cubic-bezier(.2,.8,.2,1), filter .3s ease;}
+.tank-dashboard-card.pump-on .pump-icon .gear{animation:pumpSpin 3.8s linear infinite;}
+.tank-dashboard-card.pump-on .pump-icon{animation:pumpGlow 1.2s ease-in-out infinite;}
+.tank-dashboard-card.pump-on .pump-icon .waves{animation:waterWave 1.15s linear infinite;}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 </head>
@@ -947,7 +1000,7 @@ input, select{font-family:inherit; color:var(--text);}
           <span class="ic">💧</span>
           <div>
             <div id="irrigationText">☀️ Rega normal</div>
-            <small id="irrigationSub">Sem chuva</small>
+            <small id="irrigationSub"></small>
           </div>
         </div>
 
@@ -1323,24 +1376,6 @@ input, select{font-family:inherit; color:var(--text);}
   </div>
 </div>
 
-
-<!-- ============================================================
-     MODAL: WEATHER STATE
-     ============================================================ -->
-<div class="modal-overlay hidden" id="weatherStateOverlay">
-  <div class="modal glass">
-    <div class="modal-head">
-      <h3>📍 Estado monitorado</h3>
-      <button class="modal-close" data-close="weatherStateOverlay">✕</button>
-    </div>
-    <div class="hint" style="margin-top:0;">Escolha o estado do Brasil que a meteorologia e a irrigação devem monitorar.</div>
-    <div class="state-grid" id="weatherStateGrid"></div>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" data-close="weatherStateOverlay">Cancelar</button>
-    </div>
-  </div>
-</div>
-
 <!-- ============================================================
      MODAL: SMOKE ALERT POPUP
      ============================================================ -->
@@ -1712,12 +1747,15 @@ input, select{font-family:inherit; color:var(--text);}
     if(w.rainPredicted){
       banner.className = "irrigation-banner irrigation-banner-top blocked";
       text.textContent = "⏸️ Suspensa pela chuva";
-      sub.textContent = "Chuva: "+w.rainChance+"%";
+      if(sub) sub.textContent = "";
     } else {
       banner.className = "irrigation-banner irrigation-banner-top authorized";
       text.textContent = "☀️ Rega normal";
-      sub.textContent = "Sem chuva";
+      if(sub) sub.textContent = "";
     }
+    text.style.animation = "none";
+    text.offsetHeight;
+    text.style.animation = "softTextFade .35s ease both";
   }
 
 
