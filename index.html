@@ -1185,7 +1185,19 @@ input, select{font-family:inherit; color:var(--text);}
                 <div class="field"><label>Usuário</label><input type="text" id="brokerUser" placeholder="usuario_mqtt"></div>
               </div>
               <div class="field"><label>Senha</label><input type="password" id="brokerPass" placeholder="••••••••"></div>
-              <div class="hint">Conexão do painel é feita via MQTT sobre WebSocket (porta WS/TLS do broker, ex: 8884 na HiveMQ Cloud) — controla e recebe status em tempo real dos ESP32 cadastrados.</div>
+              <div class="field-row">
+                <div class="field"><label>Modo de conexão</label><select id="brokerMode"><option value="auto">AUTO — Nuvem com fallback local</option><option value="cloud">Somente nuvem</option><option value="local">Somente local</option></select></div>
+                <div class="field"><label>Status ativo</label><input type="text" id="brokerActiveMode" value="—" disabled style="opacity:.65;"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Broker local</label><input type="text" id="localBrokerHost" placeholder="192.168.1.100"></div>
+                <div class="field"><label>Porta WebSocket local</label><input type="text" id="localBrokerPort" placeholder="9001"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Usuário local</label><input type="text" id="localBrokerUser" placeholder="opcional"></div>
+                <div class="field"><label>Senha local</label><input type="password" id="localBrokerPass" placeholder="opcional"></div>
+              </div>
+              <div class="hint">Modo AUTO: tenta primeiro a nuvem. Se falhar, muda sozinho para o broker local da rede. O broker local precisa aceitar MQTT via WebSocket, normalmente porta 9001 no Mosquitto.</div>
               <button type="submit" class="btn btn-primary btn-block">💾 Salvar e conectar</button>
             </form>
           </div>
@@ -1614,7 +1626,7 @@ input, select{font-family:inherit; color:var(--text);}
         {day:"Qui", icon:"☀️", hi:28, lo:20, rain:10}
       ]
     },
-    broker:{host:"", port:"", user:"", pass:""},
+    broker:{host:"", port:"", user:"", pass:"", mode:"auto", localHost:"", localPort:"9001", localUser:"", localPass:"", activeMode:"—"},
     waterTank:{
       id:"caixa01",
       pass:"",
@@ -2315,17 +2327,22 @@ input, select{font-family:inherit; color:var(--text);}
   }
   var mqttConnected = false;
 
-  function setBrokerStatus(connected){
+  function setBrokerStatus(connected, modeLabel){
     mqttConnected = connected;
+    if(modeLabel) state.broker.activeMode = modeLabel;
+    if(!connected && !modeLabel) state.broker.activeMode = "—";
+    var activeModeTxt = connected ? (state.broker.activeMode || "MQTT") : "—";
+    var activeInput = document.getElementById("brokerActiveMode");
+    if(activeInput) activeInput.value = activeModeTxt;
     var el = document.getElementById("brokerStatus");
     if(el){
       el.className = "badge " + (connected ? "badge-online" : "badge-offline");
-      el.textContent = connected ? "● conectado" : "● desconectado";
+      el.textContent = connected ? ("● conectado · " + activeModeTxt) : "● desconectado";
     }
     var sb = document.getElementById("sidebarBrokerStatus");
     if(sb){
       sb.className = "badge " + (connected ? "badge-online" : "badge-offline");
-      sb.innerHTML = '<span class="badge-dot"></span> Broker ' + (connected ? "conectado" : "desconectado");
+      sb.innerHTML = '<span class="badge-dot"></span> Broker ' + (connected ? ("conectado · " + activeModeTxt) : "desconectado");
     }
   }
 
@@ -2555,60 +2572,120 @@ input, select{font-family:inherit; color:var(--text);}
     });
   }
 
+  var mqttConnectAttempt = 0;
+
+  function cleanBrokerHost(host){
+    host = String(host || "").trim();
+    host = host.replace(/^mqtts?:\/\//i, "");
+    host = host.replace(/\/mqtt\/?$/i, "").replace(/\/+$/g, "");
+    return host;
+  }
+
+  function brokerUrlFromCandidate(c){
+    var host = String(c.host || "").trim();
+    var port = String(c.port || "").trim();
+    if(/^wss?:\/\//i.test(host)){
+      var url = host.replace(/\/+$/g, "");
+      if(url.indexOf("/mqtt") === -1) url += "/mqtt";
+      return url;
+    }
+    host = cleanBrokerHost(host);
+    if(host.indexOf(":") !== -1 && host.indexOf("]") === -1){
+      var splitHost = host.split(":");
+      host = splitHost[0];
+      if(!port && splitHost[1]) port = splitHost[1];
+    }
+    if(c.kind === "cloud" && port === "8883") port = "8884";
+    if(!port) port = (c.kind === "local" ? "9001" : "8884");
+    var proto = (c.kind === "local") ? "ws" : "wss";
+    return proto + "://" + host + ":" + port + "/mqtt";
+  }
+
+  function getBrokerCandidates(){
+    var mode = state.broker.mode || "auto";
+    var list = [];
+    var cloud = {
+      kind:"cloud",
+      label:"🌎 Nuvem",
+      host:state.broker.host,
+      port:state.broker.port,
+      user:state.broker.user,
+      pass:state.broker.pass
+    };
+    var local = {
+      kind:"local",
+      label:"🏠 Local",
+      host:state.broker.localHost,
+      port:state.broker.localPort || "9001",
+      user:state.broker.localUser,
+      pass:state.broker.localPass
+    };
+    if(mode === "local") list.push(local);
+    else if(mode === "cloud") list.push(cloud);
+    else { list.push(cloud); if(local.host) list.push(local); }
+    return list.filter(function(c){ return !!String(c.host || "").trim(); });
+  }
+
   function connectMqtt(){
     if(typeof mqtt === "undefined"){
       console.warn("Biblioteca mqtt.js não carregou.");
       return;
     }
-    if(!state.broker.host || !state.broker.port){
+    var candidates = getBrokerCandidates();
+    if(!candidates.length){
       setBrokerStatus(false);
-      toast("Preencha servidor e porta do broker em Configurações", "error");
+      toast("Configure o broker nuvem ou local em Configurações", "error");
       return;
     }
+    mqttConnectAttempt++;
+    var attemptId = mqttConnectAttempt;
     if(mqttClient){
       try{ mqttClient.end(true); }catch(e){}
       mqttClient = null;
     }
+    connectMqttCandidate(candidates, 0, attemptId);
+  }
 
-    var rawHost = String(state.broker.host || "").trim();
-    var rawPort = String(state.broker.port || "").trim();
-
-    // O ESP32 usa MQTT TLS puro, normalmente porta 8883.
-    // O navegador NAO consegue usar MQTT puro: precisa WebSocket TLS.
-    // Na HiveMQ Cloud, a porta WebSocket TLS normalmente e 8884.
-    rawHost = rawHost.replace(/^wss?:\/\//i, "").replace(/^mqtts?:\/\//i, "");
-    rawHost = rawHost.replace(/\/mqtt\/?$/i, "").replace(/\/+$/g, "");
-    if(rawHost.indexOf(":") !== -1){
-      var splitHost = rawHost.split(":");
-      rawHost = splitHost[0];
-      if(!rawPort && splitHost[1]) rawPort = splitHost[1];
+  function connectMqttCandidate(candidates, idx, attemptId){
+    if(attemptId !== mqttConnectAttempt) return;
+    if(idx >= candidates.length){
+      setBrokerStatus(false);
+      toast("Não consegui conectar na nuvem nem no broker local", "error");
+      return;
     }
-    var wsPort = rawPort;
-    if(wsPort === "8883"){
-      wsPort = "8884";
-      toast("Painel usa WebSocket: troquei 8883 por 8884 para conectar no navegador", "info");
-    }
-
-    var url = "wss://" + rawHost + ":" + wsPort + "/mqtt";
-    console.log("[MQTT] conectando painel via WebSocket:", url);
+    var c = candidates[idx];
+    var url = brokerUrlFromCandidate(c);
+    var connectedOnce = false;
+    console.log("[MQTT] tentando", c.label, url);
+    setBrokerStatus(false, "Tentando " + c.label);
     try{
       mqttClient = mqtt.connect(url, {
-        username: state.broker.user || undefined,
-        password: state.broker.pass || undefined,
-        clientId: "painel_" + Math.random().toString(16).slice(2),
-        reconnectPeriod: 4000,
-        connectTimeout: 12000,
+        username: c.user || undefined,
+        password: c.pass || undefined,
+        clientId: "painel_" + c.kind + "_" + Math.random().toString(16).slice(2),
+        reconnectPeriod: 0,
+        connectTimeout: 9000,
         clean: true
       });
     }catch(e){
       console.error("[MQTT] erro ao conectar:", e);
-      setBrokerStatus(false);
+      connectMqttCandidate(candidates, idx + 1, attemptId);
       return;
     }
 
+    var failTimer = setTimeout(function(){
+      if(attemptId !== mqttConnectAttempt || connectedOnce) return;
+      try{ mqttClient.end(true); }catch(e){}
+      connectMqttCandidate(candidates, idx + 1, attemptId);
+    }, 9500);
+
     mqttClient.on("connect", function(){
-      setBrokerStatus(true);
-      toast("Conectado ao broker MQTT", "success");
+      if(attemptId !== mqttConnectAttempt) return;
+      connectedOnce = true;
+      clearTimeout(failTimer);
+      state.broker.activeMode = c.label;
+      setBrokerStatus(true, c.label);
+      toast("Conectado ao broker " + c.label.replace(/[🌎🏠]/g, "").trim(), "success");
       mqttClient.subscribe("sensors/+/data", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe data", err); });
       mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
       subscribeWaterTopics();
@@ -2616,11 +2693,25 @@ input, select{font-family:inherit; color:var(--text);}
       renderWaterDebug();
     });
 
-    mqttClient.on("reconnect", function(){ setBrokerStatus(false); });
-    mqttClient.on("close", function(){ setBrokerStatus(false); });
+    mqttClient.on("close", function(){
+      if(attemptId !== mqttConnectAttempt) return;
+      setBrokerStatus(false);
+      if(!connectedOnce){
+        clearTimeout(failTimer);
+        connectMqttCandidate(candidates, idx + 1, attemptId);
+      }else{
+        setTimeout(function(){ if(attemptId === mqttConnectAttempt) connectMqtt(); }, 4000);
+      }
+    });
+    mqttClient.on("offline", function(){ if(attemptId === mqttConnectAttempt) setBrokerStatus(false); });
     mqttClient.on("error", function(err){
       console.error("[MQTT] erro:", err);
       setBrokerStatus(false);
+      if(!connectedOnce){
+        clearTimeout(failTimer);
+        try{ mqttClient.end(true); }catch(e){}
+        connectMqttCandidate(candidates, idx + 1, attemptId);
+      }
     });
 
     mqttClient.on("message", function(topic, payloadBuf){
@@ -2650,7 +2741,7 @@ input, select{font-family:inherit; color:var(--text);}
       if(parts.length < 3 || parts[0] !== "sensors" || parts[2] !== "data") return;
       var devId = parts[1];
       var env = findEnvByDeviceId(devId);
-      if(!env) return; // dispositivo ainda não cadastrado em nenhum ambiente
+      if(!env) return;
 
       var data;
       try{ data = JSON.parse(payloadText); }catch(e){ return; }
@@ -2663,7 +2754,6 @@ input, select{font-family:inherit; color:var(--text);}
         var hVal = (typeof data.humidity === "number") ? data.humidity : (typeof data.hum === "number" ? data.hum : null);
         if(hasNumber(tVal)) env.temp = tVal;
         if(hasNumber(hVal)) env.humidity = hVal;
-        // nota: estado da lâmpada vem via sensors/{id}/gas, não aqui
         env.status = "online";
       }
       env.lastSeen = new Date();
@@ -3223,6 +3313,11 @@ input, select{font-family:inherit; color:var(--text);}
     state.broker.port = document.getElementById("brokerPort").value.trim();
     state.broker.user = document.getElementById("brokerUser").value.trim();
     state.broker.pass = document.getElementById("brokerPass").value;
+    state.broker.mode = (document.getElementById("brokerMode")||{}).value || "auto";
+    state.broker.localHost = (document.getElementById("localBrokerHost")||{}).value ? document.getElementById("localBrokerHost").value.trim() : "";
+    state.broker.localPort = (document.getElementById("localBrokerPort")||{}).value ? document.getElementById("localBrokerPort").value.trim() : "9001";
+    state.broker.localUser = (document.getElementById("localBrokerUser")||{}).value ? document.getElementById("localBrokerUser").value.trim() : "";
+    state.broker.localPass = (document.getElementById("localBrokerPass")||{}).value || "";
     saveBrokerConfig();
     toast("Configuração salva — conectando ao broker...", "success");
     connectMqtt();
@@ -3248,14 +3343,31 @@ input, select{font-family:inherit; color:var(--text);}
     state.broker.port = cfg.port || "";
     state.broker.user = cfg.user || "";
     state.broker.pass = cfg.pass || "";
+    state.broker.mode = cfg.mode || "auto";
+    state.broker.localHost = cfg.localHost || "";
+    state.broker.localPort = cfg.localPort || "9001";
+    state.broker.localUser = cfg.localUser || "";
+    state.broker.localPass = cfg.localPass || "";
     var elHost = document.getElementById("brokerHost");
     var elPort = document.getElementById("brokerPort");
     var elUser = document.getElementById("brokerUser");
     var elPass = document.getElementById("brokerPass");
+    var elMode = document.getElementById("brokerMode");
+    var elLocalHost = document.getElementById("localBrokerHost");
+    var elLocalPort = document.getElementById("localBrokerPort");
+    var elLocalUser = document.getElementById("localBrokerUser");
+    var elLocalPass = document.getElementById("localBrokerPass");
+    var elActive = document.getElementById("brokerActiveMode");
     if(elHost) elHost.value = state.broker.host;
     if(elPort) elPort.value = state.broker.port;
     if(elUser) elUser.value = state.broker.user;
     if(elPass) elPass.value = state.broker.pass;
+    if(elMode) elMode.value = state.broker.mode;
+    if(elLocalHost) elLocalHost.value = state.broker.localHost;
+    if(elLocalPort) elLocalPort.value = state.broker.localPort;
+    if(elLocalUser) elLocalUser.value = state.broker.localUser;
+    if(elLocalPass) elLocalPass.value = state.broker.localPass;
+    if(elActive) elActive.value = state.broker.activeMode || "—";
     return true;
   }
 
