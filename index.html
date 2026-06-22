@@ -295,6 +295,26 @@ input, select{font-family:inherit; color:var(--text);}
 .weather-stats strong{display:block; font-size:13px; font-family:var(--font-mono);}
 .weather-stats span{font-size:9.5px; color:var(--text-faint); letter-spacing:0.5px;}
 
+.weather-action{
+  margin-left:2px;
+  width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(45,212,255,0.08);
+  border:1px solid rgba(45,212,255,0.26);
+  color:var(--cyan); font-size:14px; flex-shrink:0;
+  transition:background .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.weather-action:hover{background:rgba(45,212,255,0.16); transform:scale(1.05); box-shadow:0 0 12px rgba(45,212,255,0.20);}
+.state-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:330px; overflow-y:auto; padding-right:4px;}
+.state-option{
+  padding:9px 8px; border-radius:10px;
+  background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  font-family:var(--font-head); font-weight:700; font-size:13px; letter-spacing:.2px;
+}
+.state-option:hover{border-color:rgba(45,212,255,0.45); background:rgba(45,212,255,0.07);}
+.state-option.active{border-color:var(--cyan); color:var(--cyan); background:var(--cyan-dim); box-shadow:0 0 12px rgba(45,212,255,0.16);}
+@media(max-width:560px){.state-grid{grid-template-columns:repeat(2,1fr); max-height:55vh;}.weather-action{width:28px;height:28px;}}
+
 /* Content */
 #content{padding:16px 24px 44px; flex:1;}
 .view{display:none; animation:fadeUp .45s ease both;}
@@ -941,6 +961,7 @@ input, select{font-family:inherit; color:var(--text);}
             <div><strong id="weatherRain">--%</strong><span>CHUVA</span></div>
             <div><strong id="weatherHum">--%</strong><span>UMIDADE</span></div>
           </div>
+          <button class="weather-action" id="changeWeatherStateBtn" type="button" title="Mudar estado monitorado">📍</button>
         </div>
       </div>
     </header>
@@ -1095,8 +1116,9 @@ input, select{font-family:inherit; color:var(--text);}
         <div class="view-head">
           <div>
             <h2>METEOROLOGIA</h2>
-            <p>Dados utilizados na lógica de irrigação inteligente</p>
+            <p>Dados utilizados na lógica de irrigação inteligente · <span id="meteoStateLabel">RJ</span></p>
           </div>
+          <button class="btn btn-ghost btn-sm" id="changeWeatherStateBtn2" type="button">📍 Mudar estado</button>
         </div>
         <div class="glass panel-pad">
           <div style="display:flex; align-items:center; gap:22px; flex-wrap:wrap;">
@@ -1301,6 +1323,24 @@ input, select{font-family:inherit; color:var(--text);}
   </div>
 </div>
 
+
+<!-- ============================================================
+     MODAL: WEATHER STATE
+     ============================================================ -->
+<div class="modal-overlay hidden" id="weatherStateOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>📍 Estado monitorado</h3>
+      <button class="modal-close" data-close="weatherStateOverlay">✕</button>
+    </div>
+    <div class="hint" style="margin-top:0;">Escolha o estado do Brasil que a meteorologia e a irrigação devem monitorar.</div>
+    <div class="state-grid" id="weatherStateGrid"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close="weatherStateOverlay">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============================================================
      MODAL: SMOKE ALERT POPUP
      ============================================================ -->
@@ -1411,6 +1451,8 @@ input, select{font-family:inherit; color:var(--text);}
     environments:[],
     alerts:[],
     weather:{
+      monitoredState:"RJ",
+      monitoredStateName:"Rio de Janeiro",
       tempOut:24,
       condition:"Parcialmente nublado",
       icon:"⛅",
@@ -1480,6 +1522,7 @@ input, select{font-family:inherit; color:var(--text);}
       document.getElementById("app").classList.remove("hidden");
       restoreEnvironments();
       loadWaterState();
+      restoreWeatherState();
       renderAll();
       if(restoreBrokerConfig()) connectMqtt();
     }, 320);
@@ -1562,6 +1605,75 @@ input, select{font-family:inherit; color:var(--text);}
     });
   }
 
+  var weatherBtnTop = document.getElementById("changeWeatherStateBtn");
+  if(weatherBtnTop) weatherBtnTop.addEventListener("click", openWeatherStateModal);
+  var weatherBtnView = document.getElementById("changeWeatherStateBtn2");
+  if(weatherBtnView) weatherBtnView.addEventListener("click", openWeatherStateModal);
+
+  var BRAZIL_STATES = [
+    ["AC","Acre",30,"🌦️",70,76], ["AL","Alagoas",28,"🌤️",35,72], ["AP","Amapá",29,"🌧️",75,82],
+    ["AM","Amazonas",31,"🌧️",80,84], ["BA","Bahia",27,"☀️",20,65], ["CE","Ceará",29,"☀️",15,62],
+    ["DF","Distrito Federal",24,"🌤️",25,55], ["ES","Espírito Santo",25,"⛅",45,70], ["GO","Goiás",27,"🌤️",25,58],
+    ["MA","Maranhão",29,"🌦️",55,75], ["MT","Mato Grosso",30,"🌤️",30,60], ["MS","Mato Grosso do Sul",28,"⛅",35,62],
+    ["MG","Minas Gerais",24,"⛅",40,64], ["PA","Pará",30,"🌧️",78,83], ["PB","Paraíba",28,"☀️",20,66],
+    ["PR","Paraná",21,"🌦️",55,73], ["PE","Pernambuco",28,"🌤️",30,68], ["PI","Piauí",31,"☀️",12,52],
+    ["RJ","Rio de Janeiro",24,"⛅",65,71], ["RN","Rio Grande do Norte",29,"☀️",18,64], ["RS","Rio Grande do Sul",19,"🌧️",68,78],
+    ["RO","Rondônia",30,"🌦️",60,76], ["RR","Roraima",31,"🌦️",58,74], ["SC","Santa Catarina",20,"🌧️",62,76],
+    ["SP","São Paulo",22,"🌦️",50,70], ["SE","Sergipe",28,"🌤️",28,68], ["TO","Tocantins",31,"☀️",18,54]
+  ];
+
+  function getWeatherStateInfo(uf){
+    uf = String(uf || "RJ").toUpperCase();
+    for(var i=0;i<BRAZIL_STATES.length;i++){ if(BRAZIL_STATES[i][0] === uf) return BRAZIL_STATES[i]; }
+    return BRAZIL_STATES.find(function(s){ return s[0] === "RJ"; }) || BRAZIL_STATES[0];
+  }
+
+  function applyWeatherState(uf, shouldSave){
+    var info = getWeatherStateInfo(uf);
+    var w = state.weather;
+    w.monitoredState = info[0];
+    w.monitoredStateName = info[1];
+    w.tempOut = info[2];
+    w.icon = info[3];
+    w.rainChance = info[4];
+    w.humidity = info[5];
+    w.rainPredicted = w.rainChance >= 55;
+    w.condition = w.rainPredicted ? "Chuva prevista · " + info[0] : "Tempo estável · " + info[0];
+    w.forecast = [
+      {day:"Hoje", icon:w.icon, hi:w.tempOut+2, lo:w.tempOut-5, rain:w.rainChance},
+      {day:"Amanhã", icon:w.rainPredicted?"🌧️":"🌤️", hi:w.tempOut+1, lo:w.tempOut-4, rain:Math.min(95, Math.max(5, w.rainChance+10))},
+      {day:"Depois", icon:"🌦️", hi:w.tempOut+2, lo:w.tempOut-3, rain:Math.max(5, w.rainChance-12)},
+      {day:"+3 dias", icon:"☀️", hi:w.tempOut+3, lo:w.tempOut-2, rain:Math.max(5, w.rainChance-25)},
+      {day:"+4 dias", icon:"⛅", hi:w.tempOut+2, lo:w.tempOut-3, rain:Math.max(5, w.rainChance-18)}
+    ];
+    if(shouldSave !== false) localStorage_safeSet("smarthome_weather_state", w.monitoredState);
+  }
+
+  function restoreWeatherState(){
+    var saved = localStorage_safeGet("smarthome_weather_state") || state.weather.monitoredState || "RJ";
+    applyWeatherState(saved, false);
+  }
+
+  function openWeatherStateModal(){
+    var grid = document.getElementById("weatherStateGrid");
+    if(!grid) return;
+    grid.innerHTML = "";
+    BRAZIL_STATES.forEach(function(info){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "state-option" + (info[0] === state.weather.monitoredState ? " active" : "");
+      btn.innerHTML = '<strong>'+info[0]+'</strong><br><span style="font-size:11px;color:var(--text-dim);">'+info[1]+'</span>';
+      btn.addEventListener("click", function(){
+        applyWeatherState(info[0], true);
+        document.getElementById("weatherStateOverlay").classList.add("hidden");
+        toast("Meteorologia monitorando: " + info[1], "success");
+        renderAll();
+      });
+      grid.appendChild(btn);
+    });
+    document.getElementById("weatherStateOverlay").classList.remove("hidden");
+  }
+
   /* ============================================================
      RENDER: WEATHER
      ============================================================ */
@@ -1569,13 +1681,15 @@ input, select{font-family:inherit; color:var(--text);}
     var w = state.weather;
     document.getElementById("weatherIcon").textContent = w.icon;
     document.getElementById("weatherTemp").textContent = w.tempOut + "°C";
-    document.getElementById("weatherCond").textContent = w.condition;
+    document.getElementById("weatherCond").textContent = (w.monitoredState || "RJ") + " · " + w.condition;
     document.getElementById("weatherRain").textContent = w.rainChance + "%";
     document.getElementById("weatherHum").textContent = w.humidity + "%";
 
     document.getElementById("meteoIconBig").textContent = w.icon;
     document.getElementById("meteoTempBig").textContent = w.tempOut + "°C";
-    document.getElementById("meteoCondBig").textContent = w.condition;
+    document.getElementById("meteoCondBig").textContent = w.condition + " · " + (w.monitoredStateName || w.monitoredState || "RJ");
+    var stateLabel = document.getElementById("meteoStateLabel");
+    if(stateLabel) stateLabel.textContent = (w.monitoredStateName || "Rio de Janeiro") + " (" + (w.monitoredState || "RJ") + ")";
     document.getElementById("meteoRainBig").textContent = w.rainChance + "%";
     document.getElementById("meteoHumBig").textContent = w.humidity + "%";
 
