@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v35</title>
+<title>SMART HOME AI CONTROL - v39</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -967,6 +967,44 @@ input, select{font-family:inherit; color:var(--text);}
 @media(max-width:1100px){.measure-layout-horizontal{grid-template-columns:1fr 1fr}.measure-side-panel{grid-column:1 / -1}.measure-chart{height:112px}}
 @media(max-width:680px){.measure-layout-horizontal{grid-template-columns:1fr}.energy-power{text-align:center;font-size:34px}.energy-status-line{justify-content:center}.measure-triplet{grid-template-columns:repeat(3,1fr);gap:7px}.measure-kv{padding:8px 5px}.measure-kv strong{font-size:12px}.measure-card-horizontal{min-height:auto}}
 
+
+
+/* ============================================================
+   IRRIGAÇÃO PROGRAMADA
+   ============================================================ */
+.irrig-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; align-items:start;}
+.irrig-card{padding:18px; position:relative; overflow:hidden;}
+.irrig-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px;}
+.irrig-title{font-family:var(--font-head); font-weight:700; font-size:17px; letter-spacing:.4px;}
+.irrig-id{font-family:var(--font-mono); color:var(--text-faint); font-size:10.5px; margin-top:2px;}
+.irrig-status{display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:11px; color:var(--text-dim);}
+.irrig-status .dot{width:8px;height:8px;border-radius:50%;background:var(--text-faint);}
+.irrig-status.on .dot{background:var(--green); box-shadow:0 0 12px var(--green); animation:statusPulse 1.7s ease-in-out infinite;}
+.irrig-status.offline .dot{background:var(--red); box-shadow:0 0 8px rgba(255,77,106,.45);}
+.irrig-main{display:grid; grid-template-columns:1fr 120px; gap:14px; align-items:stretch;}
+.irrig-schedule-box{border:1px solid var(--line-soft); background:rgba(255,255,255,.025); border-radius:12px; padding:12px;}
+.irrig-next{font-family:var(--font-display); font-size:18px; color:var(--cyan); margin-bottom:6px;}
+.irrig-small{font-size:12px; color:var(--text-dim); line-height:1.45;}
+.irrig-days{display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;}
+.irrig-day{font-family:var(--font-mono); font-size:10px; padding:3px 6px; border-radius:999px; background:rgba(255,255,255,.045); color:var(--text-faint); border:1px solid var(--line-soft);}
+.irrig-day.active{background:var(--green-dim); color:var(--green); border-color:rgba(57,230,164,.35);}
+.irrig-pump{display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid var(--line-soft); border-radius:12px; background:rgba(45,212,255,.035); min-height:118px;}
+.irrig-pump .gear{font-size:31px; filter:grayscale(1); opacity:.55;}
+.irrig-pump.on .gear{filter:none; opacity:1; color:var(--cyan); animation:spin 3.5s linear infinite; text-shadow:0 0 14px rgba(45,212,255,.8);}
+.irrig-pump .waves{font-family:var(--font-mono); font-size:15px; color:var(--text-faint); letter-spacing:2px; height:18px; margin-top:4px;}
+.irrig-pump.on .waves{color:var(--cyan); animation:waterWave 1.4s linear infinite; text-shadow:0 0 10px rgba(45,212,255,.7);}
+.irrig-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+.irrig-actions .btn{flex:1; min-width:104px;}
+.irrig-gear{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:15px;}
+.irrig-gear:hover{border-color:var(--cyan); color:var(--cyan);}
+.irrig-empty{min-height:210px;}
+.week-picker{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:14px;}
+.week-picker label{display:flex; align-items:center; justify-content:center; padding:8px 0; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.03); font-family:var(--font-mono); font-size:11px; color:var(--text-dim); cursor:pointer;}
+.week-picker input{display:none;}
+.week-picker label:has(input:checked){background:var(--green-dim); border-color:rgba(57,230,164,.42); color:var(--green);}
+@keyframes waterWave{0%{transform:translateX(-3px);opacity:.6}50%{opacity:1}100%{transform:translateX(3px);opacity:.6}}
+@media(max-width:560px){.irrig-main{grid-template-columns:1fr}.week-picker{grid-template-columns:repeat(4,1fr)}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 </head>
@@ -1019,6 +1057,7 @@ input, select{font-family:inherit; color:var(--text);}
       <button class="nav-item" data-view="dispositivos"><span class="ic">📡</span> Dispositivos</button>
       <button class="nav-item" data-view="agua"><span class="ic">🚰</span> Água</button>
       <button class="nav-item" data-view="medicoes"><span class="ic">⚡</span> Medições</button>
+      <button class="nav-item" data-view="irrigacao"><span class="ic">🌱</span> Irrigação</button>
       <button class="nav-item" data-view="configuracoes"><span class="ic">⚙️</span> Configurações</button>
       <button class="nav-item" data-view="meteorologia"><span class="ic">🌦️</span> Meteorologia</button>
       <button class="nav-item" data-view="historico"><span class="ic">📊</span> Histórico</button>
@@ -1176,6 +1215,19 @@ input, select{font-family:inherit; color:var(--text);}
         <div id="measurementGrid" class="measure-grid"></div>
       </section>
 
+      <!-- ===================== IRRIGAÇÃO ===================== -->
+      <section class="view" id="view-irrigacao">
+        <div class="view-head">
+          <div>
+            <h2>IRRIGAÇÃO</h2>
+            <p>Programação por horário, dias da semana e duração da bomba</p>
+          </div>
+          <button class="btn btn-primary" id="openAddIrrigationBtn">🌱 Adicionar irrigação</button>
+        </div>
+        <div id="irrigationGrid" class="irrig-grid"></div>
+      </section>
+
+
       <!-- ===================== CONFIGURAÇÕES ===================== -->
       <section class="view" id="view-configuracoes">
         <div class="view-head">
@@ -1289,6 +1341,7 @@ input, select{font-family:inherit; color:var(--text);}
       <button class="bn-item" data-view="dispositivos"><span class="bnic">📡</span>Dispos.</button>
       <button class="bn-item" data-view="agua"><span class="bnic">🚰</span>Água</button>
       <button class="bn-item" data-view="medicoes"><span class="bnic">⚡</span>Medições</button>
+      <button class="bn-item" data-view="irrigacao"><span class="bnic">🌱</span>Irrig.</button>
       <button class="bn-item" data-view="alertas"><span class="bnic">🚨</span>Alertas<span id="bnAlertDot" class="bn-dot hidden"></span></button>
       <button class="bn-item" id="bnMore"><span class="bnic">☰</span>Mais</button>
     </nav>
@@ -1513,6 +1566,80 @@ input, select{font-family:inherit; color:var(--text);}
   </div>
 </div>
 
+
+
+<!-- ============================================================
+     MODAL: ADD IRRIGATION
+     ============================================================ -->
+<div class="modal-overlay hidden" id="addIrrigationOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>🌱 Adicionar irrigação</h3>
+      <button class="modal-close" data-close="addIrrigationOverlay">✕</button>
+    </div>
+    <form id="addIrrigationForm">
+      <div class="field"><label>Nome</label><input type="text" id="newIrrigName" placeholder="Ex.: Jardim frontal" required></div>
+      <div class="field-row">
+        <div class="field"><label>ID do dispositivo</label><input type="text" id="newIrrigId" placeholder="irrigacao01" required></div>
+        <div class="field"><label>Senha</label><input type="password" id="newIrrigPass" placeholder="Senha do ESP32"></div>
+      </div>
+      <div class="field"><label>Tópico base MQTT</label><input type="text" id="newIrrigTopicBase" value="casa/irrigacao01"></div>
+      <div class="field-row">
+        <div class="field"><label>Horário para ligar</label><input type="time" id="newIrrigTime" value="06:00" required></div>
+        <div class="field"><label>Duração</label><input type="number" id="newIrrigDuration" min="1" max="180" value="10" required></div>
+      </div>
+      <div class="field"><label>Dias da semana</label>
+        <div class="week-picker" id="newIrrigDays">
+          <label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1" checked>Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3" checked>Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5" checked>Sex</label><label><input type="checkbox" value="6">Sáb</label>
+        </div>
+      </div>
+      <div class="hint">O painel envia a configuração para tópico_base/config e comandos para tópico_base/comando. No ESP32, isso será usado para ligar a bomba nos dias e horários definidos.</div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close="addIrrigationOverlay">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmAddIrrigationBtn">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: IRRIGATION CONFIG
+     ============================================================ -->
+<div class="modal-overlay hidden" id="irrigationConfigOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>⚙️ Configurar irrigação</h3>
+      <button class="modal-close" data-close="irrigationConfigOverlay">✕</button>
+    </div>
+    <form id="irrigationConfigForm">
+      <input type="hidden" id="irrigCfgUid">
+      <div class="field"><label>Nome</label><input type="text" id="irrigCfgName"></div>
+      <div class="field-row">
+        <div class="field"><label>ID</label><input type="text" id="irrigCfgId"></div>
+        <div class="field"><label>Senha</label><input type="password" id="irrigCfgPass"></div>
+      </div>
+      <div class="field"><label>Tópico base</label><input type="text" id="irrigCfgTopicBase"></div>
+      <div class="field-row">
+        <div class="field"><label>Horário</label><input type="time" id="irrigCfgTime"></div>
+        <div class="field"><label>Duração em minutos</label><input type="number" id="irrigCfgDuration" min="1" max="180"></div>
+      </div>
+      <div class="field"><label>Dias da semana</label>
+        <div class="week-picker" id="irrigCfgDays">
+          <label><input type="checkbox" value="0">Dom</label><label><input type="checkbox" value="1">Seg</label><label><input type="checkbox" value="2">Ter</label><label><input type="checkbox" value="3">Qua</label><label><input type="checkbox" value="4">Qui</label><label><input type="checkbox" value="5">Sex</label><label><input type="checkbox" value="6">Sáb</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close="irrigationConfigOverlay">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+      <div class="danger-zone">
+        <button type="button" class="btn btn-danger btn-block" id="deleteIrrigationBtn">🗑️ Excluir irrigação</button>
+        <div class="hint">Remove somente este dispositivo do painel. O ESP32 continua configurado normalmente.</div>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ============================================================
      MODAL: WEATHER STATE SELECTOR
      ============================================================ -->
@@ -1662,7 +1789,8 @@ input, select{font-family:inherit; color:var(--text);}
     energy:{daily:[3.2,4.1,3.8,5.0,4.4,3.6,4.8], unit:"kWh"},
     water:{daily:[210,180,260,300,190,220,250], unit:"L"},
     measurements:[],
-    measurementHistory:[]
+    measurementHistory:[],
+    irrigations:[]
   };
 
   /* ============================================================
@@ -1699,6 +1827,7 @@ input, select{font-family:inherit; color:var(--text);}
       restoreSmokeRegistry();
       loadWaterState();
       loadMeasurements();
+  loadIrrigations();
       restoreWeatherState();
       renderAll();
       if(restoreBrokerConfig()) connectMqtt();
@@ -2572,6 +2701,7 @@ input, select{font-family:inherit; color:var(--text);}
     if(isMqttConnected()){
       subscribeWaterTopics();
       subscribeMeasurementTopics();
+      subscribeIrrigationTopics();
     }
   }
 
@@ -2644,6 +2774,7 @@ input, select{font-family:inherit; color:var(--text);}
       mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
       subscribeWaterTopics();
       subscribeMeasurementTopics();
+      subscribeIrrigationTopics();
       renderWaterDebug();
     });
 
@@ -2672,6 +2803,9 @@ input, select{font-family:inherit; color:var(--text);}
         return;
       }
       if(handleMeasurementMessage(topic, payloadText)){
+        return;
+      }
+      if(handleIrrigationMessage(topic, payloadText)){
         return;
       }
       if(isWaterTopicOrPayload(topic, payloadText)){
@@ -4055,6 +4189,148 @@ input, select{font-family:inherit; color:var(--text);}
     if(reset){ publishEnergyReset(reset.getAttribute("data-reset-energy")); return; }
   });
 
+
+
+  /* ============================================================
+     IRRIGAÇÃO: CADASTRO / PROGRAMAÇÃO / MQTT
+     ============================================================ */
+  function normalizeIrrigId(id){
+    return String(id || "").trim().replace(/\s+/g,"").replace(/[^a-zA-Z0-9_-]/g,"");
+  }
+  function irrigTopicBaseFor(id){
+    id = normalizeIrrigId(id || "irrigacao01");
+    return "casa/" + (id || "irrigacao01");
+  }
+  function normalizeIrrigTopicBase(v,id){
+    v = String(v || "").trim().replace(/\/+$/g,"");
+    return v || irrigTopicBaseFor(id);
+  }
+  function selectedDaysFrom(containerId){
+    return Array.prototype.slice.call(document.querySelectorAll('#'+containerId+' input[type="checkbox"]:checked')).map(function(i){return Number(i.value);});
+  }
+  function setDaysChecked(containerId, days){
+    days = Array.isArray(days) ? days.map(Number) : [];
+    document.querySelectorAll('#'+containerId+' input[type="checkbox"]').forEach(function(i){ i.checked = days.indexOf(Number(i.value)) !== -1; });
+  }
+  function dayLabels(days){
+    var lbl = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    if(!Array.isArray(days) || !days.length) return 'Nenhum dia';
+    return days.map(function(d){ return lbl[Number(d)] || '?'; }).join(' · ');
+  }
+  function findIrrigationByUid(uid){
+    return (state.irrigations || []).find(function(i){ return String(i.uid) === String(uid); }) || null;
+  }
+  function findIrrigationByTopic(topic){
+    topic = String(topic || '');
+    return (state.irrigations || []).find(function(i){
+      var base = normalizeIrrigTopicBase(i.topicBase,i.id);
+      return topic === base + '/status' || topic === base + '/dados' || topic === base + '/alerta' || topic.indexOf(base + '/') === 0;
+    }) || null;
+  }
+  function loadIrrigations(){
+    try{
+      var arr = JSON.parse(localStorage.getItem('smartHomeIrrigations') || '[]');
+      state.irrigations = Array.isArray(arr) ? arr.map(function(i){
+        var id = normalizeIrrigId(i.id || 'irrigacao01');
+        i.uid = i.uid || ('irrig-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+        i.id = id;
+        i.topicBase = normalizeIrrigTopicBase(i.topicBase,id);
+        i.days = Array.isArray(i.days) ? i.days.map(Number) : [1,3,5];
+        i.time = i.time || '06:00';
+        i.duration = Number(i.duration) || 10;
+        if(i.lastSeen) i.lastSeen = new Date(i.lastSeen);
+        return i;
+      }) : [];
+    }catch(e){ state.irrigations = []; }
+  }
+  function saveIrrigations(){ try{ localStorage.setItem('smartHomeIrrigations', JSON.stringify(state.irrigations || [])); }catch(e){} }
+  function subscribeIrrigationTopics(){
+    if(!isMqttConnected()) return;
+    (state.irrigations || []).forEach(function(i){
+      var base = normalizeIrrigTopicBase(i.topicBase,i.id);
+      mqttSub(base + '/status'); mqttSub(base + '/dados'); mqttSub(base + '/alerta'); mqttSub(base + '/#');
+    });
+  }
+  function publishIrrigationConfig(i){
+    if(!i || !isMqttConnected()) return;
+    var base = normalizeIrrigTopicBase(i.topicBase,i.id);
+    var payload = JSON.stringify({id:i.id, pass:i.pass || '', time:i.time, days:i.days || [], duration:Number(i.duration)||10, enabled:i.enabled !== false, rain_block:true});
+    mqttClient.publish(base + '/config', payload, {qos:1, retain:true});
+  }
+  function publishIrrigationCommand(uid, cmd){
+    var i = findIrrigationByUid(uid); if(!i) return;
+    if(!isMqttConnected()){ toast('Broker MQTT desconectado', 'error'); return; }
+    mqttClient.publish(normalizeIrrigTopicBase(i.topicBase,i.id) + '/comando', JSON.stringify({cmd:cmd, pass:i.pass || ''}), {qos:1, retain:false});
+    toast('Comando enviado para irrigação', 'info');
+  }
+  function handleIrrigationMessage(topic, payloadBuf){
+    var i = findIrrigationByTopic(topic); if(!i) return false;
+    var txt = decodeMqttPayload(payloadBuf), data = {};
+    try{ data = JSON.parse(txt); }catch(e){ data = {status:txt}; }
+    if(data.bomba_ligada !== undefined) i.pumpOn = !!data.bomba_ligada;
+    if(data.pumpOn !== undefined) i.pumpOn = !!data.pumpOn;
+    if(data.running !== undefined) i.pumpOn = !!data.running;
+    if(data.enabled !== undefined) i.enabled = !!data.enabled;
+    if(data.time) i.time = String(data.time);
+    if(Array.isArray(data.days)) i.days = data.days.map(Number);
+    if(data.duration !== undefined) i.duration = Number(data.duration) || i.duration;
+    i.status = 'online'; i.lastSeen = new Date(); i.lastPayload = txt.slice(0,180);
+    saveIrrigations(); renderAll(); return true;
+  }
+  function renderIrrigationView(){
+    var grid = document.getElementById('irrigationGrid'); if(!grid) return;
+    var list = state.irrigations || [];
+    if(!list.length){
+      grid.innerHTML = '<button class="add-env-card irrig-empty" id="addIrrigationEmpty"><div class="plus">🌱</div><span>Adicionar irrigação programada</span></button>';
+      var b=document.getElementById('addIrrigationEmpty'); if(b) b.onclick=openAddIrrigationModal; return;
+    }
+    grid.innerHTML = list.map(function(i){
+      var online = i.lastSeen && (Date.now()-new Date(i.lastSeen).getTime()<150000);
+      var on = !!i.pumpOn;
+      var days = Array.isArray(i.days) ? i.days : [];
+      var enabled = i.enabled !== false;
+      return '<div class="irrig-card glass">'+
+        '<div class="irrig-head"><div><div class="irrig-title">🌱 '+escapeHtml(i.name || 'Irrigação')+'</div><div class="irrig-id">'+escapeHtml(i.topicBase || irrigTopicBaseFor(i.id))+'</div></div><button class="irrig-gear" data-config-irrig="'+escapeHtml(i.uid)+'">⚙️</button></div>'+ 
+        '<div class="irrig-main"><div class="irrig-schedule-box"><div class="irrig-next">'+(enabled ? escapeHtml(i.time || '--:--') : 'Pausada')+'</div><div class="irrig-small">Duração: <b>'+escapeHtml(String(i.duration || 10))+' min</b><br>Status: '+(online?'online':'sem comunicação')+'</div><div class="irrig-days">'+[0,1,2,3,4,5,6].map(function(d){return '<span class="irrig-day '+(days.indexOf(d)!==-1?'active':'')+'">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d]+'</span>';}).join('')+'</div></div>'+ 
+        '<div class="irrig-pump '+(on?'on':'')+'"><div class="gear">⚙️</div><div class="waves">≈≈≈</div><div class="irrig-status '+(on?'on':(online?'':'offline'))+'"><span class="dot"></span>'+ (on?'Ligada':(enabled?'Auto':'Pausada')) +'</div></div></div>'+ 
+        '<div class="irrig-actions"><button class="btn btn-ghost btn-sm" data-irrig-cmd="ligar" data-irrig-uid="'+escapeHtml(i.uid)+'">Ligar</button><button class="btn btn-ghost btn-sm" data-irrig-cmd="desligar" data-irrig-uid="'+escapeHtml(i.uid)+'">Desligar</button><button class="btn btn-ghost btn-sm" data-irrig-cmd="auto" data-irrig-uid="'+escapeHtml(i.uid)+'">Auto</button></div></div>';
+    }).join('');
+  }
+  function openAddIrrigationModal(){
+    var ov=document.getElementById('addIrrigationOverlay');
+    var id=document.getElementById('newIrrigId'), topic=document.getElementById('newIrrigTopicBase');
+    if(document.getElementById('newIrrigName')) document.getElementById('newIrrigName').value='Irrigação jardim';
+    if(id) id.value='irrigacao01'; if(topic) topic.value='casa/irrigacao01';
+    if(document.getElementById('newIrrigTime')) document.getElementById('newIrrigTime').value='06:00';
+    if(document.getElementById('newIrrigDuration')) document.getElementById('newIrrigDuration').value='10';
+    if(ov){ov.classList.remove('hidden'); ov.style.display='flex';}
+  }
+  function closeAddIrrigationModal(){ var ov=document.getElementById('addIrrigationOverlay'); if(ov){ov.classList.add('hidden'); ov.style.display='none';} }
+  function addIrrigationFromModal(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    var name=(document.getElementById('newIrrigName')||{}).value||'';
+    var id=normalizeIrrigId((document.getElementById('newIrrigId')||{}).value||'');
+    var pass=(document.getElementById('newIrrigPass')||{}).value||'';
+    var topicBase=normalizeIrrigTopicBase((document.getElementById('newIrrigTopicBase')||{}).value||'',id);
+    var time=(document.getElementById('newIrrigTime')||{}).value||'06:00';
+    var duration=Number((document.getElementById('newIrrigDuration')||{}).value)||10;
+    var days=selectedDaysFrom('newIrrigDays');
+    if(!name.trim()){toast('Informe o nome da irrigação','error');return false;} if(!id){toast('Informe o ID da irrigação','error');return false;} if(!days.length){toast('Escolha ao menos um dia','error');return false;}
+    state.irrigations=state.irrigations||[];
+    var existing=state.irrigations.find(function(i){return normalizeIrrigTopicBase(i.topicBase,i.id).toLowerCase()===topicBase.toLowerCase();});
+    var obj=existing||{uid:'irrig-'+Date.now()+'-'+Math.random().toString(16).slice(2), status:'offline', pumpOn:false, lastSeen:null};
+    obj.name=name.trim(); obj.id=id; obj.pass=pass||obj.pass||''; obj.topicBase=topicBase; obj.time=time; obj.duration=duration; obj.days=days; obj.enabled=true;
+    if(!existing) state.irrigations.push(obj);
+    saveIrrigations(); setupMqttSubscriptions(); publishIrrigationConfig(obj); closeAddIrrigationModal(); toast('Irrigação adicionada','success'); renderAll(); return false;
+  }
+  function openIrrigationConfig(uid){
+    var i=findIrrigationByUid(uid); if(!i)return;
+    document.getElementById('irrigCfgUid').value=i.uid; document.getElementById('irrigCfgName').value=i.name||''; document.getElementById('irrigCfgId').value=i.id||''; document.getElementById('irrigCfgPass').value=i.pass||''; document.getElementById('irrigCfgTopicBase').value=i.topicBase||irrigTopicBaseFor(i.id); document.getElementById('irrigCfgTime').value=i.time||'06:00'; document.getElementById('irrigCfgDuration').value=i.duration||10; setDaysChecked('irrigCfgDays', i.days||[]);
+    var ov=document.getElementById('irrigationConfigOverlay'); if(ov){ov.classList.remove('hidden');ov.style.display='flex';}
+  }
+  function closeIrrigationConfig(){ var ov=document.getElementById('irrigationConfigOverlay'); if(ov){ov.classList.add('hidden');ov.style.display='none';} }
+
+
   /* ============================================================
      MASTER RENDER
      ============================================================ */
@@ -4071,6 +4347,7 @@ input, select{font-family:inherit; color:var(--text);}
     safeRender(renderDevices, "dispositivos");
     safeRender(renderWaterView, "agua");
     safeRender(renderMeasurementsView, "medicoes");
+    safeRender(renderIrrigationView, "irrigacao");
     safeRender(renderHistory, "historico");
     safeRender(renderAlertsView, "alertas");
   }
