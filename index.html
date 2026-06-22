@@ -325,7 +325,8 @@ input, select{font-family:inherit; color:var(--text);}
 .irrigation-banner-compact small{font-size:10px; margin-top:1px;}
 .irrigation-banner-top{padding:8px 12px; margin-bottom:0; border-radius:28px; font-size:11px; min-height:54px; max-width:270px;}
 .irrigation-banner-top .ic{font-size:16px;}
-.irrigation-banner-top small{font-size:9.5px; margin-top:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.irrigation-banner-top #irrigationText{font-size:11px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px;}
+.irrigation-banner-top small{font-size:9px; margin-top:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px;}
 
 /* Stat cards grid */
 .stat-grid{
@@ -925,8 +926,8 @@ input, select{font-family:inherit; color:var(--text);}
         <div id="irrigationBanner" class="irrigation-banner irrigation-banner-top authorized">
           <span class="ic">💧</span>
           <div>
-            <div id="irrigationText">IRRIGAÇÃO AUTORIZADA</div>
-            <small id="irrigationSub">Sem previsão de chuva nas próximas horas</small>
+            <div id="irrigationText">☀️ Rega normal</div>
+            <small id="irrigationSub">Sem chuva</small>
           </div>
         </div>
 
@@ -1596,12 +1597,12 @@ input, select{font-family:inherit; color:var(--text);}
     var sub = document.getElementById("irrigationSub");
     if(w.rainPredicted){
       banner.className = "irrigation-banner irrigation-banner-top blocked";
-      text.textContent = "IRRIGAÇÃO BLOQUEADA - CHUVA PREVISTA";
-      sub.textContent = "Probabilidade de chuva: "+w.rainChance+"% — sistema aguardará condições melhores";
+      text.textContent = "⏸️ Suspensa pela chuva";
+      sub.textContent = "Chuva: "+w.rainChance+"%";
     } else {
       banner.className = "irrigation-banner irrigation-banner-top authorized";
-      text.textContent = "IRRIGAÇÃO AUTORIZADA";
-      sub.textContent = "Sem previsão de chuva nas próximas horas";
+      text.textContent = "☀️ Rega normal";
+      sub.textContent = "Sem chuva";
     }
   }
 
