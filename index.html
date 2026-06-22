@@ -1082,8 +1082,8 @@ input, select{font-family:inherit; color:var(--text);}
       <section class="view" id="view-dispositivos">
         <div class="view-head">
           <div>
-            <h2>DISPOSITIVOS ESP32</h2>
-            <p>ID gerado a partir dos 6 últimos caracteres do endereço MAC</p>
+            <h2>DISPOSITIVOS DA RESIDÊNCIA</h2>
+            <p>Ambientes ESP32, reservatórios e módulos conectados</p>
           </div>
         </div>
         <div class="glass table-wrap" style="padding:8px 14px;">
@@ -2640,30 +2640,58 @@ input, select{font-family:inherit; color:var(--text);}
      ============================================================ */
   function renderDevices(){
     var body = document.getElementById("deviceTableBody");
+    if(!body) return;
     body.innerHTML = "";
-    state.environments.forEach(function(env){
+
+    // Ambientes ESP32
+    (state.environments || []).forEach(function(env){
       var tr = document.createElement("tr");
-      var devName = "ESP32-"+env.name.toUpperCase().replace(/\s+/g,"");
+      var devName = "ESP32-"+String(env.name || "AMBIENTE").toUpperCase().replace(/\s+/g,"");
       tr.innerHTML =
-        '<td data-label="Dispositivo" class="dev-name">'+devName+'</td>'+
-        '<td data-label="ID" class="dev-id">'+getEnvDeviceId(env).toUpperCase()+'</td>'+
-        '<td data-label="MAC" class="dev-mac">'+env.mac+'</td>'+
+        '<td data-label="Dispositivo" class="dev-name">'+escapeHtml(devName)+'</td>'+
+        '<td data-label="ID" class="dev-id">'+escapeHtml(getEnvDeviceId(env).toUpperCase())+'</td>'+
+        '<td data-label="MAC" class="dev-mac">'+escapeHtml(env.mac || "—")+'</td>'+
         '<td data-label="Status">'+statusBadge(env.status)+'</td>'+
         '<td data-label="Última comunicação">'+(env.lastSeen ? fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen) : 'sem dados')+'</td>'+
-        '<td data-label="Firmware" class="dev-mac">'+env.firmware+'</td>'+
-        '<td data-label="Ações"><button class="env-gear" title="Configurar ambiente" data-config-device="'+env.id+'">⚙️</button></td>';
+        '<td data-label="Firmware" class="dev-mac">'+escapeHtml(env.firmware || "ESP32 Ambiente")+'</td>'+
+        '<td data-label="Ações"><button class="env-gear" title="Configurar ambiente" data-config-device="'+escapeHtml(env.id)+'">⚙️</button></td>';
       body.appendChild(tr);
     });
+
+    // Reservatórios / caixa d'água também são dispositivos da residência.
+    // Antes a lista mostrava apenas ambientes, por isso a caixa cadastrada não aparecia aqui.
+    (state.waterReservoirs || []).forEach(function(r){
+      var id = normalizeWaterId(r.id);
+      var online = r.lastSeen && (Date.now() - new Date(r.lastSeen).getTime() < 120000);
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td data-label="Dispositivo" class="dev-name">🚰 '+escapeHtml(r.name || "Caixa d\'água")+'</td>'+
+        '<td data-label="ID" class="dev-id">'+escapeHtml(id)+'</td>'+
+        '<td data-label="MAC" class="dev-mac">'+escapeHtml(r.topic || waterTopicFor(id,"dados"))+'</td>'+
+        '<td data-label="Status">'+statusBadge(online ? "online" : "offline")+'</td>'+
+        '<td data-label="Última comunicação">'+(r.lastSeen ? fmtTime(r.lastSeen)+' · '+fmtRelative(r.lastSeen) : 'sem dados')+'</td>'+
+        '<td data-label="Firmware" class="dev-mac">Receptor LoRa / Caixa d\'água</td>'+
+        '<td data-label="Ações"><button class="env-gear" title="Configurar reservatório" data-config-water-device="'+escapeHtml(id)+'">⚙️</button></td>';
+      body.appendChild(tr);
+    });
+
+    if(!body.children.length){
+      var trEmpty = document.createElement("tr");
+      trEmpty.innerHTML = '<td colspan="7" style="text-align:center;color:var(--text-faint);padding:24px;">Nenhum dispositivo cadastrado ainda.</td>';
+      body.appendChild(trEmpty);
+    }
+
     var btns = document.querySelectorAll("#deviceTableBody [data-config-device]");
     for(var i=0;i<btns.length;i++){
       btns[i].addEventListener("click", function(){
         openDeviceConfig(this.getAttribute("data-config-device"));
       });
     }
-    var delBtns = document.querySelectorAll("#deviceTableBody [data-delete-env]");
-    for(var j=0;j<delBtns.length;j++){
-      delBtns[j].addEventListener("click", function(){
-        deleteEnvironment(this.getAttribute("data-delete-env"));
+
+    var waterBtns = document.querySelectorAll("#deviceTableBody [data-config-water-device]");
+    for(var w=0; w<waterBtns.length; w++){
+      waterBtns[w].addEventListener("click", function(){
+        openWaterConfig(this.getAttribute("data-config-water-device"));
       });
     }
   }
