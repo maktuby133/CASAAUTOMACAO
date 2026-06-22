@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v33</title>
+<title>SMART HOME AI CONTROL - v35</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -926,6 +926,35 @@ input, select{font-family:inherit; color:var(--text);}
 .tank-dashboard-card.pump-on .pump-icon{animation:pumpGlow 1.2s ease-in-out infinite;}
 .tank-dashboard-card.pump-on .pump-icon .waves{animation:waterWave 1.15s linear infinite;}
 
+
+/* ============================================================
+   MEDIÇÕES: ENERGIA / ÁGUA FUTURA
+   ============================================================ */
+.measure-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+.measure-card{padding:20px;position:relative;overflow:hidden;}
+.measure-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.measure-title{font-family:var(--font-head);font-size:17px;font-weight:700;}
+.measure-id{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin-top:2px;}
+.measure-main{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;align-items:center;}
+.energy-power{font-family:var(--font-display);font-size:30px;letter-spacing:.5px;line-height:1;color:var(--cyan);text-shadow:0 0 14px rgba(45,212,255,.35);}
+.energy-power small{font-size:14px;color:var(--text-dim);text-shadow:none;}
+.energy-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);margin-top:7px;}
+.energy-ring{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;margin-left:auto;background:conic-gradient(var(--cyan) var(--energy-deg,0deg),rgba(140,180,220,.10) 0deg);box-shadow:0 0 22px rgba(45,212,255,.14);}
+.energy-ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:rgba(6,10,18,.92);border:1px solid var(--line-soft);}
+.energy-ring span{position:relative;z-index:1;font-family:var(--font-display);font-size:15px;color:var(--text);}
+.measure-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;}
+.measure-mini{padding:8px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid var(--line-soft);text-align:center;}
+.measure-mini strong{display:block;font-family:var(--font-mono);font-size:12px;color:var(--text);}
+.measure-mini span{display:block;font-size:9.5px;color:var(--text-faint);margin-top:2px;}
+.measure-chart{height:120px;margin-top:16px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--line-soft);padding:10px;}
+.measure-chart svg{width:100%;height:100%;overflow:visible;}
+.measure-actions{display:flex;gap:8px;margin-top:14px;}
+.measure-empty{min-height:220px;}
+.measure-gear{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
+.measure-gear:hover{color:var(--cyan);border-color:rgba(45,212,255,.4);background:rgba(45,212,255,.08);}
+.measure-alert{color:var(--red);font-family:var(--font-mono);font-size:11px;margin-top:10px;}
+@media(max-width:560px){.measure-main{grid-template-columns:1fr}.energy-ring{margin:8px auto 0}.energy-power{text-align:center}.measure-metrics{grid-template-columns:repeat(2,1fr)}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 </head>
@@ -977,6 +1006,7 @@ input, select{font-family:inherit; color:var(--text);}
       <button class="nav-item" data-view="ambientes"><span class="ic">➕</span> Ambientes</button>
       <button class="nav-item" data-view="dispositivos"><span class="ic">📡</span> Dispositivos</button>
       <button class="nav-item" data-view="agua"><span class="ic">🚰</span> Água</button>
+      <button class="nav-item" data-view="medicoes"><span class="ic">⚡</span> Medições</button>
       <button class="nav-item" data-view="configuracoes"><span class="ic">⚙️</span> Configurações</button>
       <button class="nav-item" data-view="meteorologia"><span class="ic">🌦️</span> Meteorologia</button>
       <button class="nav-item" data-view="historico"><span class="ic">📊</span> Histórico</button>
@@ -1120,6 +1150,20 @@ input, select{font-family:inherit; color:var(--text);}
         <div class="water-debug-panel hidden" id="waterDebugPanel"></div>
       </section>
 
+
+      <!-- ===================== MEDIÇÕES ===================== -->
+      <section class="view" id="view-medicoes">
+        <div class="view-head">
+          <div>
+            <h2>MEDIÇÕES</h2>
+            <p>Energia agora. Água e outras medições ficam preparadas para expansão.</p>
+          </div>
+          <button class="btn btn-primary" id="openAddMeasurementBtn">⚡ Adicionar medição</button>
+        </div>
+
+        <div id="measurementGrid" class="measure-grid"></div>
+      </section>
+
       <!-- ===================== CONFIGURAÇÕES ===================== -->
       <section class="view" id="view-configuracoes">
         <div class="view-head">
@@ -1232,6 +1276,7 @@ input, select{font-family:inherit; color:var(--text);}
       <button class="bn-item" data-view="ambientes"><span class="bnic">➕</span>Ambientes</button>
       <button class="bn-item" data-view="dispositivos"><span class="bnic">📡</span>Dispos.</button>
       <button class="bn-item" data-view="agua"><span class="bnic">🚰</span>Água</button>
+      <button class="bn-item" data-view="medicoes"><span class="bnic">⚡</span>Medições</button>
       <button class="bn-item" data-view="alertas"><span class="bnic">🚨</span>Alertas<span id="bnAlertDot" class="bn-dot hidden"></span></button>
       <button class="bn-item" id="bnMore"><span class="bnic">☰</span>Mais</button>
     </nav>
@@ -1394,6 +1439,68 @@ input, select{font-family:inherit; color:var(--text);}
   </div>
 </div>
 
+
+<!-- ============================================================
+     MODAL: ADD MEASUREMENT
+     ============================================================ -->
+<div class="modal-overlay hidden" id="addMeasurementOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>⚡ Adicionar medição</h3>
+      <button class="modal-close" data-close="addMeasurementOverlay">✕</button>
+    </div>
+    <form id="addMeasurementForm">
+      <div class="field"><label>Tipo de medição</label>
+        <select id="newMeasureType">
+          <option value="energia">Energia</option>
+          <option value="agua" disabled>Água — futuro</option>
+        </select>
+      </div>
+      <div class="field"><label>Nome</label><input type="text" id="newMeasureName" placeholder="Ex.: Medidor principal" required></div>
+      <div class="field-row">
+        <div class="field"><label>ID do dispositivo</label><input type="text" id="newMeasureId" placeholder="medidor01" required></div>
+        <div class="field"><label>Senha</label><input type="password" id="newMeasurePass" placeholder="Senha do receptor"></div>
+      </div>
+      <div class="field"><label>Tópico base MQTT</label><input type="text" id="newMeasureTopicBase" value="casa/medidor01"></div>
+      <div class="hint">O receptor publica em tópico_base/dados, tópico_base/resumo e tópico_base/alerta. A senha fica preparada para comandos futuros.</div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close="addMeasurementOverlay">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmAddMeasurementBtn">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: MEASUREMENT CONFIG
+     ============================================================ -->
+<div class="modal-overlay hidden" id="measurementConfigOverlay">
+  <div class="modal glass">
+    <div class="modal-head">
+      <h3>⚙️ Configurar medição</h3>
+      <button class="modal-close" data-close="measurementConfigOverlay">✕</button>
+    </div>
+    <form id="measurementConfigForm">
+      <input type="hidden" id="measureCfgUid">
+      <div class="field"><label>Nome</label><input type="text" id="measureCfgName"></div>
+      <div class="field-row">
+        <div class="field"><label>ID</label><input type="text" id="measureCfgId"></div>
+        <div class="field"><label>Senha</label><input type="password" id="measureCfgPass"></div>
+      </div>
+      <div class="field"><label>Tópico base</label><input type="text" id="measureCfgTopicBase"></div>
+      <div class="field"><label>Última comunicação</label><input type="text" id="measureCfgLastSeen" disabled style="opacity:.65;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close="measurementConfigOverlay">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+      <div class="danger-zone">
+        <button type="button" class="btn btn-danger btn-block" id="deleteMeasurementBtn">🗑️ Excluir medição</button>
+        <div class="hint">Remove somente este medidor do painel. O receptor continua configurado normalmente.</div>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toastHost"></div>
 
 <script>
@@ -1527,7 +1634,9 @@ input, select{font-family:inherit; color:var(--text);}
     waterReservoirs:[],
     waterHistory:[],
     energy:{daily:[3.2,4.1,3.8,5.0,4.4,3.6,4.8], unit:"kWh"},
-    water:{daily:[210,180,260,300,190,220,250], unit:"L"}
+    water:{daily:[210,180,260,300,190,220,250], unit:"L"},
+    measurements:[],
+    measurementHistory:[]
   };
 
   /* ============================================================
@@ -1563,6 +1672,7 @@ input, select{font-family:inherit; color:var(--text);}
       restoreEnvironments();
       restoreSmokeRegistry();
       loadWaterState();
+      loadMeasurements();
       restoreWeatherState();
       renderAll();
       if(restoreBrokerConfig()) connectMqtt();
@@ -2263,6 +2373,138 @@ input, select{font-family:inherit; color:var(--text);}
     });
   }
 
+
+  function normalizeMeasureId(id){
+    return String(id || "").trim().replace(/\s+/g,"").replace(/[^a-zA-Z0-9_-]/g,"");
+  }
+
+  function measureTopicBaseFor(id){
+    id = normalizeMeasureId(id || "medidor01");
+    if(!id) id = "medidor01";
+    if(id.indexOf("/") !== -1) return id.replace(/\/+$/g,"");
+    return "casa/" + id;
+  }
+
+  function normalizeMeasureTopicBase(v, id){
+    v = String(v || "").trim().replace(/\/+$/g,"");
+    if(!v) v = measureTopicBaseFor(id);
+    return v;
+  }
+
+  function findMeasurementByUid(uid){
+    return (state.measurements || []).find(function(m){ return String(m.uid) === String(uid); }) || null;
+  }
+
+  function findMeasurementByTopic(topic){
+    topic = String(topic || "");
+    return (state.measurements || []).find(function(m){
+      var base = normalizeMeasureTopicBase(m.topicBase, m.id);
+      return topic === base + "/dados" || topic === base + "/resumo" || topic === base + "/alerta" || topic.indexOf(base + "/") === 0;
+    }) || null;
+  }
+
+  function loadMeasurements(){
+    try{
+      var arr = JSON.parse(localStorage.getItem("smartHomeMeasurements") || "[]");
+      state.measurements = Array.isArray(arr) ? arr.map(function(m){
+        var id = normalizeMeasureId(m.id || "medidor01");
+        m.id = id;
+        m.uid = m.uid || ("measure-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+        m.type = m.type || "energia";
+        m.topicBase = normalizeMeasureTopicBase(m.topicBase, id);
+        if(m.lastSeen) m.lastSeen = new Date(m.lastSeen);
+        return m;
+      }) : [];
+      var hist = JSON.parse(localStorage.getItem("smartHomeMeasurementHistory") || "[]");
+      state.measurementHistory = Array.isArray(hist) ? hist.map(function(h){ if(h.time) h.time = new Date(h.time); return h; }) : [];
+    }catch(e){
+      state.measurements = [];
+      state.measurementHistory = [];
+    }
+  }
+
+  function saveMeasurements(){
+    try{
+      localStorage.setItem("smartHomeMeasurements", JSON.stringify(state.measurements || []));
+      localStorage.setItem("smartHomeMeasurementHistory", JSON.stringify((state.measurementHistory || []).slice(0,120)));
+    }catch(e){}
+  }
+
+  function subscribeMeasurementTopics(){
+    if(!isMqttConnected()) return;
+    (state.measurements || []).forEach(function(m){
+      var base = normalizeMeasureTopicBase(m.topicBase, m.id);
+      mqttSub(base + "/dados");
+      mqttSub(base + "/resumo");
+      mqttSub(base + "/alerta");
+      mqttSub(base + "/#");
+    });
+  }
+
+  function parseEnergyNumber(v){
+    if(typeof v === "number" && isFinite(v)) return v;
+    if(typeof v === "string"){
+      var s = v.replace(",", ".").replace(/[^\d.\-]/g,"");
+      if(s !== "" && isFinite(Number(s))) return Number(s);
+    }
+    return null;
+  }
+
+  function handleMeasurementMessage(topic, payloadBuf){
+    var m = findMeasurementByTopic(topic);
+    if(!m) return false;
+    var txt = decodeMqttPayload(payloadBuf);
+    var data;
+    try{ data = JSON.parse(txt); }catch(e){ return true; }
+
+    var last = topic.split("/").pop();
+    if(last === "alerta"){
+      m.alert = data.tipo ? (String(data.tipo).toUpperCase() + ": " + (data.valor != null ? data.valor : "")) : txt.slice(0,80);
+      m.lastSeen = new Date();
+      saveMeasurements();
+      renderAll();
+      return true;
+    }
+
+    var map = {
+      voltage:["voltage","tensao","v"],
+      current:["current","corrente","i"],
+      power:["power","potencia","w"],
+      energy:["energy","energia","kwh"],
+      frequency:["frequency","frequencia","hz"],
+      pf:["pf","fp","fator_potencia"],
+      custo:["custo","cost"],
+      energia_hoje:["energia_hoje","hoje","daily"],
+      energia_semana:["energia_semana","semana","weekly"],
+      energia_mes:["energia_mes","mes","mensal","monthly"],
+      rssi:["rssi"]
+    };
+    Object.keys(map).forEach(function(key){
+      for(var i=0;i<map[key].length;i++){
+        if(data[map[key][i]] !== undefined){
+          var n = parseEnergyNumber(data[map[key][i]]);
+          if(n !== null) m[key] = n;
+          break;
+        }
+      }
+    });
+    if(data.status) m.statusText = String(data.status);
+    m.status = "online";
+    m.lastSeen = new Date();
+    m.lastPayload = txt.slice(0,220);
+    if(parseEnergyNumber(m.power) !== null || parseEnergyNumber(m.energia_hoje) !== null){
+      state.measurementHistory = state.measurementHistory || [];
+      state.measurementHistory.unshift({
+        uid:m.uid, id:m.id, name:m.name, power:Number(m.power)||0, kwh:Number(m.energia_hoje)||Number(m.energy)||0, time:new Date()
+      });
+      state.measurementHistory = state.measurementHistory.slice(0,120);
+    }
+    saveMeasurements();
+    renderAll();
+    return true;
+  }
+
+
   function subscribeWaterTopics(){
     if(!isMqttConnected()) return;
     // Assinaturas da caixa d'água. O receptor LoRa publica em casa/caixa01/dados.
@@ -2296,7 +2538,10 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function setupMqttSubscriptions(){
-    if(isMqttConnected()) subscribeWaterTopics();
+    if(isMqttConnected()){
+      subscribeWaterTopics();
+      subscribeMeasurementTopics();
+    }
   }
 
   function requestWaterUpdate(id){
@@ -2367,6 +2612,7 @@ input, select{font-family:inherit; color:var(--text);}
       mqttClient.subscribe("sensors/+/data", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe data", err); });
       mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
       subscribeWaterTopics();
+      subscribeMeasurementTopics();
       renderWaterDebug();
     });
 
@@ -2392,6 +2638,9 @@ input, select{font-family:inherit; color:var(--text);}
       }
       if(parts.length >= 3 && parts[0] === "sensors" && parts[2] === "gas"){
         handleGasMessage(topic, payloadText);
+        return;
+      }
+      if(handleMeasurementMessage(topic, payloadText)){
         return;
       }
       if(isWaterTopicOrPayload(topic, payloadText)){
@@ -2635,6 +2884,62 @@ input, select{font-family:inherit; color:var(--text);}
     });
   }
 
+
+  function fmtEnergy(v, unit, decimals){
+    if(!hasNumber(v)) return "—";
+    return Number(v).toFixed(decimals == null ? 1 : decimals) + (unit ? " " + unit : "");
+  }
+
+  function renderMeasurementChart(svg, uid){
+    if(!svg) return;
+    var vals = (state.measurementHistory || []).filter(function(h){ return h.uid === uid; }).slice(0,24).reverse();
+    if(!vals.length){
+      svg.innerHTML = '<text x="50%" y="54%" text-anchor="middle" fill="rgba(134,150,173,.75)" font-size="12">Aguardando histórico</text>';
+      return;
+    }
+    var max = Math.max.apply(null, [100].concat(vals.map(function(h){ return Number(h.power)||0; })));
+    var step = vals.length > 1 ? 260/(vals.length-1) : 260;
+    var pts = vals.map(function(v,i){ return (8+i*step)+','+(94-((Number(v.power)||0)/max)*78); }).join(' ');
+    svg.innerHTML = '<polyline points="'+pts+'" fill="none" stroke="rgba(45,212,255,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="95" x2="270" y2="95" stroke="rgba(140,180,220,.14)"/><line x1="8" y1="16" x2="270" y2="16" stroke="rgba(140,180,220,.08)"/>';
+  }
+
+  function renderMeasurementsView(){
+    var grid = document.getElementById("measurementGrid");
+    if(!grid) return;
+    var list = state.measurements || [];
+    if(!list.length){
+      grid.innerHTML = '<button class="add-env-card measure-empty" id="addMeasurementEmpty"><div class="plus">⚡</div><span>Adicionar medição de energia</span></button>';
+      var emptyBtn = document.getElementById("addMeasurementEmpty");
+      if(emptyBtn) emptyBtn.onclick = openAddMeasurementModal;
+      return;
+    }
+    grid.innerHTML = list.map(function(m){
+      var online = m.lastSeen && (Date.now() - new Date(m.lastSeen).getTime() < 150000);
+      var power = hasNumber(m.power) ? Number(m.power) : null;
+      var deg = power == null ? 0 : Math.max(8, Math.min(360, (power/5000)*360));
+      return '<div class="measure-card glass">'+
+        '<div class="measure-head"><div><div class="measure-title">⚡ '+escapeHtml(m.name || "Medidor de energia")+'</div><div class="measure-id">'+escapeHtml(m.topicBase || measureTopicBaseFor(m.id))+'</div></div><button class="measure-gear" data-config-measure="'+escapeHtml(m.uid)+'">⚙️</button></div>'+
+        '<div class="measure-main">'+
+          '<div><div class="energy-power">'+(power == null ? "—" : (power >= 1000 ? (power/1000).toFixed(2)+'<small> kW</small>' : power.toFixed(0)+'<small> W</small>'))+'</div><div class="energy-sub">'+(online ? "Online · " : "Offline · ")+(m.lastSeen ? fmtRelative(new Date(m.lastSeen)) : "sem dados")+'</div></div>'+
+          '<div class="energy-ring" style="--energy-deg:'+deg+'deg"><span>'+fmtEnergy(m.energia_hoje,"kWh",2)+'</span></div>'+
+        '</div>'+
+        '<div class="measure-metrics">'+
+          '<div class="measure-mini"><strong>'+fmtEnergy(m.voltage,"V",1)+'</strong><span>Tensão</span></div>'+
+          '<div class="measure-mini"><strong>'+fmtEnergy(m.current,"A",2)+'</strong><span>Corrente</span></div>'+
+          '<div class="measure-mini"><strong>'+fmtEnergy(m.energy,"kWh",3)+'</strong><span>Total</span></div>'+
+          '<div class="measure-mini"><strong>'+fmtEnergy(m.energia_mes,"kWh",2)+'</strong><span>Mês</span></div>'+
+          '<div class="measure-mini"><strong>'+fmtEnergy(m.custo,"R$",2)+'</strong><span>Custo</span></div>'+
+          '<div class="measure-mini"><strong>'+fmtEnergy(m.pf,"",2)+'</strong><span>FP</span></div>'+
+        '</div>'+
+        '<div class="measure-chart"><svg data-energy-chart="'+escapeHtml(m.uid)+'"></svg></div>'+
+        (m.alert ? '<div class="measure-alert">⚠️ '+escapeHtml(m.alert)+'</div>' : '')+
+        '<div class="measure-actions"><button class="btn btn-ghost btn-sm" data-reset-energy="'+escapeHtml(m.uid)+'">Reset energia</button></div>'+
+      '</div>';
+    }).join('');
+    document.querySelectorAll("[data-energy-chart]").forEach(function(svg){ renderMeasurementChart(svg, svg.getAttribute("data-energy-chart")); });
+  }
+
+
   /* ============================================================
      RENDER: DEVICE TABLE
      ============================================================ */
@@ -2672,6 +2977,22 @@ input, select{font-family:inherit; color:var(--text);}
         '<td data-label="Última comunicação">'+(r.lastSeen ? fmtTime(r.lastSeen)+' · '+fmtRelative(r.lastSeen) : 'sem dados')+'</td>'+
         '<td data-label="Firmware" class="dev-mac">Receptor LoRa / Caixa d\'água</td>'+
         '<td data-label="Ações"><button class="env-gear" title="Configurar reservatório" data-config-water-device="'+escapeHtml(id)+'">⚙️</button></td>';
+      body.appendChild(tr);
+    });
+
+
+    // Medidores cadastrados na aba Medições.
+    (state.measurements || []).forEach(function(m){
+      var online = m.lastSeen && (Date.now() - new Date(m.lastSeen).getTime() < 150000);
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td data-label="Dispositivo" class="dev-name">⚡ '+escapeHtml(m.name || "Medidor de energia")+'</td>'+
+        '<td data-label="ID" class="dev-id">'+escapeHtml(m.id || "—")+'</td>'+
+        '<td data-label="MAC" class="dev-mac">'+escapeHtml(m.topicBase || measureTopicBaseFor(m.id))+'</td>'+
+        '<td data-label="Status">'+statusBadge(online ? "online" : "offline")+'</td>'+
+        '<td data-label="Última comunicação">'+(m.lastSeen ? fmtTime(new Date(m.lastSeen))+' · '+fmtRelative(new Date(m.lastSeen)) : 'sem dados')+'</td>'+
+        '<td data-label="Firmware" class="dev-mac">Receptor LoRa / Medição de energia</td>'+
+        '<td data-label="Ações"><button class="env-gear" title="Configurar medição" data-config-measure="'+escapeHtml(m.uid)+'">⚙️</button></td>';
       body.appendChild(tr);
     });
 
@@ -3524,6 +3845,164 @@ input, select{font-family:inherit; color:var(--text);}
     }
   });
 
+
+  /* ============================================================
+     MEDIÇÕES: CADASTRO / CONFIG / COMANDOS
+     ============================================================ */
+  function openAddMeasurementModal(){
+    var ov = document.getElementById("addMeasurementOverlay");
+    var nameEl = document.getElementById("newMeasureName");
+    var idEl = document.getElementById("newMeasureId");
+    var passEl = document.getElementById("newMeasurePass");
+    var topicEl = document.getElementById("newMeasureTopicBase");
+    if(nameEl) nameEl.value = "Medidor principal";
+    if(idEl) idEl.value = "medidor01";
+    if(passEl) passEl.value = "";
+    if(topicEl) topicEl.value = "casa/medidor01";
+    if(ov){
+      ov.classList.remove("hidden");
+      ov.style.display = "flex";
+    }
+    setTimeout(function(){ if(nameEl) nameEl.focus(); }, 50);
+  }
+
+  function closeAddMeasurementModal(){
+    var ov = document.getElementById("addMeasurementOverlay");
+    if(ov){
+      ov.classList.add("hidden");
+      ov.style.display = "none";
+    }
+  }
+
+  function addMeasurementFromModal(e){
+    if(e && e.preventDefault) e.preventDefault();
+    var type = (document.getElementById("newMeasureType") || {}).value || "energia";
+    var name = (document.getElementById("newMeasureName") || {}).value || "";
+    var id = normalizeMeasureId((document.getElementById("newMeasureId") || {}).value || "");
+    var pass = (document.getElementById("newMeasurePass") || {}).value || "";
+    var topicBase = normalizeMeasureTopicBase((document.getElementById("newMeasureTopicBase") || {}).value || "", id);
+    if(!name.trim()){ toast("Informe o nome da medição", "error"); return false; }
+    if(!id){ toast("Informe o ID do medidor", "error"); return false; }
+    state.measurements = state.measurements || [];
+    var existing = state.measurements.find(function(m){ return normalizeMeasureTopicBase(m.topicBase,m.id).toLowerCase() === topicBase.toLowerCase(); });
+    if(existing){
+      existing.name = name.trim();
+      existing.pass = pass || existing.pass || "";
+      existing.type = type;
+      existing.id = id;
+      existing.topicBase = topicBase;
+    }else{
+      state.measurements.push({
+        uid:"measure-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        type:type,
+        name:name.trim(),
+        id:id,
+        pass:pass,
+        topicBase:topicBase,
+        status:"offline",
+        voltage:null,current:null,power:null,energy:null,frequency:null,pf:null,custo:null,
+        energia_hoje:null,energia_semana:null,energia_mes:null,rssi:null,lastSeen:null
+      });
+    }
+    saveMeasurements();
+    setupMqttSubscriptions();
+    closeAddMeasurementModal();
+    toast("Medição adicionada", "success");
+    renderAll();
+    return false;
+  }
+
+  function openMeasurementConfig(uid){
+    var m = findMeasurementByUid(uid);
+    if(!m) return;
+    document.getElementById("measureCfgUid").value = m.uid;
+    document.getElementById("measureCfgName").value = m.name || "";
+    document.getElementById("measureCfgId").value = m.id || "";
+    document.getElementById("measureCfgPass").value = m.pass || "";
+    document.getElementById("measureCfgTopicBase").value = m.topicBase || measureTopicBaseFor(m.id);
+    document.getElementById("measureCfgLastSeen").value = m.lastSeen ? (fmtTime(new Date(m.lastSeen)) + " · " + fmtRelative(new Date(m.lastSeen))) : "sem dados";
+    var ov = document.getElementById("measurementConfigOverlay");
+    if(ov){
+      ov.classList.remove("hidden");
+      ov.style.display = "flex";
+    }
+  }
+
+  function closeMeasurementConfig(){
+    var ov = document.getElementById("measurementConfigOverlay");
+    if(ov){
+      ov.classList.add("hidden");
+      ov.style.display = "none";
+    }
+  }
+
+  function publishEnergyReset(uid){
+    var m = findMeasurementByUid(uid);
+    if(!m) return;
+    if(!isMqttConnected()){ toast("Broker MQTT desconectado", "error"); return; }
+    var payload = JSON.stringify({cmd:"reset_energia", pass:m.pass || ""});
+    mqttClient.publish(normalizeMeasureTopicBase(m.topicBase,m.id) + "/comando", payload, {qos:1, retain:false}, function(err){
+      if(err) toast("Falha ao enviar reset", "error");
+      else toast("Comando reset_energia enviado", "success");
+    });
+  }
+
+  var openAddMeasureBtn = document.getElementById("openAddMeasurementBtn");
+  if(openAddMeasureBtn) openAddMeasureBtn.addEventListener("click", openAddMeasurementModal);
+
+  var addMeasureBtn = document.getElementById("confirmAddMeasurementBtn");
+  if(addMeasureBtn){
+    addMeasureBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      var form = document.getElementById("addMeasurementForm");
+      if(form && typeof form.reportValidity === "function" && !form.reportValidity()) return;
+      addMeasurementFromModal(e);
+    });
+  }
+
+  var addMeasureForm = document.getElementById("addMeasurementForm");
+  if(addMeasureForm) addMeasureForm.addEventListener("submit", addMeasurementFromModal);
+
+  var measureIdEl = document.getElementById("newMeasureId");
+  if(measureIdEl) measureIdEl.addEventListener("input", function(){
+    var topicEl = document.getElementById("newMeasureTopicBase");
+    if(topicEl) topicEl.value = measureTopicBaseFor(this.value);
+  });
+
+  var measureCfgForm = document.getElementById("measurementConfigForm");
+  if(measureCfgForm) measureCfgForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var m = findMeasurementByUid(document.getElementById("measureCfgUid").value);
+    if(!m) return;
+    m.name = document.getElementById("measureCfgName").value.trim() || m.name;
+    m.id = normalizeMeasureId(document.getElementById("measureCfgId").value) || m.id;
+    m.pass = document.getElementById("measureCfgPass").value || m.pass || "";
+    m.topicBase = normalizeMeasureTopicBase(document.getElementById("measureCfgTopicBase").value, m.id);
+    saveMeasurements();
+    setupMqttSubscriptions();
+    closeMeasurementConfig();
+    toast("Medição atualizada", "success");
+    renderAll();
+  });
+
+  var deleteMeasureBtn = document.getElementById("deleteMeasurementBtn");
+  if(deleteMeasureBtn) deleteMeasureBtn.addEventListener("click", function(){
+    var uid = document.getElementById("measureCfgUid").value;
+    state.measurements = (state.measurements || []).filter(function(m){ return m.uid !== uid; });
+    state.measurementHistory = (state.measurementHistory || []).filter(function(h){ return h.uid !== uid; });
+    saveMeasurements();
+    closeMeasurementConfig();
+    toast("Medição removida", "info");
+    renderAll();
+  });
+
+  document.addEventListener("click", function(e){
+    var cfg = e.target.closest && e.target.closest("[data-config-measure]");
+    if(cfg){ openMeasurementConfig(cfg.getAttribute("data-config-measure")); return; }
+    var reset = e.target.closest && e.target.closest("[data-reset-energy]");
+    if(reset){ publishEnergyReset(reset.getAttribute("data-reset-energy")); return; }
+  });
+
   /* ============================================================
      MASTER RENDER
      ============================================================ */
@@ -3539,6 +4018,7 @@ input, select{font-family:inherit; color:var(--text);}
     safeRender(renderEnvironments, "ambientes");
     safeRender(renderDevices, "dispositivos");
     safeRender(renderWaterView, "agua");
+    safeRender(renderMeasurementsView, "medicoes");
     safeRender(renderHistory, "historico");
     safeRender(renderAlertsView, "alertas");
   }
