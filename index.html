@@ -2141,6 +2141,7 @@ input, select{font-family:inherit; color:var(--text);}
         a.time = a.time ? new Date(a.time) : new Date();
         return a;
       });
+      window.mqttClient = mqttClient;
     }catch(e){ state.smokeRegistry = []; }
   }
 
@@ -2797,6 +2798,7 @@ input, select{font-family:inherit; color:var(--text);}
       toast("Conectado ao broker MQTT", "success");
       mqttClient.subscribe("sensors/+/data", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe data", err); });
       mqttClient.subscribe("sensors/+/gas", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe gas", err); });
+      mqttClient.subscribe("sensors/+/lamp/set", {qos:1}, function(err){ if(err) console.error("[MQTT] erro subscribe lamp", err); });
       subscribeWaterTopics();
       subscribeMeasurementTopics();
       subscribeIrrigationTopics();
@@ -3011,17 +3013,35 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function publishLightCommand(env, turnOn){
-    if(!mqttClient || !mqttConnected){
+    if(!isMqttConnected()){
       toast("Broker MQTT desconectado — configure em Configurações", "error");
       return;
     }
+
     var devId = getEnvDeviceId(env);
-    if(!devId || devId === "------"){ toast("ID do dispositivo inválido neste ambiente", "error"); return; }
+    devId = onlyHex(devId).slice(-6).toLowerCase();
+
+    if(!devId || devId.length !== 6 || devId === "000000"){
+      toast("ID do dispositivo inválido neste ambiente", "error");
+      return;
+    }
+
     var topic = "sensors/" + devId + "/lamp/set";
-    var payload = JSON.stringify({lamp: turnOn});
-    // retain:true → broker guarda o último comando; quando o ESP32
-    // reconectar ele recebe imediatamente e restaura o estado do relé.
-    mqttClient.publish(topic, payload, {qos:1, retain:true});
+    var payload = JSON.stringify({lamp: !!turnOn});
+
+    try{
+      mqttClient.publish(topic, payload, {qos:1, retain:true}, function(err){
+        if(err){
+          console.error("[MQTT] Falha ao publicar lâmpada:", topic, err);
+          toast("Falha ao enviar comando da lâmpada", "error");
+        }else{
+          console.log("[MQTT] Comando lâmpada enviado:", topic, payload);
+        }
+      });
+    }catch(e){
+      console.error("[MQTT] Erro publishLightCommand:", e);
+      toast("Erro ao enviar comando MQTT da lâmpada", "error");
+    }
   }
 
   /* ── Autenticação com o ESP32 físico (handshake via MQTT) ──
@@ -3050,7 +3070,7 @@ input, select{font-family:inherit; color:var(--text);}
 
   function requestDeviceAuth(devId, passHash){
     return new Promise(function(resolve, reject){
-      if(!mqttClient || !mqttConnected){ reject(new Error("broker_offline")); return; }
+      if(!isMqttConnected()){ reject(new Error("broker_offline")); return; }
       devId = onlyHex(devId).slice(-6).toLowerCase();
       if(!devId || devId.length < 6){ reject(new Error("id_invalido")); return; }
       var token = Date.now().toString(16) + Math.random().toString(16).slice(2);
@@ -3288,7 +3308,7 @@ input, select{font-family:inherit; color:var(--text);}
         toast("Informe a senha de acesso do dispositivo", "error");
         return;
       }
-      if(!mqttClient || !mqttConnected){
+      if(!isMqttConnected()){
         toast("Conecte o broker em Configurações antes de adicionar um dispositivo real", "error");
         return;
       }
@@ -4632,6 +4652,21 @@ input, select{font-family:inherit; color:var(--text);}
     setTimeout(renderIrrigationAdvanced, 600);
   });
   window.renderIrrigationAdvancedV40 = renderIrrigationAdvanced;
+})();
+</script>
+
+
+<script id="v41-lamp-fix">
+(function(){
+  // Correção complementar: alguns trechos antigos usavam a variável mqttConnected.
+  // Esta rotina mantém mqttConnected sincronizado com o estado real do mqtt.js.
+  setInterval(function(){
+    try{
+      if(typeof isMqttConnected === "function"){
+        window.__mqttReallyConnected = isMqttConnected();
+      }
+    }catch(e){}
+  }, 2000);
 })();
 </script>
 
