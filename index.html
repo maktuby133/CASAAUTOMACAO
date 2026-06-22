@@ -384,6 +384,41 @@ input, select{font-family:inherit; color:var(--text);}
 .smart-mini-card.glow-amber .sic{background:var(--amber-dim); color:var(--amber); box-shadow:0 0 18px rgba(255,180,67,0.15);}
 .smart-mini-card.glow-red .sic{background:var(--red-dim); color:var(--red); box-shadow:0 0 18px rgba(255,77,106,0.15);}
 .smart-mini-card.glow-green .sic{background:var(--green-dim); color:var(--green); box-shadow:0 0 18px rgba(57,230,164,0.15);}
+
+/* Dashboard compact water tank card */
+.smart-mini-card.tank-dashboard-card{
+  min-height:96px;
+  padding:10px 12px;
+  display:grid;
+  grid-template-columns:1fr 38px;
+  grid-template-rows:auto 1fr auto;
+  column-gap:9px;
+  background:
+    radial-gradient(circle at 28% 42%, rgba(45,212,255,.10), transparent 48%),
+    linear-gradient(180deg, rgba(255,255,255,.036), rgba(255,255,255,.014));
+}
+.tank-dashboard-card .tank-card-title{grid-column:1 / 2;display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:9.3px;letter-spacing:.8px;text-transform:uppercase;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tank-dashboard-card .tank-card-title .drop{font-size:15px;color:var(--cyan);filter:drop-shadow(0 0 7px rgba(45,212,255,.55));}
+.tank-dashboard-card .tank-card-level{grid-column:1 / 2;align-self:center;font-family:var(--font-display);font-size:29px;line-height:.95;letter-spacing:.5px;color:#f8fbff;text-shadow:0 0 12px rgba(45,212,255,.45);}
+.tank-dashboard-card .tank-card-level small{font-size:14px;margin-left:1px;}
+.tank-dashboard-card .tank-vertical-gauge{grid-column:2 / 3;grid-row:1 / 4;align-self:stretch;justify-self:end;width:28px;min-height:74px;border-radius:14px;padding:3px;border:1px solid rgba(45,212,255,.42);background:rgba(3,8,16,.42);box-shadow:0 0 14px rgba(45,212,255,.20), inset 0 0 12px rgba(45,212,255,.08);position:relative;overflow:hidden;}
+.tank-dashboard-card .tank-vertical-gauge::before{content:'';position:absolute;inset:7px;border-radius:10px;background:repeating-linear-gradient(to top, rgba(255,255,255,.11) 0 1px, transparent 1px 11px);opacity:.45;z-index:2;pointer-events:none;}
+.tank-dashboard-card .tank-vertical-fill{position:absolute;left:3px;right:3px;bottom:3px;height:0%;border-radius:11px;background:linear-gradient(to top,#ff334d 0%,#ff8a18 28%,#ffe94a 50%,#5cff60 78%,#20f6a7 100%);box-shadow:0 0 12px rgba(45,212,255,.45);transition:height .45s ease;}
+.tank-dashboard-card .pump-mini{grid-column:1 / 2;display:flex;align-items:center;gap:8px;min-width:0;}
+.tank-dashboard-card .pump-icon{width:28px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;color:#64748b;}
+.tank-dashboard-card .pump-icon .gear{font-size:19px;line-height:1;filter:drop-shadow(0 0 0 transparent);}
+.tank-dashboard-card .pump-icon .waves{position:absolute;left:1px;right:1px;bottom:-5px;font-family:var(--font-mono);font-size:13px;letter-spacing:-2px;color:#64748b;opacity:.55;}
+.tank-dashboard-card .pump-status{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint);letter-spacing:.8px;white-space:nowrap;}
+.tank-dashboard-card.pump-on .pump-icon{color:var(--cyan);text-shadow:0 0 10px rgba(45,212,255,.8);animation:pumpGlow 1.2s ease-in-out infinite;}
+.tank-dashboard-card.pump-on .pump-icon .gear{animation:pumpSpin 3.8s linear infinite;filter:drop-shadow(0 0 8px rgba(45,212,255,.85));}
+.tank-dashboard-card.pump-on .pump-icon .waves{color:var(--cyan);opacity:1;animation:waterWave 1.15s linear infinite;text-shadow:0 0 8px rgba(45,212,255,.75);}
+.tank-dashboard-card.pump-on .pump-status{color:var(--cyan);}
+.tank-dashboard-card.pump-off .pump-status{color:var(--text-faint);}
+@keyframes pumpSpin{to{transform:rotate(360deg);}}
+@keyframes pumpGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(45,212,255,.35));}50%{filter:drop-shadow(0 0 12px rgba(45,212,255,.9));}}
+@keyframes waterWave{0%{transform:translateX(-2px);}100%{transform:translateX(2px);}}
+@media (max-width:560px){.smart-mini-card.tank-dashboard-card{min-height:104px}.tank-dashboard-card .tank-card-level{font-size:27px}.tank-dashboard-card .tank-vertical-gauge{width:26px}}
+
 @media (max-width:1240px){.core-section-smart{grid-template-columns:340px 1fr;} .core-section-smart .smart-panel:last-child{grid-column:1 / -1;}}
 @media (max-width:980px){.core-section-smart{grid-template-columns:1fr;} .core-section-smart .smart-panel:last-child{grid-column:auto;}}
 @media (max-width:560px){.smart-side-grid{grid-template-columns:1fr 1fr; gap:10px;} .smart-mini-card{padding:12px; min-height:104px;} .smart-mini-card.stat-wide{min-height:auto;}}
@@ -1690,11 +1725,14 @@ input, select{font-family:inherit; color:var(--text);}
         sub: activeAlerts>0 ? "Requer atenção" : "Tudo normal"
       },
       {
-        cls:tankCls,
+        type:"tankDashboard",
+        cls:tankCls + " tank-dashboard-card " + (tank.pumpOn ? "pump-on" : "pump-off"),
         ic:"🚰",
         val:tankHasData ? Math.round(tank.level) + "%" : "—",
+        level:tankHasData ? Math.max(0, Math.min(100, Math.round(tank.level))) : 0,
         lbl:"Caixa d'água",
-        sub:tankSub
+        sub:tankSub,
+        pumpOn:!!tank.pumpOn
       }
     ];
 
@@ -1733,11 +1771,20 @@ input, select{font-family:inherit; color:var(--text);}
         if(c.details && c.details.length){
           extra += '<div class="tank-details">' + c.details.map(function(item){ return '<span>'+escapeHtml(item)+'</span>'; }).join('') + '</div>';
         }
-        el.innerHTML =
-          '<div class="sic">'+c.ic+'</div>'+
-          '<div class="val">'+c.val+'</div>'+
-          '<div class="lbl">'+c.lbl+'</div>'+
-          '<div class="sub">'+escapeHtml(c.sub)+'</div>'+ extra;
+        if(c.type === "tankDashboard"){
+          var level = typeof c.level === "number" ? c.level : 0;
+          el.innerHTML =
+            '<div class="tank-card-title"><span class="drop">💧</span><span>CAIXA PRINCIPAL</span></div>'+
+            '<div class="tank-card-level">'+escapeHtml(c.val).replace('%','<small>%</small>')+'</div>'+
+            '<div class="pump-mini"><span class="pump-icon"><span class="gear">⚙</span><span class="waves">≈≈≈</span></span><span class="pump-status">BOMBA '+(c.pumpOn ? 'ON' : 'OFF')+'</span></div>'+
+            '<div class="tank-vertical-gauge"><span class="tank-vertical-fill" style="height:'+level+'%"></span></div>';
+        } else {
+          el.innerHTML =
+            '<div class="sic">'+c.ic+'</div>'+
+            '<div class="val">'+c.val+'</div>'+
+            '<div class="lbl">'+c.lbl+'</div>'+
+            '<div class="sub">'+escapeHtml(c.sub)+'</div>'+ extra;
+        }
         grid.appendChild(el);
       });
     }
