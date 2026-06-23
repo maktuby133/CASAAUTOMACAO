@@ -1032,6 +1032,97 @@ input, select{font-family:inherit; color:var(--text);}
 @media(max-width:860px){.irrigation-advanced-grid{grid-template-columns:1fr}.irrigation-schedule-line strong{font-size:16px}}
 </style>
 
+
+<style id="water-dashboard-level-v43">
+/* Ajuste do card da caixa d'água no dashboard:
+   barra centralizada, valor sobreposto e sem corte em 100% */
+.water-level-card,
+.water-dashboard-card,
+.water-tank-dashboard,
+.caixa-dashboard-card{
+  overflow:hidden;
+}
+
+.water-level-vertical,
+.water-tank-level,
+.caixa-level-bar,
+.tank-level-bar{
+  position:relative !important;
+  width:64px !important;
+  min-width:64px !important;
+  height:112px !important;
+  margin:4px auto 6px !important;
+  border-radius:18px !important;
+  overflow:hidden !important;
+  display:flex !important;
+  align-items:flex-end !important;
+  justify-content:center !important;
+  border:1px solid rgba(140,180,220,.18) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)) !important;
+  box-shadow:inset 0 0 18px rgba(0,0,0,.36), 0 0 18px rgba(45,212,255,.10) !important;
+}
+
+.water-level-fill,
+.water-tank-fill,
+.caixa-level-fill,
+.tank-level-fill{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  width:100% !important;
+  max-height:100% !important;
+  border-radius:0 0 18px 18px !important;
+  transition:height .45s ease, background .3s ease, box-shadow .3s ease !important;
+}
+
+.water-level-value,
+.water-tank-value,
+.caixa-level-value,
+.tank-level-value{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:3 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  font-family:var(--font-display,'Orbitron',monospace) !important;
+  font-size:30px !important;
+  line-height:1 !important;
+  letter-spacing:.5px !important;
+  color:#fff !important;
+  text-shadow:0 0 10px rgba(45,212,255,.75), 0 2px 6px rgba(0,0,0,.85) !important;
+  pointer-events:none !important;
+  white-space:nowrap !important;
+}
+
+.water-level-value small,
+.water-tank-value small,
+.caixa-level-value small,
+.tank-level-value small{
+  font-size:.52em !important;
+  margin-left:1px !important;
+}
+
+/* Caso o HTML antigo coloque o valor em uma coluna ao lado, força o conjunto ficar central. */
+.water-dashboard-compact,
+.caixa-dashboard-compact,
+.tank-dashboard-compact{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+}
+
+/* Remove/neutraliza valores laterais antigos quando existirem duplicados. */
+.water-level-side-value,
+.caixa-level-side-value,
+.tank-level-side-value{
+  display:none !important;
+}
+</style>
+
 </head>
 <body>
 
@@ -3018,29 +3109,64 @@ input, select{font-family:inherit; color:var(--text);}
       return;
     }
 
-    var devId = getEnvDeviceId(env);
-    devId = onlyHex(devId).slice(-6).toLowerCase();
+    var devIdRaw = getEnvDeviceId(env);
+    var devId = onlyHex(devIdRaw).slice(-6).toLowerCase();
+    var devIdUpper = devId.toUpperCase();
 
     if(!devId || devId.length !== 6 || devId === "000000"){
       toast("ID do dispositivo inválido neste ambiente", "error");
       return;
     }
 
-    var topic = "sensors/" + devId + "/lamp/set";
     var payload = JSON.stringify({lamp: !!turnOn});
+    var topicMain = "sensors/" + devId + "/lamp/set";
 
+    // Diagnóstico visual: mostra o tópico real que está sendo enviado.
+    // Se a caixa d'água funciona e este tópico aparece correto, o problema fica no ESP32 do cômodo.
     try{
-      mqttClient.publish(topic, payload, {qos:1, retain:true}, function(err){
-        if(err){
-          console.error("[MQTT] Falha ao publicar lâmpada:", topic, err);
-          toast("Falha ao enviar comando da lâmpada", "error");
-        }else{
-          console.log("[MQTT] Comando lâmpada enviado:", topic, payload);
-        }
-      });
-    }catch(e){
-      console.error("[MQTT] Erro publishLightCommand:", e);
-      toast("Erro ao enviar comando MQTT da lâmpada", "error");
+      state.lastLampCommand = {
+        env: env && env.name ? env.name : "Ambiente",
+        id: devId,
+        topic: topicMain,
+        payload: payload,
+        at: new Date()
+      };
+    }catch(e){}
+
+    function pub(topic, msg, opts, label){
+      try{
+        mqttClient.publish(topic, msg, opts || {qos:1, retain:false}, function(err){
+          if(err){
+            console.error("[MQTT] Falha comando lâmpada", label, topic, err);
+          }else{
+            console.log("[MQTT] Lâmpada enviado", label, topic, msg);
+          }
+        });
+      }catch(e){
+        console.error("[MQTT] Erro publish lâmpada", label, topic, e);
+      }
+    }
+
+    // Principal: exatamente como o firmware dos cômodos usa:
+    // sensors/{deviceId}/lamp/set  payload {"lamp":true/false}
+    pub(topicMain, payload, {qos:1, retain:true}, "principal");
+
+    // Compatibilidade: se algum ESP32 antigo foi compilado com ID em maiúsculo,
+    // MQTT diferencia maiúsculas/minúsculas. Este envio não fica retido.
+    if(devIdUpper !== devId){
+      pub("sensors/" + devIdUpper + "/lamp/set", payload, {qos:1, retain:false}, "compat-uppercase");
+    }
+
+    // Compatibilidade extra para versões antigas que usavam /cmd.
+    // O firmware atual ignora se não usar esse tópico.
+    pub("sensors/" + devId + "/cmd", payload, {qos:1, retain:false}, "compat-cmd");
+
+    toast("Comando enviado: " + devIdUpper + " · " + (turnOn ? "LIGAR" : "DESLIGAR"), "info");
+
+    // Atualização visual otimista; o estado real continua sendo confirmado quando o ESP32 publicar.
+    if(env && env.lighting){
+      env.lighting.on = !!turnOn;
+      renderAll();
     }
   }
 
@@ -4667,6 +4793,105 @@ input, select{font-family:inherit; color:var(--text);}
       }
     }catch(e){}
   }, 2000);
+})();
+</script>
+
+
+<script id="water-dashboard-level-v43-script">
+(function(){
+  function clamp(n,min,max){ n=Number(n); return isNaN(n)?0:Math.max(min,Math.min(max,n)); }
+
+  function findLevelFromText(root){
+    const txt = root.innerText || "";
+    const m = txt.match(/(\d{1,3})\s*%/);
+    return m ? clamp(m[1],0,100) : null;
+  }
+
+  function colorForLevel(v){
+    if(v <= 20) return "linear-gradient(180deg,#ff4d6a,#8f1028)";
+    if(v <= 50) return "linear-gradient(180deg,#ffb443,#9b5f00)";
+    return "linear-gradient(180deg,#39e6a4,#0a8f61)";
+  }
+
+  function enhanceWaterCard(){
+    const candidates = Array.from(document.querySelectorAll(".stat-card,.glass,.water-level-card,.water-dashboard-card,.caixa-dashboard-card"));
+    const cards = candidates.filter(el=>{
+      const t=(el.innerText||"").toLowerCase();
+      return (t.includes("caixa") || t.includes("água") || t.includes("agua")) && t.includes("%");
+    });
+
+    cards.forEach(card=>{
+      if(card.dataset.waterLevelV43 === "1") {
+        const val = findLevelFromText(card);
+        const fill = card.querySelector(".water-level-fill,.water-tank-fill,.caixa-level-fill,.tank-level-fill");
+        const value = card.querySelector(".water-level-value,.water-tank-value,.caixa-level-value,.tank-level-value");
+        if(fill && val !== null){
+          fill.style.height = val + "%";
+          fill.style.background = colorForLevel(val);
+          fill.style.boxShadow = val <= 20 ? "0 0 16px rgba(255,77,106,.38)" : val <= 50 ? "0 0 16px rgba(255,180,67,.34)" : "0 0 16px rgba(57,230,164,.34)";
+        }
+        if(value && val !== null) value.innerHTML = val + "<small>%</small>";
+        return;
+      }
+
+      let val = findLevelFromText(card);
+      if(val === null) return;
+
+      // Procura barra vertical existente
+      let bar = card.querySelector(".water-level-vertical,.water-tank-level,.caixa-level-bar,.tank-level-bar");
+
+      // Se não existir, cria uma barra compacta no meio do card sem aumentar tamanho
+      if(!bar){
+        const titleNode = Array.from(card.querySelectorAll("*")).find(n=>/caixa|água|agua/i.test(n.textContent||""));
+        bar = document.createElement("div");
+        bar.className = "water-level-vertical";
+        bar.innerHTML = '<div class="water-level-fill"></div><div class="water-level-value"></div>';
+
+        // tenta inserir antes do status da bomba, senão no final
+        const bomba = Array.from(card.querySelectorAll("*")).find(n=>/bomba/i.test(n.textContent||""));
+        if(bomba && bomba.parentNode === card) card.insertBefore(bar, bomba);
+        else if(titleNode && titleNode.parentNode) titleNode.parentNode.appendChild(bar);
+        else card.appendChild(bar);
+      }
+
+      let fill = bar.querySelector(".water-level-fill,.water-tank-fill,.caixa-level-fill,.tank-level-fill");
+      let value = bar.querySelector(".water-level-value,.water-tank-value,.caixa-level-value,.tank-level-value");
+
+      if(!fill){
+        fill = document.createElement("div");
+        fill.className = "water-level-fill";
+        bar.appendChild(fill);
+      }
+      if(!value){
+        value = document.createElement("div");
+        value.className = "water-level-value";
+        bar.appendChild(value);
+      }
+
+      fill.style.height = val + "%";
+      fill.style.background = colorForLevel(val);
+      fill.style.boxShadow = val <= 20 ? "0 0 16px rgba(255,77,106,.38)" : val <= 50 ? "0 0 16px rgba(255,180,67,.34)" : "0 0 16px rgba(57,230,164,.34)";
+      value.innerHTML = val + "<small>%</small>";
+
+      // Oculta textos percentuais laterais duplicados dentro do card, preservando o valor sobreposto.
+      Array.from(card.querySelectorAll("*")).forEach(n=>{
+        if(n === value || value.contains(n) || bar.contains(n)) return;
+        const tx = (n.childNodes.length === 1 ? n.textContent.trim() : "");
+        if(/^\d{1,3}\s*%$/.test(tx)){
+          n.classList.add("water-level-side-value");
+        }
+      });
+
+      card.dataset.waterLevelV43 = "1";
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    enhanceWaterCard();
+    setInterval(enhanceWaterCard, 1500);
+  });
+
+  window.enhanceWaterCardV43 = enhanceWaterCard;
 })();
 </script>
 
