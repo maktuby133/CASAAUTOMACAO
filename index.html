@@ -1005,6 +1005,85 @@ input, select{font-family:inherit; color:var(--text);}
 @keyframes waterWave{0%{transform:translateX(-3px);opacity:.6}50%{opacity:1}100%{transform:translateX(3px);opacity:.6}}
 @media(max-width:560px){.irrig-main{grid-template-columns:1fr}.week-picker{grid-template-columns:repeat(4,1fr)}}
 
+
+/* ============================================================
+   CORREÇÃO LOCAL — CARD CAIXA D'ÁGUA DASHBOARD
+   Valor sobreposto na barra centralizada, sem cortar 100%
+   ============================================================ */
+.smart-mini-card.tank-dashboard-card{
+  min-height:96px;
+  padding:10px 12px;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  grid-template-rows:auto 1fr auto !important;
+  row-gap:4px;
+  column-gap:0 !important;
+  align-items:center;
+}
+.tank-dashboard-card .tank-card-title{
+  grid-column:1 / 2 !important;
+  grid-row:1 / 2 !important;
+  justify-content:center;
+  text-align:center;
+}
+.tank-dashboard-card .tank-vertical-gauge{
+  grid-column:1 / 2 !important;
+  grid-row:2 / 3 !important;
+  justify-self:center !important;
+  align-self:center !important;
+  width:86px !important;
+  height:58px !important;
+  min-height:58px !important;
+  padding:3px !important;
+  border-radius:15px !important;
+  overflow:hidden !important;
+}
+.tank-dashboard-card .tank-vertical-gauge::before{
+  inset:7px !important;
+  border-radius:10px !important;
+}
+.tank-dashboard-card .tank-vertical-fill{
+  left:3px !important;
+  right:3px !important;
+  bottom:3px !important;
+  border-radius:11px !important;
+  max-height:calc(100% - 6px) !important;
+}
+.tank-dashboard-card .tank-card-level{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:4 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  grid-column:auto !important;
+  align-self:auto !important;
+  font-family:var(--font-display) !important;
+  font-size:29px !important;
+  line-height:1 !important;
+  letter-spacing:.3px !important;
+  white-space:nowrap !important;
+  color:#f8fbff !important;
+  text-align:center !important;
+  text-shadow:0 0 12px rgba(45,212,255,.75), 0 2px 5px rgba(0,0,0,.8) !important;
+  pointer-events:none !important;
+}
+.tank-dashboard-card .tank-card-level small{
+  font-size:14px !important;
+  margin-left:1px !important;
+}
+.tank-dashboard-card .pump-mini{
+  grid-column:1 / 2 !important;
+  grid-row:3 / 4 !important;
+  justify-content:center !important;
+  min-width:0;
+}
+@media (max-width:560px){
+  .smart-mini-card.tank-dashboard-card{min-height:104px;}
+  .tank-dashboard-card .tank-vertical-gauge{width:82px !important;height:58px !important;min-height:58px !important;}
+  .tank-dashboard-card .tank-card-level{font-size:27px !important;}
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 
@@ -1030,97 +1109,6 @@ input, select{font-family:inherit; color:var(--text);}
 .irrigation-zone strong{display:block;font-family:var(--font-head,Arial);font-size:13px}
 .irrigation-zone span{display:block;color:var(--text-faint,#54637a);font-size:11px;margin-top:4px}
 @media(max-width:860px){.irrigation-advanced-grid{grid-template-columns:1fr}.irrigation-schedule-line strong{font-size:16px}}
-</style>
-
-
-<style id="water-dashboard-level-v43">
-/* Ajuste do card da caixa d'água no dashboard:
-   barra centralizada, valor sobreposto e sem corte em 100% */
-.water-level-card,
-.water-dashboard-card,
-.water-tank-dashboard,
-.caixa-dashboard-card{
-  overflow:hidden;
-}
-
-.water-level-vertical,
-.water-tank-level,
-.caixa-level-bar,
-.tank-level-bar{
-  position:relative !important;
-  width:64px !important;
-  min-width:64px !important;
-  height:112px !important;
-  margin:4px auto 6px !important;
-  border-radius:18px !important;
-  overflow:hidden !important;
-  display:flex !important;
-  align-items:flex-end !important;
-  justify-content:center !important;
-  border:1px solid rgba(140,180,220,.18) !important;
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)) !important;
-  box-shadow:inset 0 0 18px rgba(0,0,0,.36), 0 0 18px rgba(45,212,255,.10) !important;
-}
-
-.water-level-fill,
-.water-tank-fill,
-.caixa-level-fill,
-.tank-level-fill{
-  position:absolute !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  width:100% !important;
-  max-height:100% !important;
-  border-radius:0 0 18px 18px !important;
-  transition:height .45s ease, background .3s ease, box-shadow .3s ease !important;
-}
-
-.water-level-value,
-.water-tank-value,
-.caixa-level-value,
-.tank-level-value{
-  position:absolute !important;
-  inset:0 !important;
-  z-index:3 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-  font-family:var(--font-display,'Orbitron',monospace) !important;
-  font-size:30px !important;
-  line-height:1 !important;
-  letter-spacing:.5px !important;
-  color:#fff !important;
-  text-shadow:0 0 10px rgba(45,212,255,.75), 0 2px 6px rgba(0,0,0,.85) !important;
-  pointer-events:none !important;
-  white-space:nowrap !important;
-}
-
-.water-level-value small,
-.water-tank-value small,
-.caixa-level-value small,
-.tank-level-value small{
-  font-size:.52em !important;
-  margin-left:1px !important;
-}
-
-/* Caso o HTML antigo coloque o valor em uma coluna ao lado, força o conjunto ficar central. */
-.water-dashboard-compact,
-.caixa-dashboard-compact,
-.tank-dashboard-compact{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:8px !important;
-}
-
-/* Remove/neutraliza valores laterais antigos quando existirem duplicados. */
-.water-level-side-value,
-.caixa-level-side-value,
-.tank-level-side-value{
-  display:none !important;
-}
 </style>
 
 </head>
@@ -2378,9 +2366,8 @@ input, select{font-family:inherit; color:var(--text);}
           var level = typeof c.level === "number" ? c.level : 0;
           el.innerHTML =
             '<div class="tank-card-title"><span class="drop">💧</span><span>CAIXA PRINCIPAL</span></div>'+
-            '<div class="tank-card-level">'+escapeHtml(c.val).replace('%','<small>%</small>')+'</div>'+
-            '<div class="pump-mini"><span class="pump-icon"><span class="gear">⚙</span><span class="waves">≈≈≈</span></span><span class="pump-status">BOMBA '+(c.pumpOn ? 'ON' : 'OFF')+'</span></div>'+
-            '<div class="tank-vertical-gauge"><span class="tank-vertical-fill" style="height:'+level+'%"></span></div>';
+            '<div class="tank-vertical-gauge"><span class="tank-vertical-fill" style="height:'+level+'%"></span><div class="tank-card-level">'+escapeHtml(c.val).replace('%','<small>%</small>')+'</div></div>'+
+            '<div class="pump-mini"><span class="pump-icon"><span class="gear">⚙</span><span class="waves">≈≈≈</span></span><span class="pump-status">BOMBA '+(c.pumpOn ? 'ON' : 'OFF')+'</span></div>';
         } else {
           el.innerHTML =
             '<div class="sic">'+c.ic+'</div>'+
@@ -4793,105 +4780,6 @@ input, select{font-family:inherit; color:var(--text);}
       }
     }catch(e){}
   }, 2000);
-})();
-</script>
-
-
-<script id="water-dashboard-level-v43-script">
-(function(){
-  function clamp(n,min,max){ n=Number(n); return isNaN(n)?0:Math.max(min,Math.min(max,n)); }
-
-  function findLevelFromText(root){
-    const txt = root.innerText || "";
-    const m = txt.match(/(\d{1,3})\s*%/);
-    return m ? clamp(m[1],0,100) : null;
-  }
-
-  function colorForLevel(v){
-    if(v <= 20) return "linear-gradient(180deg,#ff4d6a,#8f1028)";
-    if(v <= 50) return "linear-gradient(180deg,#ffb443,#9b5f00)";
-    return "linear-gradient(180deg,#39e6a4,#0a8f61)";
-  }
-
-  function enhanceWaterCard(){
-    const candidates = Array.from(document.querySelectorAll(".stat-card,.glass,.water-level-card,.water-dashboard-card,.caixa-dashboard-card"));
-    const cards = candidates.filter(el=>{
-      const t=(el.innerText||"").toLowerCase();
-      return (t.includes("caixa") || t.includes("água") || t.includes("agua")) && t.includes("%");
-    });
-
-    cards.forEach(card=>{
-      if(card.dataset.waterLevelV43 === "1") {
-        const val = findLevelFromText(card);
-        const fill = card.querySelector(".water-level-fill,.water-tank-fill,.caixa-level-fill,.tank-level-fill");
-        const value = card.querySelector(".water-level-value,.water-tank-value,.caixa-level-value,.tank-level-value");
-        if(fill && val !== null){
-          fill.style.height = val + "%";
-          fill.style.background = colorForLevel(val);
-          fill.style.boxShadow = val <= 20 ? "0 0 16px rgba(255,77,106,.38)" : val <= 50 ? "0 0 16px rgba(255,180,67,.34)" : "0 0 16px rgba(57,230,164,.34)";
-        }
-        if(value && val !== null) value.innerHTML = val + "<small>%</small>";
-        return;
-      }
-
-      let val = findLevelFromText(card);
-      if(val === null) return;
-
-      // Procura barra vertical existente
-      let bar = card.querySelector(".water-level-vertical,.water-tank-level,.caixa-level-bar,.tank-level-bar");
-
-      // Se não existir, cria uma barra compacta no meio do card sem aumentar tamanho
-      if(!bar){
-        const titleNode = Array.from(card.querySelectorAll("*")).find(n=>/caixa|água|agua/i.test(n.textContent||""));
-        bar = document.createElement("div");
-        bar.className = "water-level-vertical";
-        bar.innerHTML = '<div class="water-level-fill"></div><div class="water-level-value"></div>';
-
-        // tenta inserir antes do status da bomba, senão no final
-        const bomba = Array.from(card.querySelectorAll("*")).find(n=>/bomba/i.test(n.textContent||""));
-        if(bomba && bomba.parentNode === card) card.insertBefore(bar, bomba);
-        else if(titleNode && titleNode.parentNode) titleNode.parentNode.appendChild(bar);
-        else card.appendChild(bar);
-      }
-
-      let fill = bar.querySelector(".water-level-fill,.water-tank-fill,.caixa-level-fill,.tank-level-fill");
-      let value = bar.querySelector(".water-level-value,.water-tank-value,.caixa-level-value,.tank-level-value");
-
-      if(!fill){
-        fill = document.createElement("div");
-        fill.className = "water-level-fill";
-        bar.appendChild(fill);
-      }
-      if(!value){
-        value = document.createElement("div");
-        value.className = "water-level-value";
-        bar.appendChild(value);
-      }
-
-      fill.style.height = val + "%";
-      fill.style.background = colorForLevel(val);
-      fill.style.boxShadow = val <= 20 ? "0 0 16px rgba(255,77,106,.38)" : val <= 50 ? "0 0 16px rgba(255,180,67,.34)" : "0 0 16px rgba(57,230,164,.34)";
-      value.innerHTML = val + "<small>%</small>";
-
-      // Oculta textos percentuais laterais duplicados dentro do card, preservando o valor sobreposto.
-      Array.from(card.querySelectorAll("*")).forEach(n=>{
-        if(n === value || value.contains(n) || bar.contains(n)) return;
-        const tx = (n.childNodes.length === 1 ? n.textContent.trim() : "");
-        if(/^\d{1,3}\s*%$/.test(tx)){
-          n.classList.add("water-level-side-value");
-        }
-      });
-
-      card.dataset.waterLevelV43 = "1";
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", ()=>{
-    enhanceWaterCard();
-    setInterval(enhanceWaterCard, 1500);
-  });
-
-  window.enhanceWaterCardV43 = enhanceWaterCard;
 })();
 </script>
 
