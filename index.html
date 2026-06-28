@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v47 Movimento e Segurança de Dados</title>
+<title>SMART HOME AI CONTROL - v47 Card Caixa Corrigido</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -2410,36 +2410,77 @@ input, select{font-family:inherit; color:var(--text);}
 
 
 /* ============================================================
-   V47 — movimento visual + proteção contra falso positivo
-   - água animada
-   - plantinha com movimento
-   - meteorologia animada
-   - caixa offline não mostra nível antigo
+   V47.1 — CARD CAIXA D'ÁGUA CORRIGIDO
+   Corrige:
+   - nível antigo oscilando com offline
+   - informação da bomba atrás da barra
+   - falso positivo de nível quando offline
+   - movimento real na água quando online
    ============================================================ */
 
-/* Água animada da caixa principal */
-.dash-v2-tank{
+/* Card da caixa com layout mais limpo */
+.dash-v2-tank-card{
+  overflow:hidden !important;
+}
+
+.dash-v2-tank-card .dash-v2-card-head{
+  z-index:8 !important;
+}
+
+.dash-v2-tank-wrap{
   position:relative !important;
-  overflow:visible !important;
+  z-index:2 !important;
+  padding-bottom:36px !important;
+}
+
+/* Reserva uma área fixa para a bomba fora da barra */
+.dash-v2-pump-mini,
+#dashPumpState{
+  position:absolute !important;
+  left:14px !important;
+  right:14px !important;
+  bottom:31px !important;
+  height:25px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  z-index:7 !important;
+  border-radius:999px !important;
+  background:rgba(0,0,0,.24) !important;
+  border:1px solid rgba(140,180,220,.12) !important;
+  color:#aab7c8 !important;
+  font-family:var(--font-mono) !important;
+  font-size:9.5px !important;
+  letter-spacing:.5px !important;
+  backdrop-filter:blur(6px) !important;
+  pointer-events:none !important;
+}
+
+/* Água animada quando online */
+.dash-v2-tank{
+  overflow:hidden !important;
+  isolation:isolate !important;
 }
 
 .dash-v2-water{
   overflow:hidden !important;
   transition:height .65s cubic-bezier(.2,.8,.2,1), opacity .25s ease, filter .25s ease !important;
+  will-change:height, transform !important;
 }
 
 .dash-v2-water::before{
   content:'' !important;
   position:absolute !important;
-  left:-24% !important;
-  top:-11px !important;
-  width:150% !important;
-  height:24px !important;
+  left:-35% !important;
+  top:-13px !important;
+  width:170% !important;
+  height:26px !important;
   border-radius:50% !important;
   background:
-    radial-gradient(ellipse at center, rgba(148,248,255,.96) 0%, rgba(45,212,255,.85) 45%, rgba(45,212,255,.28) 62%, transparent 70%) !important;
-  animation:v47WaterWaveA 2.2s ease-in-out infinite !important;
-  z-index:2 !important;
+    radial-gradient(ellipse at center, rgba(160,250,255,.98) 0%, rgba(45,212,255,.90) 45%, rgba(45,212,255,.25) 64%, transparent 72%) !important;
+  animation:v471WaterWave 2.1s ease-in-out infinite !important;
+  z-index:3 !important;
 }
 
 .dash-v2-water::after{
@@ -2447,37 +2488,39 @@ input, select{font-family:inherit; color:var(--text);}
   position:absolute !important;
   inset:0 !important;
   background:
-    radial-gradient(circle at 24% 78%, rgba(255,255,255,.34) 0 2px, transparent 3px),
-    radial-gradient(circle at 62% 58%, rgba(255,255,255,.23) 0 1.5px, transparent 2.5px),
-    radial-gradient(circle at 46% 86%, rgba(255,255,255,.18) 0 1px, transparent 2px),
-    linear-gradient(90deg, transparent 0%, rgba(255,255,255,.18) 45%, transparent 75%) !important;
-  background-size:100% 100%,100% 100%,100% 100%,80px 100% !important;
-  animation:v47WaterBubbles 4.2s linear infinite, v47WaterShine 3.4s ease-in-out infinite !important;
-  opacity:.9 !important;
+    radial-gradient(circle at 22% 82%, rgba(255,255,255,.42) 0 1.6px, transparent 2.6px),
+    radial-gradient(circle at 62% 62%, rgba(255,255,255,.28) 0 1.3px, transparent 2.2px),
+    radial-gradient(circle at 44% 92%, rgba(255,255,255,.20) 0 1px, transparent 2px),
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,.16) 48%, transparent 78%) !important;
+  background-size:100% 100%,100% 100%,100% 100%,76px 100% !important;
+  animation:v471Bubbles 4.2s linear infinite, v471Shine 3.2s ease-in-out infinite !important;
+  opacity:.85 !important;
+  z-index:2 !important;
 }
 
-@keyframes v47WaterWaveA{
-  0%,100%{transform:translateX(-6px) translateY(0) scaleY(1);}
-  50%{transform:translateX(10px) translateY(2px) scaleY(.92);}
+@keyframes v471WaterWave{
+  0%,100%{transform:translateX(-8px) translateY(0) scaleY(1);}
+  50%{transform:translateX(12px) translateY(2px) scaleY(.92);}
 }
 
-@keyframes v47WaterBubbles{
-  from{background-position:0 18px,0 38px,0 58px,-70px 0;}
-  to{background-position:0 -70px,0 -52px,0 -34px,90px 0;}
+@keyframes v471Bubbles{
+  from{background-position:0 22px,0 42px,0 64px,-70px 0;}
+  to{background-position:0 -70px,0 -54px,0 -36px,92px 0;}
 }
 
-@keyframes v47WaterShine{
+@keyframes v471Shine{
   0%,100%{filter:brightness(1);}
-  50%{filter:brightness(1.22);}
+  50%{filter:brightness(1.25);}
 }
 
-/* Estado offline da caixa: nenhum nível antigo visível */
+/* Estado offline: elimina visualmente qualquer nível antigo */
 .dash-v2-tank-card.tank-offline{
-  border-color:rgba(255,77,106,.40) !important;
-  box-shadow:0 0 18px rgba(255,77,106,.11), inset 0 0 24px rgba(255,77,106,.035) !important;
+  border-color:rgba(255,77,106,.42) !important;
+  box-shadow:0 0 18px rgba(255,77,106,.10), inset 0 0 24px rgba(255,77,106,.035) !important;
 }
 
-.dash-v2-tank-card.tank-offline .dash-v2-online{
+.dash-v2-tank-card.tank-offline .dash-v2-online,
+.dash-v2-tank-card.tank-offline #dashTankStatus{
   color:var(--red) !important;
 }
 
@@ -2487,9 +2530,9 @@ input, select{font-family:inherit; color:var(--text);}
 
 .dash-v2-tank-card.tank-offline .dash-v2-water{
   height:0% !important;
-  opacity:.18 !important;
-  filter:grayscale(1) brightness(.6) !important;
-  background:linear-gradient(180deg,#5b6472,#1b2430) !important;
+  min-height:0 !important;
+  opacity:0 !important;
+  filter:grayscale(1) brightness(.45) !important;
   box-shadow:none !important;
 }
 
@@ -2499,42 +2542,58 @@ input, select{font-family:inherit; color:var(--text);}
 }
 
 .dash-v2-tank-card.tank-offline .dash-v2-tank{
-  border-color:rgba(255,77,106,.55) !important;
-  box-shadow:0 0 16px rgba(255,77,106,.22), inset 0 0 16px rgba(255,77,106,.06) !important;
+  border-color:rgba(255,77,106,.56) !important;
+  background:
+    repeating-linear-gradient(to top, rgba(255,255,255,.035) 0 1px, transparent 1px 12px),
+    rgba(20,26,36,.62) !important;
+  box-shadow:0 0 16px rgba(255,77,106,.20), inset 0 0 18px rgba(255,77,106,.05) !important;
+}
+
+.dash-v2-tank-card.tank-offline .dash-v2-tank::after{
+  content:'⌁' !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) rotate(-18deg) !important;
+  color:rgba(255,77,106,.62) !important;
+  font-family:var(--font-display) !important;
+  font-size:42px !important;
+  text-shadow:0 0 12px rgba(255,77,106,.35) !important;
+  z-index:4 !important;
 }
 
 .dash-v2-tank-card.tank-offline .dash-v2-tank-value{
   color:#ff8aa0 !important;
   text-shadow:0 0 12px rgba(255,77,106,.55) !important;
-  font-size:38px !important;
+  font-size:37px !important;
   letter-spacing:0 !important;
+  z-index:6 !important;
 }
 
-.dash-v2-tank-card.tank-offline::after{
-  content:'SEM COMUNICAÇÃO' !important;
-  position:absolute !important;
-  left:50% !important;
-  bottom:36px !important;
-  transform:translateX(-50%) !important;
-  padding:4px 10px !important;
-  border-radius:999px !important;
-  border:1px solid rgba(255,77,106,.42) !important;
-  background:rgba(255,77,106,.10) !important;
+.dash-v2-tank-card.tank-offline .dash-v2-scale{
+  color:rgba(255,255,255,.48) !important;
+}
+
+.dash-v2-tank-card.tank-offline #dashPumpState,
+.dash-v2-tank-card.tank-offline .dash-v2-pump-mini{
+  bottom:33px !important;
   color:#ff8aa0 !important;
-  font-family:var(--font-mono) !important;
-  font-size:9px !important;
-  letter-spacing:.8px !important;
-  z-index:5 !important;
-  white-space:nowrap !important;
+  border-color:rgba(255,77,106,.34) !important;
+  background:rgba(255,77,106,.10) !important;
 }
 
-/* Movimento da irrigação */
-.dash-v2-icon-ring{
-  transform-origin:center bottom !important;
+.dash-v2-tank-card.tank-offline .dash-v2-card-foot{
+  color:#ff8aa0 !important;
+  background:rgba(255,77,106,.08) !important;
 }
 
+.dash-v2-tank-card.tank-offline .dash-v2-card-foot span{
+  color:#ff8aa0 !important;
+}
+
+/* Plantinha e meteorologia com movimento, sem depender de imagem */
 .dash-v2-irrigation-card.irrigation-on .dash-v2-icon-ring{
-  animation:v47PlantBreath 2.8s ease-in-out infinite, v47PlantGlow 2.2s ease-in-out infinite !important;
+  animation:v471PlantBreath 2.8s ease-in-out infinite, v471PlantGlow 2.2s ease-in-out infinite !important;
 }
 
 .dash-v2-irrigation-card.irrigation-on .dash-v2-icon-ring::after{
@@ -2550,84 +2609,36 @@ input, select{font-family:inherit; color:var(--text);}
     34px 18px 0 -2px rgba(57,230,164,.45),
     -22px 26px 0 -2px rgba(45,212,255,.36),
     0 0 12px rgba(57,230,164,.75) !important;
-  animation:v47PlantParticles 2.4s ease-in-out infinite !important;
+  animation:v471PlantParticles 2.4s ease-in-out infinite !important;
 }
 
-.dash-v2-irrigation-card.irrigation-off .dash-v2-icon-ring{
-  color:#6b7483 !important;
-  filter:grayscale(.75) !important;
-  box-shadow:0 0 8px rgba(140,150,165,.18), inset 0 0 18px rgba(255,255,255,.03) !important;
-}
-
-@keyframes v47PlantBreath{
+@keyframes v471PlantBreath{
   0%,100%{transform:scale(1) rotate(-1deg);}
   50%{transform:scale(1.06) rotate(1.4deg);}
 }
-
-@keyframes v47PlantGlow{
+@keyframes v471PlantGlow{
   0%,100%{filter:drop-shadow(0 0 6px rgba(57,230,164,.28));}
   50%{filter:drop-shadow(0 0 16px rgba(57,230,164,.70));}
 }
-
-@keyframes v47PlantParticles{
+@keyframes v471PlantParticles{
   0%,100%{opacity:.35; transform:translateY(5px) scale(.9);}
   50%{opacity:1; transform:translateY(-4px) scale(1.08);}
 }
 
-/* Movimento meteorologia */
-.dash-v2-weather-icon{
-  display:inline-block !important;
-  transform-origin:center !important;
-}
-
 .dash-v2-weather-card.weather-sun .dash-v2-weather-icon{
-  animation:v47SunFloat 3s ease-in-out infinite, v47SunGlow 2.6s ease-in-out infinite !important;
+  animation:v471SunFloat 3s ease-in-out infinite, v471SunGlow 2.6s ease-in-out infinite !important;
 }
-
 .dash-v2-weather-card.weather-rain .dash-v2-weather-icon{
-  animation:v47RainShake 1.4s ease-in-out infinite !important;
+  animation:v471RainShake 1.4s ease-in-out infinite !important;
 }
-
 .dash-v2-weather-card.weather-cloud .dash-v2-weather-icon,
 .dash-v2-weather-card.weather-default .dash-v2-weather-icon{
-  animation:v47CloudDrift 4.2s ease-in-out infinite !important;
+  animation:v471CloudDrift 4.2s ease-in-out infinite !important;
 }
-
-@keyframes v47SunFloat{
-  0%,100%{transform:translateY(0) rotate(-2deg) scale(1);}
-  50%{transform:translateY(-4px) rotate(2deg) scale(1.03);}
-}
-
-@keyframes v47SunGlow{
-  0%,100%{filter:drop-shadow(0 0 10px rgba(255,180,67,.55));}
-  50%{filter:drop-shadow(0 0 22px rgba(255,180,67,.95));}
-}
-
-@keyframes v47CloudDrift{
-  0%,100%{transform:translateX(-3px);}
-  50%{transform:translateX(5px);}
-}
-
-@keyframes v47RainShake{
-  0%,100%{transform:translateY(0);}
-  50%{transform:translateY(3px);}
-}
-
-/* Consumo de água: barras com movimento leve */
-.water-consumption-bars span{
-  animation:v47BarPulse 2.6s ease-in-out infinite !important;
-}
-.water-consumption-bars span:nth-child(2){animation-delay:.15s !important;}
-.water-consumption-bars span:nth-child(3){animation-delay:.30s !important;}
-.water-consumption-bars span:nth-child(4){animation-delay:.45s !important;}
-.water-consumption-bars span:nth-child(5){animation-delay:.60s !important;}
-.water-consumption-bars span:nth-child(6){animation-delay:.75s !important;}
-.water-consumption-bars span:nth-child(7){animation-delay:.90s !important;}
-
-@keyframes v47BarPulse{
-  0%,100%{filter:brightness(.86); opacity:.72;}
-  50%{filter:brightness(1.25); opacity:1;}
-}
+@keyframes v471SunFloat{0%,100%{transform:translateY(0) rotate(-2deg) scale(1);}50%{transform:translateY(-4px) rotate(2deg) scale(1.03);}}
+@keyframes v471SunGlow{0%,100%{filter:drop-shadow(0 0 10px rgba(255,180,67,.55));}50%{filter:drop-shadow(0 0 22px rgba(255,180,67,.95));}}
+@keyframes v471CloudDrift{0%,100%{transform:translateX(-3px);}50%{transform:translateX(5px);}}
+@keyframes v471RainShake{0%,100%{transform:translateY(0);}50%{transform:translateY(3px);}}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
@@ -6706,9 +6717,10 @@ input, select{font-family:inherit; color:var(--text);}
 </script>
 
 
-<script id="v47-motion-and-safe-water">
+<script id="v471-safe-tank-card-fix">
 (function(){
-  var WATER_OFFLINE_AFTER_MS = 30000;
+  var WATER_TIMEOUT = 30000;
+  var lock = false;
 
   function toDate(v){
     if(!v) return null;
@@ -6716,128 +6728,158 @@ input, select{font-family:inherit; color:var(--text);}
     return isNaN(d.getTime()) ? null : d;
   }
 
-  function isRecent(v, limit){
+  function recent(v){
     var d = toDate(v);
-    if(!d) return false;
-    return (Date.now() - d.getTime()) <= limit;
+    return !!d && (Date.now() - d.getTime()) <= WATER_TIMEOUT;
   }
 
-  function getTankSnapshot(){
-    var snap = {online:false, level:null, pump:false, updated:null};
-
+  function firstWaterObject(){
     try{
-      if(typeof state !== "undefined"){
-        if(state.waterTank){
-          snap.updated = state.waterTank.lastSeen || state.waterTank.updatedAt || state.waterTank.lastUpdate || null;
-          snap.online = isRecent(snap.updated, WATER_OFFLINE_AFTER_MS);
-          snap.level = state.waterTank.level ?? state.waterTank.nivel ?? state.waterTank.percent ?? state.waterTank.percentage ?? null;
-          snap.pump = !!(state.waterTank.pumpOn ?? state.waterTank.bombaLigada ?? state.waterTank.bomba_on ?? state.waterTank.pump);
-          return snap;
-        }
+      if(typeof state === "undefined") return null;
 
-        var list = state.waterReservoirs || state.waterTanks || state.tanks || state.waterDevices || state.reservoirs || [];
-        if(Array.isArray(list) && list.length){
-          var t = list[0];
-          snap.updated = t.lastSeen || t.updatedAt || t.lastUpdate || null;
-          snap.online = isRecent(snap.updated, WATER_OFFLINE_AFTER_MS);
-          snap.level = t.level ?? t.nivel ?? t.percent ?? t.percentage ?? t.percentual ?? null;
-          snap.pump = !!(t.pumpOn ?? t.bombaLigada ?? t.bomba_on ?? t.pump);
-          return snap;
-        }
+      if(state.waterTank) return state.waterTank;
+      if(state.waterReservoir) return state.waterReservoir;
+
+      var arrays = [
+        state.waterReservoirs,
+        state.waterTanks,
+        state.tanks,
+        state.waterDevices,
+        state.reservoirs
+      ];
+
+      for(var i=0;i<arrays.length;i++){
+        if(Array.isArray(arrays[i]) && arrays[i].length) return arrays[i][0];
       }
     }catch(e){}
+    return null;
+  }
+
+  function getSnapshot(){
+    var t = firstWaterObject();
+    var snap = {online:false, level:null, pump:null, updated:null};
+
+    if(t){
+      snap.updated = t.lastSeen || t.updatedAt || t.lastUpdate || t.last || null;
+      snap.online = recent(snap.updated);
+      snap.level = t.level ?? t.nivel ?? t.percent ?? t.percentage ?? t.percentual ?? null;
+      snap.pump = t.pumpOn ?? t.bombaLigada ?? t.bomba_on ?? t.pump ?? t.bomba ?? null;
+    }
 
     return snap;
   }
 
-  function setText(id, value){
+  function setTxt(id, txt){
     var el = document.getElementById(id);
-    if(el) el.textContent = value;
+    if(el && el.textContent !== txt) el.textContent = txt;
   }
 
-  function applySafeTank(){
-    var card = document.querySelector(".dash-v2-tank-card");
-    var fill = document.getElementById("dashTankFill");
-    var levelEl = document.getElementById("dashTankLevel");
-    var status = document.getElementById("dashTankStatus");
-    var updated = document.getElementById("dashTankUpdated");
-    var pump = document.getElementById("dashPumpState");
+  function safeApplyTank(){
+    if(lock) return;
+    lock = true;
+    try{
+      var card = document.querySelector(".dash-v2-tank-card");
+      var fill = document.getElementById("dashTankFill");
+      var levelEl = document.getElementById("dashTankLevel");
+      var status = document.getElementById("dashTankStatus");
+      var updated = document.getElementById("dashTankUpdated");
+      var pump = document.getElementById("dashPumpState");
 
-    if(!card) return;
+      if(!card){
+        lock = false;
+        return;
+      }
 
-    var snap = getTankSnapshot();
-    var online = snap.online === true;
-    var level = Number(snap.level);
-    var validLevel = online && isFinite(level) && level >= 0 && level <= 100;
+      var s = getSnapshot();
+      var n = Number(s.level);
+      var valid = s.online && isFinite(n) && n >= 0 && n <= 100;
 
-    card.classList.toggle("tank-offline", !online);
+      card.classList.toggle("tank-offline", !valid);
+      card.classList.toggle("tank-online", valid);
 
-    if(status) status.textContent = online ? "Online" : "Offline";
+      if(valid){
+        var pct = Math.round(n);
+        if(fill) fill.style.height = pct + "%";
+        if(levelEl) levelEl.textContent = pct + "%";
+        if(status) status.textContent = "Online";
+        if(updated){
+          var d = toDate(s.updated);
+          updated.textContent = d ? "Atualizado: " + d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "Atualizado agora";
+        }
+        if(pump){
+          var on = s.pump === true || s.pump === 1 || String(s.pump).toLowerCase() === "on" || String(s.pump).toLowerCase() === "ligado";
+          pump.textContent = on ? "BOMBA ON" : "BOMBA OFF";
+        }
+        setTxt("dashWaterLevelMini", pct + "%");
+        setTxt("dashWaterPumpMini", pump ? pump.textContent.replace("BOMBA ","") : "OFF");
+      }else{
+        if(fill) fill.style.height = "0%";
+        if(levelEl) levelEl.textContent = "--%";
+        if(status) status.textContent = "Offline";
+        if(updated) updated.textContent = "Sem comunicação com a caixa";
+        if(pump) pump.textContent = "BOMBA --";
 
-    if(validLevel){
-      var pct = Math.round(level);
-      if(fill) fill.style.height = pct + "%";
-      if(levelEl) levelEl.textContent = pct + "%";
-      if(updated) updated.textContent = "Atualizado: " + (toDate(snap.updated) ? toDate(snap.updated).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "agora");
-      if(pump) pump.textContent = snap.pump ? "BOMBA ON" : "BOMBA OFF";
-      setText("dashWaterLevelMini", pct + "%");
-      setText("dashWaterPumpMini", snap.pump ? "ON" : "OFF");
-    }else{
-      if(fill) fill.style.height = "0%";
-      if(levelEl) levelEl.textContent = "--%";
-      if(updated) updated.textContent = "Sem comunicação com a caixa";
-      if(pump) pump.textContent = "BOMBA --";
-      setText("dashWaterLevelMini", "--%");
-      setText("dashWaterPumpMini", "--");
-      setText("dashWaterToday", "—");
-      setText("dashWaterAvg", "— L");
-      setText("dashWaterUpdated", "Sem comunicação");
+        setTxt("dashWaterLevelMini", "--%");
+        setTxt("dashWaterPumpMini", "--");
+        setTxt("dashWaterToday", "—");
+        setTxt("dashWaterAvg", "— L");
+        setTxt("dashWaterUpdated", "Sem comunicação");
+      }
+    }catch(e){
+      console.warn("[V47.1] safe tank:", e);
     }
+    lock = false;
   }
 
-  function applyIrrigationMotion(){
-    var card = document.querySelector(".dash-v2-irrigation-card");
-    if(!card) return;
+  function applyMotionClasses(){
+    try{
+      var irrig = document.querySelector(".dash-v2-irrigation-card");
+      var stateEl = document.getElementById("dashIrrigationState");
+      if(irrig){
+        var txt = ((stateEl && stateEl.textContent) || "").toLowerCase();
+        var on = txt.indexOf("ligado") >= 0 || txt.indexOf("ativo") >= 0 || txt.indexOf("on") >= 0 || txt.indexOf("autom") >= 0;
+        irrig.classList.toggle("irrigation-on", on);
+        irrig.classList.toggle("irrigation-off", !on);
+      }
 
-    var stateEl = document.getElementById("dashIrrigationState");
-    var txt = (stateEl && stateEl.textContent ? stateEl.textContent : "").toLowerCase();
-    var on = txt.indexOf("ligado") >= 0 || txt.indexOf("ativo") >= 0 || txt.indexOf("on") >= 0 || txt.indexOf("autom") >= 0;
-
-    card.classList.toggle("irrigation-on", on);
-    card.classList.toggle("irrigation-off", !on);
-  }
-
-  function applyWeatherMotion(){
-    var card = document.querySelector(".dash-v2-weather-card");
-    var descEl = document.getElementById("dashWeatherDesc");
-    var iconEl = document.getElementById("dashWeatherIcon");
-    if(!card) return;
-
-    var txt = ((descEl && descEl.textContent) || "") + " " + ((iconEl && iconEl.textContent) || "");
-    txt = txt.toLowerCase();
-
-    card.classList.remove("weather-sun","weather-rain","weather-cloud","weather-default");
-
-    if(txt.indexOf("chuva") >= 0 || txt.indexOf("rain") >= 0 || txt.indexOf("🌧") >= 0 || txt.indexOf("☔") >= 0){
-      card.classList.add("weather-rain");
-    }else if(txt.indexOf("sol") >= 0 || txt.indexOf("limpo") >= 0 || txt.indexOf("☀") >= 0){
-      card.classList.add("weather-sun");
-    }else if(txt.indexOf("nublado") >= 0 || txt.indexOf("cloud") >= 0 || txt.indexOf("☁") >= 0){
-      card.classList.add("weather-cloud");
-    }else{
-      card.classList.add("weather-default");
-    }
+      var weather = document.querySelector(".dash-v2-weather-card");
+      var desc = ((document.getElementById("dashWeatherDesc") || {}).textContent || "").toLowerCase();
+      var icon = ((document.getElementById("dashWeatherIcon") || {}).textContent || "").toLowerCase();
+      var combined = desc + " " + icon;
+      if(weather){
+        weather.classList.remove("weather-sun","weather-rain","weather-cloud","weather-default");
+        if(combined.indexOf("chuva") >= 0 || combined.indexOf("rain") >= 0 || combined.indexOf("🌧") >= 0 || combined.indexOf("☔") >= 0){
+          weather.classList.add("weather-rain");
+        }else if(combined.indexOf("sol") >= 0 || combined.indexOf("limpo") >= 0 || combined.indexOf("☀") >= 0){
+          weather.classList.add("weather-sun");
+        }else if(combined.indexOf("nublado") >= 0 || combined.indexOf("cloud") >= 0 || combined.indexOf("☁") >= 0){
+          weather.classList.add("weather-cloud");
+        }else{
+          weather.classList.add("weather-default");
+        }
+      }
+    }catch(e){}
   }
 
   function applyAll(){
-    applySafeTank();
-    applyIrrigationMotion();
-    applyWeatherMotion();
+    safeApplyTank();
+    applyMotionClasses();
   }
 
   document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(applyAll, 700);
-    setInterval(applyAll, 1500);
+    setTimeout(function(){
+      applyAll();
+
+      var target = document.querySelector(".dash-v2-tank-card");
+      if(target && "MutationObserver" in window){
+        var mo = new MutationObserver(function(){
+          setTimeout(safeApplyTank, 0);
+        });
+        mo.observe(target, {subtree:true, childList:true, characterData:true, attributes:true});
+      }
+    }, 700);
+
+    setInterval(applyAll, 500);
   });
 })();
 </script>
