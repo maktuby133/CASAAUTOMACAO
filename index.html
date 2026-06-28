@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v39</title>
+<title>SMART HOME AI CONTROL - v46 Etapa 1</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -1074,6 +1074,557 @@ input, select{font-family:inherit; color:var(--text);}
 @media(max-width:1180px){.dash-v2-grid{grid-template-columns:1fr 1fr}.dash-v2-core-card{grid-column:1/-1}.dash-v2-bottom-grid{grid-template-columns:1fr}.dash-v2-core-stage{max-width:560px;}}
 @media(max-width:680px){.dash-v2-grid{grid-template-columns:1fr}.dash-v2-energy-body{grid-template-columns:1fr}.dash-v2-weather-main{gap:18px}.dash-v2-weather-temp{font-size:42px}.dash-v2-weather-icon{font-size:66px}.dash-v2-weather-kpis{grid-template-columns:1fr 1fr}.dash-v2-core-stage{height:240px}.dash-v2-tank-value{font-size:48px}}
 
+
+/* ============================================================
+   V46 ETAPA 1 — VISUAL PREMIUM DO DASHBOARD
+   Foco: identidade visual, compactação e Núcleo da Residência 2.0.
+   Mantém IDs e lógica existentes.
+   ============================================================ */
+:root{
+  --v46-bg:#030711;
+  --v46-card:#071220;
+  --v46-line:rgba(45,212,255,.34);
+  --v46-line-soft:rgba(140,180,220,.11);
+  --v46-cyan:#22d7ff;
+  --v46-green:#39e6a4;
+  --v46-orange:#ffb443;
+  --v46-purple:#9b6cff;
+  --v46-red:#ff4d6a;
+}
+
+#content{
+  padding:12px 18px 24px;
+}
+
+#topbar{
+  padding:10px 20px;
+  min-height:62px;
+  background:
+    linear-gradient(90deg, rgba(45,212,255,.055), transparent 30%, rgba(57,230,164,.035)),
+    rgba(6,10,18,.78);
+  border-bottom:1px solid rgba(45,212,255,.16);
+}
+
+.topbar-title h1{
+  font-size:16px;
+  letter-spacing:2.7px;
+}
+
+.topbar-title p{
+  margin-top:2px;
+}
+
+.weather-chip{
+  padding:6px 16px 6px 7px;
+}
+
+.weather-chip .wic{
+  width:34px;
+  height:34px;
+}
+
+#view-dashboard{
+  min-height:calc(100vh - 98px);
+}
+
+.dash-v2-shell{
+  height:calc(100vh - 104px);
+  min-height:650px;
+  display:grid;
+  grid-template-rows:minmax(338px, 1.25fr) minmax(238px, .82fr);
+  gap:12px;
+}
+
+.dash-v2-grid{
+  display:grid;
+  grid-template-columns:minmax(520px, 2.1fr) minmax(205px, .78fr) minmax(205px, .78fr) minmax(205px, .78fr);
+  gap:12px;
+  min-height:0;
+}
+
+.dash-v2-bottom-grid{
+  display:grid;
+  grid-template-columns:minmax(330px, .86fr) minmax(520px, 1.34fr);
+  gap:12px;
+  margin-top:0;
+  min-height:0;
+}
+
+.dash-v2-card{
+  border:1px solid rgba(45,212,255,.30);
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(45,212,255,.07), transparent 46%),
+    linear-gradient(180deg, rgba(9,22,37,.92), rgba(3,10,18,.96));
+  box-shadow:
+    0 0 20px rgba(45,212,255,.09),
+    inset 0 0 28px rgba(45,212,255,.035);
+  overflow:hidden;
+}
+
+.dash-v2-card::before{
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.05), transparent 38%),
+    linear-gradient(90deg, rgba(45,212,255,.025), transparent 28%, rgba(57,230,164,.017));
+}
+
+.dash-v2-card-head{
+  padding:15px 18px 5px;
+}
+
+.dash-v2-card h2{
+  font-size:19px;
+  letter-spacing:1px;
+}
+
+.dash-v2-card p{
+  font-size:12px;
+  margin-top:5px;
+}
+
+.dash-v2-title-center{
+  padding:16px 12px 2px;
+}
+
+.dash-v2-title-center h2{
+  font-size:18px;
+}
+
+.dash-v2-online{
+  font-size:12px;
+}
+
+.dash-v2-card-foot{
+  height:34px;
+  font-size:11.5px;
+  background:rgba(0,0,0,.18);
+}
+
+/* Dashboard sem excesso vertical */
+.dash-v2-core-card,
+.dash-v2-tank-card,
+.dash-v2-irrigation-card,
+.dash-v2-status-card{
+  min-height:0;
+}
+
+.dash-v2-weather-card,
+.dash-v2-energy-card{
+  min-height:0;
+}
+
+/* ============================================================
+   NÚCLEO DA RESIDÊNCIA 2.0
+   ============================================================ */
+.core-stage-v46{
+  position:relative;
+  width:100%;
+  max-width:none;
+  height:calc(100% - 76px);
+  min-height:250px;
+  margin:0 auto 34px;
+  overflow:visible;
+}
+
+.core-stage-v46 .core-lines-v46{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  z-index:1;
+  pointer-events:none;
+}
+
+.core-stage-v46 .core-lines-v46 line{
+  stroke:rgba(45,212,255,.22);
+  stroke-width:1.15;
+  filter:drop-shadow(0 0 5px rgba(45,212,255,.38));
+}
+
+.core-stage-v46 .core-lines-v46 line.on{
+  stroke:rgba(255,180,67,.42);
+  stroke-width:1.65;
+  stroke-dasharray:5 13;
+  animation:v46CoreLineFlow 2s linear infinite;
+}
+
+@keyframes v46CoreLineFlow{
+  to{stroke-dashoffset:-90;}
+}
+
+.core-stage-v46 .core-ring{
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+
+.core-stage-v46 .core-ring.r1{
+  width:270px;
+  height:270px;
+  inset:auto;
+  border-color:rgba(45,212,255,.30);
+  box-shadow:0 0 24px rgba(45,212,255,.10);
+}
+
+.core-stage-v46 .core-ring.r2{
+  width:206px;
+  height:206px;
+  inset:auto;
+  border-color:rgba(155,108,255,.30);
+  border-style:dashed;
+}
+
+.core-stage-v46 .core-ring.r3{
+  width:138px;
+  height:138px;
+  inset:auto;
+  border-color:rgba(45,212,255,.50);
+  background:radial-gradient(circle, rgba(45,212,255,.13), transparent 70%);
+}
+
+.core-center-v46{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:154px;
+  height:154px;
+  transform:translate(-50%,-50%);
+  inset:auto;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(45,212,255,.23), rgba(8,20,34,.88) 60%, rgba(2,7,13,.96));
+  border:1px solid rgba(45,212,255,.55);
+  box-shadow:
+    0 0 42px rgba(45,212,255,.25),
+    inset 0 0 28px rgba(45,212,255,.14);
+  text-align:center;
+  animation:v46CoreBreath 4.5s ease-in-out infinite;
+}
+
+@keyframes v46CoreBreath{
+  0%,100%{filter:drop-shadow(0 0 6px rgba(45,212,255,.25));}
+  50%{filter:drop-shadow(0 0 15px rgba(45,212,255,.58));}
+}
+
+.core-center-v46 .ai-label{
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:1.8px;
+  color:#fff;
+  line-height:1;
+}
+
+.core-center-v46 .ai-main{
+  font-family:var(--font-display);
+  font-size:34px;
+  line-height:.95;
+  color:var(--cyan);
+  text-shadow:0 0 18px rgba(45,212,255,.65);
+}
+
+.core-center-v46 .ai-status{
+  margin-top:4px;
+  font-family:var(--font-head);
+  font-size:13px;
+  font-weight:800;
+  color:var(--green);
+  line-height:1;
+}
+
+.core-center-v46 .small{
+  margin-top:6px;
+  font-size:9px;
+  letter-spacing:1px;
+}
+
+.core-particles-v46{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:284px;
+  height:284px;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:3;
+  animation:spin 34s linear infinite;
+}
+
+.core-particles-v46 i{
+  position:absolute;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);
+  opacity:.75;
+}
+
+.core-particles-v46 i:nth-child(1){left:50%;top:0}
+.core-particles-v46 i:nth-child(2){right:7%;top:28%}
+.core-particles-v46 i:nth-child(3){left:12%;bottom:17%}
+.core-particles-v46 i:nth-child(4){right:28%;bottom:4%}
+
+.core-stage-v46 .core-node{
+  width:132px;
+  height:62px;
+  margin:-31px -66px;
+  border-radius:15px;
+  background:rgba(3,10,18,.84);
+  border:1px solid rgba(45,212,255,.26);
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  padding:8px 10px;
+  z-index:6;
+  box-shadow:0 0 18px rgba(45,212,255,.10), inset 0 0 12px rgba(45,212,255,.035);
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.core-stage-v46 .core-node:hover{
+  transform:scale(1.04);
+  border-color:rgba(45,212,255,.58);
+  box-shadow:0 0 24px rgba(45,212,255,.22);
+}
+
+.core-stage-v46 .core-node::after,
+.core-stage-v46 .core-node .core-light-orb{
+  display:none !important;
+}
+
+.core-stage-v46 .core-node .core-env-icon{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:1px solid currentColor;
+  box-shadow:0 0 12px currentColor;
+  font-size:17px;
+  flex-shrink:0;
+}
+
+.core-stage-v46 .core-node .node-text{
+  min-width:0;
+  line-height:1;
+}
+
+.core-stage-v46 .core-node .node-name{
+  display:block;
+  font-family:var(--font-head);
+  font-size:12.5px;
+  font-weight:900;
+  text-transform:uppercase;
+  color:#fff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:72px;
+}
+
+.core-stage-v46 .core-node .node-state{
+  display:block;
+  margin-top:5px;
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:.55px;
+  color:var(--green);
+}
+
+.core-stage-v46 .core-node.online{color:var(--cyan);}
+.core-stage-v46 .core-node.offline{color:#8390a3; opacity:.70;}
+.core-stage-v46 .core-node.alert{
+  color:var(--red);
+  border-color:rgba(255,77,106,.55);
+  animation:v46AlertNode 1.05s ease-in-out infinite;
+}
+
+@keyframes v46AlertNode{
+  0%,100%{box-shadow:0 0 12px rgba(255,77,106,.22);}
+  50%{box-shadow:0 0 26px rgba(255,77,106,.58);}
+}
+
+.core-stage-v46 .core-node.light-on .core-env-icon{
+  color:#ffec7a;
+  box-shadow:0 0 14px rgba(255,236,122,.88), 0 0 25px rgba(255,180,67,.42);
+}
+
+/* Caixa d'água compacta */
+.dash-v2-tank-wrap{
+  height:226px;
+  padding-top:4px;
+}
+
+.dash-v2-scale{
+  height:184px;
+  font-size:12px;
+}
+
+.dash-v2-tank{
+  width:82px;
+  height:184px;
+  border-radius:13px;
+  overflow:visible;
+}
+
+.dash-v2-water{
+  left:4px;
+  right:4px;
+  bottom:4px;
+}
+
+.dash-v2-water::before{
+  content:'';
+  position:absolute;
+  left:-18%;
+  top:-10px;
+  width:136%;
+  height:22px;
+  border-radius:50%;
+  background:radial-gradient(ellipse,#7ff3ff 0%,#1bdcff 55%,transparent 65%);
+  animation:v46Wave 2.3s ease-in-out infinite;
+}
+
+@keyframes v46Wave{50%{transform:translateX(10px)}}
+
+.dash-v2-tank-value{
+  font-size:46px;
+  top:51%;
+  letter-spacing:-2px;
+  white-space:nowrap;
+  overflow:visible;
+}
+
+.dash-v2-pump-mini{
+  bottom:34px;
+  font-size:10px;
+}
+
+/* Irrigação e status compactos */
+.dash-v2-icon-ring{
+  width:112px;
+  height:112px;
+  font-size:50px;
+  margin:14px auto 8px;
+}
+
+.dash-v2-center-text{
+  font-size:11px;
+}
+
+.dash-v2-center-text div{
+  font-size:21px;
+}
+
+.dash-v2-sep{
+  margin:11px 18px;
+}
+
+.dash-v2-next-cycle{
+  font-size:11px;
+}
+
+.dash-v2-next-cycle strong{
+  font-size:23px;
+}
+
+.dash-v2-status-ring{
+  width:126px;
+  height:126px;
+  margin:18px auto 12px;
+  border-width:9px;
+  font-size:56px;
+}
+
+.dash-v2-status-ring::before{
+  animation:spin 22s linear infinite;
+}
+
+/* Meteorologia compacta */
+.dash-v2-weather-main{
+  padding:6px 20px 0;
+  gap:16px;
+}
+
+.dash-v2-weather-icon{
+  font-size:58px;
+}
+
+.dash-v2-weather-temp{
+  font-size:38px;
+  line-height:1;
+}
+
+.dash-v2-weather-desc{
+  font-size:16px;
+  margin-top:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:260px;
+}
+
+.dash-v2-weather-kpis{
+  margin:10px 18px 36px;
+  gap:6px;
+}
+
+.dash-v2-weather-kpis div{
+  padding:7px;
+}
+
+.dash-v2-weather-kpis small{
+  font-size:9px;
+}
+
+/* Energia compacta */
+.dash-v2-energy-body{
+  grid-template-columns:150px 1fr;
+  gap:14px;
+  padding:0 18px 34px;
+}
+
+.dash-v2-energy-power{
+  font-size:34px;
+}
+
+.dash-v2-energy-bolt{
+  font-size:28px;
+  margin:4px 0 5px;
+}
+
+.dash-v2-energy-today{
+  font-size:24px;
+}
+
+.dash-v2-chart{
+  height:146px;
+}
+
+.dash-v2-chart-footer{
+  font-size:10px;
+  margin-top:4px;
+}
+
+@media(max-width:1100px){
+  .dash-v2-shell{
+    height:auto;
+    min-height:0;
+    display:block;
+  }
+  .dash-v2-grid,
+  .dash-v2-bottom-grid{
+    grid-template-columns:1fr !important;
+  }
+  .dash-v2-bottom-grid{
+    margin-top:12px;
+  }
+  .core-stage-v46{
+    height:480px;
+  }
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 
@@ -1101,506 +1652,6 @@ input, select{font-family:inherit; color:var(--text);}
 @media(max-width:860px){.irrigation-advanced-grid{grid-template-columns:1fr}.irrigation-schedule-line strong{font-size:16px}}
 </style>
 
-
-<style id="shai-v45-reference-layout">
-/* ============================================================
-   V45 — Layout referência do Smart Home AI Control
-   Objetivo: aproximar o Dashboard da imagem-base, mantendo a lógica.
-   ============================================================ */
-:root{
-  --v45-bg:#03070d;
-  --v45-panel:#07111d;
-  --v45-line:rgba(34,215,255,.28);
-  --v45-line-soft:rgba(120,170,220,.12);
-  --v45-cyan:#22d7ff;
-  --v45-green:#00ff7a;
-  --v45-orange:#ffae22;
-  --v45-purple:#ba66ff;
-  --v45-text:#f4f8ff;
-  --v45-muted:#8ea0b8;
-}
-
-#app{
-  display:block;
-  min-height:100vh;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(34,215,255,.06), transparent 34%),
-    radial-gradient(circle at 78% 8%, rgba(0,255,122,.035), transparent 28%),
-    #03070d;
-}
-
-#sidebar,
-#sidebarOverlay,
-#topbar,
-#bottomNav{
-  display:none !important;
-}
-
-#main{
-  width:100%;
-  min-height:100vh;
-  display:block;
-  padding:10px 14px 16px;
-}
-
-#content{
-  padding:0 !important;
-  max-width:none;
-}
-
-.bg-grid{
-  background-size:36px 36px;
-  opacity:.75;
-}
-
-.shai-v45-header{
-  border:1px solid var(--v45-line);
-  border-radius:12px 12px 0 0;
-  background:linear-gradient(180deg,rgba(5,12,22,.96),rgba(3,8,15,.96));
-  min-height:88px;
-  display:grid;
-  grid-template-columns:1.35fr .7fr 1.1fr;
-  align-items:center;
-  box-shadow:0 0 24px rgba(34,215,255,.08);
-  overflow:hidden;
-}
-
-.shai-v45-brand{
-  display:flex;
-  align-items:center;
-  gap:16px;
-  padding:0 22px;
-}
-
-.shai-v45-menu{
-  font-size:30px;
-  color:#fff;
-  opacity:.9;
-  margin-right:6px;
-}
-
-.shai-v45-logo{
-  width:48px;
-  height:48px;
-  border-radius:50%;
-  border:2px solid var(--v45-cyan);
-  color:var(--v45-cyan);
-  display:grid;
-  place-items:center;
-  font-size:28px;
-  box-shadow:0 0 16px rgba(34,215,255,.75), inset 0 0 14px rgba(34,215,255,.20);
-}
-
-.shai-v45-brand h1{
-  margin:0;
-  font-family:var(--font-display);
-  font-size:23px;
-  letter-spacing:2.8px;
-  color:#fff;
-  line-height:1.05;
-}
-
-.shai-v45-brand small{
-  display:block;
-  margin-top:6px;
-  color:#c5d2e3;
-  font-family:var(--font-head);
-  letter-spacing:1.2px;
-  font-size:12px;
-}
-
-.shai-v45-clock{
-  text-align:center;
-  font-family:var(--font-display);
-}
-
-.shai-v45-clock strong{
-  display:block;
-  color:var(--v45-cyan);
-  font-size:30px;
-  letter-spacing:2px;
-  font-weight:500;
-}
-
-.shai-v45-clock span{
-  display:block;
-  margin-top:5px;
-  color:#fff;
-  font-family:var(--font-body);
-  font-size:14px;
-}
-
-.shai-v45-status{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  height:100%;
-}
-
-.shai-v45-status > div{
-  min-width:145px;
-  height:52px;
-  padding:4px 22px;
-  border-left:1px solid var(--v45-line-soft);
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  font-family:var(--font-head);
-  color:#e8f2ff;
-}
-
-.shai-v45-status .wifi{
-  color:var(--v45-green);
-  font-weight:800;
-  font-size:14px;
-}
-
-.shai-v45-status strong{
-  color:var(--v45-green);
-  font-family:var(--font-display);
-  font-size:22px;
-  letter-spacing:1px;
-}
-
-.shai-v45-bell{
-  min-width:92px !important;
-  align-items:center;
-  font-size:25px;
-  position:relative;
-}
-
-.shai-v45-alert-dot{
-  position:absolute;
-  top:10px;
-  right:28px;
-  background:#ff405f;
-  color:#fff;
-  border-radius:50%;
-  width:17px;
-  height:17px;
-  display:grid;
-  place-items:center;
-  font-size:10px;
-}
-
-.shai-v45-nav{
-  height:61px;
-  display:flex;
-  border-left:1px solid var(--v45-line);
-  border-right:1px solid var(--v45-line);
-  border-bottom:1px solid var(--v45-line);
-  border-radius:0 0 10px 10px;
-  background:linear-gradient(180deg,rgba(8,18,30,.95),rgba(5,11,20,.95));
-  margin-bottom:14px;
-  overflow:hidden;
-}
-
-.shai-v45-nav button{
-  min-width:132px;
-  flex:1;
-  border:0;
-  border-right:1px solid var(--v45-line-soft);
-  background:transparent;
-  color:#f3f8ff;
-  font-family:var(--font-head);
-  font-weight:800;
-  font-size:13px;
-  letter-spacing:.2px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-}
-
-.shai-v45-nav button.active{
-  color:var(--v45-cyan);
-  background:rgba(34,215,255,.13);
-  box-shadow:inset 0 -3px 0 var(--v45-cyan), 0 0 20px rgba(34,215,255,.08);
-}
-
-.shai-v45-nav .nav-ico{
-  font-size:17px;
-  opacity:.95;
-}
-
-/* Dashboard grid fiel à referência */
-#view-dashboard{
-  width:100%;
-}
-
-.dash-v2-shell{
-  width:100%;
-}
-
-.dash-v2-grid{
-  display:grid !important;
-  grid-template-columns:2.08fr .96fr .96fr .96fr !important;
-  gap:14px !important;
-  align-items:stretch !important;
-}
-
-.dash-v2-bottom-grid{
-  display:grid !important;
-  grid-template-columns:1fr 1.42fr !important;
-  gap:14px !important;
-  margin-top:14px !important;
-}
-
-.dash-v2-card{
-  border:1px solid rgba(34,215,255,.36) !important;
-  border-radius:12px !important;
-  background:
-    radial-gradient(circle at 22% 0%, rgba(34,215,255,.055), transparent 38%),
-    linear-gradient(180deg,rgba(8,20,34,.92),rgba(3,10,18,.94)) !important;
-  box-shadow:0 0 14px rgba(34,215,255,.08), inset 0 0 28px rgba(34,215,255,.035) !important;
-}
-
-.dash-v2-card h2{
-  font-family:var(--font-head) !important;
-  font-size:22px !important;
-  line-height:1 !important;
-  font-weight:800 !important;
-  letter-spacing:.9px !important;
-  text-transform:uppercase;
-}
-
-.dash-v2-card p{
-  font-size:13px !important;
-  color:#b1bed0 !important;
-  margin-top:7px !important;
-}
-
-.dash-v2-card-head{
-  padding:21px 26px 8px !important;
-}
-
-.dash-v2-title-center{
-  padding:22px 12px 2px !important;
-}
-
-.dash-v2-online{
-  font-family:var(--font-head) !important;
-  color:var(--v45-green) !important;
-  font-size:15px !important;
-  font-weight:800 !important;
-}
-
-.dash-v2-card-foot{
-  height:46px !important;
-  background:rgba(0,0,0,.18) !important;
-  color:#cbd8e8 !important;
-  font-size:13px !important;
-}
-
-/* Núcleo maior e com nomes como na referência */
-.dash-v2-core-card{
-  min-height:360px !important;
-}
-
-.dash-v2-core-stage{
-  width:100% !important;
-  max-width:470px !important;
-  height:265px !important;
-  margin:0 auto 44px !important;
-  overflow:visible !important;
-}
-
-.dash-v2-core-stage .core-ring.r1{
-  width:250px !important;
-  height:250px !important;
-  left:50% !important;
-  top:52% !important;
-  transform:translate(-50%,-50%) !important;
-  border-color:rgba(34,215,255,.35) !important;
-  box-shadow:0 0 24px rgba(34,215,255,.10);
-}
-
-.dash-v2-core-stage .core-ring.r2{
-  width:174px !important;
-  height:174px !important;
-  left:50% !important;
-  top:52% !important;
-  transform:translate(-50%,-50%) !important;
-  border-color:rgba(34,215,255,.22) !important;
-  border-style:dashed !important;
-}
-
-.dash-v2-core-stage .core-ring.r3{
-  width:112px !important;
-  height:112px !important;
-  left:50% !important;
-  top:52% !important;
-  transform:translate(-50%,-50%) !important;
-}
-
-.dash-v2-core-stage .core-center{
-  width:118px !important;
-  height:118px !important;
-  left:50% !important;
-  top:52% !important;
-  transform:translate(-50%,-50%) !important;
-}
-
-.dash-v2-core-stage .core-node{
-  width:108px !important;
-  height:58px !important;
-  min-width:108px !important;
-  margin:-29px -54px !important;
-  border-radius:14px !important;
-  background:rgba(2,9,17,.82) !important;
-  border-color:rgba(34,215,255,.24) !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:9px !important;
-}
-
-.dash-v2-core-stage .core-node .core-env-name{
-  position:absolute;
-  left:50%;
-  top:-23px;
-  transform:translateX(-50%);
-  color:#fff;
-  font-family:var(--font-head);
-  font-size:12px;
-  font-weight:900;
-  text-transform:uppercase;
-  white-space:nowrap;
-  text-shadow:0 0 8px rgba(0,0,0,.75);
-}
-
-.dash-v2-core-stage .core-node .core-env-state{
-  font-family:var(--font-head);
-  font-size:13px;
-  font-weight:900;
-  color:var(--v45-green);
-}
-
-.dash-v2-core-stage .core-node.offline .core-env-state{
-  color:#aeb6c4;
-}
-
-.dash-v2-core-stage .core-node .core-env-icon{
-  width:32px !important;
-  height:32px !important;
-  font-size:18px !important;
-  border-radius:50% !important;
-}
-
-/* Caixa d'água */
-.dash-v2-tank-card{
-  min-height:360px !important;
-}
-
-.dash-v2-tank-wrap{
-  height:254px !important;
-  padding-top:4px !important;
-}
-
-.dash-v2-scale{
-  height:225px !important;
-  font-family:var(--font-head) !important;
-  font-size:15px !important;
-}
-
-.dash-v2-tank{
-  width:86px !important;
-  height:225px !important;
-  border-radius:12px !important;
-}
-
-.dash-v2-tank-value{
-  font-size:58px !important;
-  letter-spacing:-2px !important;
-  top:54% !important;
-}
-
-.dash-v2-pump-mini{
-  display:none !important;
-}
-
-/* Irrigação e status */
-.dash-v2-irrigation-card,
-.dash-v2-status-card{
-  min-height:360px !important;
-}
-
-.dash-v2-icon-ring{
-  width:130px !important;
-  height:130px !important;
-  font-size:58px !important;
-  margin-top:28px !important;
-}
-
-.dash-v2-status-ring{
-  width:154px !important;
-  height:154px !important;
-  margin-top:34px !important;
-}
-
-/* Meteorologia e energia */
-.dash-v2-weather-card,
-.dash-v2-energy-card{
-  min-height:295px !important;
-}
-
-.dash-v2-weather-main{
-  padding:18px 28px !important;
-  gap:36px !important;
-}
-
-.dash-v2-weather-icon{
-  font-size:96px !important;
-}
-
-.dash-v2-weather-temp{
-  font-size:60px !important;
-  line-height:.95 !important;
-}
-
-.dash-v2-weather-desc{
-  font-size:24px !important;
-  margin-top:8px !important;
-}
-
-.dash-v2-weather-kpis{
-  margin:8px 26px 46px !important;
-}
-
-.dash-v2-energy-body{
-  grid-template-columns:180px 1fr !important;
-  padding:8px 30px 52px !important;
-}
-
-.dash-v2-chart{
-  height:190px !important;
-}
-
-/* Rodapé visual */
-.shai-v45-footer{
-  height:30px;
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  align-items:center;
-  color:#cbd8e8;
-  font-size:12px;
-  padding:0 10px;
-}
-.shai-v45-footer .ok{color:var(--v45-green)}
-.shai-v45-footer .version{text-align:right;color:var(--v45-cyan)}
-.shai-v45-footer .copy{text-align:center;color:#a9b5c8}
-
-/* Responsivo */
-@media(max-width:1100px){
-  .shai-v45-header{grid-template-columns:1fr;gap:10px;padding:16px 0;height:auto}
-  .shai-v45-clock{text-align:left;padding:0 22px}
-  .shai-v45-status{justify-content:flex-start;flex-wrap:wrap;padding:0 22px}
-  .shai-v45-status > div{border-left:none;border-right:1px solid var(--v45-line-soft);padding-left:0}
-  .shai-v45-nav{overflow-x:auto}
-  .shai-v45-nav button{flex:0 0 auto}
-  .dash-v2-grid,.dash-v2-bottom-grid{grid-template-columns:1fr !important}
-}
-</style>
 
 </head>
 <body>
@@ -1715,13 +1766,17 @@ input, select{font-family:inherit; color:var(--text);}
                 <span class="dash-v2-online" id="dashCoreStatus">Online</span>
               </div>
 
-              <div class="core-stage dash-v2-core-stage" id="coreStage">
+              <div class="core-stage dash-v2-core-stage core-stage-v46" id="coreStage">
+                <svg class="core-lines-v46" id="coreLinesV46"></svg>
                 <div class="core-ring r1"></div>
                 <div class="core-ring r2"></div>
                 <div class="core-ring r3"></div>
-                <div class="core-center">
-                  <div class="big" id="coreOnlineCount">0/0</div>
-                  <div class="small">DISPOSITIVOS ONLINE</div>
+                <div class="core-particles-v46"><i></i><i></i><i></i><i></i></div>
+                <div class="core-center core-center-v46">
+                  <div class="ai-label">SMART HOME</div>
+                  <div class="ai-main">AI</div>
+                  <div class="ai-status" id="coreAiStatus">Residência segura</div>
+                  <div class="small"><span id="coreOnlineCount">0/0</span> ONLINE</div>
                 </div>
                 <!-- core-node elements injected by JS -->
               </div>
@@ -3035,44 +3090,93 @@ input, select{font-family:inherit; color:var(--text);}
      ============================================================ */
   function renderCore(){
     var stage = document.getElementById("coreStage");
+    if(!stage) return;
+
     var existingNodes = stage.querySelectorAll(".core-node");
     for(var i=0;i<existingNodes.length;i++){ existingNodes[i].remove(); }
 
-    var envs = state.environments;
-    // raio/centro calculados a partir do tamanho real do stage (nao fixos),
-    // para os icones nao ficarem fora do circulo quando o CSS mobile encolhe o widget
-    var stageSize = stage.clientWidth || 260;
-    var center = stageSize / 2;
-    var radius = center - 8;
-    var n = envs.length;
+    var lines = document.getElementById("coreLinesV46");
+    if(lines) lines.innerHTML = "";
+
+    var envs = state.environments || [];
+    var rect = stage.getBoundingClientRect();
+    var w = rect.width || stage.clientWidth || 520;
+    var h = rect.height || stage.clientHeight || 360;
+    var centerX = w / 2;
+    var centerY = h / 2;
+
+    var radiusX = Math.min(w * 0.36, 270);
+    var radiusY = Math.min(h * 0.36, 170);
+    var n = Math.max(envs.length, 1);
+
+    function envIcon(env){
+      var name = (env.name || "").toLowerCase();
+      if(name.indexOf("cozinha") >= 0) return "🍳";
+      if(name.indexOf("quarto") >= 0) return "🛏️";
+      if(name.indexOf("banheiro") >= 0) return "🚿";
+      if(name.indexOf("garagem") >= 0) return "🚗";
+      if(name.indexOf("área") >= 0 || name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return "🌱";
+      return env.icon || "💡";
+    }
+
+    function envColor(env){
+      var name = (env.name || "").toLowerCase();
+      if(name.indexOf("cozinha") >= 0) return "var(--v46-orange)";
+      if(name.indexOf("quarto") >= 0) return "var(--v46-purple)";
+      if(name.indexOf("banheiro") >= 0) return "var(--v46-blue)";
+      if(name.indexOf("garagem") >= 0) return "#9aa8bb";
+      if(name.indexOf("área") >= 0 || name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return "var(--v46-green)";
+      return "var(--v46-cyan)";
+    }
 
     envs.forEach(function(env, idx){
       var angle = (Math.PI*2 / n) * idx - Math.PI/2;
-      var x = center + radius * Math.cos(angle);
-      var y = center + radius * Math.sin(angle);
+      var x = centerX + radiusX * Math.cos(angle);
+      var y = centerY + radiusY * Math.sin(angle);
+
+      if(lines){
+        var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", centerX);
+        line.setAttribute("y1", centerY);
+        line.setAttribute("x2", x);
+        line.setAttribute("y2", y);
+        if(env.lighting && env.lighting.on) line.classList.add("on");
+        lines.appendChild(line);
+      }
+
       var node = document.createElement("div");
       var statusClass = env.status === "alert" ? "alert" : (env.status === "online" ? "online" : "offline");
-      node.className = "core-node " + statusClass;
+      var lightOn = !!(env.lighting && env.lighting.on);
+
+      node.className = "core-node " + statusClass + (lightOn ? " light-on" : "");
       node.style.left = x + "px";
       node.style.top = y + "px";
+      node.style.color = envColor(env);
 
-      // Bolinha da lâmpada em órbita: fica do lado de dentro,
-      // na linha entre o ambiente e o centro do mapa, como sistema solar.
-      var orbDistance = 31;
-      var orbX = -Math.cos(angle) * orbDistance;
-      var orbY = -Math.sin(angle) * orbDistance;
-      node.style.setProperty("--orb-x", orbX.toFixed(2) + "px");
-      node.style.setProperty("--orb-y", orbY.toFixed(2) + "px");
-      node.style.setProperty("--orb-angle-in", ((angle * 180 / Math.PI) + 180).toFixed(2) + "deg");
-
-      var lightOn = !!(env.lighting && env.lighting.on);
       node.title = env.name + " — " + (env.status === "alert" ? "ALERTA" : (env.status === "online" ? "Online" : "Offline")) + " — Luz " + (lightOn ? "acesa" : "apagada");
-      node.innerHTML = '<span class="core-env-icon">'+env.icon+'</span><span class="core-light-orb '+(lightOn?'on':'off')+'" title="Luz '+(lightOn?'acesa':'apagada')+'"></span>';
+
+      node.innerHTML =
+        '<span class="core-env-icon">'+envIcon(env)+'</span>'+
+        '<span class="node-text">'+
+          '<span class="node-name">'+escapeHtml(env.name || "Ambiente")+'</span>'+
+          '<span class="node-state">'+(env.status === "offline" ? "OFFLINE" : (lightOn ? "LUZ ON" : "ONLINE"))+'</span>'+
+        '</span>';
+
       stage.appendChild(node);
     });
 
     var onlineCount = envs.filter(function(e){return e.status !== "offline";}).length;
-    document.getElementById("coreOnlineCount").textContent = onlineCount + "/" + envs.length;
+    var countEl = document.getElementById("coreOnlineCount");
+    if(countEl) countEl.textContent = onlineCount + "/" + envs.length;
+
+    var aiStatus = document.getElementById("coreAiStatus");
+    if(aiStatus){
+      var alerts = envs.filter(function(e){return e.status === "alert";}).length;
+      if(alerts > 0) aiStatus.textContent = "Atenção necessária";
+      else if(envs.length === 0) aiStatus.textContent = "Aguardando módulos";
+      else if(onlineCount === envs.length) aiStatus.textContent = "Residência segura";
+      else aiStatus.textContent = "Dispositivo offline";
+    }
   }
 
   /* ============================================================
@@ -5419,183 +5523,6 @@ input, select{font-family:inherit; color:var(--text);}
 })();
 </script>
 
-
-<script id="shai-v45-reference-layout-script">
-(function(){
-  function pad(n){ return String(n).padStart(2,"0"); }
-
-  function buildV45Header(){
-    if(document.getElementById("shaiV45Header")) return;
-
-    var main = document.getElementById("main");
-    if(!main) return;
-
-    var header = document.createElement("div");
-    header.id = "shaiV45Header";
-    header.className = "shai-v45-header";
-    header.innerHTML = `
-      <div class="shai-v45-brand">
-        <div class="shai-v45-menu">☰</div>
-        <div class="shai-v45-logo">🧠</div>
-        <div>
-          <h1>SMART HOME AI CONTROL</h1>
-          <small>CENTRAL DE COMANDO RESIDENCIAL</small>
-        </div>
-      </div>
-      <div class="shai-v45-clock">
-        <strong id="shaiV45Clock">--:--:--</strong>
-        <span id="shaiV45Date">--/--/----</span>
-      </div>
-      <div class="shai-v45-status">
-        <div><span class="wifi">📶 ONLINE</span></div>
-        <div><span>ESP32 CONECTADOS</span><strong id="shaiV45EspCount">0 / 0</strong></div>
-        <div class="shai-v45-bell">🔔<span class="shai-v45-alert-dot" id="shaiV45AlertCount">0</span></div>
-      </div>
-    `;
-
-    var nav = document.createElement("nav");
-    nav.id = "shaiV45Nav";
-    nav.className = "shai-v45-nav";
-    nav.innerHTML = `
-      <button class="active" data-view="dashboard"><span class="nav-ico">▦</span> DASHBOARD</button>
-      <button data-view="ambientes"><span class="nav-ico">▣</span> NÚCLEO DA RESIDÊNCIA</button>
-      <button data-view="meteorologia"><span class="nav-ico">☁</span> METEOROLOGIA</button>
-      <button data-view="medicoes"><span class="nav-ico">ϟ</span> ENERGIA</button>
-      <button data-view="irrigacao"><span class="nav-ico">♧</span> IRRIGAÇÃO</button>
-      <button data-view="agua"><span class="nav-ico">▣</span> CAIXA D’ÁGUA</button>
-      <button data-view="alertas"><span class="nav-ico">⚠</span> ALERTAS</button>
-      <button data-view="configuracoes"><span class="nav-ico">⚙</span> CONFIG</button>
-    `;
-
-    main.insertBefore(nav, main.firstChild);
-    main.insertBefore(header, nav);
-
-    nav.addEventListener("click", function(e){
-      var btn = e.target.closest("button[data-view]");
-      if(!btn) return;
-      var view = btn.getAttribute("data-view");
-      if(typeof goToView === "function") goToView(view);
-      else {
-        document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
-        var target = document.getElementById("view-"+view);
-        if(target) target.classList.add("active");
-      }
-      nav.querySelectorAll("button").forEach(function(b){ b.classList.toggle("active", b === btn); });
-    });
-
-    var footer = document.createElement("div");
-    footer.id = "shaiV45Footer";
-    footer.className = "shai-v45-footer";
-    footer.innerHTML = `<div><span class="ok">●</span> SISTEMA OPERACIONAL</div><div class="copy">© 2025 SMART HOME AI CONTROL - Todos os direitos reservados</div><div class="version">VERSÃO 2.1.0</div>`;
-    main.appendChild(footer);
-  }
-
-  function tickClock(){
-    var now = new Date();
-    var c = document.getElementById("shaiV45Clock");
-    var d = document.getElementById("shaiV45Date");
-    if(c) c.textContent = pad(now.getHours())+":"+pad(now.getMinutes())+":"+pad(now.getSeconds());
-    if(d) d.textContent = pad(now.getDate())+"/"+pad(now.getMonth()+1)+"/"+now.getFullYear();
-  }
-
-  function patchCoreRenderer(){
-    if(typeof state === "undefined") return;
-
-    window.renderCore = renderCore = function(){
-      var stage = document.getElementById("coreStage");
-      if(!stage) return;
-
-      var existingNodes = stage.querySelectorAll(".core-node");
-      for(var i=0;i<existingNodes.length;i++){ existingNodes[i].remove(); }
-
-      var envs = state.environments || [];
-      var w = stage.clientWidth || 470;
-      var h = stage.clientHeight || 265;
-      var cx = w / 2;
-      var cy = h * 0.52;
-      var radius = Math.min(w, h) * 0.43;
-      var n = Math.max(envs.length, 1);
-
-      envs.forEach(function(env, idx){
-        var angle = (Math.PI*2 / n) * idx - Math.PI/2;
-        var x = cx + radius * Math.cos(angle);
-        var y = cy + radius * Math.sin(angle);
-
-        var node = document.createElement("div");
-        var statusClass = env.status === "alert" ? "alert" : (env.status === "online" ? "online" : "offline");
-        node.className = "core-node " + statusClass;
-        node.style.left = x + "px";
-        node.style.top = y + "px";
-
-        var lightOn = !!(env.lighting && env.lighting.on);
-        var stateTxt = lightOn ? "ON" : "OFF";
-        var safeName = (env.name || "Ambiente").toUpperCase();
-
-        var icon = env.icon || "💡";
-        if(/garagem/i.test(env.name || "")) icon = "🚗";
-        if(/área|area|externa|jardim/i.test(env.name || "")) icon = "🌱";
-        if(/banheiro/i.test(env.name || "")) icon = "💧";
-
-        node.title = safeName + " — " + stateTxt;
-        node.innerHTML =
-          '<span class="core-env-name">'+safeName+'</span>'+
-          '<span class="core-env-icon">'+icon+'</span>'+
-          '<span class="core-env-state">'+stateTxt+'</span>';
-
-        stage.appendChild(node);
-      });
-
-      var onlineCount = envs.filter(function(e){return e.status !== "offline";}).length;
-      var cnt = document.getElementById("coreOnlineCount");
-      if(cnt) cnt.textContent = onlineCount + "/" + envs.length;
-
-      var esp = document.getElementById("shaiV45EspCount");
-      if(esp) esp.textContent = onlineCount + " / " + envs.length;
-    };
-  }
-
-  function patchViewActive(){
-    var active = document.querySelector(".view.active");
-    if(!active) return;
-    var name = active.id ? active.id.replace("view-","") : "dashboard";
-    var nav = document.getElementById("shaiV45Nav");
-    if(nav){
-      nav.querySelectorAll("button[data-view]").forEach(function(b){
-        b.classList.toggle("active", b.getAttribute("data-view") === name);
-      });
-    }
-  }
-
-  function updateAlertCount(){
-    try{
-      var count = (typeof state !== "undefined" && state.alerts) ? state.alerts.length : 0;
-      var el = document.getElementById("shaiV45AlertCount");
-      if(el){
-        el.textContent = count;
-        el.style.display = count ? "grid" : "none";
-      }
-    }catch(e){}
-  }
-
-  document.addEventListener("DOMContentLoaded", function(){
-    buildV45Header();
-    patchCoreRenderer();
-    tickClock();
-    setInterval(tickClock, 1000);
-    setInterval(function(){
-      patchViewActive();
-      updateAlertCount();
-    }, 900);
-
-    setTimeout(function(){
-      try{
-        if(typeof renderCore === "function") renderCore();
-        if(typeof renderAll === "function") renderAll();
-      }catch(e){ console.warn("V45 render refresh", e); }
-    }, 600);
-  });
-})();
-</script>
 
 </body>
 </html>
