@@ -1625,6 +1625,145 @@ input, select{font-family:inherit; color:var(--text);}
   }
 }
 
+
+/* ============================================================
+   V46 ETAPA 2 — energia dividida + consumo de água + compactação
+   ============================================================ */
+#content{padding-top:8px !important;padding-bottom:18px !important;}
+#topbar{padding-top:8px !important;padding-bottom:8px !important;min-height:58px !important;}
+
+.dash-v2-shell{
+  height:calc(100vh - 92px) !important;
+  min-height:590px !important;
+  display:grid !important;
+  grid-template-rows:minmax(300px,1.16fr) minmax(188px,.68fr) !important;
+  gap:10px !important;
+}
+
+.dash-v2-grid{gap:10px !important;}
+
+.dash-v2-bottom-grid{
+  display:grid !important;
+  grid-template-columns:minmax(260px,.78fr) minmax(315px,.96fr) minmax(270px,.82fr) !important;
+  gap:10px !important;
+  margin-top:0 !important;
+  min-height:0 !important;
+}
+
+.dash-v2-card-head{padding:11px 14px 3px !important;}
+.dash-v2-title-center{padding:12px 10px 0 !important;}
+.dash-v2-card h2{font-size:16.5px !important;letter-spacing:.8px !important;}
+.dash-v2-card p{font-size:10.5px !important;margin-top:3px !important;}
+.dash-v2-online{font-size:10.5px !important;}
+.dash-v2-card-foot{height:27px !important;font-size:10px !important;}
+
+.core-stage-v46{
+  height:calc(100% - 62px) !important;
+  min-height:226px !important;
+  margin-bottom:26px !important;
+}
+.core-stage-v46 .core-ring.r1{width:236px !important;height:236px !important;}
+.core-stage-v46 .core-ring.r2{width:180px !important;height:180px !important;}
+.core-stage-v46 .core-ring.r3{width:118px !important;height:118px !important;}
+.core-center-v46{width:132px !important;height:132px !important;}
+.core-center-v46 .ai-main{font-size:29px !important;}
+.core-center-v46 .ai-status{font-size:11.5px !important;}
+.core-stage-v46 .core-node{
+  width:120px !important;height:54px !important;margin:-27px -60px !important;padding:6px 8px !important;
+}
+.core-stage-v46 .core-node .core-env-icon{width:30px !important;height:30px !important;font-size:15px !important;}
+.core-stage-v46 .core-node .node-name{font-size:11px !important;max-width:64px !important;}
+.core-stage-v46 .core-node .node-state{font-size:8px !important;}
+
+.dash-v2-tank-wrap{height:190px !important;padding-top:0 !important;}
+.dash-v2-scale{height:152px !important;font-size:10.5px !important;}
+.dash-v2-tank{width:74px !important;height:152px !important;}
+.dash-v2-tank-value{font-size:40px !important;}
+.dash-v2-pump-mini{bottom:28px !important;font-size:8.5px !important;}
+
+.dash-v2-icon-ring{width:86px !important;height:86px !important;font-size:38px !important;margin:8px auto 4px !important;}
+.dash-v2-center-text{font-size:10px !important;}
+.dash-v2-center-text div{font-size:18px !important;}
+.dash-v2-sep{margin:7px 18px !important;}
+.dash-v2-next-cycle{font-size:10px !important;}
+.dash-v2-next-cycle strong{font-size:19px !important;}
+.dash-v2-status-ring{width:96px !important;height:96px !important;margin:10px auto 7px !important;border-width:8px !important;font-size:42px !important;}
+
+.dash-v2-weather-card{min-height:0 !important;}
+.dash-v2-weather-main{padding:0 14px !important;gap:10px !important;}
+.dash-v2-weather-icon{font-size:42px !important;}
+.dash-v2-weather-temp{font-size:29px !important;}
+.dash-v2-weather-desc{font-size:12.5px !important;max-width:160px !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-v2-weather-kpis{
+  grid-template-columns:repeat(4,1fr) !important;
+  gap:4px !important;
+  margin:6px 10px 28px !important;
+  border:0 !important;
+}
+.dash-v2-weather-kpis div{
+  padding:4px 3px !important;
+  border:1px solid var(--line-soft) !important;
+  border-radius:7px !important;
+}
+.dash-v2-weather-kpis small{font-size:8px !important;margin:1px 0 !important;}
+.dash-v2-weather-kpis b{font-size:10px !important;}
+
+.dash-v2-energy-card{min-height:0 !important;}
+.dash-v2-consumption-card{grid-column:auto !important;}
+.dash-v2-energy-body-compact{
+  display:grid !important;
+  grid-template-columns:108px 1fr !important;
+  gap:9px !important;
+  padding:0 12px 28px !important;
+}
+.dash-v2-energy-side small{font-size:8px !important;}
+.dash-v2-energy-power{font-size:24px !important;margin:1px 0 5px !important;}
+.dash-v2-energy-power small{font-size:11px !important;}
+.dash-v2-energy-bolt{font-size:20px !important;margin:0 0 3px !important;}
+.dash-v2-energy-today{font-size:19px !important;}
+.dash-v2-energy-today small{font-size:10px !important;}
+.dash-v2-chart-compact{height:96px !important;}
+.dash-v2-chart-footer-compact{font-size:8px !important;margin-top:3px !important;}
+
+.dash-v2-water-consumption-card{min-height:0 !important;}
+.dash-v2-water-consumption-body{padding:0 12px 28px;}
+.water-consumption-main{display:flex;align-items:center;gap:10px;margin-top:0;}
+.water-consumption-icon{
+  width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:var(--cyan);
+  font-family:var(--font-display);font-size:30px;border:2px solid rgba(45,212,255,.45);
+  box-shadow:0 0 16px rgba(45,212,255,.25), inset 0 0 14px rgba(45,212,255,.10);flex-shrink:0;
+}
+.water-consumption-main small,.water-consumption-metrics small{
+  font-family:var(--font-mono);font-size:8px;color:var(--text-faint);letter-spacing:.6px;
+}
+.water-consumption-value{font-family:var(--font-display);font-size:27px;line-height:1;color:#fff;text-shadow:0 0 12px rgba(45,212,255,.25);}
+.water-consumption-value small{font-size:11px;color:var(--text-dim);}
+.water-consumption-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:7px;}
+.water-consumption-metrics div{border:1px solid var(--line-soft);border-radius:7px;padding:4px 3px;background:rgba(255,255,255,.022);text-align:center;}
+.water-consumption-metrics strong{display:block;margin-top:1px;font-family:var(--font-head);font-size:11px;color:var(--text);}
+.water-consumption-bars{height:34px;display:flex;align-items:end;gap:4px;margin-top:7px;padding-top:4px;border-top:1px solid var(--line-soft);}
+.water-consumption-bars span{flex:1;min-width:4px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,rgba(45,212,255,.78),rgba(45,212,255,.16));box-shadow:0 0 8px rgba(45,212,255,.20);}
+
+@media(max-height:820px){
+  .dash-v2-shell{height:auto !important;min-height:0 !important;grid-template-rows:286px 176px !important;}
+  .core-stage-v46 .core-ring.r1{width:220px !important;height:220px !important;}
+  .core-stage-v46 .core-ring.r2{width:168px !important;height:168px !important;}
+  .core-stage-v46 .core-ring.r3{width:110px !important;height:110px !important;}
+  .core-center-v46{width:122px !important;height:122px !important;}
+  .dash-v2-icon-ring{width:78px !important;height:78px !important;font-size:34px !important;}
+  .dash-v2-status-ring{width:88px !important;height:88px !important;font-size:38px !important;}
+  .dash-v2-tank{height:138px !important;}
+  .dash-v2-scale{height:138px !important;}
+  .dash-v2-tank-wrap{height:174px !important;}
+  .dash-v2-chart-compact{height:82px !important;}
+  .water-consumption-bars{height:28px !important;}
+}
+
+@media(max-width:1100px){
+  .dash-v2-shell{height:auto !important;display:block !important;}
+  .dash-v2-bottom-grid{grid-template-columns:1fr !important;margin-top:10px !important;}
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 
@@ -1845,21 +1984,24 @@ input, select{font-family:inherit; color:var(--text);}
               <div class="dash-v2-card-foot"><span id="dashWeatherUpdated">Atualizado em tempo real</span></div>
             </div>
 
-            <div class="dash-v2-card dash-v2-energy-card">
+            <div class="dash-v2-card dash-v2-energy-card dash-v2-consumption-card">
               <div class="dash-v2-card-head">
-                <h2>CONSUMO DE ENERGIA</h2>
+                <div>
+                  <h2>CONSUMO DE ENERGIA</h2>
+                  <p>Potência atual e consumo do dia</p>
+                </div>
                 <span class="dash-v2-online" id="dashEnergyOnline">Online</span>
               </div>
-              <div class="dash-v2-energy-body">
+              <div class="dash-v2-energy-body dash-v2-energy-body-compact">
                 <div class="dash-v2-energy-side">
-                  <small>POTÊNCIA ATUAL</small>
+                  <small>POTÊNCIA</small>
                   <div class="dash-v2-energy-power"><span id="dashEnergyPower">—</span> <small>W</small></div>
                   <div class="dash-v2-energy-bolt">ϟ</div>
-                  <small>CONSUMO HOJE</small>
+                  <small>HOJE</small>
                   <div class="dash-v2-energy-today"><span id="dashEnergyToday">—</span> <small>kWh</small></div>
                 </div>
                 <div>
-                  <div class="dash-v2-chart">
+                  <div class="dash-v2-chart dash-v2-chart-compact">
                     <svg viewBox="0 0 600 190" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id="dashEnergyGradient" x1="0" y1="0" x2="0" y2="1">
@@ -1872,10 +2014,41 @@ input, select{font-family:inherit; color:var(--text);}
                       <circle id="dashEnergyDot" cx="500" cy="155" r="7" fill="#22d7ff"/>
                     </svg>
                   </div>
-                  <div class="dash-v2-chart-footer"><span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span></div>
+                  <div class="dash-v2-chart-footer dash-v2-chart-footer-compact"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>24h</span></div>
                 </div>
               </div>
               <div class="dash-v2-card-foot"><span id="dashEnergyUpdated">Aguardando medidor</span></div>
+            </div>
+
+            <div class="dash-v2-card dash-v2-water-consumption-card">
+              <div class="dash-v2-card-head">
+                <div>
+                  <h2>CONSUMO DE ÁGUA</h2>
+                  <p>Estimativa diária pelo reservatório</p>
+                </div>
+                <span class="dash-v2-online" id="dashWaterOnline">Online</span>
+              </div>
+
+              <div class="dash-v2-water-consumption-body">
+                <div class="water-consumption-main">
+                  <div class="water-consumption-icon">≈</div>
+                  <div>
+                    <small>HOJE</small>
+                    <div class="water-consumption-value"><span id="dashWaterToday">—</span><small> L</small></div>
+                  </div>
+                </div>
+
+                <div class="water-consumption-metrics">
+                  <div><small>NÍVEL</small><strong id="dashWaterLevelMini">—%</strong></div>
+                  <div><small>MÉDIA</small><strong id="dashWaterAvg">— L</strong></div>
+                  <div><small>BOMBA</small><strong id="dashWaterPumpMini">OFF</strong></div>
+                </div>
+
+                <div class="water-consumption-bars" id="dashWaterBars">
+                  <span style="height:42%"></span><span style="height:58%"></span><span style="height:35%"></span><span style="height:75%"></span><span style="height:62%"></span><span style="height:48%"></span><span style="height:70%"></span>
+                </div>
+              </div>
+              <div class="dash-v2-card-foot"><span id="dashWaterUpdated">Aguardando dados</span></div>
             </div>
           </div>
         </div>
@@ -5523,6 +5696,75 @@ input, select{font-family:inherit; color:var(--text);}
 })();
 </script>
 
+
+
+<script id="v46-water-consumption-script">
+(function(){
+  function getWaterSnapshot(){
+    var snap = {level:null, liters:null, pump:false, updated:"Aguardando dados"};
+    try{
+      if(typeof state !== "undefined"){
+        var list = state.waterTanks || state.tanks || state.waterDevices || state.reservoirs || [];
+        if(Array.isArray(list) && list.length){
+          var t = list[0];
+          snap.level = t.level ?? t.nivel ?? t.percent ?? t.percentual;
+          snap.liters = t.liters ?? t.litros ?? t.volume ?? t.volume_l;
+          snap.pump = !!(t.pumpOn ?? t.bombaLigada ?? t.bomba_on ?? t.pump);
+          snap.updated = t.lastSeen || t.updatedAt || t.lastUpdate || "Atualizado em tempo real";
+          return snap;
+        }
+      }
+    }catch(e){}
+    try{
+      Object.keys(localStorage).some(function(key){
+        var k = key.toLowerCase();
+        if(!(k.includes("water") || k.includes("agua") || k.includes("caixa"))) return false;
+        var obj = JSON.parse(localStorage.getItem(key));
+        var arr = Array.isArray(obj) ? obj : (obj && typeof obj === "object" ? [obj] : []);
+        if(!arr.length) return false;
+        var t = arr[0];
+        snap.level = t.level ?? t.nivel ?? t.percent ?? t.percentual ?? snap.level;
+        snap.liters = t.liters ?? t.litros ?? t.volume ?? t.volume_l ?? snap.liters;
+        snap.pump = !!(t.pumpOn ?? t.bombaLigada ?? t.bomba_on ?? t.pump ?? snap.pump);
+        snap.updated = t.lastSeen || t.updatedAt || t.lastUpdate || snap.updated;
+        return true;
+      });
+    }catch(e){}
+    return snap;
+  }
+
+  function updateWaterConsumptionDash(){
+    var snap = getWaterSnapshot();
+    var level = Number(snap.level);
+    if(!isFinite(level)) level = null;
+
+    var liters = Number(snap.liters);
+    if(!isFinite(liters) && level !== null){
+      liters = Math.round((level / 100) * 2000);
+    }
+
+    var today = liters ? Math.max(0, Math.round(2000 - liters)) : null;
+    var avg = today ? Math.round(today * 0.82) : null;
+
+    var elToday = document.getElementById("dashWaterToday");
+    var elLevel = document.getElementById("dashWaterLevelMini");
+    var elAvg = document.getElementById("dashWaterAvg");
+    var elPump = document.getElementById("dashWaterPumpMini");
+    var elUpdated = document.getElementById("dashWaterUpdated");
+
+    if(elToday) elToday.textContent = today === null ? "—" : today;
+    if(elLevel) elLevel.textContent = level === null ? "—%" : Math.round(level) + "%";
+    if(elAvg) elAvg.textContent = avg === null ? "— L" : avg + " L";
+    if(elPump) elPump.textContent = snap.pump ? "ON" : "OFF";
+    if(elUpdated) elUpdated.textContent = snap.updated || "Aguardando dados";
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    updateWaterConsumptionDash();
+    setInterval(updateWaterConsumptionDash, 2000);
+  });
+})();
+</script>
 
 </body>
 </html>
