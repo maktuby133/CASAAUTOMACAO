@@ -1764,6 +1764,18 @@ input, select{font-family:inherit; color:var(--text);}
   .dash-v2-bottom-grid{grid-template-columns:1fr !important;margin-top:10px !important;}
 }
 
+
+/* V46 status real: dispositivo fica offline por falta de pacote MQTT */
+.core-stage-v46 .core-node.offline{
+  filter:grayscale(.45);
+}
+.env-card .badge-offline,
+.device-table .badge-offline{
+  background:rgba(140,150,165,0.10);
+  color:#8f9bad;
+  border-color:rgba(140,180,220,.16);
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 
@@ -2637,6 +2649,40 @@ input, select{font-family:inherit; color:var(--text);}
     return "há "+h+"h";
   }
 
+  // V46: status real por tempo desde o último pacote MQTT.
+  // Antes o painel podia manter "online" para dispositivo já desligado.
+  var ENV_OFFLINE_AFTER_MS = 45000;
+
+  function envLastSeenDate(env){
+    if(!env || !env.lastSeen) return null;
+    var d = env.lastSeen instanceof Date ? env.lastSeen : new Date(env.lastSeen);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function isEnvActuallyOnline(env){
+    var d = envLastSeenDate(env);
+    if(!d) return false;
+    return (Date.now() - d.getTime()) <= ENV_OFFLINE_AFTER_MS;
+  }
+
+  function refreshEnvironmentOnlineStatus(){
+    var changed = false;
+    (state.environments || []).forEach(function(env){
+      if(env.status === "alert") return;
+      var online = isEnvActuallyOnline(env);
+      if(!online && env.status === "online"){
+        env.status = "offline";
+        changed = true;
+      }
+      if(online && env.status === "offline" && env.sensorReady === true){
+        env.status = "online";
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
+
   function hasNumber(v){
     return typeof v === "number" && isFinite(v);
   }
@@ -3318,7 +3364,8 @@ input, select{font-family:inherit; color:var(--text);}
       }
 
       var node = document.createElement("div");
-      var statusClass = env.status === "alert" ? "alert" : (env.status === "online" ? "online" : "offline");
+      var realOnline = isEnvActuallyOnline(env);
+      var statusClass = env.status === "alert" ? "alert" : (realOnline ? "online" : "offline");
       var lightOn = !!(env.lighting && env.lighting.on);
 
       node.className = "core-node " + statusClass + (lightOn ? " light-on" : "");
@@ -3326,19 +3373,19 @@ input, select{font-family:inherit; color:var(--text);}
       node.style.top = y + "px";
       node.style.color = envColor(env);
 
-      node.title = env.name + " — " + (env.status === "alert" ? "ALERTA" : (env.status === "online" ? "Online" : "Offline")) + " — Luz " + (lightOn ? "acesa" : "apagada");
+      node.title = env.name + " — " + (statusClass === "alert" ? "ALERTA" : (realOnline ? "Online" : "Offline")) + " — Luz " + (lightOn ? "acesa" : "apagada");
 
       node.innerHTML =
         '<span class="core-env-icon">'+envIcon(env)+'</span>'+
         '<span class="node-text">'+
           '<span class="node-name">'+escapeHtml(env.name || "Ambiente")+'</span>'+
-          '<span class="node-state">'+(env.status === "offline" ? "OFFLINE" : (lightOn ? "LUZ ON" : "ONLINE"))+'</span>'+
+          '<span class="node-state">'+(!realOnline && statusClass !== "alert" ? "OFFLINE" : (lightOn ? "LUZ ON" : "ONLINE"))+'</span>'+
         '</span>';
 
       stage.appendChild(node);
     });
 
-    var onlineCount = envs.filter(function(e){return e.status !== "offline";}).length;
+    var onlineCount = envs.filter(function(e){return e.status === "alert" || isEnvActuallyOnline(e);}).length;
     var countEl = document.getElementById("coreOnlineCount");
     if(countEl) countEl.textContent = onlineCount + "/" + envs.length;
 
@@ -3388,7 +3435,8 @@ input, select{font-family:inherit; color:var(--text);}
 
     state.environments.forEach(function(env){
       var card = document.createElement("div");
-      card.className = "glass env-card" + (env.status === "alert" ? " is-alert" : "");
+      var realStatus = env.status === "alert" ? "alert" : (isEnvActuallyOnline(env) ? "online" : "offline");
+      card.className = "glass env-card" + (realStatus === "alert" ? " is-alert" : "");
       var smokeFlag = env.gasAlert === true;
 
       card.innerHTML =
@@ -3398,7 +3446,7 @@ input, select{font-family:inherit; color:var(--text);}
             '<div><div class="env-name">'+env.name.toUpperCase()+'</div>'+
             '<div class="env-device">ESP32-'+env.name.toUpperCase().replace(/\s+/g,"")+' · '+getEnvDeviceId(env).toUpperCase()+'</div></div>'+
           '</div>'+
-          '<div style="display:flex; align-items:center; gap:8px;">'+statusBadge(env.status)+'<button class="env-gear" title="Configurar ambiente" data-config-device="'+env.id+'">⚙️</button></div>'+
+          '<div style="display:flex; align-items:center; gap:8px;">'+statusBadge(realStatus)+'<button class="env-gear" title="Configurar ambiente" data-config-device="'+env.id+'">⚙️</button></div>'+
         '</div>'+
         '<div class="env-controls">'+
           '<div class="ctrl">'+
@@ -3410,7 +3458,7 @@ input, select{font-family:inherit; color:var(--text);}
           '<div class="ctrl '+(smokeFlag?"flagged":"")+'"><div class="cic">🔥</div><div class="cval">'+fmtSmoke(env.smoke)+'</div></div>'+
         '</div>'+
         '<div class="env-foot">'+
-          '<span class="badge '+(env.status==="online"?"badge-online":(env.status==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(env.lastSeen)+'</span>'+
+          '<span class="badge '+(realStatus==="online"?"badge-online":(realStatus==="alert"?"badge-alert":"badge-offline"))+'">'+fmtRelative(envLastSeenDate(env))+'</span>'+
           '<span class="eyebrow">TOQUE NA ENGRENAGEM</span>'+
         '</div>';
       grid.appendChild(card);
@@ -4213,8 +4261,8 @@ input, select{font-family:inherit; color:var(--text);}
         '<td data-label="Dispositivo" class="dev-name">'+escapeHtml(devName)+'</td>'+
         '<td data-label="ID" class="dev-id">'+escapeHtml(getEnvDeviceId(env).toUpperCase())+'</td>'+
         '<td data-label="MAC" class="dev-mac">'+escapeHtml(env.mac || "—")+'</td>'+
-        '<td data-label="Status">'+statusBadge(env.status)+'</td>'+
-        '<td data-label="Última comunicação">'+(env.lastSeen ? fmtTime(env.lastSeen)+' · '+fmtRelative(env.lastSeen) : 'sem dados')+'</td>'+
+        '<td data-label="Status">'+statusBadge(env.status === "alert" ? "alert" : (isEnvActuallyOnline(env) ? "online" : "offline"))+'</td>'+
+        '<td data-label="Última comunicação">'+(envLastSeenDate(env) ? fmtTime(envLastSeenDate(env))+' · '+fmtRelative(envLastSeenDate(env)) : 'sem dados')+'</td>'+
         '<td data-label="Firmware" class="dev-mac">'+escapeHtml(env.firmware || "ESP32 Ambiente")+'</td>'+
         '<td data-label="Ações"><button class="env-gear" title="Configurar ambiente" data-config-device="'+escapeHtml(env.id)+'">⚙️</button></td>';
       body.appendChild(tr);
@@ -5410,6 +5458,7 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function renderAll(){
+    refreshEnvironmentOnlineStatus();
     safeRender(renderWeather, "meteorologia");
     safeRender(renderStats, "visao geral");
     safeRender(renderCore, "mapa em tempo real");
@@ -5422,6 +5471,17 @@ input, select{font-family:inherit; color:var(--text);}
     safeRender(renderHistory, "historico");
     safeRender(renderAlertsView, "alertas");
   }
+
+  setInterval(function(){
+    if(refreshEnvironmentOnlineStatus()){
+      saveEnvironments();
+      renderAll();
+    }else{
+      safeRender(renderCore, "mapa em tempo real");
+      safeRender(renderDevices, "dispositivos");
+      safeRender(renderEnvironments, "ambientes");
+    }
+  }, 5000);
 
 })();
 
