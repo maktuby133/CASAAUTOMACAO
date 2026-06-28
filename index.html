@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v47 Card Caixa Corrigido</title>
+<title>SMART HOME AI CONTROL - v47.2 Núcleo Orbital</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -2640,6 +2640,289 @@ input, select{font-family:inherit; color:var(--text);}
 @keyframes v471CloudDrift{0%,100%{transform:translateX(-3px);}50%{transform:translateX(5px);}}
 @keyframes v471RainShake{0%,100%{transform:translateY(0);}50%{transform:translateY(3px);}}
 
+
+/* ============================================================
+   V47.2 — NÚCLEO DA RESIDÊNCIA ORBITAL
+   Aproximação do modelo enviado: anel central + módulos em órbita.
+   ============================================================ */
+
+.dash-v2-core-card{
+  position:relative !important;
+  overflow:hidden !important;
+}
+
+.core-stage-v46{
+  width:100% !important;
+  height:calc(100% - 68px) !important;
+  min-height:300px !important;
+  margin:0 auto 28px !important;
+  position:relative !important;
+  overflow:visible !important;
+}
+
+.core-stage-v46::before{
+  content:'' !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:360px !important;
+  height:360px !important;
+  transform:translate(-50%,-50%) !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(circle at center, rgba(45,212,255,.13) 0%, transparent 28%),
+    radial-gradient(circle at center, transparent 41%, rgba(45,212,255,.20) 42%, transparent 43%),
+    radial-gradient(circle at center, transparent 56%, rgba(124,92,255,.18) 57%, transparent 58%),
+    radial-gradient(circle at center, transparent 72%, rgba(45,212,255,.24) 73%, transparent 74%) !important;
+  filter:drop-shadow(0 0 18px rgba(45,212,255,.16)) !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+}
+
+.core-stage-v46::after{
+  content:'' !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:282px !important;
+  height:282px !important;
+  transform:translate(-50%,-50%) !important;
+  border-radius:50% !important;
+  border:1px dashed rgba(124,92,255,.25) !important;
+  animation:spin 38s linear infinite reverse !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+}
+
+/* Esconde os anéis antigos e usa os novos do próprio stage */
+.core-stage-v46 > .core-ring,
+.core-stage-v46 > .core-particles-v46{
+  display:none !important;
+}
+
+/* Linhas orbitais */
+.core-stage-v46 .core-lines-v46{
+  z-index:2 !important;
+}
+
+.core-stage-v46 .core-lines-v46 line{
+  stroke:rgba(45,212,255,.28) !important;
+  stroke-width:1.35 !important;
+  stroke-linecap:round !important;
+  filter:drop-shadow(0 0 5px rgba(45,212,255,.42)) !important;
+}
+
+.core-stage-v46 .core-lines-v46 line.on{
+  stroke:rgba(255,180,67,.60) !important;
+  stroke-width:1.8 !important;
+  stroke-dasharray:8 12 !important;
+  animation:v472OrbitFlow 2.2s linear infinite !important;
+}
+
+@keyframes v472OrbitFlow{
+  to{stroke-dashoffset:-100;}
+}
+
+/* Centro igual ao modelo: 1/1, dispositivos, online */
+.core-center-v46{
+  width:132px !important;
+  height:132px !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(circle at center, rgba(45,212,255,.24), rgba(8,22,38,.92) 58%, rgba(3,10,18,.98)) !important;
+  border:1px solid rgba(45,212,255,.55) !important;
+  box-shadow:
+    0 0 34px rgba(45,212,255,.22),
+    inset 0 0 22px rgba(45,212,255,.18) !important;
+  z-index:5 !important;
+}
+
+.core-center-v46 .ai-label,
+.core-center-v46 .ai-main,
+.core-center-v46 .ai-status{
+  display:none !important;
+}
+
+.core-center-v46 .small{
+  display:block !important;
+  margin-top:0 !important;
+  font-family:var(--font-mono) !important;
+  font-size:10px !important;
+  letter-spacing:1.8px !important;
+  line-height:1.45 !important;
+  color:#a9c6dc !important;
+  text-transform:uppercase !important;
+}
+
+.core-center-v46 .small #coreOnlineCount{
+  display:block !important;
+  font-family:var(--font-display) !important;
+  color:#fff !important;
+  font-size:31px !important;
+  line-height:1 !important;
+  letter-spacing:0 !important;
+  margin-bottom:8px !important;
+  text-shadow:0 0 12px rgba(45,212,255,.48) !important;
+}
+
+.core-center-v46 .small::after{
+  content:'DISPOSITIVOS\A ONLINE' !important;
+  white-space:pre !important;
+}
+
+/* Módulos orbitais como no print */
+.core-stage-v46 .core-node{
+  width:112px !important;
+  height:58px !important;
+  margin:-29px -56px !important;
+  border-radius:18px !important;
+  background:
+    linear-gradient(180deg, rgba(6,18,31,.94), rgba(3,10,18,.96)) !important;
+  border:1px solid rgba(45,212,255,.26) !important;
+  box-shadow:
+    0 0 18px rgba(45,212,255,.12),
+    inset 0 0 16px rgba(45,212,255,.05) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:9px !important;
+  padding:8px 10px !important;
+  z-index:8 !important;
+}
+
+.core-stage-v46 .core-node .core-env-icon{
+  width:32px !important;
+  height:32px !important;
+  min-width:32px !important;
+  border-radius:50% !important;
+  display:grid !important;
+  place-items:center !important;
+  border:1px solid currentColor !important;
+  font-size:17px !important;
+  color:currentColor !important;
+  box-shadow:0 0 12px currentColor !important;
+}
+
+.core-stage-v46 .core-node .node-text{
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+}
+
+.core-stage-v46 .core-node .node-name{
+  position:absolute !important;
+  left:50% !important;
+  top:-25px !important;
+  transform:translateX(-50%) !important;
+  max-width:130px !important;
+  width:max-content !important;
+  color:#fff !important;
+  font-family:var(--font-head) !important;
+  font-weight:900 !important;
+  font-size:14px !important;
+  letter-spacing:.5px !important;
+  text-transform:uppercase !important;
+  text-shadow:0 0 9px rgba(0,0,0,.95) !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+}
+
+.core-stage-v46 .core-node .node-state{
+  display:block !important;
+  color:var(--green) !important;
+  font-family:var(--font-head) !important;
+  font-size:13px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  letter-spacing:.5px !important;
+}
+
+.core-stage-v46 .core-node.offline .node-state{
+  color:#a9b3c2 !important;
+}
+
+.core-stage-v46 .core-node.offline{
+  color:#9aa7b8 !important;
+  opacity:.72 !important;
+  border-color:rgba(140,180,220,.18) !important;
+  box-shadow:0 0 10px rgba(140,180,220,.08), inset 0 0 12px rgba(255,255,255,.025) !important;
+}
+
+.core-stage-v46 .core-node.alert{
+  color:var(--red) !important;
+  border-color:rgba(255,77,106,.55) !important;
+  animation:v472NodeAlert 1.15s ease-in-out infinite !important;
+}
+
+@keyframes v472NodeAlert{
+  0%,100%{box-shadow:0 0 12px rgba(255,77,106,.25);}
+  50%{box-shadow:0 0 26px rgba(255,77,106,.65);}
+}
+
+.core-stage-v46 .core-node.light-on .core-env-icon{
+  color:#ffe66d !important;
+  box-shadow:0 0 12px rgba(255,230,109,.95), 0 0 24px rgba(255,180,67,.48) !important;
+}
+
+/* Ponto colorido fora de cada módulo */
+.core-stage-v46 .core-node::before{
+  content:'' !important;
+  position:absolute !important;
+  width:13px !important;
+  height:13px !important;
+  border-radius:50% !important;
+  background:currentColor !important;
+  box-shadow:0 0 12px currentColor !important;
+  left:var(--dot-left, 50%) !important;
+  top:var(--dot-top, 50%) !important;
+  transform:translate(-50%,-50%) !important;
+}
+
+.core-stage-v46 .core-node::after{
+  display:none !important;
+}
+
+/* Ajuste fino por posição */
+.core-stage-v46 .core-node.pos-top .node-name{top:-27px !important;}
+.core-stage-v46 .core-node.pos-bottom .node-name{top:auto !important;bottom:-25px !important;}
+.core-stage-v46 .core-node.pos-left .node-name{left:-10px !important;top:50% !important;transform:translate(-100%,-50%) !important;}
+.core-stage-v46 .core-node.pos-right .node-name{left:auto !important;right:-10px !important;top:50% !important;transform:translate(100%,-50%) !important;}
+
+.core-stage-v46 .core-node.pos-top{--dot-left:100%;--dot-top:8%;}
+.core-stage-v46 .core-node.pos-right{--dot-left:0%;--dot-top:8%;}
+.core-stage-v46 .core-node.pos-bottom{--dot-left:10%;--dot-top:0%;}
+.core-stage-v46 .core-node.pos-left{--dot-left:100%;--dot-top:8%;}
+
+/* Legenda inferior do card */
+.dash-v2-core-card .dash-v2-card-foot{
+  justify-content:flex-start !important;
+  padding-left:18px !important;
+}
+
+/* Responsivo */
+@media(max-width:1180px){
+  .core-stage-v46{
+    min-height:360px !important;
+  }
+}
+
+@media(max-width:680px){
+  .core-stage-v46::before{width:300px !important;height:300px !important;}
+  .core-stage-v46::after{width:235px !important;height:235px !important;}
+  .core-stage-v46 .core-node{
+    width:98px !important;
+    height:52px !important;
+    margin:-26px -49px !important;
+  }
+  .core-stage-v46 .core-node .node-name{
+    font-size:12px !important;
+  }
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 
@@ -4185,38 +4468,69 @@ input, select{font-family:inherit; color:var(--text);}
     var envs = state.environments || [];
     var rect = stage.getBoundingClientRect();
     var w = rect.width || stage.clientWidth || 520;
-    var h = rect.height || stage.clientHeight || 360;
+    var h = rect.height || stage.clientHeight || 340;
     var centerX = w / 2;
     var centerY = h / 2;
 
-    var radiusX = Math.min(w * 0.36, 270);
-    var radiusY = Math.min(h * 0.36, 170);
-    var n = Math.max(envs.length, 1);
+    // Posições pensadas para ficar próximo ao modelo enviado:
+    // sala em cima, cozinha direita, área externa baixo-direita,
+    // garagem embaixo, banheiro baixo-esquerda, quarto esquerda.
+    var slots = [
+      {x:.50, y:.18, pos:"top"},
+      {x:.78, y:.36, pos:"right"},
+      {x:.75, y:.68, pos:"right"},
+      {x:.50, y:.84, pos:"bottom"},
+      {x:.23, y:.68, pos:"left"},
+      {x:.22, y:.36, pos:"left"}
+    ];
+
+    function normName(name){
+      return String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+    }
+
+    function slotFor(env, idx){
+      var n = normName(env.name);
+      if(n.indexOf("sala") >= 0) return slots[0];
+      if(n.indexOf("cozinha") >= 0) return slots[1];
+      if(n.indexOf("area") >= 0 || n.indexOf("externa") >= 0 || n.indexOf("jardim") >= 0) return slots[2];
+      if(n.indexOf("garagem") >= 0) return slots[3];
+      if(n.indexOf("banheiro") >= 0) return slots[4];
+      if(n.indexOf("quarto") >= 0) return slots[5];
+      return slots[idx % slots.length];
+    }
 
     function envIcon(env){
-      var name = (env.name || "").toLowerCase();
-      if(name.indexOf("cozinha") >= 0) return "🍳";
-      if(name.indexOf("quarto") >= 0) return "🛏️";
-      if(name.indexOf("banheiro") >= 0) return "🚿";
-      if(name.indexOf("garagem") >= 0) return "🚗";
-      if(name.indexOf("área") >= 0 || name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return "🌱";
+      var name = normName(env.name);
+      if(name.indexOf("cozinha") >= 0) return "💡";
+      if(name.indexOf("quarto") >= 0) return "💡";
+      if(name.indexOf("banheiro") >= 0) return "💧";
+      if(name.indexOf("garagem") >= 0) return "▱";
+      if(name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return "🌱";
       return env.icon || "💡";
     }
 
     function envColor(env){
-      var name = (env.name || "").toLowerCase();
-      if(name.indexOf("cozinha") >= 0) return "var(--v46-orange)";
-      if(name.indexOf("quarto") >= 0) return "var(--v46-purple)";
-      if(name.indexOf("banheiro") >= 0) return "var(--v46-blue)";
-      if(name.indexOf("garagem") >= 0) return "#9aa8bb";
-      if(name.indexOf("área") >= 0 || name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return "var(--v46-green)";
-      return "var(--v46-cyan)";
+      var name = normName(env.name);
+      if(name.indexOf("cozinha") >= 0) return "#ffca2d";
+      if(name.indexOf("quarto") >= 0) return "#bb6cff";
+      if(name.indexOf("banheiro") >= 0) return "#22b8ff";
+      if(name.indexOf("garagem") >= 0) return "#aab4c4";
+      if(name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return "#29f07d";
+      return "var(--cyan)";
+    }
+
+    function realStatus(env){
+      if(typeof getEnvRealStatus === "function") return getEnvRealStatus(env);
+      if(typeof isEnvActuallyOnline === "function"){
+        return env.status === "alert" ? "alert" : (isEnvActuallyOnline(env) ? "online" : "offline");
+      }
+      return env.status === "alert" ? "alert" : (env.status === "online" ? "online" : "offline");
     }
 
     envs.forEach(function(env, idx){
-      var angle = (Math.PI*2 / n) * idx - Math.PI/2;
-      var x = centerX + radiusX * Math.cos(angle);
-      var y = centerY + radiusY * Math.sin(angle);
+      var sl = slotFor(env, idx);
+      var x = w * sl.x;
+      var y = h * sl.y;
 
       if(lines){
         var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -4229,34 +4543,37 @@ input, select{font-family:inherit; color:var(--text);}
       }
 
       var node = document.createElement("div");
-      var realOnline = isEnvActuallyOnline(env);
-      var statusClass = getEnvRealStatus(env);
+      var statusClass = realStatus(env);
       var lightOn = !!(env.lighting && env.lighting.on);
 
-      node.className = "core-node " + statusClass + (lightOn ? " light-on" : "");
+      node.className = "core-node " + statusClass + (lightOn ? " light-on" : "") + " pos-" + sl.pos;
       node.style.left = x + "px";
       node.style.top = y + "px";
       node.style.color = envColor(env);
 
-      node.title = env.name + " — " + (statusClass === "alert" ? "ALERTA" : (realOnline ? "Online" : "Offline")) + " — Luz " + (lightOn ? "acesa" : "apagada");
+      node.title = env.name + " — " + (statusClass === "alert" ? "ALERTA" : (statusClass === "online" ? "Online" : "Offline")) + " — Luz " + (lightOn ? "acesa" : "apagada");
 
       node.innerHTML =
         '<span class="core-env-icon">'+envIcon(env)+'</span>'+
         '<span class="node-text">'+
           '<span class="node-name">'+escapeHtml(env.name || "Ambiente")+'</span>'+
-          '<span class="node-state">'+(!realOnline && statusClass !== "alert" ? "OFFLINE" : (lightOn ? "LUZ ON" : "ONLINE"))+'</span>'+
+          '<span class="node-state">'+(statusClass === "offline" ? "OFF" : (lightOn ? "ON" : "ON"))+'</span>'+
         '</span>';
 
       stage.appendChild(node);
     });
 
-    var onlineCount = envs.filter(function(e){return getEnvRealStatus(e) !== "offline";}).length;
+    var onlineCount = envs.filter(function(e){
+      var s = realStatus(e);
+      return s === "online" || s === "alert";
+    }).length;
+
     var countEl = document.getElementById("coreOnlineCount");
     if(countEl) countEl.textContent = onlineCount + "/" + envs.length;
 
     var aiStatus = document.getElementById("coreAiStatus");
     if(aiStatus){
-      var alerts = envs.filter(function(e){return e.status === "alert";}).length;
+      var alerts = envs.filter(function(e){return realStatus(e) === "alert";}).length;
       if(alerts > 0) aiStatus.textContent = "Atenção necessária";
       else if(envs.length === 0) aiStatus.textContent = "Aguardando módulos";
       else if(onlineCount === envs.length) aiStatus.textContent = "Residência segura";
