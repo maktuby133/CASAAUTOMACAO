@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v48.1 Caixa Online Corrigida</title>
+<title>SMART HOME AI CONTROL - v48.2 Ajuste Valor Nível</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -2843,6 +2843,33 @@ input, select{font-family:inherit; color:var(--text);}
 .dash-v2-tank-card.tank-online::after{display:none!important;content:none!important;}
 .dash-v2-tank-card.tank-online #dashTankStatus{color:var(--green)!important;}
 .dash-v2-tank-card.tank-online .dash-v2-card-foot{color:var(--text-dim)!important;background:rgba(0,0,0,.18)!important;}
+
+
+/* V48.2 - Ajuste do valor do nível */
+.dash-v2-tank-value,
+#dashTankLevel{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:6 !important;
+  font-size:inherit !important;
+  line-height:1 !important;
+  pointer-events:none !important;
+  text-shadow:0 0 8px rgba(0,0,0,.8),0 0 12px rgba(0,0,0,.6) !important;
+  mix-blend-mode:normal !important;
+}
+
+.dash-v2-water{
+  z-index:2 !important;
+}
+.dash-v2-water::before,
+.dash-v2-water::after{
+  z-index:3 !important;
+}
+.dash-v2-tank{
+  position:relative !important;
+}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
