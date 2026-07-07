@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v48.0</title>
+<title>SMART HOME AI CONTROL - v48.1 Caixa Online Corrigida</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -2837,6 +2837,12 @@ input, select{font-family:inherit; color:var(--text);}
 @keyframes v48SunGlow{0%,100%{filter:drop-shadow(0 0 10px rgba(255,180,67,.55))}50%{filter:drop-shadow(0 0 22px rgba(255,180,67,.95))}}
 @keyframes v48CloudDrift{0%,100%{transform:translateX(-3px)}50%{transform:translateX(5px)}}
 @keyframes v48RainShake{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+
+
+/* V48.1 — se a caixa estiver online, nunca mostrar visual de sem comunicação */
+.dash-v2-tank-card.tank-online::after{display:none!important;content:none!important;}
+.dash-v2-tank-card.tank-online #dashTankStatus{color:var(--green)!important;}
+.dash-v2-tank-card.tank-online .dash-v2-card-foot{color:var(--text-dim)!important;background:rgba(0,0,0,.18)!important;}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
@@ -6847,6 +6853,7 @@ input, select{font-family:inherit; color:var(--text);}
 
 
 
+
 <script id="v48-water-card-final">
 (function(){
   function toDate(v){
@@ -6857,7 +6864,12 @@ input, select{font-family:inherit; color:var(--text);}
 
   function num(v){
     if(typeof v === "number" && isFinite(v)) return v;
-    if(typeof v === "string" && v.trim() !== "" && isFinite(Number(v))) return Number(v);
+    if(typeof v === "string"){
+      var s = v.trim().replace(",", ".");
+      if(s !== "" && isFinite(Number(s))) return Number(s);
+      var m = s.match(/-?\d+(\.\d+)?/);
+      if(m && isFinite(Number(m[0]))) return Number(m[0]);
+    }
     return null;
   }
 
@@ -6866,27 +6878,18 @@ input, select{font-family:inherit; color:var(--text);}
     if(typeof v === "number") return v !== 0;
     if(typeof v === "string"){
       var s = v.trim().toLowerCase();
-      if(["1","true","on","ligado","ligada","sim"].indexOf(s) >= 0) return true;
-      if(["0","false","off","desligado","desligada","nao","não"].indexOf(s) >= 0) return false;
+      if(["1","true","on","ligado","ligada","sim","auto"].indexOf(s) >= 0) return true;
+      if(["0","false","off","desligado","desligada","nao","não","manual"].indexOf(s) >= 0) return false;
     }
     return false;
   }
 
-  function getWaterSource(){
+  function getFirstWaterSource(){
     try{
       if(typeof state === "undefined") return null;
-
       if(state.waterTank) return state.waterTank;
       if(state.waterReservoir) return state.waterReservoir;
-
-      var lists = [
-        state.waterReservoirs,
-        state.waterTanks,
-        state.tanks,
-        state.waterDevices,
-        state.reservoirs
-      ];
-
+      var lists = [state.waterReservoirs,state.waterTanks,state.tanks,state.waterDevices,state.reservoirs];
       for(var i=0;i<lists.length;i++){
         if(Array.isArray(lists[i]) && lists[i].length) return lists[i][0];
       }
@@ -6894,46 +6897,56 @@ input, select{font-family:inherit; color:var(--text);}
     return null;
   }
 
-  function sourceHasData(src){
-    if(!src) return false;
-    return (
-      src.level !== undefined || src.nivel !== undefined || src.percent !== undefined ||
-      src.percentage !== undefined || src.percentual !== undefined ||
-      src.liters !== undefined || src.litros !== undefined || src.volume !== undefined ||
-      src.distance !== undefined || src.distancia !== undefined
-    );
-  }
-
-  function sourceOnline(src){
-    if(!src || !sourceHasData(src)) return false;
-
-    /* Usa primeiro o status real do próprio sistema da caixa, se existir.
-       Não cria timeout paralelo que conflita com o restante do painel. */
-    if(src.online === true || src.connected === true || src.status === "online") return true;
-    if(src.online === false || src.connected === false || src.status === "offline") return false;
-
-    /* Se recebeu dados válidos e o sistema não marcou offline, considera online.
-       Isso corrige o caso em que havia sinal/nível, mas o card forçava OFFLINE. */
-    return true;
+  function readVisibleLevel(){
+    var ids = ["dashTankLevel","tankLevel","waterLevel","dashWaterLevelMini"];
+    for(var i=0;i<ids.length;i++){
+      var el = document.getElementById(ids[i]);
+      var n = el ? num(el.textContent) : null;
+      if(n !== null && n >= 0 && n <= 100) return n;
+    }
+    var fill = document.getElementById("dashTankFill");
+    if(fill){
+      var n2 = num(fill.style.height || "");
+      if(n2 !== null && n2 >= 0 && n2 <= 100) return n2;
+    }
+    return null;
   }
 
   function getSnapshot(){
-    var src = getWaterSource();
-    var s = {online:false, level:null, pump:false, updated:null};
+    var src = getFirstWaterSource();
+    var snap = {level:null,pump:false,online:false,updated:null};
 
-    if(!src) return s;
+    if(src){
+      snap.level = num(src.level ?? src.nivel ?? src.percent ?? src.percentage ?? src.percentual ?? src.porcentagem);
+      snap.pump = bool(src.pumpOn ?? src.bombaLigada ?? src.bomba_on ?? src.pump ?? src.bomba);
+      snap.updated = src.lastSeen || src.updatedAt || src.lastUpdate || src.last || src.timestamp || null;
 
-    s.level = num(src.level ?? src.nivel ?? src.percent ?? src.percentage ?? src.percentual);
-    s.pump = bool(src.pumpOn ?? src.bombaLigada ?? src.bomba_on ?? src.pump ?? src.bomba);
-    s.updated = src.lastSeen || src.updatedAt || src.lastUpdate || src.last || null;
-    s.online = sourceOnline(src);
+      var statusText = String(src.status ?? src.estado ?? "").toLowerCase();
+      var explicitOnline = src.online === true || src.connected === true || statusText === "online" || statusText === "ok" || statusText === "conectado";
+      var explicitOffline = src.online === false || src.connected === false || statusText === "offline" || statusText === "desconectado";
 
-    if(s.level === null || s.level < 0 || s.level > 100) s.online = false;
+      var validLevel = snap.level !== null && snap.level >= 0 && snap.level <= 100;
 
-    return s;
+      // CORREÇÃO: se há nível válido, o dashboard não deve forçar OFFLINE,
+      // a menos que venha um offline explícito do próprio objeto da caixa.
+      snap.online = validLevel && !explicitOffline;
+      if(explicitOnline && validLevel) snap.online = true;
+    }
+
+    // Fallback: se o código principal já colocou nível na tela,
+    // respeita esse dado e remove o falso "sem comunicação".
+    if(!snap.online){
+      var visible = readVisibleLevel();
+      if(visible !== null){
+        snap.level = visible;
+        snap.online = true;
+      }
+    }
+
+    return snap;
   }
 
-  function text(id, value){
+  function setText(id,value){
     var el = document.getElementById(id);
     if(el && el.textContent !== value) el.textContent = value;
   }
@@ -6949,7 +6962,7 @@ input, select{font-family:inherit; color:var(--text);}
     var pump = document.getElementById("dashPumpState");
 
     var s = getSnapshot();
-    var valid = s.online === true && s.level !== null;
+    var valid = s.online === true && s.level !== null && s.level >= 0 && s.level <= 100;
 
     card.classList.toggle("tank-offline", !valid);
     card.classList.toggle("tank-online", valid);
@@ -6962,10 +6975,11 @@ input, select{font-family:inherit; color:var(--text);}
       if(pump) pump.textContent = s.pump ? "BOMBA ON" : "BOMBA OFF";
 
       var d = toDate(s.updated);
-      if(updated) updated.textContent = d ? "Atualizado: " + d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "Atualizado em tempo real";
+      if(updated) updated.textContent = d ? "Atualizado: " + d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "Caixa em comunicação";
 
-      text("dashWaterLevelMini", pct + "%");
-      text("dashWaterPumpMini", s.pump ? "ON" : "OFF");
+      setText("dashWaterLevelMini", pct + "%");
+      setText("dashWaterPumpMini", s.pump ? "ON" : "OFF");
+      setText("dashWaterUpdated", "Caixa em comunicação");
     }else{
       if(fill) fill.style.height = "0%";
       if(levelEl) levelEl.textContent = "--%";
@@ -6973,11 +6987,11 @@ input, select{font-family:inherit; color:var(--text);}
       if(pump) pump.textContent = "BOMBA --";
       if(updated) updated.textContent = "Sem comunicação com a caixa";
 
-      text("dashWaterLevelMini", "--%");
-      text("dashWaterPumpMini", "--");
-      text("dashWaterToday", "—");
-      text("dashWaterAvg", "— L");
-      text("dashWaterUpdated", "Sem comunicação");
+      setText("dashWaterLevelMini", "--%");
+      setText("dashWaterPumpMini", "--");
+      setText("dashWaterToday", "—");
+      setText("dashWaterAvg", "— L");
+      setText("dashWaterUpdated", "Sem comunicação");
     }
   }
 
@@ -7009,7 +7023,7 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(tick, 500);
+    setTimeout(tick, 400);
     setInterval(tick, 700);
   });
 })();
