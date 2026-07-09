@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v48.4 Núcleo Lâmpada</title>
+<title>SMART HOME AI CONTROL - v48.5 Núcleo Lâmpada Corrigido</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -3428,6 +3428,24 @@ input, select{font-family:inherit; color:var(--text);}
     height:80px !important;
     margin:-40px -48px !important;
   }
+}
+
+
+/* V48.5 — correção leitura temp/umidade e estado ON/OFF lâmpada */
+.core-stage-v46 .core-node .node-metrics{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+.core-stage-v46 .core-node:not(.light-on) .node-state{
+  color:#9aa8bb!important;
+}
+.core-stage-v46 .core-node:not(.light-on) .core-env-icon,
+.core-stage-v46 .core-node.offline .core-env-icon{
+  color:#7d8796!important;
+}
+.core-stage-v46 .core-node.light-on .node-state{
+  color:#ffe13f!important;
 }
 
 </style>
@@ -7616,6 +7634,7 @@ input, select{font-family:inherit; color:var(--text);}
 </script>
 
 
+
 <script id="v484-core-lamp-rooms">
 (function(){
   function normName(name){
@@ -7624,7 +7643,25 @@ input, select{font-family:inherit; color:var(--text);}
 
   function valNum(v){
     if(typeof v === "number" && isFinite(v)) return v;
-    if(typeof v === "string" && v.trim() !== "" && isFinite(Number(v.replace(",", ".")))) return Number(v.replace(",", "."));
+    if(typeof v === "string"){
+      var s = v.trim().replace(",", ".");
+      if(s !== "" && isFinite(Number(s))) return Number(s);
+      var m = s.match(/-?\d+(\.\d+)?/);
+      if(m) return Number(m[0]);
+    }
+    return null;
+  }
+
+  function getByPath(obj, paths){
+    for(var i=0;i<paths.length;i++){
+      var parts = paths[i].split(".");
+      var cur = obj;
+      for(var j=0;j<parts.length;j++){
+        if(cur == null) break;
+        cur = cur[parts[j]];
+      }
+      if(cur !== undefined && cur !== null && cur !== "") return cur;
+    }
     return null;
   }
 
@@ -7635,29 +7672,91 @@ input, select{font-family:inherit; color:var(--text);}
   }
 
   function tempOf(env){
-    var v = valNum(env.temperature ?? env.temp ?? env.temperatura ?? env.sensor?.temperature ?? env.climate?.temperature);
-    if(v === null) return "--";
-    return v.toFixed(1) + "°C";
+    var v = getByPath(env, [
+      "temperature","temp","temperatura",
+      "sensor.temperature","sensor.temp","sensor.temperatura",
+      "sensors.temperature","sensors.temp","sensors.temperatura",
+      "climate.temperature","climate.temp","climate.temperatura",
+      "readings.temperature","readings.temp","readings.temperatura",
+      "data.temperature","data.temp","data.temperatura",
+      "dht.temperature","dht.temp","dht.temperatura",
+      "lastPayload.temperature","lastPayload.temp","lastPayload.temperatura",
+      "lastData.temperature","lastData.temp","lastData.temperatura"
+    ]);
+    var n = valNum(v);
+    return n === null ? "--" : n.toFixed(1) + "°C";
   }
 
   function humOf(env){
-    var v = valNum(env.humidity ?? env.umidade ?? env.hum ?? env.sensor?.humidity ?? env.climate?.humidity);
-    if(v === null) return "--";
-    return Math.round(v) + "%";
+    var v = getByPath(env, [
+      "humidity","hum","umidade",
+      "sensor.humidity","sensor.hum","sensor.umidade",
+      "sensors.humidity","sensors.hum","sensors.umidade",
+      "climate.humidity","climate.hum","climate.umidade",
+      "readings.humidity","readings.hum","readings.umidade",
+      "data.humidity","data.hum","data.umidade",
+      "dht.humidity","dht.hum","dht.umidade",
+      "lastPayload.humidity","lastPayload.hum","lastPayload.umidade",
+      "lastData.humidity","lastData.hum","lastData.umidade"
+    ]);
+    var n = valNum(v);
+    return n === null ? "--" : Math.round(n) + "%";
   }
 
-  function slotFor(env, index, total){
-    var name = normName(env.name);
+  function lightIsOn(env){
+    var candidates = [
+      getByPath(env, ["lighting.on"]),
+      getByPath(env, ["light.on"]),
+      getByPath(env, ["lamp.on"]),
+      getByPath(env, ["luz.on"]),
+      getByPath(env, ["relay.on"]),
+      getByPath(env, ["rele.on"]),
+      getByPath(env, ["output.on"]),
+      env.lightOn, env.lampOn, env.luzLigada, env.luz,
+      env.light, env.relay, env.rele, env.lighting, env.iluminacao,
+      getByPath(env, ["lastPayload.light"]),
+      getByPath(env, ["lastPayload.luz"]),
+      getByPath(env, ["lastPayload.relay"]),
+      getByPath(env, ["lastPayload.rele"]),
+      getByPath(env, ["lastPayload.lighting"]),
+      getByPath(env, ["data.light"]),
+      getByPath(env, ["data.luz"]),
+      getByPath(env, ["data.relay"]),
+      getByPath(env, ["data.rele"]),
+      getByPath(env, ["data.lighting"])
+    ];
 
+    for(var i=0;i<candidates.length;i++){
+      var v = candidates[i];
+      if(v === undefined || v === null) continue;
+      if(typeof v === "boolean") return v;
+      if(typeof v === "number") return v !== 0;
+      if(typeof v === "string"){
+        var s = v.trim().toLowerCase();
+        if(["1","true","on","ligado","ligada","acesa","open","high"].indexOf(s) >= 0) return true;
+        if(["0","false","off","desligado","desligada","apagada","closed","low"].indexOf(s) >= 0) return false;
+      }
+      if(typeof v === "object" && v.on !== undefined) return !!v.on;
+      if(typeof v === "object" && v.state !== undefined){
+        var st = String(v.state).toLowerCase();
+        if(st === "on" || st === "ligado") return true;
+        if(st === "off" || st === "desligado") return false;
+      }
+    }
+    return false;
+  }
+
+  function slotFor(env, index){
+    var name = normName(env.name);
     var base8 = {
-      "sala":       {x:.50,y:.08,dotX:"50%",dotY:"100%",color:"#39e6a4"},
-      "cozinha":    {x:.77,y:.26,dotX:"0%", dotY:"70%", color:"#ffcf2f"},
-      "escritorio": {x:.83,y:.52,dotX:"0%", dotY:"50%", color:"#9aa8bb"},
-      "lavanderia": {x:.72,y:.78,dotX:"0%", dotY:"8%",  color:"#9aa8bb"},
-      "area":       {x:.50,y:.88,dotX:"50%",dotY:"0%",  color:"#39e6a4"},
-      "banheiro":   {x:.28,y:.78,dotX:"100%",dotY:"8%", color:"#9aa8bb"},
-      "quarto2":    {x:.17,y:.52,dotX:"100%",dotY:"50%",color:"#39e6a4"},
-      "quarto":     {x:.23,y:.26,dotX:"100%",dotY:"70%",color:"#9aa8bb"}
+      "sala":       {x:.50,y:.08,dotX:"50%", dotY:"100%"},
+      "cozinha":    {x:.77,y:.26,dotX:"0%",  dotY:"70%"},
+      "escritorio": {x:.83,y:.52,dotX:"0%",  dotY:"50%"},
+      "lavanderia": {x:.72,y:.78,dotX:"0%",  dotY:"8%"},
+      "area":       {x:.50,y:.88,dotX:"50%", dotY:"0%"},
+      "banheiro":   {x:.28,y:.78,dotX:"100%",dotY:"8%"},
+      "quarto2":    {x:.17,y:.52,dotX:"100%",dotY:"50%"},
+      "quarto":     {x:.23,y:.26,dotX:"100%",dotY:"70%"}
     };
 
     if(name.indexOf("sala") >= 0) return base8.sala;
@@ -7669,14 +7768,11 @@ input, select{font-family:inherit; color:var(--text);}
     if(name.indexOf("quarto 2") >= 0 || name.indexOf("quarto2") >= 0) return base8.quarto2;
     if(name.indexOf("quarto") >= 0) return base8.quarto;
 
-    var positions = [
-      base8.sala, base8.cozinha, base8.escritorio, base8.lavanderia,
-      base8.area, base8.banheiro, base8.quarto2, base8.quarto
-    ];
+    var positions = [base8.sala, base8.cozinha, base8.escritorio, base8.lavanderia, base8.area, base8.banheiro, base8.quarto2, base8.quarto];
     return positions[index % positions.length];
   }
 
-  window.renderCore = function(){
+  function renderCoreLamp(){
     var stage = document.getElementById("coreStage");
     if(!stage) return;
 
@@ -7688,21 +7784,20 @@ input, select{font-family:inherit; color:var(--text);}
     var rect = stage.getBoundingClientRect();
     var w = rect.width || stage.clientWidth || 620;
     var h = rect.height || stage.clientHeight || 360;
-
     var show = envs.slice(0, 8);
 
     show.forEach(function(env, idx){
-      var slot = slotFor(env, idx, show.length);
+      var slot = slotFor(env, idx);
       var st = realStatus(env);
-      var lightOn = !!(env.lighting && env.lighting.on);
+      var lightOn = lightIsOn(env);
       var node = document.createElement("div");
 
-      node.className = "core-node " + st + (lightOn ? " light-on" : "");
+      node.className = "core-node " + st + (lightOn && st !== "offline" ? " light-on" : "");
       node.style.left = (w * slot.x) + "px";
       node.style.top = (h * slot.y) + "px";
       node.style.setProperty("--dot-x", slot.dotX);
       node.style.setProperty("--dot-y", slot.dotY);
-      node.style.setProperty("--orbit-color", lightOn ? "#ffcf2f" : (st === "online" ? "#39e6a4" : "#9aa8bb"));
+      node.style.setProperty("--orbit-color", lightOn && st !== "offline" ? "#ffcf2f" : (st === "online" ? "#39e6a4" : "#9aa8bb"));
 
       node.innerHTML =
         '<span class="node-name">'+escapeHtml(env.name || "Ambiente")+'</span>'+
@@ -7734,16 +7829,17 @@ input, select{font-family:inherit; color:var(--text);}
     legend.className = "core-legend-v484";
     legend.innerHTML =
       '<span style="color:#39e6a4"><i></i> ONLINE</span>'+
-      '<span style="color:#ffcf2f"><i></i> ATIVO</span>'+
-      '<span style="color:#9aa8bb"><i></i> INATIVO</span>'+
+      '<span style="color:#ffcf2f"><i></i> LUZ ON</span>'+
+      '<span style="color:#9aa8bb"><i></i> OFF</span>'+
       '<span style="color:#ff4d6a"><i></i> FALHA</span>';
     stage.appendChild(legend);
-  };
+  }
+
+  window.renderCore = renderCoreLamp;
 
   document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(function(){
-      try{ window.renderCore(); }catch(e){}
-    }, 600);
+    setTimeout(renderCoreLamp, 500);
+    setInterval(renderCoreLamp, 1000);
   });
 })();
 </script>
