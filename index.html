@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>SMART HOME AI CONTROL - v48.5 Núcleo Lâmpada Corrigido</title>
+<title>SMART HOME AI CONTROL - v48.6 Núcleo Elegante</title>
 <meta name="description" content="Central de comando residencial inteligente — ambientes, dispositivos ESP32, meteorologia e alertas em tempo real.">
 
 <!-- PWA: instalável como app no celular -->
@@ -3447,6 +3447,48 @@ input, select{font-family:inherit; color:var(--text);}
 .core-stage-v46 .core-node.light-on .node-state{
   color:#ffe13f!important;
 }
+
+
+/* V48.6 NUCLEO ELEGANTE TECNOLOGICO */
+.dash-v2-core-card{overflow:hidden!important;background:radial-gradient(circle at 50% 45%,rgba(45,212,255,.10),transparent 36%),linear-gradient(180deg,rgba(9,22,37,.94),rgba(3,10,18,.98))!important}
+.core-stage-v46{position:relative!important;height:calc(100% - 68px)!important;min-height:338px!important;margin:0 auto 30px!important;overflow:visible!important}
+.core-stage-v46>.core-ring,.core-stage-v46>.core-particles-v46{display:none!important}
+.core-lines-v46{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important;z-index:2!important;pointer-events:none!important}
+.core-lines-v46 path{fill:none!important;stroke:rgba(45,212,255,.24)!important;stroke-width:1.15!important;stroke-linecap:round!important;filter:drop-shadow(0 0 5px rgba(45,212,255,.35))!important}
+.core-lines-v46 path.active{stroke:rgba(255,207,47,.62)!important;stroke-width:1.8!important;stroke-dasharray:7 12!important;animation:v486Flow 2.4s linear infinite!important}
+@keyframes v486Flow{to{stroke-dashoffset:-110}}
+.core-stage-v46:before{content:''!important;position:absolute!important;left:50%!important;top:50%!important;width:286px!important;height:286px!important;transform:translate(-50%,-50%)!important;border-radius:50%!important;background:radial-gradient(circle,transparent 0 35%,rgba(45,212,255,.30) 35.4%,transparent 36.1%),radial-gradient(circle,transparent 0 52%,rgba(45,212,255,.18) 52.4%,transparent 53.1%),radial-gradient(circle,transparent 0 70%,rgba(124,92,255,.18) 70.4%,transparent 71.1%),radial-gradient(circle,transparent 0 84%,rgba(45,212,255,.24) 84.4%,transparent 85.1%)!important;animation:v486Breath 5s ease-in-out infinite!important;z-index:1!important}
+.core-stage-v46:after{content:''!important;position:absolute!important;left:50%!important;top:50%!important;width:220px!important;height:220px!important;transform:translate(-50%,-50%)!important;border-radius:50%!important;border:1px dashed rgba(45,212,255,.20)!important;animation:spin 52s linear infinite reverse!important;z-index:1!important}
+@keyframes v486Breath{0%,100%{opacity:.78}50%{opacity:1;filter:drop-shadow(0 0 14px rgba(45,212,255,.22))}}
+.core-center-v46{width:136px!important;height:136px!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;border-radius:50%!important;background:radial-gradient(circle at 50% 42%,rgba(45,212,255,.22),rgba(5,18,32,.95) 60%,rgba(2,7,13,.99))!important;border:1px solid rgba(45,212,255,.62)!important;box-shadow:0 0 36px rgba(45,212,255,.25),inset 0 0 26px rgba(45,212,255,.15)!important;z-index:5!important;animation:v486Core 4s ease-in-out infinite!important}
+@keyframes v486Core{0%,100%{filter:drop-shadow(0 0 6px rgba(45,212,255,.25))}50%{filter:drop-shadow(0 0 15px rgba(45,212,255,.55))}}
+.core-center-v46 .ai-label,.core-center-v46 .ai-main,.core-center-v46 .ai-status{display:none!important}
+.core-center-v46 .small{display:block!important;text-align:center!important;font-family:var(--font-mono)!important;font-size:8.5px!important;line-height:1.35!important;letter-spacing:1.1px!important;color:#9fb5cc!important;text-transform:uppercase!important}
+.core-center-v46 .small:before{content:'⌂'!important;display:block!important;font-family:var(--font-display)!important;font-size:31px!important;line-height:1!important;margin-bottom:7px!important;color:var(--cyan)!important;text-shadow:0 0 16px rgba(45,212,255,.76)!important}
+.core-center-v46 .small #coreOnlineCount{display:block!important;color:var(--green)!important;font-family:var(--font-display)!important;font-size:18px!important;line-height:1!important;margin-bottom:4px!important}
+.core-center-v46 .small:after{content:'DISPOSITIVOS\A ONLINE'!important;white-space:pre!important}
+.core-stage-v46 .core-node{position:absolute!important;width:112px!important;height:82px!important;margin:-41px -56px!important;border-radius:16px!important;padding:8px!important;background:radial-gradient(circle at 50% 18%,rgba(45,212,255,.08),transparent 50%),linear-gradient(180deg,rgba(7,18,31,.96),rgba(2,8,15,.98))!important;border:1px solid rgba(45,212,255,.27)!important;box-shadow:0 0 16px rgba(45,212,255,.11),inset 0 0 14px rgba(45,212,255,.045)!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:3px!important;z-index:7!important;animation:v486Float 5.2s ease-in-out infinite!important;animation-delay:var(--float-delay,0s)!important}
+.core-stage-v46 .core-node:hover{transform:translateY(-3px) scale(1.035)!important;border-color:rgba(45,212,255,.55)!important;box-shadow:0 0 26px rgba(45,212,255,.22),inset 0 0 18px rgba(45,212,255,.07)!important}
+@keyframes v486Float{0%,100%{margin-top:-41px}50%{margin-top:-45px}}
+.core-stage-v46 .node-name{position:static!important;width:100%!important;max-width:96px!important;text-align:center!important;font-family:var(--font-head)!important;font-size:11.5px!important;line-height:1!important;font-weight:900!important;letter-spacing:.35px!important;color:#fff!important;text-transform:uppercase!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-shadow:0 0 9px rgba(0,0,0,.95)!important}
+.core-stage-v46 .core-env-icon{position:relative!important;width:31px!important;height:35px!important;min-width:31px!important;margin:3px 0 0!important;border:0!important;box-shadow:none!important;font-size:0!important;color:#768394!important}
+.core-stage-v46 .core-env-icon:before{content:''!important;position:absolute!important;left:50%!important;top:1px!important;width:22px!important;height:22px!important;transform:translateX(-50%)!important;border-radius:50% 50% 43% 43%!important;border:2px solid currentColor!important;background:rgba(255,255,255,.018)!important}
+.core-stage-v46 .core-env-icon:after{content:''!important;position:absolute!important;left:50%!important;top:24px!important;width:14px!important;height:10px!important;transform:translateX(-50%)!important;border:2px solid currentColor!important;border-top:0!important;border-radius:0 0 5px 5px!important;box-shadow:0 5px 0 -2px currentColor,0 8px 0 -3px currentColor!important}
+.core-stage-v46 .node-text{display:flex!important;flex-direction:column!important;align-items:center!important;width:100%!important}
+.core-stage-v46 .node-state{font-family:var(--font-head)!important;font-size:11.5px!important;line-height:1!important;font-weight:900!important;color:#8c98aa!important;margin-top:1px!important}
+.core-stage-v46 .node-metrics{display:flex!important;justify-content:center!important;gap:7px!important;width:100%!important;margin-top:6px!important;padding-top:5px!important;border-top:1px solid rgba(140,180,220,.10)!important;font-family:var(--font-mono)!important;font-size:9.2px!important;line-height:1!important;color:#d6e0ed!important;white-space:nowrap!important}
+.core-stage-v46 .node-metrics .hum{color:var(--cyan)!important}
+.core-stage-v46 .core-node.light-on .core-env-icon,.core-stage-v46 .core-node.light-on .node-state{color:#ffdb36!important}
+.core-stage-v46 .core-node.light-on .core-env-icon:before{background:rgba(255,219,54,.10)!important;box-shadow:0 0 13px rgba(255,219,54,.95),0 0 30px rgba(255,180,67,.56),inset 0 0 8px rgba(255,219,54,.28)!important;animation:v486Lamp 1.45s ease-in-out infinite!important}
+.core-stage-v46 .core-node:not(.light-on) .core-env-icon{color:#707b8b!important;filter:grayscale(.35)!important}
+.core-stage-v46 .core-node.offline{opacity:.58!important}
+.core-stage-v46 .core-node.alert{border-color:rgba(255,77,106,.55)!important}
+@keyframes v486Lamp{0%,100%{filter:brightness(1);transform:translateX(-50%) scale(.96)}50%{filter:brightness(1.32);transform:translateX(-50%) scale(1.08)}}
+.core-stage-v46 .core-node:before{content:''!important;position:absolute!important;width:9px!important;height:9px!important;border-radius:50%!important;background:var(--orbit-color,#8d97a6)!important;box-shadow:0 0 10px var(--orbit-color,#8d97a6)!important;left:var(--dot-x,50%)!important;top:var(--dot-y,50%)!important;transform:translate(-50%,-50%)!important;z-index:8!important;animation:v486Dot 2.2s ease-in-out infinite!important}
+.core-stage-v46 .core-node:after{display:none!important}
+@keyframes v486Dot{0%,100%{opacity:.65;transform:translate(-50%,-50%) scale(.88)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.24)}}
+.core-legend-v486{position:absolute!important;left:50%!important;bottom:-9px!important;transform:translateX(-50%)!important;display:flex!important;gap:16px!important;font-family:var(--font-mono)!important;font-size:9.5px!important;color:var(--text-dim)!important;z-index:8!important;white-space:nowrap!important}.core-legend-v486 span{display:inline-flex!important;align-items:center!important;gap:5px!important}.core-legend-v486 i{width:8px!important;height:8px!important;border-radius:50%!important;display:inline-block!important;box-shadow:0 0 8px currentColor!important}
+@media(max-width:900px){.core-stage-v46{min-height:520px!important;height:520px!important}.core-stage-v46:before{width:224px!important;height:224px!important}.core-stage-v46:after{width:182px!important;height:182px!important}.core-center-v46{width:112px!important;height:112px!important}.core-stage-v46 .core-node{width:104px!important;height:78px!important;margin:-39px -52px!important}@keyframes v486Float{0%,100%{margin-top:-39px}50%{margin-top:-42px}}.core-stage-v46 .node-name{font-size:10.2px!important}.core-stage-v46 .node-metrics{font-size:8px!important;gap:5px!important}.core-legend-v486{bottom:-12px!important;gap:8px!important;font-size:8px!important}}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
@@ -7635,212 +7677,24 @@ input, select{font-family:inherit; color:var(--text);}
 
 
 
-<script id="v484-core-lamp-rooms">
+
+<script id="v486-core-elegant">
 (function(){
-  function normName(name){
-    return String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-  }
-
-  function valNum(v){
-    if(typeof v === "number" && isFinite(v)) return v;
-    if(typeof v === "string"){
-      var s = v.trim().replace(",", ".");
-      if(s !== "" && isFinite(Number(s))) return Number(s);
-      var m = s.match(/-?\d+(\.\d+)?/);
-      if(m) return Number(m[0]);
-    }
-    return null;
-  }
-
-  function getByPath(obj, paths){
-    for(var i=0;i<paths.length;i++){
-      var parts = paths[i].split(".");
-      var cur = obj;
-      for(var j=0;j<parts.length;j++){
-        if(cur == null) break;
-        cur = cur[parts[j]];
-      }
-      if(cur !== undefined && cur !== null && cur !== "") return cur;
-    }
-    return null;
-  }
-
-  function realStatus(env){
-    if(typeof getEnvRealStatus === "function") return getEnvRealStatus(env);
-    if(typeof isEnvActuallyOnline === "function") return env.status === "alert" ? "alert" : (isEnvActuallyOnline(env) ? "online" : "offline");
-    return env.status === "alert" ? "alert" : (env.status === "online" ? "online" : "offline");
-  }
-
-  function tempOf(env){
-    var v = getByPath(env, [
-      "temperature","temp","temperatura",
-      "sensor.temperature","sensor.temp","sensor.temperatura",
-      "sensors.temperature","sensors.temp","sensors.temperatura",
-      "climate.temperature","climate.temp","climate.temperatura",
-      "readings.temperature","readings.temp","readings.temperatura",
-      "data.temperature","data.temp","data.temperatura",
-      "dht.temperature","dht.temp","dht.temperatura",
-      "lastPayload.temperature","lastPayload.temp","lastPayload.temperatura",
-      "lastData.temperature","lastData.temp","lastData.temperatura"
-    ]);
-    var n = valNum(v);
-    return n === null ? "--" : n.toFixed(1) + "°C";
-  }
-
-  function humOf(env){
-    var v = getByPath(env, [
-      "humidity","hum","umidade",
-      "sensor.humidity","sensor.hum","sensor.umidade",
-      "sensors.humidity","sensors.hum","sensors.umidade",
-      "climate.humidity","climate.hum","climate.umidade",
-      "readings.humidity","readings.hum","readings.umidade",
-      "data.humidity","data.hum","data.umidade",
-      "dht.humidity","dht.hum","dht.umidade",
-      "lastPayload.humidity","lastPayload.hum","lastPayload.umidade",
-      "lastData.humidity","lastData.hum","lastData.umidade"
-    ]);
-    var n = valNum(v);
-    return n === null ? "--" : Math.round(n) + "%";
-  }
-
-  function lightIsOn(env){
-    var candidates = [
-      getByPath(env, ["lighting.on"]),
-      getByPath(env, ["light.on"]),
-      getByPath(env, ["lamp.on"]),
-      getByPath(env, ["luz.on"]),
-      getByPath(env, ["relay.on"]),
-      getByPath(env, ["rele.on"]),
-      getByPath(env, ["output.on"]),
-      env.lightOn, env.lampOn, env.luzLigada, env.luz,
-      env.light, env.relay, env.rele, env.lighting, env.iluminacao,
-      getByPath(env, ["lastPayload.light"]),
-      getByPath(env, ["lastPayload.luz"]),
-      getByPath(env, ["lastPayload.relay"]),
-      getByPath(env, ["lastPayload.rele"]),
-      getByPath(env, ["lastPayload.lighting"]),
-      getByPath(env, ["data.light"]),
-      getByPath(env, ["data.luz"]),
-      getByPath(env, ["data.relay"]),
-      getByPath(env, ["data.rele"]),
-      getByPath(env, ["data.lighting"])
-    ];
-
-    for(var i=0;i<candidates.length;i++){
-      var v = candidates[i];
-      if(v === undefined || v === null) continue;
-      if(typeof v === "boolean") return v;
-      if(typeof v === "number") return v !== 0;
-      if(typeof v === "string"){
-        var s = v.trim().toLowerCase();
-        if(["1","true","on","ligado","ligada","acesa","open","high"].indexOf(s) >= 0) return true;
-        if(["0","false","off","desligado","desligada","apagada","closed","low"].indexOf(s) >= 0) return false;
-      }
-      if(typeof v === "object" && v.on !== undefined) return !!v.on;
-      if(typeof v === "object" && v.state !== undefined){
-        var st = String(v.state).toLowerCase();
-        if(st === "on" || st === "ligado") return true;
-        if(st === "off" || st === "desligado") return false;
-      }
-    }
-    return false;
-  }
-
-  function slotFor(env, index){
-    var name = normName(env.name);
-    var base8 = {
-      "sala":       {x:.50,y:.08,dotX:"50%", dotY:"100%"},
-      "cozinha":    {x:.77,y:.26,dotX:"0%",  dotY:"70%"},
-      "escritorio": {x:.83,y:.52,dotX:"0%",  dotY:"50%"},
-      "lavanderia": {x:.72,y:.78,dotX:"0%",  dotY:"8%"},
-      "area":       {x:.50,y:.88,dotX:"50%", dotY:"0%"},
-      "banheiro":   {x:.28,y:.78,dotX:"100%",dotY:"8%"},
-      "quarto2":    {x:.17,y:.52,dotX:"100%",dotY:"50%"},
-      "quarto":     {x:.23,y:.26,dotX:"100%",dotY:"70%"}
-    };
-
-    if(name.indexOf("sala") >= 0) return base8.sala;
-    if(name.indexOf("cozinha") >= 0) return base8.cozinha;
-    if(name.indexOf("escritorio") >= 0 || name.indexOf("office") >= 0) return base8.escritorio;
-    if(name.indexOf("lavanderia") >= 0) return base8.lavanderia;
-    if(name.indexOf("area") >= 0 || name.indexOf("externa") >= 0 || name.indexOf("jardim") >= 0) return base8.area;
-    if(name.indexOf("banheiro") >= 0) return base8.banheiro;
-    if(name.indexOf("quarto 2") >= 0 || name.indexOf("quarto2") >= 0) return base8.quarto2;
-    if(name.indexOf("quarto") >= 0) return base8.quarto;
-
-    var positions = [base8.sala, base8.cozinha, base8.escritorio, base8.lavanderia, base8.area, base8.banheiro, base8.quarto2, base8.quarto];
-    return positions[index % positions.length];
-  }
-
-  function renderCoreLamp(){
-    var stage = document.getElementById("coreStage");
-    if(!stage) return;
-
-    stage.querySelectorAll(".core-node").forEach(function(n){n.remove();});
-    var oldLegend = stage.querySelector(".core-legend-v484");
-    if(oldLegend) oldLegend.remove();
-
-    var envs = (typeof state !== "undefined" && state.environments) ? state.environments : [];
-    var rect = stage.getBoundingClientRect();
-    var w = rect.width || stage.clientWidth || 620;
-    var h = rect.height || stage.clientHeight || 360;
-    var show = envs.slice(0, 8);
-
-    show.forEach(function(env, idx){
-      var slot = slotFor(env, idx);
-      var st = realStatus(env);
-      var lightOn = lightIsOn(env);
-      var node = document.createElement("div");
-
-      node.className = "core-node " + st + (lightOn && st !== "offline" ? " light-on" : "");
-      node.style.left = (w * slot.x) + "px";
-      node.style.top = (h * slot.y) + "px";
-      node.style.setProperty("--dot-x", slot.dotX);
-      node.style.setProperty("--dot-y", slot.dotY);
-      node.style.setProperty("--orbit-color", lightOn && st !== "offline" ? "#ffcf2f" : (st === "online" ? "#39e6a4" : "#9aa8bb"));
-
-      node.innerHTML =
-        '<span class="node-name">'+escapeHtml(env.name || "Ambiente")+'</span>'+
-        '<span class="core-env-icon" aria-hidden="true"></span>'+
-        '<span class="node-text">'+
-          '<span class="node-state">'+(lightOn && st !== "offline" ? "ON" : "OFF")+'</span>'+
-          '<span class="node-metrics"><span>'+tempOf(env)+'</span><span class="hum">💧 '+humOf(env)+'</span></span>'+
-        '</span>';
-
-      stage.appendChild(node);
-    });
-
-    var onlineCount = envs.filter(function(e){
-      var s = realStatus(e);
-      return s === "online" || s === "alert";
-    }).length;
-
-    var countEl = document.getElementById("coreOnlineCount");
-    if(countEl) countEl.textContent = onlineCount + "/" + envs.length;
-
-    var aiStatus = document.getElementById("coreAiStatus");
-    if(aiStatus){
-      if(envs.length === 0) aiStatus.textContent = "Aguardando módulos";
-      else if(onlineCount === envs.length) aiStatus.textContent = "Residência segura";
-      else aiStatus.textContent = "Dispositivo offline";
-    }
-
-    var legend = document.createElement("div");
-    legend.className = "core-legend-v484";
-    legend.innerHTML =
-      '<span style="color:#39e6a4"><i></i> ONLINE</span>'+
-      '<span style="color:#ffcf2f"><i></i> LUZ ON</span>'+
-      '<span style="color:#9aa8bb"><i></i> OFF</span>'+
-      '<span style="color:#ff4d6a"><i></i> FALHA</span>';
-    stage.appendChild(legend);
-  }
-
-  window.renderCore = renderCoreLamp;
-
-  document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(renderCoreLamp, 500);
-    setInterval(renderCoreLamp, 1000);
-  });
+function nrm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+function val(v){if(typeof v==="number"&&isFinite(v))return v;if(typeof v==="string"){let s=v.trim().replace(",",".");if(s!==""&&isFinite(Number(s)))return Number(s);let m=s.match(/-?\d+(\.\d+)?/);if(m)return Number(m[0])}return null}
+function path(o,ps){for(let p of ps){let c=o;for(let k of p.split(".")){if(c==null)break;c=c[k]}if(c!==undefined&&c!==null&&c!=="")return c}return null}
+function st(e){if(typeof getEnvRealStatus==="function")return getEnvRealStatus(e);if(typeof isEnvActuallyOnline==="function")return e.status==="alert"?"alert":(isEnvActuallyOnline(e)?"online":"offline");return e.status==="alert"?"alert":(e.status==="online"?"online":"offline")}
+function temp(e){let v=path(e,["temperature","temp","temperatura","sensor.temperature","sensor.temp","sensor.temperatura","sensors.temperature","sensors.temp","sensors.temperatura","data.temperature","data.temp","data.temperatura","lastPayload.temperature","lastPayload.temp","lastPayload.temperatura","lastData.temperature","lastData.temp","lastData.temperatura"]);let x=val(v);return x==null?"--":x.toFixed(1)+"°C"}
+function hum(e){let v=path(e,["humidity","hum","umidade","sensor.humidity","sensor.hum","sensor.umidade","sensors.humidity","sensors.hum","sensors.umidade","data.humidity","data.hum","data.umidade","lastPayload.humidity","lastPayload.hum","lastPayload.umidade","lastData.humidity","lastData.hum","lastData.umidade"]);let x=val(v);return x==null?"--":Math.round(x)+"%"}
+function light(e){let cs=[path(e,["lighting.on"]),path(e,["light.on"]),path(e,["lamp.on"]),path(e,["luz.on"]),path(e,["relay.on"]),path(e,["rele.on"]),e.lightOn,e.lampOn,e.luzLigada,e.luz,e.light,e.relay,e.rele,path(e,["lastPayload.light"]),path(e,["lastPayload.luz"]),path(e,["lastPayload.relay"]),path(e,["lastPayload.rele"]),path(e,["data.light"]),path(e,["data.luz"]),path(e,["data.relay"]),path(e,["data.rele"])];
+for(let v of cs){if(v==null)continue;if(typeof v==="boolean")return v;if(typeof v==="number")return v!==0;if(typeof v==="string"){let s=v.trim().toLowerCase();if(["1","true","on","ligado","ligada","acesa","high"].includes(s))return true;if(["0","false","off","desligado","desligada","apagada","low"].includes(s))return false}if(typeof v==="object"&&v.on!==undefined)return !!v.on;if(typeof v==="object"&&v.state!==undefined){let s=String(v.state).toLowerCase();if(s==="on"||s==="ligado")return true;if(s==="off"||s==="desligado")return false}}return false}
+function slot(e,i){let name=nrm(e.name),S={sala:{x:.50,y:.08,dx:"50%",dy:"100%"},coz:{x:.77,y:.26,dx:"0%",dy:"70%"},esc:{x:.83,y:.52,dx:"0%",dy:"50%"},lav:{x:.72,y:.78,dx:"0%",dy:"8%"},area:{x:.50,y:.88,dx:"50%",dy:"0%"},ban:{x:.28,y:.78,dx:"100%",dy:"8%"},q2:{x:.17,y:.52,dx:"100%",dy:"50%"},q:{x:.23,y:.26,dx:"100%",dy:"70%"}};if(name.includes("sala"))return S.sala;if(name.includes("cozinha"))return S.coz;if(name.includes("escritorio")||name.includes("office"))return S.esc;if(name.includes("lavanderia"))return S.lav;if(name.includes("area")||name.includes("externa")||name.includes("jardim"))return S.area;if(name.includes("banheiro"))return S.ban;if(name.includes("quarto 2")||name.includes("quarto2"))return S.q2;if(name.includes("quarto"))return S.q;return [S.sala,S.coz,S.esc,S.lav,S.area,S.ban,S.q2,S.q][i%8]}
+function curve(cx,cy,x,y){return `M${cx},${cy} Q${(cx+x)/2},${(cy+y)/2} ${x},${y}`}
+function render(){let stage=document.getElementById("coreStage");if(!stage)return;stage.querySelectorAll(".core-node,.core-legend-v486").forEach(e=>e.remove());let svg=stage.querySelector("#coreLinesV46");if(!svg){svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.id="coreLinesV46";svg.classList.add("core-lines-v46");stage.insertBefore(svg,stage.firstChild)}svg.innerHTML="";
+let envs=(typeof state!=="undefined"&&state.environments)?state.environments:[],r=stage.getBoundingClientRect(),w=r.width||stage.clientWidth||620,h=r.height||stage.clientHeight||360,cx=w/2,cy=h/2;
+envs.slice(0,8).forEach((env,i)=>{let sl=slot(env,i),x=w*sl.x,y=h*sl.y,status=st(env),on=light(env)&&status!=="offline";let p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("d",curve(cx,cy,x,y));if(on)p.classList.add("active");svg.appendChild(p);let node=document.createElement("div");node.className="core-node "+status+(on?" light-on":"");node.style.left=x+"px";node.style.top=y+"px";node.style.setProperty("--dot-x",sl.dx);node.style.setProperty("--dot-y",sl.dy);node.style.setProperty("--float-delay",(i*.22)+"s");node.style.setProperty("--orbit-color",on?"#ffcf2f":(status==="online"?"#39e6a4":"#9aa8bb"));node.innerHTML=`<span class="node-name">${escapeHtml(env.name||"Ambiente")}</span><span class="core-env-icon"></span><span class="node-text"><span class="node-state">${on?"ON":"OFF"}</span><span class="node-metrics"><span>${temp(env)}</span><span class="hum">💧 ${hum(env)}</span></span></span>`;stage.appendChild(node)});
+let online=envs.filter(e=>{let s=st(e);return s==="online"||s==="alert"}).length,ce=document.getElementById("coreOnlineCount");if(ce)ce.textContent=online+"/"+envs.length;let lg=document.createElement("div");lg.className="core-legend-v486";lg.innerHTML='<span style="color:#39e6a4"><i></i>ONLINE</span><span style="color:#ffcf2f"><i></i>LUZ ON</span><span style="color:#9aa8bb"><i></i>OFF</span><span style="color:#ff4d6a"><i></i>FALHA</span>';stage.appendChild(lg)}
+window.renderCore=render;document.addEventListener("DOMContentLoaded",()=>{setTimeout(render,500);setInterval(render,1000)})
 })();
 </script>
 
